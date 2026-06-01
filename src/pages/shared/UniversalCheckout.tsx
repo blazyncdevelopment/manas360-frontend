@@ -9,8 +9,10 @@ import { http } from '../../lib/http';
 import { useWallet } from '../../hooks/useWallet';
 import {
   buildPatientSubscriptionSuccessRedirect,
+  buildUniversalPatientPaymentSuccessUrl,
   getCheckoutSummaryMinor,
   loadCart,
+  PATIENT_GATEWAY_PLAN_MAP,
   PATIENT_SUBSCRIPTION_SUCCESS_REDIRECT,
   type PatientSubscriptionCart,
 } from '../../lib/patientSubscriptionFlow';
@@ -38,13 +40,6 @@ const buildProviderFreePlan = () => ({
   features: ['Platform access', 'Profile verification', 'Required for lead plans'],
   validityDays: null,
 });
-
-const PATIENT_PLAN_MAP: Record<string, string> = {
-  free: 'patient-free',
-  monthly: 'patient-1month',
-  quarterly: 'patient-3month',
-  premium_monthly: 'patient-1year',
-};
 
 const PROVIDER_PLAN_MAP: Record<string, string> = {
   free: 'lead-free',
@@ -117,7 +112,7 @@ export default function UniversalCheckout() {
           if (cart) {
             setPatientCart(cart);
             if (!selectedPlanId) {
-              selectedPlanId = PATIENT_PLAN_MAP[cart.planId] || '';
+              selectedPlanId = PATIENT_GATEWAY_PLAN_MAP[cart.planId] || '';
             }
           } else {
             setPatientCart(null);
@@ -150,7 +145,7 @@ export default function UniversalCheckout() {
 
   const resolvedPlanId = mode === 'provider'
     ? (providerCart ? PROVIDER_PLAN_MAP[providerCart.leadPlanId] : typePlanId || '')
-    : (patientCart ? PATIENT_PLAN_MAP[patientCart.planId] : typePlanId || '');
+    : (patientCart ? PATIENT_GATEWAY_PLAN_MAP[patientCart.planId] : typePlanId || '');
 
   const isProviderTrialAuthFlow = mode === 'provider' && resolvedPlanId === 'lead-free' && trialAuthRequested;
   const trialAuthMinor = isProviderTrialAuthFlow ? 100 : 0;
@@ -233,7 +228,9 @@ export default function UniversalCheckout() {
             idempotencyKey,
             addons: patientCart?.addons,
             redirectUrl: buildPatientSubscriptionSuccessRedirect(FRONTEND_URL),
-            successRedirectUrl: PATIENT_SUBSCRIPTION_SUCCESS_REDIRECT,
+            successRedirectUrl: buildUniversalPatientPaymentSuccessUrl(FRONTEND_URL, resolvedPlanId),
+            successReturnUrl: buildUniversalPatientPaymentSuccessUrl(FRONTEND_URL, resolvedPlanId),
+            postPaymentPath: PATIENT_SUBSCRIPTION_SUCCESS_REDIRECT,
           };
 
       const response = await http.post('/v1/payments/universal/initiate', payload);

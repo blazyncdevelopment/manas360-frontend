@@ -20,7 +20,12 @@ export type JourneyRecommendationResponse = {
   };
   nextActions?: string[];
   assessment?: {
-    id?: string;
+    id?: string | null;
+    type?: string;
+    score?: number;
+  };
+  screening?: {
+    id?: string | null;
     type?: string;
     score?: number;
   };
@@ -247,18 +252,20 @@ export const patientApi = {
     (await http.get(`/v1/sessions/${encodeURIComponent(id)}/documents/invoice`, { responseType: 'blob' })).data,
   submitAssessment: async (payload: { type: string; score?: number; answers?: number[] }) => {
     const normalizedType = inferClinicalAssessmentType(payload.type);
-    return (await http.post('/v1/patient-journey/clinical-assessment', {
+    return (await http.post('/v1/patient-journey/clinical-screening', {
       type: normalizedType,
       score: payload.score,
       answers: payload.answers,
     })).data;
   },
 	submitPHQ9: async (answers: number[]) =>
-		(await http.post('/v1/patient-journey/clinical-assessment', { type: 'PHQ-9', answers })).data,
+		(await http.post('/v1/patient-journey/clinical-screening', { type: 'PHQ-9', answers })).data,
   submitQuickScreeningJourney: async (payload: JourneyQuickScreeningRequest): Promise<JourneyRecommendationResponse> =>
     (await http.post('/v1/patient-journey/quick-screening', payload)).data,
   submitClinicalJourney: async (payload: JourneyClinicalRequest): Promise<JourneyRecommendationResponse> =>
-    (await http.post('/v1/patient-journey/clinical-assessment', payload)).data,
+    (await http.post('/v1/patient-journey/clinical-screening', payload)).data,
+  submitClinicalScreening: async (payload: JourneyClinicalRequest): Promise<JourneyRecommendationResponse> =>
+    (await http.post('/v1/patient-journey/clinical-screening', payload)).data,
   submitPresetAssessment: async (payload: {
     entryType: string;
     responses: number[];

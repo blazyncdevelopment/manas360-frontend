@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { readCachedClinicalScreening, readGuestScreeningResult } from '../utils/guestScreeningCache';
 
 interface ResultsPageProps {
   data: {
@@ -11,13 +12,31 @@ interface ResultsPageProps {
     interpretation?: string;
     recommendation?: string;
     action?: string;
+    templateKey?: string;
+    nextActions?: string[];
   } | null;
 }
 
 export const ResultsPage: React.FC<ResultsPageProps> = ({ data }) => {
   const navigate = useNavigate();
   const handleGoHome = () => navigate('/landing', { replace: true });
-  if (!data) {
+  const resolvedData = useMemo(() => {
+    if (data) return data;
+    const cached = readGuestScreeningResult();
+    if (!cached) return null;
+    return {
+      totalScore: cached.totalScore,
+      severityLevel: cached.severityLevel,
+      interpretation: cached.interpretation,
+      recommendation: cached.recommendation,
+      templateKey: cached.type,
+      nextActions: cached.nextActions,
+    };
+  }, [data]);
+
+  const hasPendingGuestScreening = Boolean(readCachedClinicalScreening());
+
+  if (!resolvedData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <button onClick={handleGoHome} className="text-blue-500 underline">Return Home</button>
@@ -25,9 +44,9 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ data }) => {
     );
   }
 
-  const symptomCount = Array.isArray(data.symptoms) ? data.symptoms.length : 0;
-  const apiSeverity = String(data.severityLevel || '').trim();
-  const hasApiResult = apiSeverity.length > 0 || typeof data.totalScore === 'number';
+  const symptomCount = Array.isArray(resolvedData.symptoms) ? resolvedData.symptoms.length : 0;
+  const apiSeverity = String(resolvedData.severityLevel || '').trim();
+  const hasApiResult = apiSeverity.length > 0 || typeof resolvedData.totalScore === 'number';
   let severity = "Mild";
   let emoji = "😊";
   let color = "text-emerald-600";
@@ -35,7 +54,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ data }) => {
 
   if (hasApiResult) {
     severity = apiSeverity || 'Assessment Complete';
-    message = data.interpretation || 'Your assessment is complete.';
+    message = resolvedData.interpretation || 'Your screening is complete.';
     if (severity.toLowerCase() === 'severe') {
       emoji = '😞';
       color = 'text-red-500';
@@ -57,9 +76,13 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ data }) => {
     }
   }
 
-  const primaryCondition = (data.symptoms || []).some(s => s.includes("worry") || s.includes("Racing")) 
-    ? "Anxiety" 
-    : "Depression";
+  const screeningLabel = resolvedData.templateKey === 'GAD-7' ? 'Anxiety (GAD-7)' : 'Depression (PHQ-9)';
+  const primaryCondition = (resolvedData.symptoms || []).some((s) => s.includes('worry') || s.includes('Racing'))
+    ? 'Anxiety'
+    : 'Depression';
+  const signupHref = hasPendingGuestScreening
+    ? '/auth/signup?next=/patient/sessions&from=screening'
+    : '/auth/signup?next=/patient/sessions';
 
   return (
     <div className="responsive-page bg-wellness-bg animate-fadeIn">
@@ -93,19 +116,21 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ data }) => {
             <div>
               <p className="text-sm text-wellness-muted mb-2">Likely Primary Concern</p>
               <p className="text-xl font-serif text-wellness-text font-medium">
-                {hasApiResult ? (data.severityLevel || 'Assessment Result') : `${primaryCondition} Indicators`}
+                {hasApiResult ? (resolvedData.templateKey || screeningLabel) : `${primaryCondition} Indicators`}
               </p>
             </div>
             <div>
               <p className="text-sm text-wellness-muted mb-2">Total Score</p>
               <p className="text-xl font-serif text-wellness-text font-medium">
-                {typeof data.totalScore === 'number' ? data.totalScore : 'N/A'}
+                {typeof resolvedData.totalScore === 'number' ? resolvedData.totalScore : 'N/A'}
               </p>
             </div>
             <div className="col-span-1 md:col-span-2">
               <p className="text-sm text-wellness-muted mb-3">Recommendation</p>
               <p className="text-base text-wellness-text">
-                {data.recommendation || data.impact || 'No recommendation available.'}
+                {Array.isArray(resolvedData.nextActions) && resolvedData.nextActions.length > 0
+                  ? resolvedData.nextActions.join(' ')
+                  : resolvedData.recommendation || resolvedData.impact || 'No recommendation available.'}
               </p>
             </div>
           </div>
@@ -128,7 +153,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ data }) => {
             </button>
             
             <button
-              onClick={() => navigate('/auth/signup?next=/patient/sessions')}
+              onClick={() => navigate(signupHref)}
               className={`
                 group flex-1 min-h-[3rem] px-6
                 bg-white border-2 border-gentle-blue text-gentle-blue
@@ -140,7 +165,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ data }) => {
               `}
             >
               <span>🩺</span>
-              Full Health Assessment
+              {hasPendingGuestScreening ? 'Register & Save Results' : 'Full Health Assessment'}
             </button>
           </div>
           

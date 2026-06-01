@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { patientApi } from '../api/patient';
+import { buildPatientSubscriptionSuccessRedirect } from '../lib/patientSubscriptionFlow';
+import { FRONTEND_URL } from '../lib/runtimeEnv';
 
 type PricingConfig = {
   platformFee: {
@@ -119,7 +121,10 @@ export default function SubscribePage() {
       }
 
       try {
-        const resp = await (patientApi as any).upgradeSubscription({ planKey });
+        const resp = await (patientApi as any).upgradeSubscription({
+          planKey,
+          redirectUrl: buildPatientSubscriptionSuccessRedirect(FRONTEND_URL),
+        });
         const payload = (resp as any)?.data ?? resp;
         if (payload?.redirectUrl) {
           window.location.href = payload.redirectUrl;

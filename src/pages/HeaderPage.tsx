@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Instagram, Youtube, Linkedin } from "lucide-react";
+import { MessageCircle, Instagram, Youtube, Linkedin, User } from "lucide-react";
 import {
   applyTheme,
   getStoredThemePreference,
@@ -8,6 +9,7 @@ import {
   type ThemePreference,
 } from "../lib/themePreference";
 import { useLanguage } from "../context/LanguageContext";
+import { useAuth } from "../context/AuthContext";
 
 const logo = "/AppIcon.jpeg";
 
@@ -32,6 +34,40 @@ type QuickNavMegaMenu = {
   columns: number;
   items: QuickNavMegaItem[];
 };
+
+const MEGA_ITEM_DEFAULT_BG = "rgba(255,255,255,0.98)";
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const normalized = hex.replace("#", "").trim();
+  if (normalized.length !== 6) return null;
+  const r = Number.parseInt(normalized.slice(0, 2), 16);
+  const g = Number.parseInt(normalized.slice(2, 4), 16);
+  const b = Number.parseInt(normalized.slice(4, 6), 16);
+  if ([r, g, b].some((n) => Number.isNaN(n))) return null;
+  return { r, g, b };
+}
+
+/** Light tint of the parent nav accent for mega-menu item hover */
+function accentHoverBackground(accent: string, mix = 0.14): string {
+  const rgb = hexToRgb(accent);
+  if (!rgb) return "#FAFCFF";
+  const r = Math.round(rgb.r * mix + 255 * (1 - mix));
+  const g = Math.round(rgb.g * mix + 255 * (1 - mix));
+  const b = Math.round(rgb.b * mix + 255 * (1 - mix));
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+function megaItemHoverHandlers(accent: string) {
+  const hoverBg = accentHoverBackground(accent);
+  return {
+    onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
+      e.currentTarget.style.background = hoverBg;
+    },
+    onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
+      e.currentTarget.style.background = MEGA_ITEM_DEFAULT_BG;
+    },
+  };
+}
 
 export const landingHeaderStyles = `
         .landing-nav-shell {
@@ -244,10 +280,15 @@ export const landingHeaderStyles = `
             background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.94) 14%, rgba(255, 255, 255, 0.98) 28%);
           }
           .landing-brand-actions button,
-          .landing-login-btn {
+          .landing-login-btn,
+          .landing-profile-btn {
             min-height: 40px;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+          }
+          .landing-profile-btn {
+            width: 40px !important;
+            height: 40px !important;
           }
           .landing-login-dropdown.landing-login-dropdown--mobile {
             position: fixed;
@@ -345,8 +386,14 @@ export const landingHeaderStyles = `
         }
 `;
 
+function isPatientUser(role: unknown): boolean {
+  return String(role || "").toLowerCase().replace(/_/g, "") === "patient";
+}
+
 export const HeaderPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+  const isPatientLoggedIn = isAuthenticated && isPatientUser(user?.role);
   const { selectedLanguage, setSelectedLanguage } = useLanguage();
   const [activeTheme, setActiveTheme] = useState<ThemePreference>(() => resolveTheme(getStoredThemePreference()));
   const [showSearch, setShowSearch] = useState(false);
@@ -368,6 +415,12 @@ export const HeaderPage: React.FC = () => {
   useEffect(() => {
     applyTheme(activeTheme);
   }, [activeTheme]);
+
+  useEffect(() => {
+    if (!isPatientLoggedIn) return;
+    setLoginDropdownOpen(false);
+    setLoginDropdownTop(null);
+  }, [isPatientLoggedIn]);
 
   useEffect(() => {
     const clearMobileAnchors = () => {
@@ -466,7 +519,7 @@ export const HeaderPage: React.FC = () => {
   }, [updateLoginDropdownPosition]);
 
   useEffect(() => {
-    if (!loginDropdownOpen || window.innerWidth > 980) return;
+    if (!loginDropdownOpen) return;
 
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
       const target = e.target as Node;
@@ -1169,95 +1222,128 @@ export const HeaderPage: React.FC = () => {
                   </span>
                 </button>
 
-                <button
-                  type="button"
-                  className="landing-subscribe-btn"
-                  onClick={() => navigate('/auth/signup')}
-                  style={{
-                    background: "#0B2D5E",
-                    color: "white",
-                    padding: "7px 12px",
-                    borderRadius: "18px",
-                    fontSize: "11px",
-                    fontWeight: 900,
-                    cursor: "pointer",
-                    border: "none",
-                    whiteSpace: "nowrap"
-                  }}
-                >
-                  Subscribe
-                </button>
-
-                <div className="landing-login-wrap">
+                {isPatientLoggedIn ? (
                   <button
-                    ref={loginBtnRef}
                     type="button"
-                    className="landing-login-btn"
-                    aria-expanded={loginDropdownOpen}
-                    aria-haspopup="menu"
-                    onClick={toggleLoginDropdown}
+                    className="landing-profile-btn"
+                    aria-label="Go to dashboard"
+                    title="Dashboard"
+                    onClick={() => navigate("/patient/dashboard")}
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "0px",
-                      padding: "7px 12px",
-                      borderRadius: "18px",
+                      justifyContent: "center",
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "50%",
                       border: "1px solid #D5DEE9",
                       cursor: "pointer",
-                      fontSize: "11px",
-                      fontWeight: 800,
-                      color: "#1A1A2E",
-                      background: "white",
-                      whiteSpace: "nowrap"
+                      background: "#E8EFE6",
+                      color: "#0B2D5E",
+                      flexShrink: 0,
                     }}
                   >
-                    Log In
+                    {user?.firstName ? (
+                      <span style={{ fontSize: "13px", fontWeight: 900 }}>
+                        {user.firstName.charAt(0).toUpperCase()}
+                      </span>
+                    ) : (
+                      <User size={18} aria-hidden />
+                    )}
                   </button>
-
-                  {loginDropdownOpen && (
-                    <div
-                      ref={loginDropdownRef}
-                      className={`landing-login-dropdown${loginDropdownTop != null ? " landing-login-dropdown--mobile" : ""}`}
-                      role="menu"
-                      style={loginDropdownTop != null ? { top: loginDropdownTop } : undefined}
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="landing-subscribe-btn"
+                      onClick={() => navigate("/auth/signup")}
+                      style={{
+                        background: "#0B2D5E",
+                        color: "white",
+                        padding: "7px 12px",
+                        borderRadius: "18px",
+                        fontSize: "11px",
+                        fontWeight: 900,
+                        cursor: "pointer",
+                        border: "none",
+                        whiteSpace: "nowrap",
+                      }}
                     >
-                      {loginOptions.map((option) => (
-                        <button
-                          key={option.type}
-                          type="button"
-                          role="menuitem"
-                          onClick={() => handleLogin(option.type)}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            width: "100%",
-                            padding: "10px 10px",
-                            borderRadius: "9px",
-                            cursor: "pointer",
-                            transition: "background 0.15s",
-                            border: "none",
-                            background: "transparent",
-                            textAlign: "left",
-                            fontFamily: "inherit"
-                          }}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLElement).style.background = "#FAFCFF";
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLElement).style.background = "transparent";
-                          }}
+                      Subscribe
+                    </button>
+
+                    <div className="landing-login-wrap">
+                      <button
+                        ref={loginBtnRef}
+                        type="button"
+                        className="landing-login-btn"
+                        aria-expanded={loginDropdownOpen}
+                        aria-haspopup="menu"
+                        onClick={toggleLoginDropdown}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0px",
+                          padding: "7px 12px",
+                          borderRadius: "18px",
+                          border: "1px solid #D5DEE9",
+                          cursor: "pointer",
+                          fontSize: "11px",
+                          fontWeight: 800,
+                          color: "#1A1A2E",
+                          background: "white",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Log In
+                      </button>
+
+                      {loginDropdownOpen && (
+                        <div
+                          ref={loginDropdownRef}
+                          className={`landing-login-dropdown${loginDropdownTop != null ? " landing-login-dropdown--mobile" : ""}`}
+                          role="menu"
+                          style={loginDropdownTop != null ? { top: loginDropdownTop } : undefined}
                         >
-                          <span style={{ fontSize: "17px", width: "24px", textAlign: "center" }}>{option.icon}</span>
-                          <div>
-                            <div style={{ fontSize: "12px", fontWeight: 900, color: "#1A1A2E" }}>{option.label}</div>
-                            <div style={{ fontSize: "10px", color: "#666680", marginTop: "1px" }}>{option.desc}</div>
-                          </div>
-                        </button>
-                      ))}
+                          {loginOptions.map((option) => (
+                            <button
+                              key={option.type}
+                              type="button"
+                              role="menuitem"
+                              onClick={() => handleLogin(option.type)}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                width: "100%",
+                                padding: "10px 10px",
+                                borderRadius: "9px",
+                                cursor: "pointer",
+                                transition: "background 0.15s",
+                                border: "none",
+                                background: "transparent",
+                                textAlign: "left",
+                                fontFamily: "inherit",
+                              }}
+                              onMouseEnter={(e) => {
+                                (e.currentTarget as HTMLElement).style.background = "#FAFCFF";
+                              }}
+                              onMouseLeave={(e) => {
+                                (e.currentTarget as HTMLElement).style.background = "transparent";
+                              }}
+                            >
+                              <span style={{ fontSize: "17px", width: "24px", textAlign: "center" }}>{option.icon}</span>
+                              <div>
+                                <div style={{ fontSize: "12px", fontWeight: 900, color: "#1A1A2E" }}>{option.label}</div>
+                                <div style={{ fontSize: "10px", color: "#666680", marginTop: "1px" }}>{option.desc}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
 
                 <div className="landing-brand-socials" style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "6px" }}>
                   {[
@@ -1344,8 +1430,9 @@ export const HeaderPage: React.FC = () => {
                                 gap: "10px",
                                 padding: "12px 12px",
                                 borderRadius: "14px",
-                                background: "rgba(255,255,255,0.98)",
-                                cursor: "pointer"
+                                background: MEGA_ITEM_DEFAULT_BG,
+                                cursor: "pointer",
+                                transition: "background 0.15s ease"
                               }}
                               role="button"
                               tabIndex={0}
@@ -1356,12 +1443,7 @@ export const HeaderPage: React.FC = () => {
                                   handleMegaItemNav(mi.title, activeQuickNav);
                                 }
                               }}
-                              onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLElement).style.background = "#FAFCFF";
-                              }}
-                              onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.98)";
-                              }}
+                              {...megaItemHoverHandlers(quickNavMegaMenus[activeQuickNav].accent)}
                             >
                               <div
                                 style={{
@@ -1549,19 +1631,15 @@ export const HeaderPage: React.FC = () => {
                                 width: "100%",
                                 padding: "12px 12px",
                                 borderRadius: "14px",
-                                background: "rgba(255,255,255,0.98)",
+                                background: MEGA_ITEM_DEFAULT_BG,
                                 cursor: "pointer",
                                 border: "none",
                                 textAlign: "left",
                                 fontFamily: "inherit",
-                                touchAction: "manipulation"
+                                touchAction: "manipulation",
+                                transition: "background 0.15s ease"
                               }}
-                              onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLElement).style.background = "#FAFCFF";
-                              }}
-                              onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.98)";
-                              }}
+                              {...megaItemHoverHandlers(quickNavMegaMenus[activeQuickNav].accent)}
                             >
                               <div
                                 style={{
@@ -1770,6 +1848,7 @@ export const HeaderPage: React.FC = () => {
         </div>
       )}
       <style>{`${landingHeaderStyles}`}</style>
+     
     </>
   );
 };

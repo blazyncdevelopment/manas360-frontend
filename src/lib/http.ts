@@ -1,4 +1,11 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import {
+	clearAuthTokens,
+	getAccessToken,
+	getAuthHeaders,
+	getRefreshToken,
+	persistTokensFromAuthResponse,
+} from '../utils/authToken';
 import { getApiBaseUrl } from './runtimeEnv';
 
 const baseURL = getApiBaseUrl();
@@ -43,6 +50,12 @@ const isAuthRoute = (url: string): boolean => (
 	|| url.includes('/auth/password/')
 );
 
+const isTokenIssuingAuthRoute = (url: string): boolean => (
+	url.includes('/auth/login')
+	|| url.includes('/auth/verify/phone-otp')
+	|| url.includes('/auth/refresh')
+);
+
 const refreshAccessToken = async (): Promise<void> => {
 	if (refreshPromise) {
 		return refreshPromise;
@@ -51,15 +64,21 @@ const refreshAccessToken = async (): Promise<void> => {
 	refreshPromise = (async () => {
 		const csrfCookieName = import.meta.env.VITE_CSRF_COOKIE_NAME || 'csrf_token';
 		const csrfToken = getCookieValue(csrfCookieName);
+		const storedRefreshToken = getRefreshToken();
 
-		await axios.post(
-			`${baseURL}/auth/refresh`,
+		const response = await axios.post(
+			`${baseURL}/v1/auth/refresh`,
 			{},
 			{
 				withCredentials: true,
-				headers: csrfToken ? { 'x-csrf-token': csrfToken } : undefined,
+				headers: {
+					...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+					...(storedRefreshToken ? { 'x-refresh-token': storedRefreshToken } : {}),
+				},
 			},
 		);
+
+		persistTokensFromAuthResponse(response);
 	})();
 
 	try {
@@ -94,6 +113,17 @@ if (http && http.interceptors && http.interceptors.request && typeof http.interc
 			config.url = normalizeApiUrl(config.url);
 		}
 
+		const authHeaders = getAuthHeaders();
+		if (authHeaders.Authorization) {
+			config.headers = Object.assign(config.headers || {}, authHeaders);
+		}
+
+		const csrfCookieName = import.meta.env.VITE_CSRF_COOKIE_NAME || 'csrf_token';
+		const csrfToken = getCookieValue(csrfCookieName);
+		if (csrfToken) {
+			config.headers = Object.assign(config.headers || {}, { 'x-csrf-token': csrfToken });
+		}
+
 		return config;
 	});
 }
@@ -107,7 +137,17 @@ const isExpectedAuthFailure = (status: number | undefined, url: string): boolean
 
 if (http && http.interceptors && http.interceptors.response && typeof http.interceptors.response.use === 'function') {
 	http.interceptors.response.use(
-		(response: AxiosResponse) => response,
+		(response: AxiosResponse) => {
+			const baseUrl = response.config?.baseURL || '';
+			const relativeUrl = normalizeApiUrl(response.config?.url || '');
+			const fullUrl = `${baseUrl}${relativeUrl}`;
+
+			if (isTokenIssuingAuthRoute(fullUrl)) {
+				persistTokensFromAuthResponse(response);
+			}
+
+			return response;
+		},
 		async (error: any) => {
 			const status: number | undefined = error?.response?.status;
 			const baseUrl = error?.config?.baseURL || '';
@@ -130,8 +170,15 @@ if (http && http.interceptors && http.interceptors.response && typeof http.inter
 				originalRequest._retry = true;
 				try {
 					await refreshAccessToken();
+					const accessToken = getAccessToken();
+					if (accessToken) {
+						originalRequest.headers = Object.assign(originalRequest.headers || {}, {
+							Authorization: `Bearer ${accessToken}`,
+						});
+					}
 					return http(originalRequest as any);
 				} catch {
+					clearAuthTokens();
 					// Let the original 401 bubble up when refresh is unavailable/expired.
 				}
 			}

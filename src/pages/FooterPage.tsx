@@ -7,7 +7,8 @@ export const landingFooterStyles = `
         .landing-footer {
           flex-shrink: 0;
           width: 100%;
-          margin-top: 0;
+          margin-top: auto;
+          margin-bottom: 0;
           font-family: var(--sans, 'DM Sans', sans-serif);
           background: linear-gradient(180deg, #0B2D5E 0%, #06203F 100%);
           color: #ffffff;

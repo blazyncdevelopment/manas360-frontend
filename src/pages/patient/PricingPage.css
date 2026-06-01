@@ -98,6 +98,25 @@
   box-shadow: 0 -4px 16px rgba(74, 103, 65, 0.1);
 }
 
+.pricing-page .role-tabs--locked .role-tab {
+  cursor: default;
+  pointer-events: none;
+}
+
+.pricing-page .role-tabs--locked .role-tab:not(.active) {
+  opacity: 0.55;
+}
+
+.pricing-page .role-tabs--locked .role-tab:hover {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--mute);
+}
+
+.pricing-page .role-tabs--locked .role-tab.active:hover {
+  background: var(--white);
+  color: var(--sage-d);
+}
+
 .pricing-page .role-tab .tab-icon {
   font-size: 20px;
   display: block;
@@ -206,6 +225,8 @@
   display: grid;
   gap: 14px;
   margin: 16px 0 28px;
+  overflow: visible;
+  padding-top: 14px;
 }
 
 .pricing-page .cards-3 {
@@ -239,6 +260,7 @@
   transition: all 0.3s;
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
 
 .pricing-page .card:hover {
@@ -247,23 +269,26 @@
 }
 
 .pricing-page .card.popular {
-  border-color: var(--sage);
-  box-shadow: 0 0 0 1px var(--sage);
+  border-color: var(--sage-d);
+  box-shadow: 0 0 0 1px var(--sage-d);
 }
 
 .pricing-page .card.popular::after {
   content: 'MOST POPULAR';
   position: absolute;
-  top: -11px;
+  top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--sage);
+  background: var(--sage-d);
   color: var(--white);
   font-size: 9px;
   font-weight: 800;
-  padding: 3px 14px;
-  border-radius: 10px;
-  letter-spacing: 1px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+  z-index: 2;
+  line-height: 1.2;
 }
 
 .pricing-page .card.mvp {
@@ -274,16 +299,19 @@
 .pricing-page .card.mvp::after {
   content: 'MVP PLAN';
   position: absolute;
-  top: -11px;
+  top: -12px;
   left: 50%;
   transform: translateX(-50%);
   background: var(--blue);
   color: var(--white);
   font-size: 9px;
   font-weight: 800;
-  padding: 3px 14px;
-  border-radius: 10px;
-  letter-spacing: 1px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+  z-index: 2;
+  line-height: 1.2;
 }
 
 .pricing-page .card.current-plan {
@@ -309,8 +337,84 @@
 .pricing-page .card-compact {
   background: #f9fafb;
   border-color: #e5e7eb;
-  padding: 18px 16px;
   opacity: 0.85;
+}
+
+/* Patient plan cards — compact height matching design */
+.pricing-page .plan-cards-row .card {
+  padding: 14px 14px 12px;
+}
+
+.pricing-page .plan-cards-row .card-compact {
+  padding: 14px 14px 12px;
+}
+
+.pricing-page .plan-cards-row .card-icon {
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+
+.pricing-page .plan-cards-row .card-icon-sm {
+  font-size: 20px;
+}
+
+.pricing-page .plan-cards-row .card-name {
+  font-size: 15px;
+}
+
+.pricing-page .plan-cards-row .card-name-sm {
+  font-size: 14px;
+}
+
+.pricing-page .plan-cards-row .card-price {
+  margin: 4px 0;
+}
+
+.pricing-page .plan-cards-row .card-price .amt {
+  font-size: 22px;
+}
+
+.pricing-page .plan-cards-row .card-price .amt-sm {
+  font-size: 18px;
+}
+
+.pricing-page .plan-cards-row .card-price .per {
+  font-size: 11px;
+}
+
+.pricing-page .plan-cards-row .card-target {
+  font-size: 10px;
+  margin-bottom: 8px;
+}
+
+.pricing-page .plan-cards-row .card-callout {
+  font-size: 9px;
+  padding: 4px 8px;
+  margin-bottom: 6px;
+  line-height: 1.35;
+}
+
+.pricing-page .plan-cards-row .card-features {
+  margin-bottom: 10px;
+}
+
+.pricing-page .plan-cards-row .card-features li {
+  font-size: 11px;
+  padding: 2px 0;
+}
+
+.pricing-page .plan-cards-row .card-features-sm li {
+  font-size: 10px;
+}
+
+.pricing-page .plan-cards-row .card-cta {
+  padding: 8px;
+  font-size: 11px;
+}
+
+.pricing-page .plan-cards-row .card-cta-lg {
+  padding: 9px;
+  font-size: 11px;
 }
 
 .pricing-page .card-hero {

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getApiErrorMessage, signupWithPhone, verifyPhoneSignupOtp } from '../api/auth';
+import { clearGuestClinicalScreening, readCachedClinicalScreening } from '../utils/guestScreeningCache';
 
 const EnrollmentRegistrationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -91,7 +92,21 @@ const EnrollmentRegistrationPage: React.FC = () => {
 
     setProcessing(true);
     try {
-      await verifyPhoneSignupOtp(mobile, otp.trim(), { acceptedTerms: true });
+      const cachedScreening = readCachedClinicalScreening();
+      await verifyPhoneSignupOtp(mobile, otp.trim(), {
+        acceptedTerms: true,
+        ...(cachedScreening
+          ? {
+            clinicalScreening: {
+              type: cachedScreening.type,
+              answers: cachedScreening.answers,
+            },
+          }
+          : {}),
+      });
+      if (cachedScreening) {
+        clearGuestClinicalScreening();
+      }
       await checkAuth({ force: true });
       continueToCheckout({ fullName, mobile });
     } catch (error: any) {

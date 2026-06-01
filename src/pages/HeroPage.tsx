@@ -3,7 +3,12 @@ import { useNavigate } from 'react-router-dom';
 
 
 
-// const PUBLIC_HERO_VIDEO ='https://manas360-temp-clinical-file.s3.ap-south-1.amazonaws.com/Website%20Assets/HERO-BackgroundVideo.mp4';
+const HERO_VIDEO_S3_URL = '/HERO-BackgroundVideo.mp4';
+  //const HERO_VIDEO_S3_URL =  'https://manas360-temp-clinical-file.s3.ap-south-1.amazonaws.com/Website%20Assets/HERO-BackgroundVideo.mp4';
+
+/** Optional presigned URL when the bucket object is not public-read */
+const HERO_VIDEO_SRC =
+  import.meta.env.VITE_HERO_VIDEO_URL?.trim() || HERO_VIDEO_S3_URL;
 
 
 
@@ -55,7 +60,7 @@ export const Hero: React.FC = () => {
     }
   }, []);
 
-  // We optimistically render the <video> and switch to the styled navy fallback on error.
+  // We optimistically render the video and switch to the styled navy fallback on error.
 
 
 
@@ -96,14 +101,15 @@ export const Hero: React.FC = () => {
           z-index: 0;
         }
         
-        /* Video Background per user requirement */
         .hero-bg-video {
           position: absolute;
           inset: 0;
           width: 100%;
           height: 100%;
           object-fit: cover;
-          opacity: 0.6; /* Balanced visibility */
+          border: none;
+          pointer-events: none;
+          opacity: 0.6;
           z-index: 1;
         }
 
@@ -334,6 +340,7 @@ export const Hero: React.FC = () => {
         {videoAvailable && (
           <video
             className="hero-bg-video"
+            src={HERO_VIDEO_SRC}
             autoPlay
             loop
             muted
@@ -341,10 +348,7 @@ export const Hero: React.FC = () => {
             preload="auto"
             aria-hidden="true"
             onError={() => setVideoAvailable(false)}
-          >
-            {/* <source src={PUBLIC_HERO_VIDEO} type="video/mp4" /> */}
-            <source src="/HERO-BackgroundVideo.mp4" type="video/mp4" />
-          </video>
+          />
         )}
         <div className="hero-bg-gradient" />
         <div className="hero-bg-pattern" />

@@ -203,6 +203,10 @@ interface AssessmentData {
   interpretation?: string;
   recommendation?: string;
   action?: string;
+  templateKey?: string;
+  pathway?: string;
+  nextActions?: string[];
+  crisisDetected?: boolean;
 }
 
 function DashboardRedirect() {
@@ -256,19 +260,25 @@ function App() {
     '/confirmation',
   ];
   
-  const showHeaderFooter =
-    !hideHeaderFooterRoutes.includes(location.pathname) &&
-    !location.pathname.startsWith('/patient');
+  // const showHeaderFooter =
+  //   !hideHeaderFooterRoutes.includes(location.pathname) &&
+  //   !location.pathname.startsWith('/patient');
+  
+  const isDashboardRoute =
+  location.pathname.startsWith('/patient') ||
+  location.pathname.startsWith('/provider') ||
+  location.pathname.startsWith('/admin') ||
+  location.pathname.startsWith('/corporate');
+
+const showHeaderFooter =
+  !hideHeaderFooterRoutes.includes(location.pathname) &&
+  !isDashboardRoute;
 
     
 
-  const handleAssessmentSubmit = (data: AssessmentData, isCritical: boolean) => {
+  const handleAssessmentSubmit = (data: AssessmentData) => {
     setAssessmentData(data);
-    if (isCritical) {
-      navigate('/crisis', { replace: true });
-    } else {
-      navigate('/results', { replace: true });
-    }
+    navigate('/results', { replace: true });
   };
 
   const handleOnboardingName = (data: { firstName: string; lastName: string; pronouns: string }) => {
@@ -302,8 +312,10 @@ function App() {
             }}
           />
             <Suspense fallback={<GlobalFallbackLoader />}>
+              <div className="site-layout">
               <ScrollToTop />
               {showHeaderFooter && <HeaderPage />}
+              <div className="site-layout-main">
               <Routes>
               <Route path="/" element={<HeroPage />} />
               <Route path="/intro" element={<HeroIntroPage />} />
@@ -519,7 +531,9 @@ function App() {
               <Route
                 path="/plans"
                 element={
-                  <ProtectedRoute allowedRoles={['patient']}>
+                  <ProtectedRoute
+                    allowedRoles={['patient', 'therapist', 'psychiatrist', 'psychologist', 'coach']}
+                  >
                     <PricingPage />
                   </ProtectedRoute>
                 }
@@ -556,14 +570,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/universal/payment-success"
-                element={
-                  <ProtectedRoute allowedRoles={['patient', 'therapist', 'psychiatrist', 'psychologist', 'coach']}>
-                    <UniversalPaymentSuccessPage />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/universal/payment-success" element={<UniversalPaymentSuccessPage />} />
               <Route path="/admin-portal/login" element={<AdminPortalLoginPage />} />
               <Route path="/corporate/login" element={<Navigate to="/auth/login" replace />} />
               <Route
@@ -790,7 +797,9 @@ function App() {
               <Route path="/verify/:certId" element={<CertificateVerificationPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
+              </div>
               {showHeaderFooter && <FooterPage />}
+              </div>
             </Suspense>
             <CookieConsentBanner />
             <GlobalAudioPlayerConsole />

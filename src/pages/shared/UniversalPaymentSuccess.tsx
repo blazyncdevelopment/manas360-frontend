@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Home, Copy, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -6,6 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { http } from '../../lib/http';
+import { useAuth } from '../../context/AuthContext';
+import { clearCart, PATIENT_DASHBOARD_PATH } from '../../lib/patientSubscriptionFlow';
+import { repairHashBasedRoute } from '../../lib/hashRouteRedirect';
+import {
+  buildUniversalVerifyParams,
+  PAYMENT_POLL_INTERVAL_MS,
+  PAYMENT_POLL_MAX_ATTEMPTS,
+  pollPaymentUntilSettled,
+} from '../../lib/paymentVerification';
 
 /**
  * UNIVERSAL PAYMENT SUCCESS & INVOICE PAGE
@@ -61,8 +70,9 @@ const normalizePaymentDetails = (raw: any, fallback: { type: string; planId: str
   const wallet = resolveMoney(raw?.walletUsed, raw?.walletUsedMinor);
 
   const normalizedStatus = String(raw?.status || '').toUpperCase();
+  const isCompleted = ['COMPLETED', 'SUCCESS', 'PAID', 'ACTIVE', 'TRIAL', 'TRIALING'].includes(normalizedStatus);
   const status: PaymentDetails['status'] =
-    normalizedStatus === 'COMPLETED'
+    isCompleted
       ? 'COMPLETED'
       : normalizedStatus === 'FAILED'
         ? 'FAILED'
@@ -91,18 +101,29 @@ export default function PaymentSuccessPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const { checkAuth } = useAuth();
+  const hasRedirectedRef = useRef(false);
 
   const type = searchParams.get('type') || (location.pathname.startsWith('/provider') ? 'provider' : 'patient');
   const planId = searchParams.get('planId');
-  const transactionId = searchParams.get('transactionId');
+  const transactionId = searchParams.get('transactionId') || searchParams.get('orderId');
 
   const [payment, setPayment] = useState<PaymentDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+  const [redirecting, setRedirecting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('Verifying your payment, please do not close this window...');
+  const [pollAttempt, setPollAttempt] = useState(0);
 
-  // Fetch and verify payment
   useEffect(() => {
+    repairHashBasedRoute();
+  }, []);
+
+  // Poll universal verify, then refresh auth session before redirect.
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
     const verifyPayment = async () => {
       if (!transactionId) {
         setError('Transaction ID not found');
@@ -111,26 +132,85 @@ export default function PaymentSuccessPage() {
       }
 
       try {
-        const response = await http.get('/v1/payments/universal/verify', {
-          params: { orderId: transactionId, type, planId },
+        const outcome = await pollPaymentUntilSettled({
+          mode: 'universal',
+          transactionId,
+          universalParams: { type, planId, transactionId },
+          maxAttempts: PAYMENT_POLL_MAX_ATTEMPTS,
+          intervalMs: PAYMENT_POLL_INTERVAL_MS,
+          signal: controller.signal,
+          onProgress: (attempt, maxAttempts) => {
+            if (!active) return;
+            setPollAttempt(attempt);
+            setStatusMessage(`Verifying your payment... (Attempt ${attempt}/${maxAttempts})`);
+          },
         });
 
-        if (!response?.data) {
-          throw new Error('Failed to verify payment');
-        }
+        if (!active) return;
 
+        const response = await http.get('/v1/payments/universal/verify', {
+          params: buildUniversalVerifyParams(transactionId, { type, planId, transactionId }),
+        });
         const data = response.data;
         const rawPayment = data?.data?.payment || data?.payment || data;
-        setPayment(normalizePaymentDetails(rawPayment, { type, planId, orderId: transactionId }));
+        const normalized = normalizePaymentDetails(rawPayment, { type, planId, orderId: transactionId });
+
+        if (outcome === 'success') {
+          normalized.status = 'COMPLETED';
+          setPayment(normalized);
+          setStatusMessage('Payment verified successfully! Syncing your profile...');
+          try {
+            if (type === 'patient') {
+              clearCart();
+            }
+            await checkAuth({ force: true });
+          } catch {
+            // Continue — dashboard redirect still proceeds.
+          }
+          return;
+        }
+
+        if (outcome === 'failed') {
+          normalized.status = 'FAILED';
+          setPayment(normalized);
+          setLoading(false);
+          return;
+        }
+
+        normalized.status = 'PENDING';
+        setPayment(normalized);
       } catch (err: any) {
+        if ((err as Error)?.name === 'AbortError') return;
         setError(err?.message || 'Failed to verify payment');
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
-    verifyPayment();
-  }, [transactionId, type, planId]);
+    void verifyPayment();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [transactionId, type, planId, checkAuth]);
+
+  const dashboardRoute = type === 'provider' ? '/provider/dashboard' : PATIENT_DASHBOARD_PATH;
+
+  useEffect(() => {
+    if (!payment || payment.status !== 'COMPLETED' || hasRedirectedRef.current) return;
+
+    hasRedirectedRef.current = true;
+    setRedirecting(true);
+
+    const timer = window.setTimeout(() => {
+      navigate(dashboardRoute, { replace: true });
+    }, 1500);
+
+    return () => window.clearTimeout(timer);
+  }, [payment, navigate, dashboardRoute]);
 
   // Invoice generation disabled — invoice downloads removed.
 
@@ -143,12 +223,19 @@ export default function PaymentSuccessPage() {
   };
 
   // Loading state
-  if (loading) {
+  if (loading || redirecting) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="text-center">
           <Loader className="inline-block animate-spin text-emerald-600 mb-4" size={40} />
-          <p className="text-slate-600 font-medium">Verifying payment...</p>
+          <p className="text-slate-600 font-medium">
+            {redirecting ? 'Payment confirmed. Opening your dashboard...' : statusMessage}
+          </p>
+          {!redirecting && pollAttempt > 0 && (
+            <p className="mt-2 text-xs text-slate-400">
+              Attempt {pollAttempt} of {PAYMENT_POLL_MAX_ATTEMPTS}. Please do not refresh.
+            </p>
+          )}
         </div>
       </div>
     );
@@ -211,8 +298,6 @@ export default function PaymentSuccessPage() {
       </div>
     );
   }
-
-  const dashboardRoute = type === 'provider' ? '/provider/dashboard' : '/patient/dashboard';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 py-8 px-4">

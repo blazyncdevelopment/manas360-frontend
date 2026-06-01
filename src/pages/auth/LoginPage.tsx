@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getApiErrorMessage, signupWithPhone, verifyPhoneSignupOtp } from '../../api/auth';
+import { clearGuestClinicalScreening, readCachedClinicalScreening } from '../../utils/guestScreeningCache';
 import { patientApi } from '../../api/patient';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -127,9 +128,21 @@ export default function LoginPage() {
 		isCompletingLoginRef.current = true;
 		try {
 			const guestGameToken = localStorage.getItem('guest_game_token') || undefined;
-			const result = await verifyPhoneSignupOtp(phone.trim(), otp.trim(), undefined, guestGameToken);
+			const cachedScreening = readCachedClinicalScreening();
+			const result = await verifyPhoneSignupOtp(phone.trim(), otp.trim(), cachedScreening
+				? {
+					acceptedTerms: true,
+					clinicalScreening: {
+						type: cachedScreening.type,
+						answers: cachedScreening.answers,
+					},
+				}
+				: undefined, guestGameToken);
 			if (guestGameToken) {
 				localStorage.removeItem('guest_game_token');
+			}
+			if (cachedScreening) {
+				clearGuestClinicalScreening();
 			}
 
 			const resolvedUser = await syncSessionAfterOtp(result.user);

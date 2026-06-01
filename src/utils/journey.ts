@@ -11,6 +11,9 @@ export type JourneyPayload = {
   followUpDays?: number;
   rationale?: string[];
   actions?: string[];
+  screeningScore?: number;
+  screeningType?: string;
+  crisisDetected?: boolean;
 };
 
 export const parseJourneyPayload = (raw: JourneyRecommendationResponse | any): JourneyPayload | null => {
@@ -24,6 +27,8 @@ export const parseJourneyPayload = (raw: JourneyRecommendationResponse | any): J
     return null;
   }
 
+  const screening = payload.screening ?? payload.assessment;
+
   return {
     pathway: payload.pathway,
     selectedPathway: payload?.selectedPathway?.pathway,
@@ -35,5 +40,8 @@ export const parseJourneyPayload = (raw: JourneyRecommendationResponse | any): J
     followUpDays: payload?.followUpDays,
     rationale: Array.isArray(payload?.recommendation?.rationale) ? payload.recommendation.rationale : [],
     actions: Array.isArray(payload?.nextActions) ? payload.nextActions : [],
+    screeningScore: typeof screening?.score === 'number' ? screening.score : undefined,
+    screeningType: screening?.type,
+    crisisDetected: Boolean(payload?.crisis?.detected),
   };
 };

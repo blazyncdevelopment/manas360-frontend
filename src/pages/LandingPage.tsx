@@ -204,7 +204,6 @@ const LandingPage: React.FC = () => {
     <div
       className="landing-page-root"
       style={{
-        minHeight: "100vh",
         backgroundImage: `linear-gradient(rgba(238, 233, 233, 0.46), rgba(223, 213, 213, 0.46)), url(${landingBg})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -383,7 +382,7 @@ const LandingPage: React.FC = () => {
         }}
       >
         {[
-          { bg: "#FFF", image: "/AnytimeBUDDY.jpeg", label: "Doctor" },
+          { bg: "#FFF", image: "/AnytimeBUDDY.jpeg", label: "Doctor", href: "/ai-power-hub" },
           { bg: "#111827", image: "/HitASixer.jpeg", label: "Cricket", href: "/hit-a-sixer" },
           { bg: "#03163A", image: "/Pet.jpg", label: "Digital Pet", href: "/pet" }
         ].map((item, idx) => (
@@ -399,18 +398,16 @@ const LandingPage: React.FC = () => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              cursor: item.href ? "pointer" : "default",
+              cursor: "pointer",
               animation: `landingAvatarFloat 3.8s ease-in-out ${idx * 0.35}s infinite`,
               transition: "transform 180ms ease, box-shadow 180ms ease"
             }}
-            title={item.label}
-            role={item.href ? "button" : undefined}
-            tabIndex={item.href ? 0 : undefined}
-            onClick={() => {
-              if (item.href) navigate(item.href);
-            }}
+            aria-label={item.label}
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate(item.href)}
             onKeyDown={(e) => {
-              if (item.href && (e.key === "Enter" || e.key === " ")) {
+              if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 navigate(item.href);
               }
@@ -627,7 +624,7 @@ const LandingPage: React.FC = () => {
         className="landing-pros-section"
         aria-label="For Mental Health Professionals"
         style={{
-          background: "linear-gradient(180deg, rgba(207, 224, 235, 0.95) 0%, rgba(231, 243, 245, 0.9) 55%, rgba(255,255,255,0.95) 100%)",
+          background: "transparent",
           padding: "42px 16px 42px 16px"
         }}
       >
@@ -739,7 +736,7 @@ const LandingPage: React.FC = () => {
         id="assessSection"
         className="landing-assess-section"
         style={{
-          background: "linear-gradient(180deg, rgba(207, 224, 235, 0.65) 0%, rgba(231, 243, 245, 0.75) 55%, rgba(255,255,255,0.98) 100%)",
+          background: "transparent",
           padding: "28px 16px"
         }}
       >
@@ -1109,8 +1106,7 @@ const LandingPage: React.FC = () => {
           --landing-gold: #7f8000;
           display: flex;
           flex-direction: column;
-          min-height: 100vh;
-          min-height: 100dvh;
+          flex: 1 0 auto;
           font-family: 'DM Sans', sans-serif;
           color: var(--landing-dark);
           -webkit-font-smoothing: antialiased;
@@ -1222,6 +1218,10 @@ const LandingPage: React.FC = () => {
           width: 100%;
           padding-top: 0;
           padding-bottom: 48px;
+        }
+        .landing-main > section,
+        .landing-main > .landing-hero-section {
+          background: transparent;
         }
         .landing-main > section,
         .landing-main > .landing-hero-section {
@@ -1343,8 +1343,7 @@ const LandingPage: React.FC = () => {
                   min-width: 0;
                 }
         .landing-gt-strip {
-          background: linear-gradient(180deg, #fafbfc 0%, #f1f5f9 100%);
-          border-bottom: 1px solid #e2e8f0;
+          background: transparent;
           padding: 10px 0;
           width: 100%;
           margin-top: 0;

@@ -1,14 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { patientApi } from '../api/patient';
 import { theme } from '../theme/theme';
 import {
   CLINICAL_ASSESSMENT_OPTIONS,
   CLINICAL_QUESTION_BANK,
   severityFromClinicalScore,
 } from '../utils/clinicalAssessments';
+import {
+  readScreeningScoreFromResponse,
+  writeCachedClinicalScreening,
+  writeGuestScreeningResult,
+} from '../utils/guestScreeningCache';
+import { parseJourneyPayload } from '../utils/journey';
 
 interface AssessmentProps {
-  onSubmit: (data: any, isCritical: boolean) => void;
+  onSubmit: (data: any) => void;
 }
 
 const PHQ9_QUESTIONS: string[] = CLINICAL_QUESTION_BANK['PHQ-9'];
@@ -16,6 +23,67 @@ const PHQ9_OPTIONS = CLINICAL_ASSESSMENT_OPTIONS.map((option) => ({
   label: option.label,
   value: option.points,
 }));
+
+const SCREENING_TYPE = 'PHQ-9' as const;
+const ASSESSMENT_ANSWERS_STORAGE_KEY = 'manas360-phq9-screening-answers';
+
+type StoredAssessmentAnswer = {
+  questionId: string;
+  optionIndex: number;
+};
+
+function readStoredAnswers(): StoredAssessmentAnswer[] {
+  try {
+    const raw = localStorage.getItem(ASSESSMENT_ANSWERS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is StoredAssessmentAnswer =>
+        typeof item === 'object' &&
+        item !== null &&
+        typeof (item as StoredAssessmentAnswer).questionId === 'string' &&
+        typeof (item as StoredAssessmentAnswer).optionIndex === 'number' &&
+        Number.isFinite((item as StoredAssessmentAnswer).optionIndex),
+    );
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredAnswers(answersArray: StoredAssessmentAnswer[]): void {
+  try {
+    if (answersArray.length === 0) {
+      localStorage.removeItem(ASSESSMENT_ANSWERS_STORAGE_KEY);
+      return;
+    }
+    localStorage.setItem(ASSESSMENT_ANSWERS_STORAGE_KEY, JSON.stringify(answersArray));
+  } catch {
+    // ignore quota / private mode errors
+  }
+}
+
+function clearStoredAnswers(): void {
+  try {
+    localStorage.removeItem(ASSESSMENT_ANSWERS_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+function answersRecordFromArray(arr: StoredAssessmentAnswer[]): Record<string, number> {
+  return arr.reduce<Record<string, number>>((acc, { questionId, optionIndex }) => {
+    acc[questionId] = optionIndex;
+    return acc;
+  }, {});
+}
+
+function answersArrayFromRecord(record: Record<string, number>): StoredAssessmentAnswer[] {
+  return Object.entries(record).map(([questionId, optionIndex]) => ({
+    questionId,
+    optionIndex,
+  }));
+}
 
 export const Assessment: React.FC<AssessmentProps> = ({ onSubmit }) => {
   const navigate = useNavigate();
@@ -35,17 +103,22 @@ export const Assessment: React.FC<AssessmentProps> = ({ onSubmit }) => {
       setLoading(true);
       setError('');
       try {
-        setQuestions(
-          PHQ9_QUESTIONS.map((prompt, idx) => ({
-            questionId: `PHQ-9-${idx + 1}`,
-            prompt,
-            sectionKey: 'PHQ-9',
-            options: PHQ9_OPTIONS.map((option) => ({
-              optionIndex: option.value,
-              label: option.label,
-            })),
+        const loadedQuestions = PHQ9_QUESTIONS.map((prompt, idx) => ({
+          questionId: `${SCREENING_TYPE}-${idx + 1}`,
+          prompt,
+          sectionKey: SCREENING_TYPE,
+          options: PHQ9_OPTIONS.map((option) => ({
+            optionIndex: option.value,
+            label: option.label,
           })),
-        );
+        }));
+        setQuestions(loadedQuestions);
+
+        const validQuestionIds = new Set(loadedQuestions.map((q) => q.questionId));
+        const restored = readStoredAnswers().filter((item) => validQuestionIds.has(item.questionId));
+        if (restored.length > 0) {
+          setAnswers(answersRecordFromArray(restored));
+        }
       } catch (err: any) {
         setError(err?.response?.data?.message || 'Unable to load assessment. Please refresh and try again.');
       } finally {
@@ -56,13 +129,18 @@ export const Assessment: React.FC<AssessmentProps> = ({ onSubmit }) => {
     void loadAssessment();
   }, []);
 
+  useEffect(() => {
+    if (loading) return;
+    writeStoredAnswers(answersArrayFromRecord(answers));
+  }, [answers, loading]);
+
   const setAnswer = (questionId: string, optionIndex: number) => {
     setAnswers((prev) => ({ ...prev, [questionId]: optionIndex }));
   };
 
   const handleFinish = async () => {
     if (questions.length === 0) {
-      setError('Assessment is not ready yet. Please refresh and try again.');
+      setError('Screening is not ready yet. Please refresh and try again.');
       return;
     }
 
@@ -80,19 +158,50 @@ export const Assessment: React.FC<AssessmentProps> = ({ onSubmit }) => {
     setSubmitting(true);
     setError('');
     try {
-      const totalScore = answersPayload.reduce((sum, item) => sum + Number(item.optionIndex || 0), 0);
-      const severityLevel = severityFromClinicalScore('PHQ-9', totalScore);
+      const numericAnswers = answersPayload.map((item) => Number(item.optionIndex));
+      const apiResponse = await patientApi.submitClinicalScreening({
+        type: SCREENING_TYPE,
+        answers: numericAnswers,
+      });
+      const journey = parseJourneyPayload(apiResponse);
+      const screeningMeta = readScreeningScoreFromResponse(apiResponse);
+      const totalScore =
+        typeof screeningMeta?.score === 'number'
+          ? screeningMeta.score
+          : numericAnswers.reduce((sum, value) => sum + value, 0);
+      const severityLevel =
+        journey?.severity || severityFromClinicalScore(SCREENING_TYPE, totalScore);
+      const nextActions = journey?.actions || [];
+      const rationale = journey?.rationale || [];
       const result = {
-        attemptId: `PHQ-9-${Date.now()}`,
-        templateKey: 'PHQ-9',
+        attemptId: screeningMeta?.id || `${SCREENING_TYPE}-${Date.now()}`,
+        templateKey: SCREENING_TYPE,
         totalScore,
         severityLevel,
+        interpretation: rationale[0] || 'Your screening is complete.',
+        recommendation: nextActions.join(' ') || rationale.join(' '),
+        pathway: journey?.pathway,
+        nextActions,
+        crisisDetected: journey?.crisisDetected,
       };
-      const isCritical = String(result.severityLevel || '').toLowerCase() === 'severe';
 
-      onSubmit(result, isCritical);
+      writeCachedClinicalScreening({ type: SCREENING_TYPE, answers: numericAnswers });
+      writeGuestScreeningResult({
+        type: SCREENING_TYPE,
+        totalScore,
+        severityLevel,
+        interpretation: result.interpretation,
+        recommendation: result.recommendation,
+        nextActions,
+        crisisDetected: journey?.crisisDetected,
+        pathway: journey?.pathway,
+        raw: ((apiResponse as { data?: unknown })?.data ?? apiResponse) as typeof apiResponse,
+      });
+
+      clearStoredAnswers();
+      onSubmit(result);
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Unable to submit assessment. Please try again.');
+      setError(err?.response?.data?.message || 'Unable to submit screening. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -115,7 +224,7 @@ export const Assessment: React.FC<AssessmentProps> = ({ onSubmit }) => {
             MANAS<span className="font-semibold text-calm-sage">360</span>
           </div>
           <div className="text-sm font-medium text-wellness-text bg-calm-sage/15 px-5 py-2 rounded-full">
-            Assessment
+            Screening
           </div>
         </div>
 
@@ -123,7 +232,7 @@ export const Assessment: React.FC<AssessmentProps> = ({ onSubmit }) => {
           {loading ? (
             <section>
               <h2 className="font-serif text-2xl sm:text-3xl text-wellness-text mb-2 leading-tight font-light">
-                Loading your assessment...
+                Loading your screening...
               </h2>
               <p className="text-sm text-wellness-muted">Preparing questions</p>
             </section>

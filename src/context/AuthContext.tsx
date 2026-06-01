@@ -6,6 +6,7 @@ import {
   becomeProvider as becomeProviderApi,
   type AuthUser,
 } from '../api/auth';
+import { clearAuthTokens, hasStoredAccessToken } from '../utils/authToken';
 
 export type AppRole = 
   | 'patient' 
@@ -187,6 +188,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
 
+    if (hasStoredAccessToken()) {
+      return true;
+    }
+
     const csrfCookieName = (import.meta.env.VITE_CSRF_COOKIE_NAME || 'csrf_token').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return new RegExp(`(?:^|; )${csrfCookieName}=`).test(document.cookie);
   }, [authProbeBlockKey]);
@@ -223,8 +228,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       setUser(null);
       clearSessionHint();
-      if (typeof window !== 'undefined' && error?.response?.status === 401) {
-        window.sessionStorage.setItem(authProbeBlockKey, '1');
+      if (error?.response?.status === 401) {
+        clearAuthTokens();
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.setItem(authProbeBlockKey, '1');
+        }
       }
     } finally {
       setLoading(false);
@@ -267,14 +275,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         window.sessionStorage.removeItem(authProbeBlockKey);
       }
       return currentUser;
-    } catch (error: any) {
+    } catch {
+      const hadBearerToken = hasStoredAccessToken();
       setUser(null);
       clearSessionHint();
+      clearAuthTokens();
       throw new Error(
-        'Login succeeded but session could not be established. Please enable cookies and retry.',
+        hadBearerToken
+          ? 'Login succeeded but your profile could not be loaded. Please try again.'
+          : 'Login succeeded but session could not be established. Please enable cookies or retry.',
       );
     }
-  }, [authProbeBlockKey]);
+  }, [authProbeBlockKey, clearSessionHint]);
 
   const logout = useCallback(async () => {
     try {
@@ -284,6 +296,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setUser(null);
       clearSessionHint();
+      clearAuthTokens();
     }
   }, [clearSessionHint]);
 

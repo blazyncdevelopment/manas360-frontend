@@ -36,12 +36,16 @@ export interface AuthUser {
 	providerProfileVerified?: boolean;
 	requiresPlatformPayment?: boolean;
 	platformAccessActive?: boolean;
+	requiresSubscription?: boolean;
+	patientSubscriptionActive?: boolean;
+	patientSubscriptionPlan?: string | null;
 	legalAcceptanceRequired?: boolean;
 	nriTermsAccepted?: boolean;
 	pendingLegalDocuments?: LegalDocument[];
 	permissions?: string[];
 	adminPolicies?: Record<string, string[]>;
 	adminPolicyVersion?: number;
+	aadhaarNumber?: string | null;
 }
 
 export interface LoginPayload {
@@ -78,12 +82,18 @@ export interface ProviderRegisterPayload {
 	digitalSignature: string;
 }
 
+export type ClinicalScreeningOtpPayload = {
+	type: 'PHQ-9' | 'GAD-7';
+	answers: number[];
+};
+
 export interface SignupConsentPayload {
 	acceptedTerms: boolean;
 	acceptedDocuments?: string[];
 	nri_declared?: boolean;
 	nri_tos_accepted?: boolean;
 	nri_tos_accepted_at?: string;
+	clinicalScreening?: ClinicalScreeningOtpPayload;
 }
 
 export const getApiErrorMessage = (error: unknown, fallback = 'Request failed'): string => {
@@ -105,8 +115,15 @@ const normalizePhoneForAuth = (value: string): string => {
 	return compactPhone;
 };
 
+export type AuthSessionPayload = {
+	user: AuthUser;
+	sessionId: string;
+	accessToken?: string;
+	refreshToken?: string;
+};
+
 export const login = async (payload: LoginPayload): Promise<AuthUser> => {
-	const response = await http.post<ApiEnvelope<{ user: AuthUser; sessionId: string }>>('/v1/auth/login', payload);
+	const response = await http.post<ApiEnvelope<AuthSessionPayload>>('/v1/auth/login', payload);
 	const loggedInUser = response.data.data.user;
 
 	if (!loggedInUser?.role) {
@@ -125,7 +142,7 @@ export const providerRegister = async (payload: ProviderRegisterPayload): Promis
 };
 
 export const googleLogin = async (idToken: string): Promise<AuthUser> => {
-	const response = await http.post<ApiEnvelope<{ user: AuthUser; sessionId: string }>>('/v1/auth/login/google', { idToken });
+	const response = await http.post<ApiEnvelope<AuthSessionPayload>>('/v1/auth/login/google', { idToken });
 	return response.data.data.user;
 };
 
@@ -146,9 +163,9 @@ export const verifyPhoneSignupOtp = async (
 	otp: string,
 	consent?: SignupConsentPayload,
 	guestGameToken?: string,
-): Promise<{ user: AuthUser; sessionId: string }> => {
+): Promise<AuthSessionPayload> => {
 	const normalizedPhone = normalizePhoneForAuth(phone);
-	const response = await http.post<ApiEnvelope<{ user: AuthUser; sessionId: string }>>('/v1/auth/verify/phone-otp', {
+	const response = await http.post<ApiEnvelope<AuthSessionPayload>>('/v1/auth/verify/phone-otp', {
 		phone: normalizedPhone,
 		otp,
 		...(consent || {}),

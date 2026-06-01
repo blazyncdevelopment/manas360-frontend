@@ -11,6 +11,7 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { VideoSessionProvider } from './context/VideoSessionContext'
 import { ErrorProvider } from './components/ErrorProvider'
 import { applyThemePreference, getStoredThemePreference } from './lib/themePreference'
+import { repairHashBasedRoute } from './lib/hashRouteRedirect'
 
 const forceInitialGoogleTranslateEnglish = () => {
   if (typeof document === 'undefined') return
@@ -67,6 +68,8 @@ const forceInitialGoogleTranslateEnglish = () => {
   }
 }
 
+// PhonePe may return `/#/universal/payment-success` — normalize before React boots.
+if (!repairHashBasedRoute()) {
 forceInitialGoogleTranslateEnglish()
 
 const initialPreference = getStoredThemePreference()
@@ -117,3 +120,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </HelmetProvider>
 );
+}

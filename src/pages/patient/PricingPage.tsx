@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import type { AuthUser } from '../../api/auth';
 import { patientApi } from '../../api/patient';
+import { hasCorporateAccess, useAuth } from '../../context/AuthContext';
 import { FRONTEND_URL } from '../../lib/runtimeEnv';
 import {
   PATIENT_PLANS,
@@ -28,6 +30,28 @@ const ROLE_TABS: Array<{ id: PricingRole; icon: string; label: string }> = [
 function parseRoleParam(value: string | null): PricingRole {
   if (value === 'provider' || value === 'corporate') return value;
   return 'patient';
+}
+
+const PROVIDER_PRICING_ROLES = new Set(['therapist', 'psychiatrist', 'psychologist', 'coach']);
+
+function resolveLockedPricingRole(user: AuthUser | null | undefined): PricingRole | null {
+  if (!user) return null;
+
+  const normalized = String(user.role || '').toLowerCase().replace(/_/g, '');
+
+  if (PROVIDER_PRICING_ROLES.has(normalized)) {
+    return 'provider';
+  }
+
+  if (hasCorporateAccess(user)) {
+    return 'corporate';
+  }
+
+  if (normalized === 'patient') {
+    return 'patient';
+  }
+
+  return null;
 }
 
 function FeatureList({
@@ -81,7 +105,9 @@ function CardCta({
 
 export default function PricingPage() {
   const navigate = useNavigate();
+  const { user, checkAuth } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const lockedRole = useMemo(() => resolveLockedPricingRole(user), [user]);
   const [activeRole, setActiveRole] = useState<PricingRole>(() => parseRoleParam(searchParams.get('role')));
   const [subscribingPlanId, setSubscribingPlanId] = useState<PatientPlanId | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
@@ -100,29 +126,60 @@ export default function PricingPage() {
   }, []);
 
   useEffect(() => {
-    void loadSubscription();
-  }, [loadSubscription]);
+    void (async () => {
+      try {
+        await checkAuth({ force: true });
+      } catch {
+        // Continue loading subscription snapshot even if profile refresh fails.
+      }
+      await loadSubscription();
+    })();
+  }, [checkAuth, loadSubscription]);
 
   useEffect(() => {
+    if (lockedRole) {
+      setActiveRole(lockedRole);
+      const urlRole = searchParams.get('role');
+      if (urlRole && parseRoleParam(urlRole) !== lockedRole) {
+        setSearchParams(lockedRole === 'patient' ? {} : { role: lockedRole }, { replace: true });
+      }
+      return;
+    }
+
     const role = parseRoleParam(searchParams.get('role'));
     setActiveRole(role);
-  }, [searchParams]);
+  }, [searchParams, lockedRole, setSearchParams]);
 
   const switchRole = (role: PricingRole) => {
+    if (lockedRole) return;
     setActiveRole(role);
     setSearchParams(role === 'patient' ? {} : { role }, { replace: true });
   };
 
+  const authSubscriptionActive = Boolean(user?.patientSubscriptionActive);
+
   const subscriptionActive = useMemo(
-    () => isSubscriptionStatusActive(subscription),
-    [subscription],
+    () => authSubscriptionActive || isSubscriptionStatusActive(subscription),
+    [authSubscriptionActive, subscription],
   );
 
-  const onFreePlan = useMemo(() => isFreeLikeSubscription(subscription), [subscription]);
+  const onFreePlan = useMemo(
+    () => !authSubscriptionActive && isFreeLikeSubscription(subscription),
+    [authSubscriptionActive, subscription],
+  );
 
   const hasPaidActiveSubscription = subscriptionActive && !onFreePlan;
 
-  const activePlanId = useMemo(() => resolveActivePatientPlanId(subscription), [subscription]);
+  const activePlanId = useMemo(() => {
+    if (user?.patientSubscriptionPlan) {
+      const fromAuth = resolveActivePatientPlanId({
+        planKey: user.patientSubscriptionPlan,
+        status: 'active',
+      });
+      if (fromAuth) return fromAuth;
+    }
+    return resolveActivePatientPlanId(subscription);
+  }, [user?.patientSubscriptionPlan, subscription]);
 
   const renewalLabel = useMemo(() => {
     if (!subscription?.renewalDate) return '';
@@ -250,20 +307,29 @@ export default function PricingPage() {
         </p>
       </header>
 
-      <div className="role-tabs" role="tablist" aria-label="Pricing audience">
-        {ROLE_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={activeRole === tab.id}
-            className={cardClass('role-tab', activeRole === tab.id && 'active')}
-            onClick={() => switchRole(tab.id)}
-          >
-            <span className="tab-icon">{tab.icon}</span>
-            <span className="tab-label">{tab.label}</span>
-          </button>
-        ))}
+      <div
+        className={cardClass('role-tabs', lockedRole ? 'role-tabs--locked' : undefined)}
+        role="tablist"
+        aria-label="Pricing audience"
+      >
+        {ROLE_TABS.map((tab) => {
+          const isActive = activeRole === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              aria-disabled={lockedRole ? true : undefined}
+              tabIndex={lockedRole ? -1 : undefined}
+              className={cardClass('role-tab', isActive && 'active')}
+              onClick={() => switchRole(tab.id)}
+            >
+              <span className="tab-icon">{tab.icon}</span>
+              <span className="tab-label">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="content">
@@ -299,7 +365,7 @@ export default function PricingPage() {
             </div>
           )}
 
-          <div className="cards-row cards-4">
+          <div className="cards-row cards-4 plan-cards-row">
             <article
               className={cardClass(
                 'card card-compact',
@@ -349,7 +415,7 @@ export default function PricingPage() {
 
             <article
               className={cardClass(
-                'card mvp card-hero card-hero-blue',
+                'card mvp',
                 subscriptionActive && activePlanId === 'quarterly' && 'current-plan',
               )}
             >

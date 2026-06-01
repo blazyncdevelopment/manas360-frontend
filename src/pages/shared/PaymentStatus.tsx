@@ -1,8 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2, ArrowLeft, Home, Clock, AlertCircle, HelpCircle } from 'lucide-react';
-import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
+import { me as meApi, type AuthUser } from '../../api/auth';
+import { getPostLoginRoute, useAuth } from '../../context/AuthContext';
+import { repairHashBasedRoute } from '../../lib/hashRouteRedirect';
+import { http } from '../../lib/http';
+import {
+	PAYMENT_POLL_INTERVAL_MS,
+	PAYMENT_POLL_MAX_ATTEMPTS,
+	pollPaymentUntilSettled,
+} from '../../lib/paymentVerification';
+import {
+	clearCart,
+	isPatientSubscriptionTransaction,
+	PATIENT_DASHBOARD_PATH,
+	resolveGatewayPlanIdFromCart,
+	resolvePostPaymentRedirectPath,
+} from '../../lib/patientSubscriptionFlow';
 
 type PaymentState = 'loading' | 'pending' | 'success' | 'failed';
 
@@ -10,6 +24,9 @@ interface PaymentDetails {
 	status?: string;
 	failureReason?: string;
 	metadata?: {
+		redirectUrl?: string;
+		successRedirectUrl?: string;
+		type?: string;
 		declineTitle?: string;
 		declineMessage?: string;
 		declineAction?: string;
@@ -18,104 +35,190 @@ interface PaymentDetails {
 	};
 }
 
+const FAILURE_STATES = new Set(['FAILED', 'DECLINED', 'PAYMENT_ERROR', 'PAYMENT_DECLINED']);
+
 export default function PaymentStatusPage() {
 	const [searchParams] = useSearchParams();
 	const navigate = useNavigate();
 	const { checkAuth } = useAuth();
+	const refreshedUserRef = useRef<AuthUser | null>(null);
 	const [state, setState] = useState<PaymentState>('loading');
-	const [retryCount, setRetryCount] = useState(0);
+	const [pollAttempt, setPollAttempt] = useState(0);
+	const [statusMessage, setStatusMessage] = useState('Verifying your payment, please do not close this window...');
 	const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
 
 	const statusFromUrl = (searchParams.get('status') || searchParams.get('code') || '').toUpperCase();
 	const transactionId = searchParams.get('transactionId') || searchParams.get('id') || '';
-	const isProviderTransaction = transactionId.startsWith('PROV_');
-	const redirectAfterSuccess = searchParams.get('redirect') || '';
+	const orderId = searchParams.get('orderId') || '';
+	const verifyId = transactionId || orderId;
+	const planIdFromUrl = searchParams.get('planId');
+	const resolvedPlanId = planIdFromUrl || resolveGatewayPlanIdFromCart() || null;
+	const paymentType = searchParams.get('type') || 'patient';
+	const hasUniversalCheckoutParams = Boolean(resolvedPlanId) && searchParams.has('type');
+	const useUniversalVerify =
+		Boolean(orderId)
+		|| searchParams.get('verify') === 'universal'
+		|| (Boolean(transactionId) && hasUniversalCheckoutParams)
+		|| isPatientSubscriptionTransaction(transactionId);
+	const isProviderTransaction = transactionId.startsWith('PROV_') || paymentType === 'provider';
+	const redirectAfterSuccess = searchParams.get('redirect') || searchParams.get('successRedirect') || '';
+	const isSubscriptionPayment = useMemo(
+		() => isPatientSubscriptionTransaction(transactionId),
+		[transactionId],
+	);
 
-	// Fetch payment details when failed state is reached
 	useEffect(() => {
-		if (state !== 'failed' || !transactionId) return;
+		repairHashBasedRoute();
+	}, []);
+
+	const resolveRedirectTarget = useCallback(
+		(metadataRedirect?: string) =>
+			resolvePostPaymentRedirectPath(metadataRedirect || redirectAfterSuccess, {
+				isProvider: isProviderTransaction,
+				preferSubscriptionDashboard: isSubscriptionPayment,
+			}),
+		[redirectAfterSuccess, isProviderTransaction, isSubscriptionPayment],
+	);
+
+	useEffect(() => {
+		if (state !== 'failed' || !verifyId) return;
 
 		const fetchPaymentDetails = async () => {
 			try {
-				const response = await axios.get(
-					`/api/v1/payments/status/${transactionId}`,
-					{ withCredentials: true }
-				); 
+				const response = await http.get(`/v1/payments/status/${verifyId}`);
 				const details = response.data?.data as PaymentDetails | undefined;
 				if (details) {
 					setPaymentDetails(details);
 				}
 			} catch (err) {
 				console.warn('Failed to fetch payment details for error display', err);
-				// Continue without details
 			}
 		};
 
-		fetchPaymentDetails();
-	}, [state, transactionId]);
+		void fetchPaymentDetails();
+	}, [state, verifyId]);
 
 	useEffect(() => {
-		// Initial state determination
-		if (statusFromUrl === 'SUCCESS' || statusFromUrl === 'PAYMENT_SUCCESS') {
-			setState('success');
-		} else if (statusFromUrl === 'PENDING' || statusFromUrl === 'INTERNAL_SERVER_ERROR' || !statusFromUrl) {
-			// If PhonePe returned PENDING or we don't have a status yet, start polling
-			setState('pending');
-		} else {
+		if (!verifyId) {
 			setState('failed');
+			setStatusMessage('Invalid payment session. Missing transaction identifier.');
+			return;
 		}
-	}, [statusFromUrl]);
 
-  useEffect(() => {
-    if (state !== 'pending' || !transactionId) return;
+		if (FAILURE_STATES.has(statusFromUrl)) {
+			setState('failed');
+			setStatusMessage('Payment was declined or failed. Please try again.');
+			return;
+		}
 
-    const pollStatus = async () => {
-      try {
-        const response = await axios.get(`/api/v1/payments/phonepe/status/${transactionId}`, { withCredentials: true });
-        const data = response.data?.data;
-        const stateFromApi = String(data?.data?.state || data?.code || '').toUpperCase();
+		const controller = new AbortController();
+		let active = true;
 
-        if (stateFromApi === 'COMPLETED' || stateFromApi === 'PAYMENT_SUCCESS') {
-          setState('success');
-        } else if (stateFromApi === 'FAILED' || stateFromApi === 'DECLINED' || stateFromApi === 'PAYMENT_ERROR') {
-          setState('failed');
-        } else {
-          // Still pending, increment retry count to trigger effect again
-          if (retryCount < 10) {
-            setTimeout(() => setRetryCount(prev => prev + 1), 5000);
-          } else {
-            // Max retries reached
-            setState('failed');
-          }
-        }
-      } catch (err) {
-        console.error('Status poll failed', err);
-        // On error, we don't stop immediately, just wait for next poll
-        if (retryCount < 10) {
-          setTimeout(() => setRetryCount(prev => prev + 1), 5000);
-        } else {
-          setState('failed');
-        }
-      }
-    };
+		const verifyPayment = async () => {
+			setState('pending');
+			setStatusMessage('Verifying your payment, please do not close this window...');
 
-    pollStatus();
-  }, [state, transactionId, retryCount]);
+			const outcome = await pollPaymentUntilSettled({
+				mode: useUniversalVerify ? 'universal' : 'standard',
+				transactionId: verifyId,
+				universalParams: {
+					type: paymentType,
+					planId: resolvedPlanId,
+					orderId: orderId || null,
+					transactionId: transactionId || null,
+				},
+				maxAttempts: PAYMENT_POLL_MAX_ATTEMPTS,
+				intervalMs: PAYMENT_POLL_INTERVAL_MS,
+				signal: controller.signal,
+				onProgress: (attempt, maxAttempts, paymentState) => {
+					if (!active) return;
+					setPollAttempt(attempt);
+					setStatusMessage(
+						paymentState === 'PENDING' || paymentState === 'PENDING_PAYMENT'
+							? `Payment processing... Checking status (Attempt ${attempt}/${maxAttempts})`
+							: `Verifying your payment... (Attempt ${attempt}/${maxAttempts})`,
+					);
+				},
+			});
 
-  useEffect(() => {
-    if (state !== 'success') return;
+			if (!active) return;
+
+			if (outcome === 'success') {
+				const shouldClearCart =
+					!isProviderTransaction
+					&& (isSubscriptionPayment || paymentType === 'patient' || Boolean(resolvedPlanId));
+
+				if (shouldClearCart) {
+					clearCart();
+				}
+
+				setStatusMessage('Payment verified successfully! Syncing your profile...');
+				try {
+					refreshedUserRef.current = await meApi();
+				} catch (err) {
+					console.warn('Profile refresh after payment failed', err);
+					refreshedUserRef.current = null;
+				}
+				try {
+					await checkAuth({ force: true });
+				} catch (err) {
+					console.warn('Auth context sync after payment failed', err);
+				}
+
+				setState('success');
+				setStatusMessage('Subscription activated! Redirecting...');
+				return;
+			}
+
+			if (outcome === 'failed') {
+				setState('failed');
+				setStatusMessage('Payment was declined or failed. Please try again.');
+				return;
+			}
+
+			setState('failed');
+			setStatusMessage(
+				'Payment status verification timed out. If money was debited, your plan will activate shortly.',
+			);
+		};
+
+		void verifyPayment().catch((err) => {
+			if ((err as Error)?.name === 'AbortError') return;
+			console.error('Payment verification failed', err);
+			if (!active) return;
+			setState('failed');
+			setStatusMessage('Unable to verify payment. Please try again or contact support.');
+		});
+
+		return () => {
+			active = false;
+			controller.abort();
+		};
+	}, [
+		verifyId,
+		orderId,
+		transactionId,
+		statusFromUrl,
+		useUniversalVerify,
+		paymentType,
+		resolvedPlanId,
+		isProviderTransaction,
+		isSubscriptionPayment,
+	]);
+
+	useEffect(() => {
+		if (state !== 'success') return;
 
 		const timer = window.setTimeout(() => {
-			void checkAuth({ force: true }).finally(async () => {
+			void (async () => {
 				if (!isProviderTransaction) {
-					// Finalize pending smart-match request, if this transaction belongs to that flow.
 					if (transactionId && transactionId.startsWith('SMREQ_')) {
 						const pendingKey = `manas360.smartmatch.pending.${transactionId}`;
 						const pendingRaw = localStorage.getItem(pendingKey);
 						if (pendingRaw) {
 							try {
 								const pendingPayload = JSON.parse(pendingRaw);
-								await axios.post('/api/v1/patient/appointments/smart-match', pendingPayload, { withCredentials: true });
+								await http.post('/v1/patient/appointments/smart-match', pendingPayload);
 								localStorage.removeItem(pendingKey);
 								const smartMatchSummary = pendingPayload?.smartMatchSummary || null;
 								if (smartMatchSummary) {
@@ -136,41 +239,65 @@ export default function PaymentStatusPage() {
 						}
 					}
 
-					let redirectUrl = '';
-					try {
-						if (transactionId) {
-							const response = await axios.get(`/api/v1/payments/status/${transactionId}`, { withCredentials: true });
-							redirectUrl = response.data?.data?.metadata?.redirectUrl || '';
+					const metadataRedirect =
+						paymentDetails?.metadata?.successRedirectUrl
+						|| paymentDetails?.metadata?.redirectUrl
+						|| '';
+
+					const refreshedUser = refreshedUserRef.current;
+					let destination = resolveRedirectTarget(metadataRedirect);
+					if (refreshedUser) {
+						const routeFromProfile = getPostLoginRoute(refreshedUser);
+						if (routeFromProfile && routeFromProfile !== '/plans') {
+							destination = routeFromProfile;
 						}
-					} catch (err) {
-						console.warn('Could not fetch custom redirect for successful payment', err);
+					}
+					if (isSubscriptionPayment && destination.startsWith('/plans')) {
+						destination = PATIENT_DASHBOARD_PATH;
 					}
 
-					if (redirectUrl) {
-						if (redirectUrl.startsWith('/')) {
-							navigate(redirectUrl, { replace: true });
-						} else {
-							window.location.href = redirectUrl;
-						}
-					} else if (redirectAfterSuccess && redirectAfterSuccess.startsWith('/')) {
-						navigate(redirectAfterSuccess, { replace: true });
-					} else {
-						navigate('/patient/dashboard', { replace: true });
-					}
+					navigate(destination, { replace: true });
 					return;
 				}
+
 				navigate(`/provider/confirmation?transactionId=${encodeURIComponent(transactionId)}`, { replace: true });
-			});
-		}, 800);
+			})();
+		}, 2000);
 
 		return () => window.clearTimeout(timer);
-	}, [state, checkAuth, navigate, isProviderTransaction, transactionId, redirectAfterSuccess]);
+	}, [
+		state,
+		navigate,
+		isProviderTransaction,
+		transactionId,
+		paymentDetails,
+		resolveRedirectTarget,
+	]);
 
-	if (state === 'loading') {
+	const dashboardPath = isProviderTransaction ? '/provider/dashboard' : PATIENT_DASHBOARD_PATH;
+	const successSubtitle = isSubscriptionPayment
+		? 'Payment verified. Your plan is active — opening your dashboard...'
+		: 'Payment received successfully. We are now confirming your booking.';
+
+	if (state === 'loading' || state === 'pending') {
 		return (
-			<div className="flex min-h-screen flex-col items-center justify-center bg-slate-50">
-				<Loader2 className="h-12 w-12 animate-spin text-indigo-600" />
-				<p className="mt-4 text-sm font-medium text-slate-600">Verifying your payment...</p>
+			<div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4">
+				{state === 'loading' ? (
+					<Loader2 className="h-12 w-12 animate-spin text-indigo-600" />
+				) : (
+					<Clock className="h-12 w-12 text-amber-600 animate-pulse" />
+				)}
+				<p className="mt-4 max-w-md text-center text-sm font-medium text-slate-600">{statusMessage}</p>
+				{state === 'pending' && pollAttempt > 0 && (
+					<p className="mt-2 text-xs text-slate-400">
+						Attempt {pollAttempt} of {PAYMENT_POLL_MAX_ATTEMPTS}. Please do not refresh.
+					</p>
+				)}
+				{verifyId && (
+					<p className="mt-4 rounded-lg bg-white px-3 py-2 text-center text-xs font-mono text-slate-500">
+						Transaction: {verifyId}
+					</p>
+				)}
 			</div>
 		);
 	}
@@ -184,18 +311,16 @@ export default function PaymentStatusPage() {
 							<CheckCircle className="h-10 w-10 text-emerald-600" />
 						</div>
 						<h1 className="mt-6 text-center text-2xl font-bold text-slate-900">Payment Successful!</h1>
-						<p className="mt-2 text-center text-sm text-slate-500">
-							Payment received successfully. We are now confirming your booking.
-						</p>
-						{transactionId && (
+						<p className="mt-2 text-center text-sm text-slate-500">{successSubtitle}</p>
+						{verifyId && (
 							<p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-center text-xs font-mono text-slate-500">
-								Transaction: {transactionId}
+								Transaction: {verifyId}
 							</p>
 						)}
 						<div className="mt-8 flex flex-col gap-3">
 							<button
 								type="button"
-								onClick={() => navigate(isProviderTransaction ? '/provider/dashboard' : '/patient/dashboard', { replace: true })}
+								onClick={() => navigate(dashboardPath, { replace: true })}
 								className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
 							>
 								<Home className="h-4 w-4" /> Go to Dashboard
@@ -204,57 +329,22 @@ export default function PaymentStatusPage() {
 					</>
 				)}
 
-				{state === 'pending' && (
-					<>
-						<div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-amber-100">
-							<Clock className="h-10 w-10 text-amber-600 animate-pulse" />
-						</div>
-						<h1 className="mt-6 text-center text-2xl font-bold text-slate-900">Payment Processing</h1>
-						<p className="mt-2 text-center text-sm text-slate-500">
-							Your payment is being verified by PhonePe. This usually takes a few seconds. Do not refresh or go back.
-						</p>
-						<div className="mt-6 flex flex-col items-center gap-2">
-							<Loader2 className="h-5 w-5 animate-spin text-amber-600" />
-							<p className="text-xs text-slate-400">Waiting for confirmation (Attempt {retryCount}/10)...</p>
-						</div>
-						{transactionId && (
-							<p className="mt-5 rounded-lg bg-slate-50 px-3 py-2 text-center text-xs font-mono text-slate-500">
-								Transaction: {transactionId}
-							</p>
-						)}
-						<div className="mt-8">
-							<button
-								type="button"
-								onClick={() => navigate(isProviderTransaction ? '/provider/dashboard' : '/patient/dashboard', { replace: true })}
-								className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-							>
-								Go to Dashboard (Check back later)
-							</button>
-						</div>
-					</>
-				)}
-
 				{state === 'failed' && (
 					<>
-						{/* Header */}
 						<div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
 							<XCircle className="h-10 w-10 text-red-600" />
 						</div>
 						<h1 className="mt-6 text-center text-2xl font-bold text-slate-900">Payment Failed</h1>
+						<p className="mt-3 text-center text-sm text-slate-500">{statusMessage}</p>
 
-						{/* Decline Reason (if available) */}
 						{paymentDetails?.metadata?.declineTitle && (
 							<div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4">
 								<div className="flex gap-3">
 									<AlertCircle className="h-5 w-5 flex-shrink-0 text-red-600 mt-0.5" />
 									<div className="flex-1">
-										<h3 className="font-semibold text-red-900">
-											{paymentDetails.metadata.declineTitle}
-										</h3>
+										<h3 className="font-semibold text-red-900">{paymentDetails.metadata.declineTitle}</h3>
 										{paymentDetails.metadata.declineMessage && (
-											<p className="mt-1 text-sm text-red-800">
-												{paymentDetails.metadata.declineMessage}
-											</p>
+											<p className="mt-1 text-sm text-red-800">{paymentDetails.metadata.declineMessage}</p>
 										)}
 										{paymentDetails.metadata.declineAction && (
 											<div className="mt-2 rounded bg-red-100 p-2 text-xs text-red-900">
@@ -266,22 +356,13 @@ export default function PaymentStatusPage() {
 							</div>
 						)}
 
-						{/* Generic fallback message */}
-						{!paymentDetails?.metadata?.declineTitle && (
-							<p className="mt-3 text-center text-sm text-slate-500">
-								Something went wrong with your payment. No charges have been applied. Please try again.
-							</p>
-						)}
-
-						{transactionId && (
+						{verifyId && (
 							<p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-center text-xs font-mono text-slate-500">
-								Transaction: {transactionId}
+								Transaction: {verifyId}
 							</p>
 						)}
 
-						{/* Action Buttons */}
 						<div className="mt-8 flex flex-col gap-3">
-							{/* Retry button (shown if retryable) */}
 							{paymentDetails?.metadata?.declineIsRetryable !== false && (
 								<button
 									type="button"
@@ -292,7 +373,6 @@ export default function PaymentStatusPage() {
 								</button>
 							)}
 
-							{/* Support contact (shown if not retryable) */}
 							{paymentDetails?.metadata?.declineIsRetryable === false && (
 								<a
 									href="https://wa.me/918848220077?text=I%20need%20help%20with%20my%20payment"
@@ -304,16 +384,13 @@ export default function PaymentStatusPage() {
 								</a>
 							)}
 
-							{/* Fallback: always show retry */}
-							{paymentDetails?.metadata?.declineIsRetryable === undefined && (
-								<button
-									type="button"
-									onClick={() => navigate(isProviderTransaction ? '/provider/checkout' : '/checkout', { replace: true })}
-									className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500"
-								>
-									<ArrowLeft className="h-4 w-4" /> Retry Payment
-								</button>
-							)}
+							<button
+								type="button"
+								onClick={() => navigate(dashboardPath, { replace: true })}
+								className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+							>
+								<Home className="h-4 w-4" /> Go to Dashboard
+							</button>
 						</div>
 					</>
 				)}
