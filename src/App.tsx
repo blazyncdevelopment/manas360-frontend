@@ -43,6 +43,7 @@ const SessionsPage = lazy(() => import('./pages/patient/SessionsPage'));
 const PatientSessionDetailPage = lazy(() => import('./pages/patient/SessionDetailPage'));
 const AIChatPage = lazy(() => import('./pages/patient/AIChatPage'));
 const ProfilePage = lazy(() => import('./pages/patient/ProfilePage'));
+const ProfilePreferencePage = lazy(() => import('./pages/patient/ProfilePreferencePage'));
 const SettingsPage = lazy(() => import('./pages/patient/SettingsPage'));
 const LiveSessionPage = lazy(() => import('./pages/patient/LiveSessionPage'));
 const DocumentsPage = lazy(() => import('./pages/patient/DocumentsPage'));
@@ -759,6 +760,7 @@ const showHeaderFooter =
                 <Route path="provider-messages/:providerId" element={<ProviderMessagesPage />} />
                 <Route path="messages" element={<AIChatPage />} />
                 <Route path="profile" element={<ProfilePage />} />
+                <Route path="preferences" element={<ProfilePreferencePage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="assessments" element={<Navigate to="/patient/care-team" replace />} />
                 <Route path="assessment-reports" element={<Navigate to="/patient/progress?tab=clinical" replace />} />
