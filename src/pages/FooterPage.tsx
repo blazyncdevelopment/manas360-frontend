@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -81,6 +82,16 @@ export const landingFooterStyles = `
           font-size: 12px;
           font-weight: 900;
           user-select: none;
+          text-decoration: none;
+          color: inherit;
+          cursor: pointer;
+          transition: transform 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+        }
+        
+        .landing-footer .footer-social-chip:hover {
+          background: rgba(255,255,255,0.22);
+          transform: translateY(-1px);
+          opacity: 1;
         }
 
         .landing-footer-crisis {
@@ -184,7 +195,7 @@ export const FooterPage: React.FC = () => {
     "Specialized Care": "/specialized-care",
     "For Providers": "/my-digital-clinic",
     "NRI | Global Inc": "/nri-landing",
-    Careers: "/corporate-landing",
+    Careers: "/landing",
     
   };
 
@@ -194,7 +205,7 @@ export const FooterPage: React.FC = () => {
     "Cookie Policy": "/cookie-policy",
     "DPDPA Compliance": "/privacy",
     "Refund Policy": "/refunds",
-    Disclaimer: "/terms"
+    Disclaimer: "/legal/community-guidelines"
   };
 
   const handleFooterRoute = (routeMap: Record<string, string>, label: string) => {
@@ -262,9 +273,26 @@ export const FooterPage: React.FC = () => {
                 &#9742; +91-8867736009
               </a>
               <div style={{ fontSize: "12px", opacity: 0.9, marginBottom: "14px", fontWeight: 800 }}>&#128172; WhatsApp Support</div>
-              <div style={{ display: "flex", gap: "10px", opacity: 0.85 }}>{["wa", "ig", "in", "x"].map((s) => (
-                <div key={s} className="footer-social-chip">{s}</div>
-              ))}</div>
+              <div style={{ display: "flex", gap: "10px", opacity: 0.85 }}>
+                {[
+                  { key: "wa", label: "wa", aria: "WhatsApp", href: "https://wa.me/919876543210" },
+                  { key: "ig", label: "ig", aria: "Instagram", href: "https://instagram.com/manas360" },
+                  { key: "in", label: "in", aria: "LinkedIn", href: "https://linkedin.com/company/manas360" },
+                  { key: "x", label: "x", aria: "X (Twitter)", href: "https://x.com/manas360" }
+                ].map((s) => (
+                  <a
+                    key={s.key}
+                    className="footer-social-chip"
+                    href={s.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={s.aria}
+                    title={s.aria}
+                  >
+                    {s.label}
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -285,6 +313,7 @@ export const FooterPage: React.FC = () => {
         </div>
       </footer>
       <style>{`${landingFooterStyles}`}</style>
+   
     </>
   );
 };

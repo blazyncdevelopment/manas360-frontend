@@ -127,6 +127,7 @@ const CookieAndTrackingPolicy = lazy(() => import('./pages/legal/CookieAndTracki
 // AcceptableUsePolicy lazy import removed (not used in routing)
 // const AcceptableUsePolicy = lazy(() => import('./pages/legal/AcceptableUsePolicy'));
 const RefundAndCancellationPolicy = lazy(() => import('./pages/legal/RefundAndCancellationPolicy'));
+const CommunityGuidelines = lazy(() => import('./pages/legal/CommunityGuidelines'));
 const TherapistICAgr = lazy(() => import('./pages/legal/TherapistICAgr'));
 const TherapistNDA = lazy(() => import('./pages/legal/TherapistNDA'));
 const TherapistDataProcessingAgr = lazy(() => import('./pages/legal/TherapistDataProcessingAgr'));
@@ -272,8 +273,8 @@ function App() {
   const isDashboardRoute =
   location.pathname.startsWith('/patient') ||
   location.pathname.startsWith('/provider') ||
-  location.pathname.startsWith('/admin') ||
-  location.pathname.startsWith('/corporate');
+  location.pathname.startsWith('/admin') 
+  // location.pathname.startsWith('/corporate');
 
 const showHeaderFooter =
   !hideHeaderFooterRoutes.includes(location.pathname) &&
@@ -798,6 +799,7 @@ const showHeaderFooter =
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/cookie-policy" element={<CookieAndTrackingPolicy />} />
               <Route path="/refunds" element={<RefundAndCancellationPolicy />} />
+              <Route path="/legal/community-guidelines" element={<CommunityGuidelines />} />
               <Route path="/legal/therapist-ic-agreement" element={<TherapistICAgr />} />
               <Route path="/legal/therapist-nda" element={<TherapistNDA />} />
               <Route path="/legal/therapist-data-processing" element={<TherapistDataProcessingAgr />} />

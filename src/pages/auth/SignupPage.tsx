@@ -6,7 +6,7 @@ import { clearGuestClinicalScreening, readCachedClinicalScreening } from '../../
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useAuth, getPostLoginRoute } from '../../context/AuthContext';
-import NriPatch, { type NriConsentState } from '../legal/nri';
+import NriPatch, { type NriConsentState } from '../legal/Nri';
 
 type SignupRole = 'patient' | 'therapist' | 'psychiatrist' | 'psychologist' | 'coach';
 type ProviderAgreementKey = 'THERAPIST_IC_AGREEMENT' | 'THERAPIST_NDA' | 'THERAPIST_DATA_PROCESSING_AGREEMENT';

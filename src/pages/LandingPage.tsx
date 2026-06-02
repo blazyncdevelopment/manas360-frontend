@@ -67,6 +67,25 @@ const LandingPage: React.FC = () => {
   const [hoveredSideId, setHoveredSideId] = useState<string | null>(null);
   const pageEpoch = useRef(Date.now());
 
+  const sideRailRoutes: Partial<Record<string, string>> = useMemo(
+    () => ({
+      bot: "/ai-power-hub",
+      pets: "/pet",
+      sound: "/sound-therapy",
+      schedule: "/patient/sessions",
+      "chat-mid": "/ai-chat",
+      notes: "/assessment",
+      brain: "/self-help"
+    }),
+    []
+  );
+
+  const handleSideRailNavigate = (id: string) => {
+    const to = sideRailRoutes[id];
+    if (!to) return;
+    navigate(to);
+  };
+
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
@@ -321,16 +340,23 @@ const LandingPage: React.FC = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "flex-start",
-                  cursor: "pointer",
+                  cursor: sideRailRoutes[item.id] ? "pointer" : "default",
                   margin: "1px 2px",
                   background: "transparent",
                   fontSize: "18px",
                   position: "relative"
                 }}
-                aria-label="Quick item"
+                aria-label={item.title}
                 onMouseEnter={() => setHoveredSideId(item.id)}
                 onFocus={() => setHoveredSideId(item.id)}
                 onBlur={() => setHoveredSideId(null)}
+                onClick={() => handleSideRailNavigate(item.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleSideRailNavigate(item.id);
+                  }
+                }}
               >
                 <span className="landing-side-icon" style={{ background: item.bg }}>
                   {item.icon}

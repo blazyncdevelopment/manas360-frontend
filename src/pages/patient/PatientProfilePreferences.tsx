@@ -27,6 +27,16 @@ interface PatientPreferences {
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
+const DAYS: DaySlot[] = [
+  { day: "Monday", short: "Mon", slots: [] },
+  { day: "Tuesday", short: "Tue", slots: [] },
+  { day: "Wednesday", short: "Wed", slots: [] },
+  { day: "Thursday", short: "Thu", slots: [] },
+  { day: "Friday", short: "Fri", slots: [] },
+  { day: "Saturday", short: "Sat", slots: [] },
+  { day: "Sunday", short: "Sun", slots: [] },
+];
+
 const LANGUAGES = [
   { code: "en", label: "English", script: "English" },
   { code: "hi", label: "Hindi", script: "हिंदी" },
@@ -40,16 +50,6 @@ const THERAPY_MODES = [
   { id: "voice", icon: "🎙️", label: "Voice therapy", sub: "Audio only, no camera" },
   { id: "chat", icon: "💬", label: "Chat / messaging", sub: "Text-based sessions" },
   { id: "ai_buddy", icon: "🤖", label: "AnytimeBuddy (AI)", sub: "24/7 AI companion" },
-];
-
-const _DAYS: DaySlot[] = [
-  { day: "Monday", short: "Mon", slots: [] },
-  { day: "Tuesday", short: "Tue", slots: [] },
-  { day: "Wednesday", short: "Wed", slots: [] },
-  { day: "Thursday", short: "Thu", slots: [] },
-  { day: "Friday", short: "Fri", slots: [] },
-  { day: "Saturday", short: "Sat", slots: [] },
-  { day: "Sunday", short: "Sun", slots: [] },
 ];
 
 const TIME_SLOTS: TimeSlot[] = [
@@ -129,8 +129,8 @@ const AvailabilityGrid = ({
   availability: Record<string, string[]>;
   onChange: (day: string, slot: string) => void;
 }) => {
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const fullDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const days = DAYS.map((d) => d.short);
+  const fullDays = DAYS.map((d) => d.day);
 
   return (
     <div style={{ overflowX: "auto" }}>
