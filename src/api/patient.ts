@@ -217,6 +217,8 @@ export const isOnboardingRequiredError = (error: any): boolean => {
 export const patientApi = {
   getDashboard: async () => (await http.get('/v1/patient/dashboard')).data,
   getDashboardV2: async () => (await http.get('/v1/patient/dashboard')).data,
+  getPreferences: async () => (await http.get('/v1/patient/preferences')).data,
+  savePreferences: async (prefs: Record<string, unknown>) => (await http.patch('/v1/patient/preferences', prefs)).data,
   changePassword: async (payload: { currentPassword: string; newPassword: string; confirmPassword: string }) =>
     (await http.patch('/v1/users/me/password', payload)).data,
   getActiveSessions: async () => (await http.get('/v1/users/me/sessions')).data,
@@ -365,6 +367,8 @@ export const patientApi = {
   getMoodStats: async () => (await http.get('/v1/patient/mood/stats')).data,
   addMoodLog: async (payload: { mood: number; note?: string; intensity?: number; tags?: string[]; energy?: 'low' | 'medium' | 'high'; sleepHours?: string }) =>
     (await http.post('/v1/patient/mood', payload)).data,
+  getTodayCheckInStatus: async (): Promise<{ morning: boolean; evening: boolean }> =>
+    (await http.get('/v1/patient/daily-checkin/today')).data?.data ?? { morning: false, evening: false },
   addDailyCheckIn: async (payload: {
     type: 'morning' | 'evening';
     mood?: number;

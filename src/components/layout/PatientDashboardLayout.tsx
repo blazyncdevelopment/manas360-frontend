@@ -11,6 +11,7 @@ import {
   Menu,
   MessageSquare,
   Settings2,
+  SlidersHorizontal,
   Sparkles,
   User,
   X,
@@ -36,6 +37,7 @@ const selfCareNavItems = [
   { to: '/patient/messages', label: 'Anytime Buddy (AI)', icon: MessageSquare, badge: 'AI', feature: 'ai-support' },
   { to: '/patient/check-in', label: 'Daily Check-in', icon: HeartPulse, feature: 'daily-checkin' },
   { to: '/patient/wellness-library', label: 'Premium Library', icon: Sparkles, feature: 'wellness-library' },
+  { to: '/patient/preferences', label: 'My Preferences', icon: SlidersHorizontal },
 ];
 
 const progressNavItems = [
@@ -136,6 +138,7 @@ export default function PatientDashboardLayout() {
     '/patient/support': 'Help Center',
     '/patient/settings': 'Settings',
     '/patient/profile': 'Profile',
+    '/patient/preferences': 'My Preferences',
     '/patient/wellness-library': 'Premium Library',
     '/patient/digital-pets': 'Digital Pets Hub',
     '/patient/sleep-therapy': 'Sleep Therapy',

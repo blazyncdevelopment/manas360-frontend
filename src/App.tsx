@@ -62,6 +62,7 @@ const WellnessLibraryPage = lazy(() => import('./pages/patient/WellnessLibraryPa
 const BuddyChatPage = lazy(() => import('./pages/patient/BuddyChatPage'));
 const ProviderMessagesPage = lazy(() => import('./pages/patient/ProviderMessagesPage'));
 const PatientOnboardingPage = lazy(() => import('./pages/patient/PatientOnboardingPage'));
+const PatientProfilePreferences = lazy(() => import('./pages/patient/PatientProfilePreferences'));
 const DailyCheckInPage = lazy(() => import('./pages/patient/DailyCheckInPage'));
 const HitASixerGamePage = lazy(() => import('./pages/patient/HitASixerGamePage'));
 const WalletPage = lazy(() => import('./pages/patient/WalletPage'));
@@ -161,6 +162,7 @@ const ProviderLandingPage = lazy(() => import('./pages/provider/ProviderLandingP
 const ProviderSubscriptionPage = lazy(() => import('./pages/provider/ProviderSubscriptionPage'));
 const ProviderSubscriptionAddonsPage = lazy(() => import('./pages/provider/ProviderSubscriptionAddonsPage'));
 const AppointmentRequestsPage = lazy(() => import('./pages/provider/AppointmentRequests'));
+const ProviderMarketplacePage = lazy(() => import('./pages/provider/ProviderMarketplacePage'));
 const ProviderOnboardingPage = lazy(() => import('./pages/provider/ProviderOnboardingPage'));
 const ProviderVerificationPendingPage = lazy(() => import('./pages/provider/ProviderVerificationPendingPage'));
 const TherapistLiveSessionPage = lazy(() => import('./pages/therapist/TherapistLiveSessionPage'));
@@ -259,6 +261,8 @@ function App() {
     '/plans/addons',
     '/checkout',
     '/confirmation',
+    '/crisis',
+    '/results',
   ];
   
   // const showHeaderFooter =
@@ -439,6 +443,7 @@ const showHeaderFooter =
                 <Route path="goals" element={<Navigate to="/provider/patients" replace />} />
                 <Route path="earnings" element={<ProviderEarningsPage />} />
                 <Route path="appointments" element={<AppointmentRequestsPage />} />
+                <Route path="leads" element={<ProviderMarketplacePage />} />
                 <Route path="certifications" element={<CertificationLandingPage />} />
                 <Route path="certifications/:slug" element={<CertificationDetailsPage />} />
                 <Route path="certification/enroll/:slug" element={<EnrollmentRegistrationPage />} />
@@ -739,6 +744,7 @@ const showHeaderFooter =
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="onboarding" element={<PatientOnboardingPage />} />
+                <Route path="preferences" element={<PatientProfilePreferences />} />
                 <Route path="therapy-plan" element={<TherapyPlanPage />} />
                 <Route path="care-team" element={<Navigate to="/patient/sessions" replace />} />
                 <Route path="providers" element={<Navigate to="/patient/sessions" replace />} />
