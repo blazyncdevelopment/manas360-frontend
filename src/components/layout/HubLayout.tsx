@@ -3,11 +3,32 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ProviderSidebar } from './ProviderSidebar';
 import { useAuth } from '../../context/AuthContext';
 import PersistentVideoLayout from './PersistentVideoLayout';
-import { Lock, FileCheck, CreditCard } from 'lucide-react';
+import { Lock, FileCheck, CreditCard, RefreshCw } from 'lucide-react';
+import { http } from '../../lib/http';
+import toast from 'react-hot-toast';
 
 export const HubLayout = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, checkAuth } = useAuth();
   const navigate = useNavigate();
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSyncAccount = async () => {
+    setSyncing(true);
+    try {
+      const res = await http.post('/v1/provider/platform-access/sync');
+      const active = res.data?.data?.platformAccessActive;
+      if (active) {
+        await checkAuth({ force: true });
+        toast.success('Platform access confirmed! Loading your dashboard...');
+      } else {
+        toast.error('No completed payment found. Please complete checkout first.');
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Sync failed. Please try again.');
+    } finally {
+      setSyncing(false);
+    }
+  };
   const location = useLocation();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -120,7 +141,16 @@ export const HubLayout = () => {
                   >
                     <span>{needsPlatformFee ? 'Pay Platform Fee to Start' : 'Complete Verification'}</span>
                   </button>
-                  
+
+                  <button
+                    onClick={() => void handleSyncAccount()}
+                    disabled={syncing}
+                    className="w-full mt-3 border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 font-semibold py-2.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <RefreshCw size={15} className={syncing ? 'animate-spin' : ''} />
+                    <span>{syncing ? 'Syncing...' : 'Already paid? Sync my account'}</span>
+                  </button>
+
                   {needsVerification && !needsPlatformFee && (
                     <p className="mt-4 text-xs text-gray-500 font-medium">Pending Admin Approval</p>
                   )}

@@ -97,7 +97,7 @@ export default function DashboardPage() {
         ]);
       } catch (err: any) {
         if (isOnboardingRequiredError(err)) {
-          navigate('/patient/onboarding?next=/patient/sessions', { replace: true });
+          navigate('/patient/onboarding?next=/patient/preferences', { replace: true });
           return;
         }
         setError(err?.response?.data?.message || err?.message || 'Unable to load dashboard right now.');

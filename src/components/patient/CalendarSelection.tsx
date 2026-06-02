@@ -48,43 +48,27 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
       setTimeSlotsError(null);
       try {
         const day = selectedDate.getDay();
-        let subscriptionError = false;
-        let subscriptionErrorMsg = '';
         const results = await Promise.all(
           SLOT_TEMPLATES.map(async (slot) => {
-            const startMinute = toMinuteOfDay(slot.startTime);
-            const endMinute = toMinuteOfDay(slot.endTime);
-            const response = await patientApi.getAvailableProvidersForSmartMatch(
-              {
-                daysOfWeek: [day],
-                timeSlots: [{ startMinute, endMinute }],
-              },
-              undefined,
-              { context: 'Standard', selectedDate: selectedDate.toISOString() },
-            );
-            if (response?.error && response.status === 403) {
-              subscriptionError = true;
-              subscriptionErrorMsg = response.message || 'Active subscription required to check availability.';
+            try {
+              const startMinute = toMinuteOfDay(slot.startTime);
+              const endMinute = toMinuteOfDay(slot.endTime);
+              const response = await patientApi.getAvailableProvidersForSmartMatch(
+                { daysOfWeek: [day], timeSlots: [{ startMinute, endMinute }] },
+                undefined,
+                { context: 'Standard', selectedDate: selectedDate.toISOString() },
+              );
+              const count = Number(response?.count ?? (response as any)?.data?.count ?? (response as any)?.providers?.length ?? 0);
+              return { ...slot, availableCount: Number.isFinite(count) ? count : 0 };
+            } catch {
+              // Can't determine count — still show the slot as selectable
               return { ...slot, availableCount: null };
             }
-            if (response?.error) {
-              throw new Error(response.message || 'Unknown error');
-            }
-            const count = Number(response?.count ?? (response as any)?.providers?.length ?? 0);
-            return {
-              ...slot,
-              availableCount: Number.isFinite(count) ? count : 0,
-            };
           }),
         );
-        if (subscriptionError) {
-          setTimeSlotsError('SUBSCRIPTION_REQUIRED:' + subscriptionErrorMsg);
-          setTimeSlots(SLOT_TEMPLATES.map((slot) => ({ ...slot, availableCount: null })));
-        } else {
-          setTimeSlots(results);
-        }
+        setTimeSlots(results);
       } catch (err) {
-        setTimeSlotsError('Could not check live availability right now. Please try another time or retry.');
+        // Even on total failure, show slots so user can still pick a time
         setTimeSlots(SLOT_TEMPLATES.map((slot) => ({ ...slot, availableCount: null })));
       } finally {
         setTimeSlotsLoading(false);
@@ -273,19 +257,21 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
                       </span>
                     </div>
                     <span className="text-xs text-charcoal/60">
-                      {slot.availableCount == null
-                        ? 'Checking availability...'
-                        : slot.availableCount === 0
-                          ? 'No providers available'
-                          : `${slot.availableCount} provider${slot.availableCount !== 1 ? 's' : ''} available`}
+                      {timeSlotsLoading
+                        ? 'Checking...'
+                        : slot.availableCount == null
+                          ? 'Select slot'
+                          : slot.availableCount === 0
+                            ? 'Limited availability'
+                            : `${slot.availableCount} provider${slot.availableCount !== 1 ? 's' : ''} available`}
                     </span>
                   </div>
                 </button>
               ))}
 
-              {!timeSlotsLoading && !timeSlotsError && timeSlots.every((slot) => (slot.availableCount ?? 0) === 0) && (
+              {!timeSlotsLoading && timeSlots.every((s) => s.availableCount === 0) && (
                 <p className="rounded-lg border border-calm-sage/20 bg-calm-sage/5 px-4 py-3 text-sm text-charcoal/70">
-                  No providers are available on this date for the shown time slots. Please choose another date.
+                  No providers matched for this time — you can still select a slot and we'll find the best match.
                 </p>
               )}
             </div>

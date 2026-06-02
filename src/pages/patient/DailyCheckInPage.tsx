@@ -58,9 +58,17 @@ export default function DailyCheckInPage() {
 
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [todayDone, setTodayDone] = useState<{ morning: boolean; evening: boolean }>({ morning: false, evening: false });
 
   // Use shared therapy data hook for streak synchronization
   const { streak, refreshStreak } = useTherapyData();
+
+  // Fetch today's completion status on mount
+  useEffect(() => {
+    patientApi.getTodayCheckInStatus()
+      .then(setTodayDone)
+      .catch(() => {/* ignore — default false */});
+  }, []);
 
   useEffect(() => {
     const typeParam = searchParams.get('type');
@@ -156,12 +164,15 @@ export default function DailyCheckInPage() {
 
       await patientApi.addDailyCheckIn(checkInData);
 
+      // Mark this type as done so the form hides
+      setTodayDone((prev) => ({ ...prev, [activeCheckInType]: true }));
+
       // Refresh streak from shared hook
       await refreshStreak();
 
       toast.success(`${activeCheckInType === 'morning' ? 'Morning' : 'Evening'} check-in saved!`);
 
-      // Reset form
+      // Reset form state for next time
       if (activeCheckInType === 'morning') {
         setMorningMood(null);
         setMorningEnergy(null);
@@ -483,6 +494,31 @@ export default function DailyCheckInPage() {
           })}
         </div>
 
+        {/* Already done banner */}
+        {todayDone[activeCheckInType] ? (
+          <div className="min-h-[400px] flex flex-col items-center justify-center text-center gap-4">
+            <div className="text-6xl">{activeCheckInType === 'morning' ? '☀️' : '🌙'}</div>
+            <h2 className="text-xl font-semibold text-charcoal">
+              {activeCheckInType === 'morning' ? 'Morning' : 'Evening'} check-in done!
+            </h2>
+            <p className="text-sm text-charcoal/60 max-w-xs">
+              You've already completed today's {activeCheckInType} check-in.
+              {activeCheckInType === 'morning' && !todayDone.evening
+                ? ' Come back this evening to log your reflection.'
+                : ' Great job keeping your streak going!'}
+            </p>
+            {activeCheckInType === 'morning' && !todayDone.evening && (
+              <button
+                type="button"
+                onClick={() => setCheckInType('evening')}
+                className="mt-2 rounded-full bg-calm-sage px-6 py-2.5 text-sm font-semibold text-white"
+              >
+                Do evening check-in now
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
         {/* Progress Indicator */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
@@ -527,6 +563,8 @@ export default function DailyCheckInPage() {
             </div>
           </div>
         </div>
+          </>
+        )}
       </section>
     </div>
   );
