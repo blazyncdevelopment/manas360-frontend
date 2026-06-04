@@ -4,7 +4,7 @@
  */
 const IGNORE_HASH_SNIPPETS = ['googtrans'];
 
-const PAYMENT_CALLBACK_PATHS = ['/payment/status', '/universal/payment-success'];
+const PAYMENT_CALLBACK_PATHS = ['/payment/status', '/universal/payment-success', '/provider/payment-callback'];
 
 export function repairHashBasedRoute(): boolean {
   if (typeof window === 'undefined') return false;

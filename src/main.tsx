@@ -70,54 +70,54 @@ const forceInitialGoogleTranslateEnglish = () => {
 
 // PhonePe may return `/#/universal/payment-success` — normalize before React boots.
 if (!repairHashBasedRoute()) {
-forceInitialGoogleTranslateEnglish()
+  forceInitialGoogleTranslateEnglish()
 
-const initialPreference = getStoredThemePreference()
-applyThemePreference(initialPreference)
+  const initialPreference = getStoredThemePreference()
+  applyThemePreference(initialPreference)
 
-// Handle dynamic import/chunk loading failures (common after new deployments)
-if (typeof window !== 'undefined') {
-  window.addEventListener('vite:preloadError', (event) => {
-    console.warn('Vite preload error detected, forcing hard reload to fetch new assets:', event);
-    window.location.reload();
-  });
-}
+  // Handle dynamic import/chunk loading failures (common after new deployments)
+  if (typeof window !== 'undefined') {
+    window.addEventListener('vite:preloadError', (event) => {
+      console.warn('Vite preload error detected, forcing hard reload to fetch new assets:', event);
+      window.location.reload();
+    });
+  }
 
-if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-  const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)')
-  const handleSystemThemeChange = () => {
-    if (getStoredThemePreference() === null) {
-      applyThemePreference(null)
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleSystemThemeChange = () => {
+      if (getStoredThemePreference() === null) {
+        applyThemePreference(null)
+      }
+    }
+
+    if (typeof darkModeQuery.addEventListener === 'function') {
+      darkModeQuery.addEventListener('change', handleSystemThemeChange)
+    } else if (typeof darkModeQuery.addListener === 'function') {
+      darkModeQuery.addListener(handleSystemThemeChange)
     }
   }
 
-  if (typeof darkModeQuery.addEventListener === 'function') {
-    darkModeQuery.addEventListener('change', handleSystemThemeChange)
-  } else if (typeof darkModeQuery.addListener === 'function') {
-    darkModeQuery.addListener(handleSystemThemeChange)
-  }
-}
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <HelmetProvider>
-    <QueryClientProvider client={new QueryClient()}>
-      <Provider store={store}>
-        <ErrorProvider>
-          <ErrorBoundary>
-            <VideoSessionProvider>
-              <RouterProvider
-                router={createBrowserRouter([
-                  // Parent route must accept nested routes — use a trailing /*
-                  { path: '/*', element: <App /> },
-                ])}
-                // Opt into v7 behavior to avoid future warnings
-                future={{ v7_startTransition: true }}
-              />
-            </VideoSessionProvider>
-          </ErrorBoundary>
-        </ErrorProvider>
-      </Provider>
-    </QueryClientProvider>
-  </HelmetProvider>
-);
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <HelmetProvider>
+      <QueryClientProvider client={new QueryClient()}>
+        <Provider store={store}>
+          <ErrorProvider>
+            <ErrorBoundary>
+              <VideoSessionProvider>
+                <RouterProvider
+                  router={createBrowserRouter([
+                    // Parent route must accept nested routes — use a trailing /*
+                    { path: '/*', element: <App /> },
+                  ])}
+                  // Opt into v7 behavior to avoid future warnings
+                  future={{ v7_startTransition: true }}
+                />
+              </VideoSessionProvider>
+            </ErrorBoundary>
+          </ErrorProvider>
+        </Provider>
+      </QueryClientProvider>
+    </HelmetProvider>
+  );
 }

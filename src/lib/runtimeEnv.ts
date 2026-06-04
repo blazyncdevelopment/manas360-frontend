@@ -15,11 +15,11 @@ const stripTrailingApiSegment = (value: string): string => value.replace(/\/api\
 const getDefaultWebsocketUrl = (): string => {
   const origin = getWindowOrigin();
   let wsUrl = origin.replace(/^https:/i, 'wss:').replace(/^http:/i, 'ws:');
-  
+
   if (import.meta.env.DEV && wsUrl.includes('localhost')) {
     wsUrl = wsUrl.replace(/:\d+$/, ':5001');
   }
-  
+
   return wsUrl;
 };
 

@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Lock, ShieldCheck, Zap, Clock } from 'lucide-react';
+import { CheckCircle2, Lock, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import {
+  initiatePlatformPayment,
+  getProviderOnboardingErrorMessage,
+  resolveProviderIdForOnboarding,
+} from '../../api/providerOnboarding';
 import {
   DEFAULT_PROVIDER_ADDONS,
   PROVIDER_LEAD_PLANS,
@@ -11,27 +16,56 @@ import {
   type ProviderBillingCycle,
   type ProviderLeadPlanId,
 } from '../../lib/providerSubscriptionFlow';
+import { setStoredPlatformTransactionId } from '../../utils/providerOnboardingStorage';
 
 export default function ProviderSubscriptionPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [selectedPlatformCycle, setSelectedPlatformCycle] = useState<ProviderBillingCycle>('quarterly');
+  const [selectedPlatformCycle] = useState<ProviderBillingCycle>('quarterly');
   const [loading, setLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const isPlatformActive = user?.platformAccessActive;
   const isOnboardingComplete = String(user?.onboardingStatus || '').toUpperCase() === 'COMPLETED';
   const canChoosePlan = isPlatformActive && isOnboardingComplete;
 
+  useEffect(() => {
+    if (!user || isPlatformActive) return;
+    void resolveProviderIdForOnboarding(user, { allowPhoneLookup: false });
+  }, [user, isPlatformActive]);
+
   const handlePlatformPayment = async () => {
+    const providerId = await resolveProviderIdForOnboarding(user);
+    if (!providerId) {
+      setPaymentError(
+        'We could not find your provider account. Please log out, sign in again with your registered mobile number, then retry payment.',
+      );
+      return;
+    }
+
+    setPaymentError(null);
     setLoading(true);
-    saveProviderCart({
-      leadPlanId: 'free',
-      platformCycle: selectedPlatformCycle,
-      addons: { ...DEFAULT_PROVIDER_ADDONS },
-      updatedAt: new Date().toISOString(),
-    });
-    navigate('/universal/checkout?type=provider&planId=lead-free');
-    setLoading(false);
+    try {
+      const result = await initiatePlatformPayment(providerId);
+      if (result.transaction_id) {
+        // Store in both session AND local storage so it survives the PhonePe full-page redirect
+        setStoredPlatformTransactionId(result.transaction_id);
+        try {
+          localStorage.setItem('manas360_provider_platform_txn_persistent', result.transaction_id);
+        } catch {
+          // ignore
+        }
+      }
+      if (!result.payment_url) {
+        setPaymentError('Payment could not be started. Please try again.');
+        return;
+      }
+      window.location.href = result.payment_url;
+    } catch (err) {
+      setPaymentError(getProviderOnboardingErrorMessage(err, 'Failed to start platform payment'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const startFlow = (leadPlanId: ProviderLeadPlanId) => {
@@ -89,68 +123,30 @@ export default function ProviderSubscriptionPage() {
           </div>
 
           {!isPlatformActive ? (
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Monthly Card */}
-              <button
-                type="button"
-                onClick={() => setSelectedPlatformCycle('monthly')}
-                className={`relative flex flex-col p-8 rounded-3xl border-2 transition-all text-left ${
-                  selectedPlatformCycle === 'monthly' ? 'border-[#1f6f5f] bg-[#1f6f5f]/5 shadow-xl shadow-[#1f6f5f]/10' : 'border-slate-200 bg-white'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="h-10 w-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600">
-                    <Clock className="h-5 w-5" />
-                  </div>
-                  {selectedPlatformCycle === 'monthly' && <CheckCircle2 className="h-6 w-6 text-[#1f6f5f]" />}
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">Monthly Access</h3>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-slate-900">₹99</span>
-                  <span className="text-sm font-bold text-slate-400">/ month</span>
-                </div>
-                <p className="mt-4 text-xs font-medium text-slate-500">Billed monthly. Standard access fee.</p>
-              </button>
-
-              {/* Quarterly Card */}
-              <button
-                type="button"
-                onClick={() => setSelectedPlatformCycle('quarterly')}
-                className={`relative flex flex-col p-8 rounded-3xl border-2 transition-all text-left ${
-                  selectedPlatformCycle === 'quarterly' ? 'border-[#1f6f5f] bg-[#1f6f5f]/5 shadow-xl shadow-[#1f6f5f]/10' : 'border-slate-200 bg-white'
-                }`}
-              >
-                <div className="absolute top-4 right-6">
-                   <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-tighter">Save ₹18</span>
-                </div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="h-10 w-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600">
-                    <Zap className="h-5 w-5" />
-                  </div>
-                  {selectedPlatformCycle === 'quarterly' && <CheckCircle2 className="h-6 w-6 text-[#1f6f5f]" />}
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">Quarterly Pass</h3>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-slate-900">₹279</span>
-                  <span className="text-sm font-bold text-slate-400">/ 3 months</span>
-                </div>
-                <p className="mt-4 text-xs font-medium text-slate-500">Billed quarterly (effectively ₹93/mo). Maximum value.</p>
-              </button>
-
-              <div className="md:col-span-2 mt-4">
-                <button
-                  type="button"
-                  onClick={handlePlatformPayment}
-                  disabled={loading}
-                  className="w-full flex items-center justify-center gap-3 bg-[#1f6f5f] hover:bg-[#145347] text-white font-black py-4 rounded-2xl shadow-xl shadow-[#1f6f5f]/20 transition-all disabled:opacity-50"
-                >
-                  {loading ? (
-                    <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>Proceed to Payment & Onboarding →</>
-                  )}
-                </button>
+            <div className="rounded-3xl border-2 border-[#1f6f5f]/20 bg-white p-8 shadow-xl shadow-[#1f6f5f]/10">
+              <h3 className="text-lg font-bold text-slate-900">Step 1: Platform Access Fee</h3>
+              <div className="mt-3 flex items-baseline gap-1">
+                <span className="text-4xl font-black text-slate-900">₹99</span>
+                <span className="text-sm font-bold text-slate-400">one-time setup</span>
               </div>
+              <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+                Activate your provider profile, dashboard, and lead marketplace access. Payment is processed securely via PhonePe.
+              </p>
+              {paymentError ? (
+                <p role="alert" className="mt-4 text-sm font-medium text-red-600">{paymentError}</p>
+              ) : null}
+              <button
+                type="button"
+                onClick={handlePlatformPayment}
+                disabled={loading}
+                className="mt-6 w-full flex items-center justify-center gap-3 bg-[#1f6f5f] hover:bg-[#145347] text-white font-black py-4 rounded-2xl shadow-xl shadow-[#1f6f5f]/20 transition-all disabled:opacity-50"
+              >
+                {loading ? (
+                  <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>Pay ₹99</>
+                )}
+              </button>
             </div>
           ) : (
             <div className="bg-emerald-50 border border-emerald-100 p-6 rounded-3xl flex items-center gap-4 text-emerald-800">

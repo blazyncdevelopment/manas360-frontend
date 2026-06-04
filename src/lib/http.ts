@@ -53,6 +53,7 @@ const isAuthRoute = (url: string): boolean => (
 const isTokenIssuingAuthRoute = (url: string): boolean => (
 	url.includes('/auth/login')
 	|| url.includes('/auth/verify/phone-otp')
+	|| url.includes('/provider-onboarding/verify-otp')
 	|| url.includes('/auth/refresh')
 );
 

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getApiErrorMessage, signupWithPhone, verifyPhoneSignupOtp } from '../../api/auth';
+import { resolveProviderIdForOnboarding } from '../../api/providerOnboarding';
 import { clearGuestClinicalScreening, readCachedClinicalScreening } from '../../utils/guestScreeningCache';
 import { patientApi } from '../../api/patient';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { getPostLoginRoute, hasCorporateAccess, useAuth } from '../../context/AuthContext';
+import type { AuthUser } from '../../api/auth';
 
 type SignupRole = 'patient' | 'therapist' | 'psychiatrist' | 'psychologist' | 'coach';
 
@@ -34,6 +36,10 @@ const inferSignupRoleFromPath = (path: string | null | undefined): SignupRole | 
 	return null;
 };
 
+const isProviderAuthRole = (role: SignupRole | string | null): boolean => (
+	role === 'therapist' || role === 'psychiatrist' || role === 'psychologist' || role === 'coach'
+);
+
 const isSubscriptionActive = (subscription: any): boolean => {
 	if (!subscription) return false;
 
@@ -53,18 +59,22 @@ export default function LoginPage() {
 	const from = locationState?.from;
 	const afterLogin = locationState?.afterLogin;
 	const next = new URLSearchParams(location.search).get('next');
-	const signupRoleFromQuery = resolveSignupRole(new URLSearchParams(location.search).get('role'));
+	const loginSearchParams = new URLSearchParams(location.search);
+	const signupRoleFromQuery = resolveSignupRole(loginSearchParams.get('role'));
+	const signupRoleFromUserType = resolveSignupRole(loginSearchParams.get('userType'));
 	const signupRoleFromState = resolveSignupRole(locationState?.role);
 	const signupRoleFromPath = inferSignupRoleFromPath(from || afterLogin || next);
-	const signupRole = signupRoleFromState || signupRoleFromQuery || signupRoleFromPath;
+	const signupRole = signupRoleFromState || signupRoleFromQuery || signupRoleFromUserType || signupRoleFromPath;
+	const isProviderLogin = isProviderAuthRole(signupRole);
 
 	const [phone, setPhone] = useState('');
 	const [otp, setOtp] = useState('');
+	const [devOtp, setDevOtp] = useState<string | null>(null);
 	const [otpSent, setOtpSent] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const resolvePostLoginRouteWithSubscription = async (candidate: string | null, role: string | undefined, userOverride?: any) => {
+	const resolvePostLoginRouteWithSubscription = async (candidate: string | null, role: string | undefined, userOverride?: AuthUser | null) => {
 		const effectiveUser = userOverride || user;
 
 		if (hasCorporateAccess(effectiveUser)) {
@@ -102,6 +112,14 @@ export default function LoginPage() {
 			return;
 		}
 
+		if (isProviderAuthRole(resolveSignupRole(user.role))) {
+			if (!user.platformAccessActive) {
+				void resolveProviderIdForOnboarding(user);
+				navigate('/provider/subscription', { replace: true });
+				return;
+			}
+		}
+
 		const candidate = from || afterLogin || next || null;
 		void (async () => {
 			const postLoginRoute = await resolvePostLoginRouteWithSubscription(candidate, user.role, user);
@@ -109,11 +127,19 @@ export default function LoginPage() {
 		})();
 	}, [afterLogin, from, isAuthenticated, navigate, next, user]);
 
+	// ── OTP request — same endpoint for all users ───────────────────────────
 	const requestOtp = async () => {
+		if (!phone.trim()) {
+			setError('Please enter your phone number.');
+			return;
+		}
+
 		setError(null);
 		setLoading(true);
 		try {
-			await signupWithPhone(phone.trim());
+			// Always use /v1/auth/signup/phone regardless of role
+			const response = await signupWithPhone(phone.trim());
+			setDevOtp(response.devOtp || null);
 			setOtpSent(true);
 		} catch (err) {
 			setError(getApiErrorMessage(err, 'Failed to send OTP'));
@@ -122,22 +148,31 @@ export default function LoginPage() {
 		}
 	};
 
+	// ── OTP verification — same endpoint for all users ──────────────────────
 	const verifyOtp = async () => {
 		setError(null);
 		setLoading(true);
 		isCompletingLoginRef.current = true;
 		try {
+			// Always use /v1/auth/verify/phone-otp regardless of role
 			const guestGameToken = localStorage.getItem('guest_game_token') || undefined;
 			const cachedScreening = readCachedClinicalScreening();
-			const result = await verifyPhoneSignupOtp(phone.trim(), otp.trim(), cachedScreening
-				? {
-					acceptedTerms: true,
-					clinicalScreening: {
-						type: cachedScreening.type,
-						answers: cachedScreening.answers,
-					},
-				}
-				: undefined, guestGameToken);
+
+			const result = await verifyPhoneSignupOtp(
+				phone.trim(),
+				otp.trim(),
+				cachedScreening
+					? {
+						acceptedTerms: true,
+						clinicalScreening: {
+							type: cachedScreening.type,
+							answers: cachedScreening.answers,
+						},
+					}
+					: undefined,
+				guestGameToken,
+			);
+
 			if (guestGameToken) {
 				localStorage.removeItem('guest_game_token');
 			}
@@ -147,14 +182,30 @@ export default function LoginPage() {
 
 			const resolvedUser = await syncSessionAfterOtp(result.user);
 
-			// Check corporate access first - corporate admins bypass subscription checks
+			// ── Route based on the returned user's actual role ───────────────────
+			if (isProviderAuthRole(resolveSignupRole(resolvedUser.role) ?? resolvedUser.role)) {
+				// Ensure provider_id is resolved/stored for downstream payment pages
+				await resolveProviderIdForOnboarding(resolvedUser);
+
+				if (!resolvedUser.platformAccessActive) {
+					navigate('/provider/subscription', { replace: true });
+					return;
+				}
+
+				const candidate = from || afterLogin || next || null;
+				const postLoginRoute = candidate && !candidate.startsWith('/auth/')
+					? candidate
+					: getPostLoginRoute(resolvedUser);
+				navigate(postLoginRoute, { replace: true });
+				return;
+			}
+
 			if (hasCorporateAccess(resolvedUser)) {
 				navigate('/corporate/dashboard', { replace: true });
 				return;
 			}
-			
-			// Redirect patients without subscription to plans
-			if ((resolvedUser as any)?.requiresSubscription) {
+
+			if ((resolvedUser as AuthUser)?.requiresSubscription) {
 				let hasActiveSubscription = false;
 				try {
 					const subscriptionResponse = await patientApi.getSubscription();
@@ -176,12 +227,14 @@ export default function LoginPage() {
 				navigate(`/plans?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
 				return;
 			}
+
 			const candidate = from || afterLogin || next || null;
 			const postLoginRoute = await resolvePostLoginRouteWithSubscription(candidate, resolvedUser?.role, resolvedUser);
 			navigate(postLoginRoute, { replace: true });
-		} catch (err: any) {
-			const message = String(err?.response?.data?.message || '');
-			if (Number(err?.response?.status) === 422 && message.toLowerCase().includes('accept terms')) {
+		} catch (err: unknown) {
+			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } };
+			const message = String(axiosErr?.response?.data?.message || '');
+			if (Number(axiosErr?.response?.status) === 422 && message.toLowerCase().includes('accept terms')) {
 				const returnToCandidate = from || afterLogin || next || '/certifications';
 				const searchParams = new URLSearchParams({ phone: phone.trim() });
 				searchParams.set('returnTo', returnToCandidate);
@@ -227,35 +280,51 @@ export default function LoginPage() {
 
 					<section className="card card-flat mx-auto w-full max-w-lg justify-self-center p-5 sm:p-8 lg:justify-self-end lg:animate-scaleIn">
 						<h1 className="font-display text-3xl font-bold leading-tight sm:text-4xl" style={{ color: 'var(--color-ink)' }}>Welcome back</h1>
-						<p className="mt-2 text-sm text-muted sm:text-base">Continue your wellness journey</p>
+						<p className="mt-2 text-sm text-muted sm:text-base">
+							{isProviderLogin ? 'Sign in with your registered mobile number' : 'Continue your wellness journey'}
+						</p>
 
 						<div className="mt-6 space-y-4">
-							<Input
-								id="login-phone"
-								label="Phone Number"
-								type="tel"
-								autoComplete="tel"
-								placeholder="+919876543210"
-								helperText="Use your phone number to continue"
-								value={phone}
-								onChange={(event) => setPhone(event.target.value)}
-								required
-							/>
-
-							{otpSent ? (
+							{!otpSent ? (
 								<Input
-									id="login-otp"
-									label="One-Time Code"
-									inputMode="numeric"
-									pattern="\\d{4}"
-									maxLength={4}
-									autoComplete="one-time-code"
-									placeholder="4-digit OTP"
-									helperText="We'll send you a one-time code"
-									value={otp}
-									onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
+									id="login-phone"
+									label="Phone Number"
+									type="tel"
+									autoComplete="tel"
+									placeholder="+919876543210"
+									helperText={isProviderLogin ? 'OTP will be sent to your registered number' : 'Use your phone number to continue'}
+									value={phone}
+									onChange={(event) => setPhone(event.target.value)}
 									required
 								/>
+							) : null}
+
+							{otpSent ? (
+								<>
+									<Input
+										id="login-otp"
+										label="One-Time Code"
+										inputMode="numeric"
+										pattern="\\d{4}"
+										maxLength={4}
+										autoComplete="one-time-code"
+										placeholder="4-digit OTP"
+										helperText="Enter the code sent to your phone"
+										value={otp}
+										onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
+										required
+									/>
+									{devOtp ? (
+										<div
+											role="status"
+											className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+										>
+											<p className="font-semibold">Development OTP</p>
+											<p className="mt-1 font-mono text-lg tracking-widest">{devOtp}</p>
+											<p className="mt-1 text-xs text-amber-800">Use this code if SMS is unavailable in your environment.</p>
+										</div>
+									) : null}
+								</>
 							) : null}
 
 							{!otpSent ? (
@@ -266,7 +335,7 @@ export default function LoginPage() {
 									className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
 									onClick={requestOtp}
 								>
-									{loading ? 'Preparing...' : 'Continue'}
+									{loading ? 'Sending OTP...' : 'Send OTP'}
 								</Button>
 							) : (
 								<Button
@@ -276,7 +345,7 @@ export default function LoginPage() {
 									className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
 									onClick={verifyOtp}
 								>
-									{loading ? 'Verifying...' : 'Continue to wellness'}
+									{loading ? 'Verifying...' : (isProviderLogin ? 'Verify & Continue' : 'Continue to wellness')}
 								</Button>
 							)}
 						</div>
@@ -292,7 +361,7 @@ export default function LoginPage() {
 						) : null}
 
 						<p className="mt-4 text-center text-sm text-muted">
-							Need to create an account?{' '}
+							{isProviderLogin ? 'New provider? ' : 'Need to create an account? '}
 							<Link
 								to={signupRole ? `/auth/signup?role=${encodeURIComponent(signupRole)}` : '/auth/signup'}
 								state={signupRole ? { role: signupRole } : undefined}

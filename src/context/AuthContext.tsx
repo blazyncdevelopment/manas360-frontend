@@ -7,6 +7,7 @@ import {
   type AuthUser,
 } from '../api/auth';
 import { clearAuthTokens, hasStoredAccessToken } from '../utils/authToken';
+import { extractProviderId, setStoredProviderId } from '../utils/providerOnboardingStorage';
 
 export type AppRole = 
   | 'patient' 
@@ -221,6 +222,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const currentUser = await meApi();
+      const providerId = extractProviderId(currentUser);
+      if (providerId) {
+        setStoredProviderId(providerId);
+      }
       setUser(currentUser);
       if (typeof window !== 'undefined') {
         window.sessionStorage.removeItem(authProbeBlockKey);
@@ -246,8 +251,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.sessionStorage.removeItem(authProbeBlockKey);
     }
 
+    const providerIdFromOtp = extractProviderId(otpUser);
+    if (providerIdFromOtp) {
+      setStoredProviderId(providerIdFromOtp);
+    }
+
     try {
       const currentUser = await meApi();
+      const providerIdFromMe = extractProviderId(currentUser);
+      if (providerIdFromMe) {
+        setStoredProviderId(providerIdFromMe);
+      }
       setUser(currentUser);
       return currentUser;
     } catch {

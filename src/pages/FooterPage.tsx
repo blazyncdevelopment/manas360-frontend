@@ -2,6 +2,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
+
+
 const logo = "/AppIcon.jpeg";
 
 export const landingFooterStyles = `
@@ -196,7 +198,7 @@ export const FooterPage: React.FC = () => {
     "For Providers": "/my-digital-clinic",
     "NRI | Global Inc": "/nri-landing",
     Careers: "/landing",
-    
+
   };
 
   const footerLegalRoutes: Record<string, string> = {
@@ -232,7 +234,7 @@ export const FooterPage: React.FC = () => {
 
             <div>
               <div className="footer-title">Quick Links</div>
-              {["About Us", "How It Works", "Specialized Care", "For Providers", "NRI | Global Inc", "Careers", ].map((t) => (
+              {["About Us", "How It Works", "Specialized Care", "For Providers", "NRI | Global Inc", "Careers",].map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -313,7 +315,9 @@ export const FooterPage: React.FC = () => {
         </div>
       </footer>
       <style>{`${landingFooterStyles}`}</style>
-   
+
+
+
     </>
   );
 };

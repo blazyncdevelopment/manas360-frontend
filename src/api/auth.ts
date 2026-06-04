@@ -1,5 +1,6 @@
 import type { AxiosError } from 'axios';
 import { http } from '../lib/http';
+import { extractDevOtp } from './providerOnboarding';
 
 interface ApiEnvelope<T> {
 	success: boolean;
@@ -46,6 +47,8 @@ export interface AuthUser {
 	adminPolicies?: Record<string, string[]>;
 	adminPolicyVersion?: number;
 	aadhaarNumber?: string | null;
+	providerId?: string | null;
+	provider_id?: string | null;
 }
 
 export interface LoginPayload {
@@ -97,8 +100,9 @@ export interface SignupConsentPayload {
 }
 
 export const getApiErrorMessage = (error: unknown, fallback = 'Request failed'): string => {
-	const axiosError = error as AxiosError<{ message?: string }>;
-	return axiosError.response?.data?.message ?? fallback;
+	const axiosError = error as AxiosError<{ message?: string; error?: string }>;
+	const data = axiosError.response?.data;
+	return data?.message || data?.error || fallback;
 };
 
 const normalizePhoneForAuth = (value: string): string => {
@@ -155,7 +159,10 @@ export const signupWithPhone = async (
 		phone: normalizedPhone,
 		...(profile || {}),
 	});
-	return response.data.data;
+	const data = response.data.data;
+	const devOtp = extractDevOtp(response.data) ?? data.devOtp;
+
+	return devOtp ? { ...data, devOtp } : data;
 };
 
 export const verifyPhoneSignupOtp = async (
