@@ -1,0 +1,200 @@
+/**
+ * Keeps Google-translated UI the same size as English: ellipsis, fixed heights, no growth.
+ */
+
+html[data-app-language='Hindi'] body,
+html[data-app-language='Kannada'] body,
+html[data-app-language='Tamil'] body,
+html[data-app-language='Telugu'] body {
+  font-family:
+    'DM Sans',
+    'Noto Sans Devanagari',
+    'Noto Sans Kannada',
+    'Noto Sans Tamil',
+    'Noto Sans Telugu',
+    system-ui,
+    sans-serif;
+}
+
+/* Google Translate <font> tags must stay inline so ellipsis + flex work */
+font {
+  background: transparent !important;
+  box-shadow: none !important;
+  position: static !important;
+  vertical-align: baseline !important;
+  display: inline !important;
+  white-space: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  font-family: inherit !important;
+}
+
+.goog-text-highlight,
+.goog-text-highlight font {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Reusable single-line clip (same footprint as English) */
+.manas-text-clip,
+.manas-text-clip > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* --- Landing left quick-access rail (fixed 56px / 290px) --- */
+.landing-side-rail {
+  contain: layout style;
+}
+
+.landing-side-rail:not(.landing-side-rail-expanded) .landing-side-text,
+.landing-side-rail:not(.landing-side-rail-expanded) .landing-side-pill,
+.landing-side-rail:not(.landing-side-rail-expanded) .landing-side-section-label {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.landing-side-item {
+  min-width: 0;
+  height: 44px !important;
+  max-height: 44px !important;
+  overflow: hidden !important;
+}
+
+.landing-side-text {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.landing-side-title,
+.landing-side-subtitle {
+  display: block !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.landing-side-title {
+  height: 15px;
+  line-height: 15px;
+}
+
+.landing-side-subtitle {
+  height: 13px;
+  line-height: 13px;
+  margin-top: 2px;
+}
+
+.landing-side-pill {
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  max-width: 46px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  padding: 4px 7px !important;
+}
+
+.landing-side-section-label {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 100% !important;
+  height: 14px;
+  line-height: 14px;
+}
+
+/* Smaller type in same box — more text becomes "..." not wider layout */
+html[data-app-language='Hindi'] .landing-side-rail-expanded .landing-side-title,
+html[data-app-language='Kannada'] .landing-side-rail-expanded .landing-side-title,
+html[data-app-language='Tamil'] .landing-side-rail-expanded .landing-side-title,
+html[data-app-language='Telugu'] .landing-side-rail-expanded .landing-side-title {
+  font-size: 12px;
+}
+
+html[data-app-language='Hindi'] .landing-side-rail-expanded .landing-side-subtitle,
+html[data-app-language='Kannada'] .landing-side-rail-expanded .landing-side-subtitle,
+html[data-app-language='Tamil'] .landing-side-rail-expanded .landing-side-subtitle,
+html[data-app-language='Telugu'] .landing-side-rail-expanded .landing-side-subtitle {
+  font-size: 10px;
+}
+
+html[data-app-language='Hindi'] .landing-side-rail-expanded .landing-side-pill,
+html[data-app-language='Kannada'] .landing-side-rail-expanded .landing-side-pill,
+html[data-app-language='Tamil'] .landing-side-rail-expanded .landing-side-pill,
+html[data-app-language='Telugu'] .landing-side-rail-expanded .landing-side-pill {
+  font-size: 8px;
+  max-width: 40px !important;
+}
+
+/* --- Header bar: no height growth, ellipsis on translated chips --- */
+.brand-bar-top-row {
+  max-height: 52px;
+  overflow: visible;
+}
+
+.brand-bar-top-leading {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.landing-top-shortcut-btn {
+  max-width: 118px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.landing-top-shortcut-btn > span:last-child {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 88px;
+}
+
+html[data-app-language]:not([data-app-language='English']) .landing-top-shortcut-btn {
+  font-size: 9px !important;
+  padding: 5px 6px !important;
+  max-width: 108px;
+}
+
+html[data-app-language]:not([data-app-language='English']) .landing-top-shortcut-btn > span:last-child {
+  max-width: 78px;
+}
+
+.landing-brand-name,
+.landing-brand-tagline {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: min(160px, 38vw);
+}
+
+.quick-nav-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  .brand-bar-top-row {
+    max-height: 52px !important;
+    overflow: visible !important;
+  }
+}

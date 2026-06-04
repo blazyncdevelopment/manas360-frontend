@@ -1,5 +1,8 @@
 import type { AxiosError } from 'axios';
 import { http } from '../lib/http';
+import { getApiBaseUrl } from '../lib/runtimeEnv';
+import { getAccessToken } from '../utils/authToken';
+import { extractDevOtp } from './providerOnboarding';
 
 interface ApiEnvelope<T> {
 	success: boolean;
@@ -46,6 +49,8 @@ export interface AuthUser {
 	adminPolicies?: Record<string, string[]>;
 	adminPolicyVersion?: number;
 	aadhaarNumber?: string | null;
+	providerId?: string | null;
+	provider_id?: string | null;
 }
 
 export interface LoginPayload {
@@ -80,6 +85,21 @@ export interface ProviderRegisterPayload {
 	tagline: string;
 	bio: string;
 	digitalSignature: string;
+	// Extended 7-step onboarding fields
+	name?: string;
+	phone?: string;
+	dob?: string;
+	city?: string;
+	state?: string;
+	degree?: string;
+	university?: string;
+	yearOfPassing?: string;
+	degreeCertificateUrl?: string;
+	idProofUrl?: string;
+	contactEmail?: string;
+	availability?: Record<string, string[]>;
+	hourlyRate?: number;
+	ethicsAgreed?: boolean;
 }
 
 export type ClinicalScreeningOtpPayload = {
@@ -97,8 +117,18 @@ export interface SignupConsentPayload {
 }
 
 export const getApiErrorMessage = (error: unknown, fallback = 'Request failed'): string => {
-	const axiosError = error as AxiosError<{ message?: string }>;
-	return axiosError.response?.data?.message ?? fallback;
+	// Check the axios response body FIRST — it contains the real backend message.
+	// Doing instanceof Error first would return the generic axios "Request failed with status code 4xx".
+	const axiosError = error as AxiosError<{ message?: string; error?: string; details?: unknown }>;
+	const data = axiosError.response?.data;
+	const backendMsg = data?.message || data?.error;
+	if (typeof backendMsg === 'string' && backendMsg.trim()) {
+		return backendMsg.trim();
+	}
+	if (error instanceof Error && error.message.trim()) {
+		return error.message;
+	}
+	return fallback;
 };
 
 const normalizePhoneForAuth = (value: string): string => {
@@ -155,7 +185,10 @@ export const signupWithPhone = async (
 		phone: normalizedPhone,
 		...(profile || {}),
 	});
-	return response.data.data;
+	const data = response.data.data;
+	const devOtp = extractDevOtp(response.data) ?? data.devOtp;
+
+	return devOtp ? { ...data, devOtp } : data;
 };
 
 export const verifyPhoneSignupOtp = async (
@@ -223,4 +256,112 @@ export const logout = async (): Promise<void> => {
 export const becomeProvider = async (): Promise<AuthUser> => {
 	const response = await http.post<ApiEnvelope<AuthUser>>('/v1/users/me/become-provider');
 	return response.data.data;
+};
+
+const pickString = (...values: unknown[]): string => {
+	for (const value of values) {
+		if (typeof value === 'string' && value.trim()) {
+			return value.trim();
+		}
+	}
+	return '';
+};
+
+const extractUploadedDocumentUrl = (payload: unknown): string => {
+	if (!payload || typeof payload !== 'object') return '';
+	const record = payload as Record<string, unknown>;
+	const nested = record.data && typeof record.data === 'object'
+		? (record.data as Record<string, unknown>)
+		: null;
+
+	return pickString(
+		record.url,
+		record.fileUrl,
+		record.file_url,
+		record.documentUrl,
+		record.document_url,
+		record.signedUrl,
+		record.signed_url,
+		record.s3Url,
+		record.s3_url,
+		record.location,
+		nested?.url,
+		nested?.fileUrl,
+		nested?.file_url,
+		nested?.documentUrl,
+		nested?.document_url,
+		nested?.signedUrl,
+		nested?.signed_url,
+		nested?.s3Url,
+		nested?.s3_url,
+		nested?.location,
+	);
+};
+
+const buildMultipartAuthHeaders = (): Record<string, string> => {
+	const headers: Record<string, string> = {};
+	const token = getAccessToken();
+	if (token) {
+		headers.Authorization = `Bearer ${token}`;
+	}
+	const csrfToken = getCookieValue(import.meta.env.VITE_CSRF_COOKIE_NAME || 'csrf_token');
+	if (csrfToken) {
+		headers['x-csrf-token'] = csrfToken;
+	}
+	return headers;
+};
+
+/** Upload provider verification docs to S3 via POST /v1/provider/documents/upload */
+export const uploadProviderDocument = async (formData: FormData): Promise<{ success: boolean; url: string }> => {
+	const baseUrl = getApiBaseUrl().replace(/\/$/, '');
+	const response = await fetch(`${baseUrl}/v1/provider/documents/upload`, {
+		method: 'POST',
+		body: formData,
+		credentials: 'include',
+		headers: buildMultipartAuthHeaders(),
+	});
+
+	let payload: unknown = null;
+	try {
+		payload = await response.json();
+	} catch {
+		payload = null;
+	}
+
+	if (!response.ok) {
+		// Handle legal re-acceptance requirement (HTTP 428) — same logic as the axios
+		// response interceptor in http.ts, which does NOT fire here because this
+		// function uses native `fetch` instead of the axios `http` instance.
+		if (response.status === 428 && typeof window !== 'undefined') {
+			const errorCode = String(
+				(payload && typeof payload === 'object'
+					? ((payload as Record<string, unknown>).details as Record<string, unknown> | undefined)?.code
+					: undefined) ?? '',
+			);
+			if (errorCode === 'LEGAL_REACCEPTANCE_REQUIRED') {
+				const currentPath = `${window.location.pathname}${window.location.search}` || '/';
+				if (!currentPath.startsWith('/auth/legal-accept')) {
+					window.location.href = `/auth/legal-accept?returnTo=${encodeURIComponent(currentPath)}`;
+					// Return a promise that never resolves so the caller doesn't see an error
+					// while the browser navigates away.
+					await new Promise(() => { /* navigation in progress */ });
+				}
+			}
+		}
+
+		const message =
+			(payload && typeof payload === 'object'
+				? pickString(
+					(payload as Record<string, unknown>).message,
+					(payload as Record<string, unknown>).error,
+				)
+				: '') || `Upload failed (${response.status})`;
+		throw new Error(message);
+	}
+
+	const url = extractUploadedDocumentUrl(payload);
+	if (!url) {
+		throw new Error('No URL returned from upload API.');
+	}
+	return { success: true, url };
 };

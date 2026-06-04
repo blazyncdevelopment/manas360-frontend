@@ -227,6 +227,16 @@ const hideGoogleBanner = (): (() => void) => {
       display: none !important;
     }
     .notranslate { translate: no; }
+    font {
+      background: transparent !important;
+      box-shadow: none !important;
+      position: static !important;
+      display: inline !important;
+      white-space: inherit !important;
+      font-size: inherit !important;
+      line-height: inherit !important;
+      font-family: inherit !important;
+    }
   `;
   document.head.appendChild(style);
 

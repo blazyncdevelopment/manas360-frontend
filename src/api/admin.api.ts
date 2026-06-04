@@ -994,6 +994,232 @@ export type AdminVerificationDocument = {
 	createdAt: string;
 };
 
+/** Fields submitted via the 7-step provider onboarding form. */
+export type AdminProviderOnboardingProfile = {
+	name?: string;
+	phone?: string;
+	dob?: string;
+	city?: string;
+	state?: string;
+	degree?: string;
+	university?: string;
+	yearOfPassing?: string;
+	degreeCertificateUrl?: string;
+	idProofUrl?: string;
+	contactEmail?: string;
+	clinicalCategories?: string[];
+	specializations?: string[];
+	yearsOfExperience?: number;
+	availability?: Record<string, string[]>;
+	consultationFee?: number;
+	hourlyRate?: number;
+	bio?: string;
+	tagline?: string;
+	digitalSignature?: string;
+	ethicsAgreed?: boolean;
+	education?: string;
+	shiftPreferences?: string[];
+};
+
+export type AdminVerificationReview = {
+	profile: AdminProviderOnboardingProfile | null;
+	documents: AdminVerificationDocument[];
+};
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+	value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+
+const pickString = (...values: unknown[]): string | undefined => {
+	for (const value of values) {
+		if (typeof value === 'string' && value.trim()) return value.trim();
+	}
+	return undefined;
+};
+
+const pickNumber = (...values: unknown[]): number | undefined => {
+	for (const value of values) {
+		const num = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
+		if (Number.isFinite(num)) return num;
+	}
+	return undefined;
+};
+
+const pickStringArray = (...values: unknown[]): string[] | undefined => {
+	for (const value of values) {
+		if (Array.isArray(value)) {
+			const items = value.map((item) => String(item || '').trim()).filter(Boolean);
+			if (items.length > 0) return items;
+		}
+		if (typeof value === 'string' && value.trim()) {
+			return value.split(',').map((item) => item.trim()).filter(Boolean);
+		}
+	}
+	return undefined;
+};
+
+const pickAvailability = (value: unknown): Record<string, string[]> | undefined => {
+	const record = asRecord(value);
+	if (!record) return undefined;
+	const availability: Record<string, string[]> = {};
+	for (const [day, slots] of Object.entries(record)) {
+		if (Array.isArray(slots)) {
+			const normalized = slots.map((slot) => String(slot || '').trim()).filter(Boolean);
+			if (normalized.length > 0) availability[day] = normalized;
+		}
+	}
+	return Object.keys(availability).length > 0 ? availability : undefined;
+};
+
+const mergeProfileSources = (...sources: unknown[]): Record<string, unknown> => {
+	const merged: Record<string, unknown> = {};
+	for (const source of sources) {
+		const record = asRecord(source);
+		if (!record) continue;
+		Object.assign(merged, record);
+		const nestedKeys = [
+			'therapistProfile',
+			'therapist_profile',
+			'providerProfile',
+			'provider_profile',
+			'onboarding',
+			'onboardingData',
+			'onboarding_data',
+			'profile',
+		];
+		for (const key of nestedKeys) {
+			const nested = asRecord(record[key]);
+			if (nested) Object.assign(merged, nested);
+		}
+	}
+	return merged;
+};
+
+export const extractAdminProviderOnboardingProfile = (
+	...sources: unknown[]
+): AdminProviderOnboardingProfile | null => {
+	const merged = mergeProfileSources(...sources);
+	if (Object.keys(merged).length === 0) return null;
+
+	const profile: AdminProviderOnboardingProfile = {
+		name: pickString(merged.name, merged.fullName, merged.full_name),
+		phone: pickString(merged.phone, merged.phoneNumber, merged.phone_number),
+		dob: pickString(merged.dob, merged.dateOfBirth, merged.date_of_birth),
+		city: pickString(merged.city),
+		state: pickString(merged.state),
+		degree: pickString(merged.degree, merged.highestQual, merged.highest_qual),
+		university: pickString(merged.university),
+		yearOfPassing: pickString(merged.yearOfPassing, merged.year_of_passing),
+		degreeCertificateUrl: pickString(
+			merged.degreeCertificateUrl,
+			merged.degree_certificate_url,
+			merged.degreeCertificate,
+		),
+		idProofUrl: pickString(merged.idProofUrl, merged.id_proof_url, merged.idProof),
+		contactEmail: pickString(merged.contactEmail, merged.contact_email, merged.email),
+		clinicalCategories: pickStringArray(
+			merged.clinicalCategories,
+			merged.clinical_categories,
+		),
+		specializations: pickStringArray(merged.specializations, merged.specialization),
+		yearsOfExperience: pickNumber(merged.yearsOfExperience, merged.years_of_experience),
+		availability: pickAvailability(merged.availability),
+		consultationFee: pickNumber(merged.consultationFee, merged.consultation_fee),
+		hourlyRate: pickNumber(merged.hourlyRate, merged.hourly_rate),
+		bio: pickString(merged.bio),
+		tagline: pickString(merged.tagline),
+		digitalSignature: pickString(merged.digitalSignature, merged.digital_signature),
+		ethicsAgreed:
+			typeof merged.ethicsAgreed === 'boolean'
+				? merged.ethicsAgreed
+				: typeof merged.ethics_agreed === 'boolean'
+					? merged.ethics_agreed
+					: undefined,
+		education: pickString(merged.education),
+		shiftPreferences: pickStringArray(merged.shiftPreferences, merged.shift_preferences),
+	};
+
+	const hasData = Object.values(profile).some((value) => {
+		if (value === undefined || value === null || value === '') return false;
+		if (Array.isArray(value)) return value.length > 0;
+		if (typeof value === 'object') return Object.keys(value).length > 0;
+		return true;
+	});
+
+	return hasData ? profile : null;
+};
+
+const normalizeVerificationDocument = (
+	raw: unknown,
+	userId: string,
+	fallbackIndex: number,
+): AdminVerificationDocument | null => {
+	const record = asRecord(raw);
+	if (!record) return null;
+	const url = pickString(record.url, record.fileUrl, record.file_url, record.documentUrl, record.document_url);
+	if (!url) return null;
+	return {
+		id: pickString(record.id, record._id) || `doc-${userId}-${fallbackIndex}`,
+		userId: pickString(record.userId, record.user_id) || userId,
+		documentType: pickString(record.documentType, record.document_type, record.type) || 'DOCUMENT',
+		url,
+		createdAt: pickString(record.createdAt, record.created_at) || '',
+	};
+};
+
+const parseVerificationDocumentsPayload = (
+	payload: unknown,
+	userId: string,
+): AdminVerificationDocument[] => {
+	if (Array.isArray(payload)) {
+		return payload
+			.map((item, index) => normalizeVerificationDocument(item, userId, index))
+			.filter((item): item is AdminVerificationDocument => Boolean(item));
+	}
+
+	const record = asRecord(payload);
+	if (!record) return [];
+
+	const list = Array.isArray(record.documents)
+		? record.documents
+		: Array.isArray(record.data)
+			? record.data
+			: [];
+
+	return list
+		.map((item, index) => normalizeVerificationDocument(item, userId, index))
+		.filter((item): item is AdminVerificationDocument => Boolean(item));
+};
+
+const appendProfileDocumentUrls = (
+	documents: AdminVerificationDocument[],
+	profile: AdminProviderOnboardingProfile | null,
+	userId: string,
+): AdminVerificationDocument[] => {
+	if (!profile) return documents;
+
+	const extras: Array<{ type: string; url?: string }> = [
+		{ type: 'DEGREE_CERTIFICATE', url: profile.degreeCertificateUrl },
+		{ type: 'ID_PROOF', url: profile.idProofUrl },
+	];
+
+	const merged = [...documents];
+	const existingUrls = new Set(merged.map((doc) => doc.url));
+
+	for (const extra of extras) {
+		if (!extra.url || existingUrls.has(extra.url)) continue;
+		merged.push({
+			id: `profile-${extra.type.toLowerCase()}-${userId}`,
+			userId,
+			documentType: extra.type,
+			url: extra.url,
+			createdAt: '',
+		});
+		existingUrls.add(extra.url);
+	}
+
+	return merged;
+};
+
 export type AdminPayoutRequest = {
 	id: string;
 	providerId: string;
@@ -1021,7 +1247,43 @@ export const getAdminVerifications = async (all = false): Promise<ApiEnvelope<Ad
 };
 
 export const getAdminVerificationDocuments = async (userId: string): Promise<ApiEnvelope<AdminVerificationDocument[]>> => {
-	return (await client.get<ApiEnvelope<AdminVerificationDocument[]>>(`/v1/admin/verifications/${encodeURIComponent(userId)}/documents`)).data;
+	const envelope = (
+		await client.get<ApiEnvelope<AdminVerificationDocument[] | Record<string, unknown>>>(
+			`/v1/admin/verifications/${encodeURIComponent(userId)}/documents`,
+		)
+	).data;
+	const documents = parseVerificationDocumentsPayload(envelope.data, userId);
+	return { ...envelope, data: documents };
+};
+
+/** Loads 7-step onboarding profile fields and uploaded documents for admin review. */
+export const getAdminVerificationReview = async (
+	userId: string,
+	contextUser?: unknown,
+): Promise<ApiEnvelope<AdminVerificationReview>> => {
+	const [documentsEnvelope, userEnvelope] = await Promise.all([
+		client
+			.get<ApiEnvelope<unknown>>(`/v1/admin/verifications/${encodeURIComponent(userId)}/documents`)
+			.then((response) => response.data)
+			.catch(() => ({ success: true, data: [] as unknown[] })),
+		getAdminUserById(userId).catch(() => null),
+	]);
+
+	const rawPayload = documentsEnvelope?.data;
+	const documents = parseVerificationDocumentsPayload(rawPayload, userId);
+	const profile = extractAdminProviderOnboardingProfile(
+		contextUser,
+		userEnvelope?.data,
+		rawPayload,
+	);
+
+	return {
+		success: true,
+		data: {
+			profile,
+			documents: appendProfileDocumentUrls(documents, profile, userId),
+		},
+	};
 };
 
 export const updateAdminVerification = async (userId: string, action: 'approve' | 'reject', rejectionReason?: string): Promise<ApiEnvelope<{ status: string }>> => {

@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { getApiErrorMessage, signupWithPhone, verifyPhoneSignupOtp } from '../../api/auth';
+import { getApiErrorMessage, me as meApi, signupWithPhone, verifyPhoneSignupOtp } from '../../api/auth';
+import {
+	extractDevOtp,
+	getProviderOnboardingErrorMessage,
+	isProviderAlreadyRegisteredError,
+	registerProvider,
+	resolveProviderIdForOnboarding,
+	shouldNavigateToPlatformFee,
+	verifyProviderOnboardingOtp,
+} from '../../api/providerOnboarding';
+import { extractProviderId, setStoredProviderId } from '../../utils/providerOnboardingStorage';
 import { clearGuestClinicalScreening, readCachedClinicalScreening } from '../../utils/guestScreeningCache';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -160,13 +170,14 @@ export default function SignupPage() {
 	}, [location.search, locationState]);
 
 	const [name, setName] = useState('');
+	const [qualification, setQualification] = useState('');
+	const [rciNumber, setRciNumber] = useState('');
 	const [phone, setPhone] = useState('');
 	const [role, setRole] = useState<SignupRole>(initialRole);
 	const [otp, setOtp] = useState('');
 	const [otpSent, setOtpSent] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [devOtp, setDevOtp] = useState<string | null>(null);
 	const [acceptedTerms, setAcceptedTerms] = useState(false);
 	const [providerAgreementsAccepted, setProviderAgreementsAccepted] = useState<Record<ProviderAgreementKey, boolean>>({
 		THERAPIST_IC_AGREEMENT: false,
@@ -304,23 +315,75 @@ export default function SignupPage() {
 			return;
 		}
 
+		if (isProviderFlow) {
+			if (!name.trim()) {
+				setError('Please enter your full name.');
+				return;
+			}
+			if (!qualification.trim()) {
+				setError('Please enter your qualification.');
+				return;
+			}
+			if (!rciNumber.trim()) {
+				setError('Please enter your RCI / NMC registration number.');
+				return;
+			}
+		}
+
 		setError(null);
 		setLoading(true);
 		try {
-			const res = await signupWithPhone(
+			if (isProviderFlow) {
+				try {
+					const response = await registerProvider({
+						name: name.trim(),
+						phone: phone.trim(),
+						qualification: qualification.trim(),
+						rci_number: rciNumber.trim(),
+					});
+					if (response.provider_id) {
+						setStoredProviderId(response.provider_id);
+					}
+					if (response.devOtp) {
+						setOtp(response.devOtp);
+					}
+					setOtpSent(true);
+				} catch (err) {
+					if (isProviderAlreadyRegisteredError(err)) {
+						const conflictPayload = (err as { response?: { data?: unknown } }).response?.data;
+						const conflictProviderId = extractProviderId(conflictPayload);
+						if (conflictProviderId) {
+							setStoredProviderId(conflictProviderId);
+						}
+						const extractedOtp = extractDevOtp(conflictPayload);
+						if (extractedOtp) {
+							setOtp(extractedOtp);
+						}
+						setOtpSent(true);
+						return;
+					}
+					throw err;
+				}
+				return;
+			}
+
+			const response = await signupWithPhone(
 				phone.trim(),
 				isCertificationContext
 					? { name: name.trim(), role: 'learner' }
 					: { name: name.trim(), role: isPatientLeadFlow ? 'patient' : role },
 			);
 			setOtpSent(true);
-			if (res?.devOtp) {
-				setDevOtp(res.devOtp);
-				setOtp(res.devOtp);
-				console.log('[DEV] OTP:', res.devOtp);
+			if (response.devOtp) {
+				setOtp(response.devOtp);
+				console.log('[DEV] OTP:', response.devOtp);
 			}
 		} catch (err) {
-			setError(getApiErrorMessage(err, 'Failed to send OTP'));
+			setError(
+				isProviderFlow
+					? getProviderOnboardingErrorMessage(err, 'Failed to send OTP')
+					: getApiErrorMessage(err, 'Failed to send OTP'),
+			);
 		} finally {
 			setLoading(false);
 		}
@@ -375,7 +438,7 @@ export default function SignupPage() {
 	};
 
 	const verifyOtp = async () => {
-		if (!isCertificationContext && nriConsent.nri_declared && !nriConsent.nri_tos_accepted) {
+		if (!isCertificationContext && !isProviderFlow && nriConsent.nri_declared && !nriConsent.nri_tos_accepted) {
 			setError('Please review and accept NRI Terms of Service to complete registration.');
 			return;
 		}
@@ -389,6 +452,44 @@ export default function SignupPage() {
 		setError(null);
 		setLoading(true);
 		try {
+			if (isProviderFlow) {
+				const providerResult = await verifyProviderOnboardingOtp(phone.trim(), otp.trim());
+				let resolvedUser = providerResult.user;
+				if (!resolvedUser) {
+					try {
+						resolvedUser = await meApi();
+					} catch {
+						resolvedUser = undefined;
+					}
+				}
+
+				if (providerResult.provider_id) {
+					setStoredProviderId(providerResult.provider_id);
+				}
+
+				if (resolvedUser) {
+					const syncedUser = await syncSessionAfterOtp(resolvedUser);
+					await resolveProviderIdForOnboarding(syncedUser);
+					await queryClient.invalidateQueries({ queryKey: ['wallet'] });
+					if (shouldNavigateToPlatformFee(providerResult) || !syncedUser.platformAccessActive) {
+						navigate('/provider/subscription', { replace: true });
+						return;
+					}
+					const returnTo = resolveReturnTo();
+					const postLoginRoute = returnTo || getPostLoginRoute(syncedUser);
+					navigate(postLoginRoute, { replace: true });
+					return;
+				}
+
+				if (shouldNavigateToPlatformFee(providerResult)) {
+					navigate('/provider/subscription', { replace: true });
+					return;
+				}
+
+				navigate('/provider/subscription', { replace: true });
+				return;
+			}
+
 			const guestGameToken = localStorage.getItem('guest_game_token') || undefined;
 			const cachedScreening = readCachedClinicalScreening();
 			const result = await verifyPhoneSignupOtp(phone.trim(), otp.trim(), {
@@ -429,7 +530,11 @@ export default function SignupPage() {
 			const postLoginRoute = getPostLoginRoute(resolvedUser);
 			navigate(postLoginRoute, { replace: true });
 		} catch (err) {
-			setError(getApiErrorMessage(err, 'OTP verification failed'));
+			setError(
+				isProviderFlow
+					? getProviderOnboardingErrorMessage(err, 'OTP verification failed')
+					: getApiErrorMessage(err, 'OTP verification failed'),
+			);
 		} finally {
 			setLoading(false);
 		}
@@ -454,30 +559,51 @@ export default function SignupPage() {
 					<div className="mt-6 space-y-4">
 						<Input
 							id="signup-name"
-							label="Nick Name"
+							label={isProviderFlow ? 'Full Name' : 'Nick Name'}
 							autoComplete="name"
-							placeholder="Your nick name"
+							placeholder={isProviderFlow ? 'Dr. Priya Sharma' : 'Your nick name'}
 							value={name}
 							onChange={(event) => setName(event.target.value)}
 							required
 						/>
 
+						{isProviderFlow ? (
+							<>
+								<Input
+									id="signup-qualification"
+									label="Qualification"
+									placeholder="e.g. M.Phil in Clinical Psychology"
+									value={qualification}
+									onChange={(event) => setQualification(event.target.value)}
+									required
+								/>
+								<Input
+									id="signup-rci"
+									label="RCI / NMC Registration Number"
+									placeholder="e.g. A12345"
+									value={rciNumber}
+									onChange={(event) => setRciNumber(event.target.value)}
+									required
+								/>
+							</>
+						) : null}
+
 						{!isCertificationContext && !isPatientLeadFlow ? (
-						<div>
-							<label htmlFor="signup-role" className="mb-2 block text-sm font-medium" style={{ color: 'var(--color-ink)' }}>Role</label>
-							<select
-								id="signup-role"
-								value={role}
-								onChange={(event) => setRole(event.target.value as SignupRole)}
-								className="input w-full"
-							>
-								<option value="patient">Patient</option>
-								<option value="therapist">Therapist</option>
-								<option value="psychiatrist">Psychiatrist</option>
-								<option value="psychologist">Psychologist</option>
-								<option value="coach">Coach</option>
-							</select>
-						</div>
+							<div>
+								<label htmlFor="signup-role" className="mb-2 block text-sm font-medium" style={{ color: 'var(--color-ink)' }}>Role</label>
+								<select
+									id="signup-role"
+									value={role}
+									onChange={(event) => setRole(event.target.value as SignupRole)}
+									className="input w-full"
+								>
+									<option value="patient">Patient</option>
+									<option value="therapist">Therapist</option>
+									<option value="psychiatrist">Psychiatrist</option>
+									<option value="psychologist">Psychologist</option>
+									<option value="coach">Coach</option>
+								</select>
+							</div>
 						) : null}
 
 						{isProviderFlow ? (
@@ -543,7 +669,7 @@ export default function SignupPage() {
 							</label>
 						) : null}
 
-						{!isCertificationContext ? (
+						{!isCertificationContext && !isProviderFlow ? (
 							<NriPatch onChange={setNriConsent} blockSubmitButtons={false} />
 						) : null}
 
@@ -553,20 +679,15 @@ export default function SignupPage() {
 									id="signup-otp"
 									label="OTP"
 									inputMode="numeric"
-									pattern="\\d{4}"
-									maxLength={4}
+									pattern={isProviderFlow ? '\\d{6}' : '\\d{4}'}
+									maxLength={isProviderFlow ? 6 : 4}
 									autoComplete="one-time-code"
-									placeholder="4-digit OTP"
+									placeholder={isProviderFlow ? '6-digit OTP' : '4-digit OTP'}
 									value={otp}
-									onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
+									onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, isProviderFlow ? 6 : 4))}
 									required
 								/>
-								{devOtp && (
-									<div className="flex items-center justify-between rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm">
-										<span className="font-mono font-bold text-yellow-800">🔑 Dev OTP: {devOtp}</span>
-										<button type="button" onClick={() => setDevOtp(null)} className="ml-3 text-xs text-yellow-600 underline hover:text-yellow-900">Hide</button>
-									</div>
-								)}
+
 							</>
 						) : null}
 
@@ -706,7 +827,7 @@ export default function SignupPage() {
 					<p className="mt-2 text-center text-sm text-muted">
 						Already have an account?{' '}
 						<Link
-							to="/auth/login"
+							to={isProviderFlow ? `/auth/login?role=${encodeURIComponent(role)}` : '/auth/login'}
 							className="font-semibold text-sky underline underline-offset-4 transition-colors duration-150 hover:text-[var(--brand-sky-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-navy)]/35 focus-visible:ring-offset-2"
 						>
 							Login here

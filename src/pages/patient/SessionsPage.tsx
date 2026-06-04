@@ -774,7 +774,6 @@ export default function SessionsPage() {
   };
 
   const nextSession = upcoming[0];
-  const nextSessionProviderName = nextSession?.provider?.name || 'your provider';
   const isLockedSession = Boolean(nextSession?.isLocked ?? nextSession?.is_locked);
 
   const previousConsultedProviders = useMemo(() => {
@@ -847,13 +846,13 @@ export default function SessionsPage() {
     if (isConsultingPatient) {
       setSmartMatchPreferences(adPresetProviderType
         ? {
-            initialProviderType: adPresetProviderType,
-            lockProviderType: true,
-          }
+          initialProviderType: adPresetProviderType,
+          lockProviderType: true,
+        }
         : {
-            initialProviderType: 'ALL',
-            lockProviderType: false,
-          });
+          initialProviderType: 'ALL',
+          lockProviderType: false,
+        });
       setIsSmartMatchOpen(true);
       return;
     }
@@ -861,13 +860,13 @@ export default function SessionsPage() {
     // Open smart match to browse providers
     setSmartMatchPreferences(adPresetProviderType
       ? {
-          initialProviderType: adPresetProviderType,
-          lockProviderType: true,
-        }
+        initialProviderType: adPresetProviderType,
+        lockProviderType: true,
+      }
       : {
-          initialProviderType: 'ALL',
-          lockProviderType: false,
-        });
+        initialProviderType: 'ALL',
+        lockProviderType: false,
+      });
     setIsSmartMatchOpen(true);
   };
 
@@ -881,13 +880,13 @@ export default function SessionsPage() {
 
     setSmartMatchPreferences(adPresetProviderType
       ? {
-          initialProviderType: adPresetProviderType,
-          lockProviderType: true,
-        }
+        initialProviderType: adPresetProviderType,
+        lockProviderType: true,
+      }
       : {
-          initialProviderType: 'ALL',
-          lockProviderType: false,
-        });
+        initialProviderType: 'ALL',
+        lockProviderType: false,
+      });
     setIsSmartMatchOpen(true);
   };
 
@@ -941,11 +940,10 @@ export default function SessionsPage() {
                     key={key}
                     type="button"
                     onClick={() => setClinicalStartWith(key)}
-                    className={`rounded-xl border p-3 text-left transition ${
-                      clinicalStartWith === key
-                        ? 'border-teal-400 bg-teal-50'
-                        : 'border-calm-sage/20 bg-white hover:bg-calm-sage/5'
-                    }`}
+                    className={`rounded-xl border p-3 text-left transition ${clinicalStartWith === key
+                      ? 'border-teal-400 bg-teal-50'
+                      : 'border-calm-sage/20 bg-white hover:bg-calm-sage/5'
+                      }`}
                   >
                     <p className="text-sm font-semibold text-charcoal">Start with {key}</p>
                   </button>
@@ -996,11 +994,10 @@ export default function SessionsPage() {
                       type="button"
                       onClick={() => void onStructuredOptionSelect(structuredAttempt.questions[currentStructuredQuestionIndex], option.optionIndex)}
                       disabled={clinicalFlowLoading}
-                      className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
-                        structuredAnswers[structuredAttempt.questions[currentStructuredQuestionIndex].questionId] === option.optionIndex
-                          ? 'border-teal-400 bg-teal-50 text-charcoal'
-                          : 'border-calm-sage/20 bg-white text-charcoal/85 hover:bg-calm-sage/5'
-                      } disabled:opacity-60`}
+                      className={`rounded-xl border px-4 py-3 text-left text-sm transition ${structuredAnswers[structuredAttempt.questions[currentStructuredQuestionIndex].questionId] === option.optionIndex
+                        ? 'border-teal-400 bg-teal-50 text-charcoal'
+                        : 'border-calm-sage/20 bg-white text-charcoal/85 hover:bg-calm-sage/5'
+                        } disabled:opacity-60`}
                     >
                       {option.label}
                     </button>
@@ -1468,11 +1465,10 @@ export default function SessionsPage() {
                           <p className="text-sm font-semibold text-charcoal">{result.type}</p>
                           <p className="text-xs text-charcoal/60">Score: {result.score}</p>
                         </div>
-                        <span className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${
-                          result.severity.includes('severe') ? 'bg-red-100 text-red-700' :
+                        <span className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${result.severity.includes('severe') ? 'bg-red-100 text-red-700' :
                           result.severity.includes('moderate') ? 'bg-amber-100 text-amber-700' :
-                          'bg-green-100 text-green-700'
-                        }`}>
+                            'bg-green-100 text-green-700'
+                          }`}>
                           {result.severity}
                         </span>
                       </div>

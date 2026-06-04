@@ -335,6 +335,7 @@ const LandingPage: React.FC = () => {
                 style={{
                   width: "100%",
                   height: "44px",
+                  maxHeight: "44px",
                   borderRadius: "14px",
                   border: "none",
                   display: "flex",
@@ -344,7 +345,9 @@ const LandingPage: React.FC = () => {
                   margin: "1px 2px",
                   background: "transparent",
                   fontSize: "18px",
-                  position: "relative"
+                  position: "relative",
+                  overflow: "hidden",
+                  minWidth: 0
                 }}
                 aria-label={item.title}
                 onMouseEnter={() => setHoveredSideId(item.id)}
@@ -358,7 +361,7 @@ const LandingPage: React.FC = () => {
                   }
                 }}
               >
-                <span className="landing-side-icon" style={{ background: item.bg }}>
+                <span className="landing-side-icon notranslate" translate="no" style={{ background: item.bg, flexShrink: 0 }}>
                   {item.icon}
                 </span>
                 <span className="landing-side-text">
@@ -367,7 +370,7 @@ const LandingPage: React.FC = () => {
                 </span>
                 {"pill" in item && item.pill ? (
                   <span
-                    className="landing-side-pill"
+                    className="landing-side-pill manas-text-clip"
                     style={{ background: item.pill.bg, color: item.pill.fg }}
                     aria-hidden
                   >
@@ -1142,13 +1145,23 @@ const LandingPage: React.FC = () => {
           width: 56px !important;
           transition: width 220ms cubic-bezier(0.4, 0, 0.2, 1);
           overflow: hidden;
+          contain: layout style;
         }
         .landing-side-rail-expanded {
           width: 290px !important;
         }
+        .landing-side-rail:not(.landing-side-rail-expanded) .landing-side-text,
+        .landing-side-rail:not(.landing-side-rail-expanded) .landing-side-pill,
+        .landing-side-rail:not(.landing-side-rail-expanded) .landing-side-section-label {
+          display: none !important;
+        }
         .landing-side-item {
           padding: 6px 8px;
           gap: 10px;
+          height: 44px;
+          max-height: 44px;
+          min-width: 0;
+          overflow: hidden;
           transition: background 180ms ease, transform 180ms ease;
         }
         .landing-side-item:hover,
@@ -1169,10 +1182,13 @@ const LandingPage: React.FC = () => {
         }
         .landing-side-text {
           display: flex;
+          flex: 1 1 0%;
           flex-direction: column;
           align-items: flex-start;
           justify-content: center;
           min-width: 0;
+          max-width: 100%;
+          overflow: hidden;
           opacity: 0;
           transform: translateX(-6px);
           transition: opacity 160ms ease, transform 200ms ease;
@@ -1184,30 +1200,39 @@ const LandingPage: React.FC = () => {
           pointer-events: auto;
         }
         .landing-side-title {
+          display: block;
           font-size: 14px;
           font-weight: 800;
           color: #0f172a;
-          line-height: 1.05;
+          line-height: 15px;
+          height: 15px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          max-width: 175px;
+          max-width: 100%;
+          width: 100%;
         }
         .landing-side-subtitle {
+          display: block;
           margin-top: 2px;
           font-size: 11px;
           font-weight: 500;
           color: rgba(15, 23, 42, 0.62);
+          line-height: 13px;
+          height: 13px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          max-width: 175px;
+          max-width: 100%;
+          width: 100%;
         }
         .landing-side-pill {
           margin-left: auto;
+          flex: 0 0 auto;
+          flex-shrink: 0;
           font-size: 10px;
           font-weight: 900;
-          padding: 4px 10px;
+          padding: 4px 8px;
           border-radius: 999px;
           letter-spacing: 0.4px;
           box-shadow: 0 10px 20px rgba(15, 23, 42, 0.10);
@@ -1216,6 +1241,10 @@ const LandingPage: React.FC = () => {
           transition: opacity 160ms ease, transform 200ms ease;
           border: 2px solid rgba(255, 255, 255, 0.9);
           pointer-events: none;
+          max-width: 46px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .landing-side-rail-expanded .landing-side-pill {
           opacity: 1;
@@ -1231,6 +1260,11 @@ const LandingPage: React.FC = () => {
           opacity: 0;
           transition: opacity 160ms ease;
           white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 100%;
+          height: 14px;
+          line-height: 14px;
           pointer-events: none;
         }
         .landing-side-rail-expanded .landing-side-section-label {

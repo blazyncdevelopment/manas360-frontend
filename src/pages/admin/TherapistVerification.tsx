@@ -1,31 +1,34 @@
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  getAdminVerifications, 
-  getAdminVerificationDocuments, 
-  updateAdminVerification, 
-  type AdminUser, 
-  type AdminVerificationDocument 
+import {
+  getAdminVerifications,
+  getAdminVerificationReview,
+  updateAdminVerification,
+  type AdminUser,
+  type AdminProviderOnboardingProfile,
+  type AdminVerificationDocument,
 } from '../../api/admin.api';
+import ProviderOnboardingReviewPanel from '../../components/admin/ProviderOnboardingReviewPanel';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import toast from 'react-hot-toast';
 
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
-  THERAPIST:    { label: 'Therapist',    color: 'bg-teal-50 text-teal-700 border-teal-100' },
+  THERAPIST: { label: 'Therapist', color: 'bg-teal-50 text-teal-700 border-teal-100' },
   PSYCHOLOGIST: { label: 'Psychologist', color: 'bg-blue-50 text-blue-700 border-blue-100' },
   PSYCHIATRIST: { label: 'Psychiatrist', color: 'bg-purple-50 text-purple-700 border-purple-100' },
-  COACH:        { label: 'Coach',        color: 'bg-amber-50 text-amber-700 border-amber-100' },
+  COACH: { label: 'Coach', color: 'bg-amber-50 text-amber-700 border-amber-100' },
 };
 
 export default function TherapistVerification() {
   const [verifications, setVerifications] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<AdminProviderOnboardingProfile | null>(null);
   const [selectedDocs, setSelectedDocs] = useState<AdminVerificationDocument[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDocLoading, setIsDocLoading] = useState(false);
-  const [selectedTherapistName, setSelectedTherapistName] = useState('');
 
   const fetchVerifications = useCallback(async () => {
     setLoading(true);
@@ -44,16 +47,27 @@ export default function TherapistVerification() {
     fetchVerifications();
   }, [fetchVerifications]);
 
+  const closeReviewModal = () => {
+    setIsModalOpen(false);
+    setSelectedUser(null);
+    setSelectedProfile(null);
+    setSelectedDocs([]);
+  };
+
   const handleViewDocs = async (user: AdminUser) => {
-    setSelectedTherapistName(`${user.firstName} ${user.lastName}`);
+    setSelectedUser(user);
+    setSelectedProfile(null);
+    setSelectedDocs([]);
     setIsModalOpen(true);
     setIsDocLoading(true);
     try {
-      const res = await getAdminVerificationDocuments(user.id);
-      setSelectedDocs(res.data || []);
+      const res = await getAdminVerificationReview(user.id, user);
+      setSelectedProfile(res.data.profile);
+      setSelectedDocs(res.data.documents || []);
     } catch (err) {
-      toast.error('Failed to load documents');
-      setIsModalOpen(false);
+      console.error(err);
+      toast.error('Failed to load provider submission');
+      closeReviewModal();
     } finally {
       setIsDocLoading(false);
     }
@@ -63,17 +77,24 @@ export default function TherapistVerification() {
     let reason: string | undefined;
     if (action === 'reject') {
       reason = prompt('Enter rejection reason:') || undefined;
-      if (!reason) return; // Cancelled
+      if (!reason) return;
     }
 
     try {
       await updateAdminVerification(userId, action, reason);
       toast.success(`Therapist ${action === 'approve' ? 'approved' : 'rejected'}`);
+      if (selectedUser?.id === userId) {
+        closeReviewModal();
+      }
       fetchVerifications();
     } catch (err) {
       toast.error('Action failed');
     }
   };
+
+  const selectedTherapistName = selectedUser
+    ? `${selectedUser.firstName} ${selectedUser.lastName}`.trim()
+    : '';
 
   if (loading) return <div className="p-8 text-center text-gray-500 italic">Synchronizing verification queue...</div>;
 
@@ -100,8 +121,8 @@ export default function TherapistVerification() {
 
       <div className="bg-white rounded-2xl shadow-soft-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-           <h3 className="font-bold text-gray-800 text-base uppercase tracking-wider">Pending Credentials Queue</h3>
-           <Badge variant="secondary" className="text-[10px] font-black">{verifications.length} Pending</Badge>
+          <h3 className="font-bold text-gray-800 text-base uppercase tracking-wider">Pending Credentials Queue</h3>
+          <Badge variant="secondary" className="text-[10px] font-black">{verifications.length} Pending</Badge>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -119,10 +140,10 @@ export default function TherapistVerification() {
             <tbody className="divide-y divide-gray-50 text-sm">
               {verifications.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-8 py-16 text-center text-emerald-600 font-bold italic">
+                  <td colSpan={7} className="px-8 py-16 text-center text-emerald-600 font-bold italic">
                     <div className="flex flex-col items-center gap-2">
-                       <span className="text-3xl">✅</span>
-                       All caught up! No pending verifications.
+                      <span className="text-3xl">✅</span>
+                      All caught up! No pending verifications.
                     </div>
                   </td>
                 </tr>
@@ -135,18 +156,18 @@ export default function TherapistVerification() {
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       <div>{v.email || '—'}</div>
-                      <div className="text-xs text-gray-400">{(v as any).phone || ''}</div>
+                      <div className="text-xs text-gray-400">{(v as AdminUser & { phone?: string }).phone || ''}</div>
                     </td>
                     <td className="px-6 py-4">
                       {(() => {
-                        const roleKey = String((v as any).role || 'THERAPIST').toUpperCase();
+                        const roleKey = String((v as AdminUser & { role?: string }).role || 'THERAPIST').toUpperCase();
                         const meta = ROLE_LABELS[roleKey] || ROLE_LABELS.THERAPIST;
                         return <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${meta.color}`}>{meta.label}</span>;
                       })()}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <Badge variant="soft" className={`text-[10px] font-black uppercase tracking-wider ${(v as any).isTherapistVerified ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
-                        {(v as any).isTherapistVerified ? 'VERIFIED' : v.onboardingStatus}
+                      <Badge variant="soft" className={`text-[10px] font-black uppercase tracking-wider ${(v as AdminUser & { isTherapistVerified?: boolean }).isTherapistVerified ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
+                        {(v as AdminUser & { isTherapistVerified?: boolean }).isTherapistVerified ? 'VERIFIED' : v.onboardingStatus}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-xs font-medium">
@@ -154,9 +175,10 @@ export default function TherapistVerification() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <Button
+                        type="button"
                         variant="secondary"
                         size="sm"
-                        onClick={() => handleViewDocs(v)}
+                        onClick={() => void handleViewDocs(v)}
                         className="text-[10px] font-black uppercase tracking-widest h-8 px-4 rounded-lg border-gray-100 text-blue-600 hover:bg-blue-50"
                       >
                         Review Docs
@@ -164,13 +186,15 @@ export default function TherapistVerification() {
                     </td>
                     <td className="px-6 py-4 text-center space-x-2">
                       <Button
-                        onClick={() => handleAction(v.id, 'approve')}
+                        type="button"
+                        onClick={() => void handleAction(v.id, 'approve')}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-widest h-8 px-4 rounded-lg shadow-md shadow-emerald-100"
                       >
                         Approve
                       </Button>
                       <Button
-                        onClick={() => handleAction(v.id, 'reject')}
+                        type="button"
+                        onClick={() => void handleAction(v.id, 'reject')}
                         variant="soft"
                         className="text-[10px] font-black uppercase tracking-widest h-8 px-4 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border-red-100"
                       >
@@ -185,47 +209,16 @@ export default function TherapistVerification() {
         </div>
       </div>
 
-      {/* Credential Review Modal */}
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title={`Reviewing: ${selectedTherapistName}`} 
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeReviewModal}
+        title={`7-Step Application: ${selectedTherapistName}`}
         size="xl"
       >
         {isDocLoading ? (
-          <div className="py-20 text-center text-gray-400 italic font-medium">Retrieving secure clinical documents...</div>
+          <div className="py-20 text-center text-gray-400 italic font-medium">Loading provider submission…</div>
         ) : (
-          <div className="space-y-8">
-            {selectedDocs.length === 0 ? (
-              <div className="p-12 text-center text-gray-400 border-2 border-dashed border-gray-100 rounded-3xl">
-                No documents found for this therapist.
-              </div>
-            ) : (
-              selectedDocs.map((doc) => (
-                <div key={doc.id} className="border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
-                  <div className="bg-gray-50 px-6 py-3 flex items-center justify-between border-b border-gray-100">
-                    <span className="text-[10px] uppercase font-black text-gray-500 tracking-widest">{doc.documentType.replace('_', ' ')}</span>
-                    <a 
-                      href={doc.url} 
-                      target="_blank" 
-                      rel="noreferrer" 
-                      className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:underline"
-                    >
-                      Open in New Tab
-                    </a>
-                  </div>
-                  <div className="h-[500px] bg-gray-100 flex items-center justify-center">
-                    {/* iframe for PDF/Img. iframe is standard for this in the user requirement code */}
-                    <iframe
-                      src={doc.url}
-                      className="w-full h-full border-0"
-                      title={doc.documentType}
-                    />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <ProviderOnboardingReviewPanel profile={selectedProfile} documents={selectedDocs} />
         )}
       </Modal>
 

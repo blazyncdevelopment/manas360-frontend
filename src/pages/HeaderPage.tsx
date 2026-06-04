@@ -9,7 +9,8 @@ import {
   type ThemePreference,
 } from "../lib/themePreference";
 import { useLanguage } from "../context/LanguageContext";
-import { useAuth } from "../context/AuthContext";
+import type { AuthUser } from "../api/auth";
+import { getPostLoginRoute, useAuth } from "../context/AuthContext";
 
 const logo = "/AppIcon.jpeg";
 
@@ -141,12 +142,22 @@ export const landingHeaderStyles = `
           contain: layout style;
           transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
         }
+        .brand-bar-top-row {
+          max-height: 52px;
+          overflow: visible;
+        }
+        .landing-top-shortcut-btn > span:last-child {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 88px;
+        }
         .brand-bar > div {
-          padding-left: 176px;
+          padding-left: 216px;
         }
         @media (max-width: 600px) {
           .brand-bar > div {
-            padding-left: 96px;
+            padding-left: 128px;
           }
         }
         .brand-bar.scrolled {
@@ -210,7 +221,7 @@ export const landingHeaderStyles = `
           top: calc(100% + 8px);
           right: 0;
           width: 248px;
-          z-index: 150;
+          z-index: 210;
           background: white;
           border-radius: 12px;
           box-shadow: 0 14px 50px rgba(0, 0, 0, 0.14);
@@ -266,7 +277,7 @@ export const landingHeaderStyles = `
           .brand-bar-top-row {
             height: auto;
             min-height: 48px;
-            max-height: none;
+            max-height: 52px;
             flex-wrap: nowrap !important;
             justify-content: space-between !important;
             overflow: visible;
@@ -423,14 +434,22 @@ export const landingHeaderStyles = `
         }
 `;
 
-function isPatientUser(role: unknown): boolean {
-  return String(role || "").toLowerCase().replace(/_/g, "") === "patient";
+function getUserInitial(user: AuthUser | null | undefined): string {
+  const firstName = String(user?.firstName || "").trim();
+  if (firstName) return firstName.charAt(0).toUpperCase();
+  const lastName = String(user?.lastName || "").trim();
+  if (lastName) return lastName.charAt(0).toUpperCase();
+  const email = String(user?.email || "").trim();
+  if (email) return email.charAt(0).toUpperCase();
+  const phone = String(user?.phone || "").trim();
+  if (phone) return phone.charAt(phone.length - 1).toUpperCase();
+  return "";
 }
 
 export const HeaderPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const isPatientLoggedIn = isAuthenticated && isPatientUser(user?.role);
+  const userInitial = useMemo(() => getUserInitial(user), [user]);
   const { selectedLanguage, setSelectedLanguage } = useLanguage();
   const [activeTheme, setActiveTheme] = useState<ThemePreference>(() => resolveTheme(getStoredThemePreference()));
   const [showSearch, setShowSearch] = useState(false);
@@ -454,10 +473,10 @@ export const HeaderPage: React.FC = () => {
   }, [activeTheme]);
 
   useEffect(() => {
-    if (!isPatientLoggedIn) return;
+    if (!isAuthenticated) return;
     setLoginDropdownOpen(false);
     setLoginDropdownTop(null);
-  }, [isPatientLoggedIn]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const clearMobileAnchors = () => {
@@ -522,12 +541,20 @@ export const HeaderPage: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKeydown);
   }, []);
 
+  const loginRoutes: Record<string, string> = useMemo(
+    () => ({
+      patient: "/auth/login?userType=patient",
+      therapist: "/auth/login?role=therapist",
+      corporate: "/auth/login?next=/corporate/dashboard",
+      clinic: "/auth/login?role=therapist",
+    }),
+    []
+  );
+
   const handleLogin = (type: string) => {
     setLoginDropdownOpen(false);
     setLoginDropdownTop(null);
-    setTimeout(() => {
-      navigate(`/auth/login?userType=${type}`);
-    }, 100);
+    navigate(loginRoutes[type] ?? `/auth/login?userType=${type}`);
   };
 
   const updateLoginDropdownPosition = useCallback(() => {
@@ -558,7 +585,7 @@ export const HeaderPage: React.FC = () => {
   useEffect(() => {
     if (!loginDropdownOpen) return;
 
-    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+    const handleOutsideClick = (e: MouseEvent) => {
       const target = e.target as Node;
       if (
         loginBtnRef.current?.contains(target) ||
@@ -574,14 +601,12 @@ export const HeaderPage: React.FC = () => {
       if (window.innerWidth <= 980) updateLoginDropdownPosition();
     };
 
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("touchstart", handlePointerDown, { passive: true });
+    document.addEventListener("click", handleOutsideClick);
     window.addEventListener("resize", handleReposition);
     window.addEventListener("scroll", handleReposition, { passive: true });
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("click", handleOutsideClick);
       window.removeEventListener("resize", handleReposition);
       window.removeEventListener("scroll", handleReposition);
     };
@@ -610,10 +635,10 @@ export const HeaderPage: React.FC = () => {
     "AnytimeBuddy Chat": "/ai-power-hub",
     "Vent Buddy": "/ai-power-hub",
     "AI Session Notes": "/ai-power-hub",
-    "Baby Dinosaur": "/pet",
-    "Golden Retriever": "/pet",
-    "Healing Elephant": "/pet",
-    "Chintu Fox": "/pet",
+    "Baby Dinosaur": "/dino",
+    "Golden Retriever": "/goldenPup",
+    "Healing Elephant": "/elephant",
+    "Chintu Fox": "/chintu",
     "Name Your Pet \u2014 Adopt": "/pet",
     "Mood Tracker": "/self-help",
     "Breathing Exercises": "/self-help",
@@ -1114,9 +1139,9 @@ export const HeaderPage: React.FC = () => {
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              width: "54px",
-              height: "54px",
-              borderRadius: "14px",
+              width: "88px",
+              height: "88px",
+              borderRadius: "18px",
               padding: "3px",
               boxSizing: "border-box",
               overflow: "hidden",
@@ -1136,85 +1161,81 @@ export const HeaderPage: React.FC = () => {
                   objectFit: "contain",
                   objectPosition: "center",
                   display: "block",
-                  borderRadius: "12px",
+                  borderRadius: "16px",
                   background: "#FFFFFF"
                 }}
               />
             </div>
-            {/* Brand name + tagline */}
-            <div className="landing-brand-text">
-              <span className="landing-brand-name">MANAS360</span>
-              <span className="landing-brand-tagline">Holistic Mental Wellness&nbsp;|&nbsp;Anytime Anywhere</span>
-            </div>
+
           </a>
-        <div className={`brand-bar${isScrolled ? " scrolled" : ""}`}>
-          <div style={{ maxWidth: "1260px", margin: "0 auto", padding: "0 16px" }}>
-            <div className="brand-bar-top-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "52px", gap: "8px", flexWrap: "nowrap" }}>
-              <div className="brand-bar-top-leading" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "nowrap", minWidth: 0 }}>
-                <div className="landing-brand-langs notranslate" translate="no" style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}>
-                  {(["English", "Hindi", "Kannada", "Tamil", "Telugu"] as const).map((lang) => {
-                    const active = selectedLanguage === lang;
-                    return (
+          <div className={`brand-bar${isScrolled ? " scrolled" : ""}`}>
+            <div style={{ maxWidth: "1260px", margin: "0 auto", padding: "0 16px" }}>
+              <div className="brand-bar-top-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "52px", gap: "8px", flexWrap: "nowrap" }}>
+                <div className="brand-bar-top-leading" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "nowrap", minWidth: 0 }}>
+                  <div className="landing-brand-langs notranslate" translate="no" style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}>
+                    {(["English", "Hindi", "Kannada", "Tamil", "Telugu"] as const).map((lang) => {
+                      const active = selectedLanguage === lang;
+                      return (
+                        <button
+                          key={lang}
+                          type="button"
+                          className="notranslate"
+                          translate="no"
+                          onClick={() => setSelectedLanguage(lang)}
+                          style={{
+                            border: "1px solid #E8EDF2",
+                            background: active ? "#0B2D5E" : "white",
+                            color: active ? "white" : "#1A1A2E",
+                            fontSize: "10px",
+                            fontWeight: 800,
+                            padding: "5px 9px",
+                            borderRadius: "16px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          <span className="notranslate" translate="no">{languageLabelMap[lang]}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div
+                    className="landing-top-shortcuts"
+                    style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}
+                    onMouseEnter={keepQuickNavMenuOpen}
+                    onMouseLeave={closeQuickNavMenuWithDelay}
+                  >
+                    {topShortcutItems.map((item) => (
                       <button
-                        key={lang}
+                        key={item.label}
                         type="button"
-                        className="notranslate"
-                        translate="no"
-                        onClick={() => setSelectedLanguage(lang)}
+                        onClick={() => navigate(item.route)}
+                        onMouseEnter={() => openQuickNavMenu(item.label)}
+                        className="landing-top-shortcut-btn"
                         style={{
-                          border: "1px solid #E8EDF2",
-                          background: active ? "#0B2D5E" : "white",
-                          color: active ? "white" : "#1A1A2E",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          border: "1px solid #D5DEE9",
+                          background: "white",
+                          color: "#1A1A2E",
                           fontSize: "10px",
                           fontWeight: 800,
-                          padding: "5px 9px",
-                          borderRadius: "16px",
-                          cursor: "pointer"
+                          padding: "5px 8px",
+                          borderRadius: "999px",
+                          cursor: "pointer",
+                          whiteSpace: "nowrap"
                         }}
                       >
-                        <span className="notranslate" translate="no">{languageLabelMap[lang]}</span>
+                        <span aria-hidden>{item.icon}</span>
+                        <span>{item.label}</span>
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
 
-                <div
-                  className="landing-top-shortcuts"
-                  style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}
-                  onMouseEnter={keepQuickNavMenuOpen}
-                  onMouseLeave={closeQuickNavMenuWithDelay}
-                >
-                  {topShortcutItems.map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onClick={() => navigate(item.route)}
-                      onMouseEnter={() => openQuickNavMenu(item.label)}
-                      className="landing-top-shortcut-btn"
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        border: "1px solid #D5DEE9",
-                        background: "white",
-                        color: "#1A1A2E",
-                        fontSize: "10px",
-                        fontWeight: 800,
-                        padding: "5px 8px",
-                        borderRadius: "999px",
-                        cursor: "pointer",
-                        whiteSpace: "nowrap"
-                      }}
-                    >
-                      <span aria-hidden>{item.icon}</span>
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="landing-brand-actions" style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "auto" }}>
-                {/* <button
+                <div className="landing-brand-actions" style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "auto" }}>
+                  {/* <button
                   type="button"
                   onClick={toggleTheme}
                   className="landing-theme-toggle"
@@ -1234,512 +1255,512 @@ export const HeaderPage: React.FC = () => {
                 >
                   {activeTheme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                 </button> */}
-                <button
-                  type="button"
-                  className="landing-search-btn"
-                  onClick={() => setShowSearch(true)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "6px 10px",
-                    borderRadius: "18px",
-                    border: "1px solid #D5DEE9",
-                    cursor: "pointer",
-                    background: "#F8FBFF",
-                    minWidth: "150px"
-                  }}
-                >
-                  <span style={{ fontSize: "12px", color: "#2563EB" }}>&#128269;</span>
-                  <span style={{ fontSize: "10px", color: "#64748B", flex: 1, textAlign: "left", fontWeight: 700 }}>Search...</span>
-                  <span
-                    style={{
-                      fontSize: "9px",
-                      color: "#64748B",
-                      background: "#FFFFFF",
-                      border: "1px solid #DDE5EF",
-                      padding: "1px 6px",
-                      borderRadius: "8px"
-                    }}
-                  >
-                    ⌘ K
-                  </span>
-                </button>
-
-                {isPatientLoggedIn ? (
                   <button
                     type="button"
-                    className="landing-profile-btn"
-                    aria-label="Go to dashboard"
-                    title="Dashboard"
-                    onClick={() => navigate("/patient/dashboard")}
+                    className="landing-search-btn"
+                    onClick={() => setShowSearch(true)}
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      width: "36px",
-                      height: "36px",
-                      borderRadius: "50%",
+                      gap: "6px",
+                      padding: "6px 10px",
+                      borderRadius: "18px",
                       border: "1px solid #D5DEE9",
                       cursor: "pointer",
-                      background: "#E8EFE6",
-                      color: "#0B2D5E",
-                      flexShrink: 0,
+                      background: "#F8FBFF",
+                      minWidth: "150px"
                     }}
                   >
-                    {user?.firstName ? (
-                      <span style={{ fontSize: "13px", fontWeight: 900 }}>
-                        {user.firstName.charAt(0).toUpperCase()}
-                      </span>
-                    ) : (
-                      <User size={18} aria-hidden />
-                    )}
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="landing-subscribe-btn"
-                      onClick={() => navigate("/auth/signup")}
+                    <span style={{ fontSize: "12px", color: "#2563EB" }}>&#128269;</span>
+                    <span style={{ fontSize: "10px", color: "#64748B", flex: 1, textAlign: "left", fontWeight: 700 }}>Search...</span>
+                    <span
                       style={{
-                        background: "#0B2D5E",
-                        color: "white",
-                        padding: "7px 12px",
-                        borderRadius: "18px",
-                        fontSize: "11px",
-                        fontWeight: 900,
-                        cursor: "pointer",
-                        border: "none",
-                        whiteSpace: "nowrap",
+                        fontSize: "9px",
+                        color: "#64748B",
+                        background: "#FFFFFF",
+                        border: "1px solid #DDE5EF",
+                        padding: "1px 6px",
+                        borderRadius: "8px"
                       }}
                     >
-                      Subscribe
-                    </button>
+                      ⌘ K
+                    </span>
+                  </button>
 
-                    <div className="landing-login-wrap">
-                      <button
-                        ref={loginBtnRef}
-                        type="button"
-                        className="landing-login-btn"
-                        aria-expanded={loginDropdownOpen}
-                        aria-haspopup="menu"
-                        onClick={toggleLoginDropdown}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0px",
-                          padding: "7px 12px",
-                          borderRadius: "18px",
-                          border: "1px solid #D5DEE9",
-                          cursor: "pointer",
-                          fontSize: "11px",
-                          fontWeight: 800,
-                          color: "#1A1A2E",
-                          background: "white",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        Log In
-                      </button>
-
-                      {loginDropdownOpen && (
-                        <div
-                          ref={loginDropdownRef}
-                          className={`landing-login-dropdown${loginDropdownTop != null ? " landing-login-dropdown--mobile" : ""}`}
-                          role="menu"
-                          style={loginDropdownTop != null ? { top: loginDropdownTop } : undefined}
-                        >
-                          {loginOptions.map((option) => (
-                            <button
-                              key={option.type}
-                              type="button"
-                              role="menuitem"
-                              onClick={() => handleLogin(option.type)}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "10px",
-                                width: "100%",
-                                padding: "10px 10px",
-                                borderRadius: "9px",
-                                cursor: "pointer",
-                                transition: "background 0.15s",
-                                border: "none",
-                                background: "transparent",
-                                textAlign: "left",
-                                fontFamily: "inherit",
-                              }}
-                              onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLElement).style.background = "#FAFCFF";
-                              }}
-                              onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLElement).style.background = "transparent";
-                              }}
-                            >
-                              <span style={{ fontSize: "17px", width: "24px", textAlign: "center" }}>{option.icon}</span>
-                              <div>
-                                <div style={{ fontSize: "12px", fontWeight: 900, color: "#1A1A2E" }}>{option.label}</div>
-                                <div style={{ fontSize: "10px", color: "#666680", marginTop: "1px" }}>{option.desc}</div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                <div className="landing-brand-socials" style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "6px" }}>
-                  {[
-                    { key: "wa", label: <MessageCircle className="h-4 w-4" />, href: "https://wa.me/919876543210" },
-                    { key: "ig", label: <Instagram className="h-4 w-4" />, href: "https://instagram.com/manas360" },
-                    { key: "yt", label: <Youtube className="h-4 w-4" />, href: "https://youtube.com/@manas360" },
-                    { key: "in", label: <Linkedin className="h-4 w-4" />, href: "https://linkedin.com/company/manas360" }
-                  ].map((s) => (
-                    <a
-                      key={s.key}
-                      href={s.href}
-                      target="_blank"
-                      rel="noreferrer"
+                  {isAuthenticated ? (
+                    <button
+                      type="button"
+                      className="landing-profile-btn"
+                      aria-label="Go to dashboard"
+                      title="Dashboard"
+                      onClick={() => navigate(getPostLoginRoute(user))}
                       style={{
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: "7px",
-                        background: "transparent",
-                        border: "none",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: "13px",
-                        fontWeight: 900,
-                        color: "#66708A",
-                        textDecoration: "none"
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "50%",
+                        border: "1px solid #D5DEE9",
+                        cursor: "pointer",
+                        background: "#E8EFE6",
+                        color: "#0B2D5E",
+                        flexShrink: 0,
                       }}
                     >
-                      {s.label}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Top shortcuts mega menu (full width like the one below) */}
-            {activeQuickNav &&
-              (activeQuickNav === "Premium Therapy Hub" || activeQuickNav === "AI Power Hub") &&
-              quickNavMegaMenus[activeQuickNav] && (
-                <div
-                  style={{ position: "relative" }}
-                  onMouseEnter={keepQuickNavMenuOpen}
-                  onMouseLeave={closeQuickNavMenuWithDelay}
-                >
-                  <div style={{ position: "absolute", left: 0, right: 0, top: "10px", zIndex: 180 }}>
-                    <div
-                      style={{
-                        background: "white",
-                        borderRadius: "18px",
-                        border: "1px solid rgba(226, 232, 240, 0.95)",
-                        boxShadow: "0 28px 90px rgba(15, 23, 42, 0.22)",
-                        overflow: "hidden"
-                      }}
-                    >
-                      <div style={{ height: "3px", background: quickNavMegaMenus[activeQuickNav].accent }} />
-
-                      <div style={{ padding: "18px 18px 16px 18px" }}>
-                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
-                          <div>
-                            <div style={{ fontSize: "18px", fontWeight: 900, color: "#0F172A", lineHeight: 1.15 }}>
-                              {quickNavMegaMenus[activeQuickNav].title}
-                            </div>
-                            <div style={{ marginTop: "4px", fontSize: "12px", fontWeight: 700, color: "#64748B" }}>
-                              {quickNavMegaMenus[activeQuickNav].subtitle}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div
-                          className="quick-nav-mega-grid"
-                          style={{
-                            marginTop: "14px",
-                            display: "grid",
-                            gridTemplateColumns: `repeat(${quickNavMegaMenus[activeQuickNav].columns}, minmax(0, 1fr))`,
-                            gap: "10px"
-                          }}
-                        >
-                          {quickNavMegaMenus[activeQuickNav].items.map((mi) => (
-                            <div
-                              key={mi.title}
-                              style={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                                gap: "10px",
-                                padding: "12px 12px",
-                                borderRadius: "14px",
-                                background: MEGA_ITEM_DEFAULT_BG,
-                                cursor: "pointer",
-                                transition: "background 0.15s ease"
-                              }}
-                              role="button"
-                              tabIndex={0}
-                              onClick={() => handleMegaItemNav(mi.title, activeQuickNav)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault();
-                                  handleMegaItemNav(mi.title, activeQuickNav);
-                                }
-                              }}
-                              {...megaItemHoverHandlers(quickNavMegaMenus[activeQuickNav].accent)}
-                            >
-                              <div
-                                style={{
-                                  width: "34px",
-                                  height: "34px",
-                                  borderRadius: "10px",
-                                  border: "1px solid rgba(232, 237, 242, 0.95)",
-                                  background: "#FFFFFF",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  flex: "0 0 auto",
-                                  fontSize: "18px"
-                                }}
-                                aria-hidden
-                              >
-                                {mi.icon}
-                              </div>
-
-                              <div style={{ minWidth: 0, flex: 1 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                                  <div
-                                    style={{
-                                      fontSize: "13px",
-                                      fontWeight: 900,
-                                      color: "#0F172A",
-                                      whiteSpace: "nowrap",
-                                      overflow: "hidden",
-                                      textOverflow: "ellipsis"
-                                    }}
-                                  >
-                                    {mi.title}
-                                  </div>
-                                  {mi.badge && (
-                                    <div
-                                      style={{
-                                        fontSize: "10px",
-                                        fontWeight: 900,
-                                        padding: "2px 8px",
-                                        borderRadius: "999px",
-                                        border: "1px solid rgba(232, 237, 242, 0.95)",
-                                        background: "#F1F5F9",
-                                        color: "#0F172A",
-                                        whiteSpace: "nowrap"
-                                      }}
-                                    >
-                                      {mi.badge}
-                                    </div>
-                                  )}
-                                </div>
-                                <div style={{ marginTop: "2px", fontSize: "11px", fontWeight: 700, color: "#64748B", lineHeight: 1.45 }}>
-                                  {mi.subtitle}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            <div
-              ref={quickNavRowRef}
-              className="quick-nav-row header-scroll-x"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "12px",
-                padding: "10px 0 14px 0",
-                borderTop: "1px solid rgba(232, 237, 242, 0.7)"
-              }}
-            >
-              <div
-                className="quick-nav-scroll"
-                style={{ position: "relative", flex: 1, minWidth: 0 }}
-                onMouseEnter={keepQuickNavMenuOpen}
-                onMouseLeave={closeQuickNavMenuWithDelay}
-              >
-                <div className="quick-nav">
-                  {quickNavItems.map((item) => {
-                    const menu = quickNavMegaMenus[item.label];
-                    const isActive = activeQuickNav === item.label && !!menu;
-                    const accent = menu?.accent;
-
-                    return (
+                      {userInitial ? (
+                        <span style={{ fontSize: "13px", fontWeight: 900 }}>
+                          {userInitial}
+                        </span>
+                      ) : (
+                        <User size={18} aria-hidden />
+                      )}
+                    </button>
+                  ) : (
+                    <>
                       <button
-                        key={item.label}
                         type="button"
-                        aria-expanded={isActive}
-                        aria-haspopup={menu ? "menu" : undefined}
-                        onMouseEnter={() => {
-                          if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-                            openQuickNavMenu(item.label);
-                          }
-                        }}
-                        onPointerDown={handleQuickNavChipPointerDown}
-                        onPointerUp={(e) => handleQuickNavChipPointerUp(e, item.label, !!menu)}
-                        onClick={() => {
-                          if (quickNavTouchHandled.current) {
-                            quickNavTouchHandled.current = false;
-                            return;
-                          }
-                          activateQuickNavChip(item.label, !!menu);
-                        }}
-                        className="quick-nav-chip quick-nav-chip-btn"
+                        className="landing-subscribe-btn"
+                        onClick={() => navigate("/auth/signup")}
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          fontSize: "clamp(9px, 0.82vw, 11px)",
+                          background: "#0B2D5E",
+                          color: "white",
+                          padding: "7px 12px",
+                          borderRadius: "18px",
+                          fontSize: "11px",
                           fontWeight: 900,
-                          color: "#000000",
-                          opacity: 1,
                           cursor: "pointer",
+                          border: "none",
                           whiteSpace: "nowrap",
-                          padding: "4px 7px",
-                          borderRadius: "999px",
-                          border: isActive && accent ? `1px solid ${accent}` : "1px solid rgba(15, 23, 42, 0.22)",
-                          background: "rgba(255,255,255,1)",
-                          boxShadow: isActive ? "0 10px 24px rgba(15, 23, 42, 0.14)" : "0 2px 4px rgba(15,23,42,0.08)",
-                          fontFamily: "inherit"
                         }}
                       >
-                        <span className="quick-nav-chip-icon" style={{ fontSize: "clamp(9px, 0.82vw, 11px)" }} aria-hidden>{item.icon}</span>
-                        <span className="quick-nav-chip-label">{item.label}</span>
+                        Subscribe
                       </button>
-                    );
-                  })}
-                </div>
 
-                {activeQuickNav &&
-                  quickNavMegaMenus[activeQuickNav] &&
-                  quickNavItems.some((q) => q.label === activeQuickNav) && (
-                  <div
-                    ref={quickNavMegaRef}
-                    className={`quick-nav-mega-panel${quickNavMegaTop != null ? " quick-nav-mega-panel--mobile" : ""}`}
-                    onMouseEnter={keepQuickNavMenuOpen}
-                    onMouseLeave={closeQuickNavMenuWithDelay}
-                    style={quickNavMegaTop != null ? { top: quickNavMegaTop } : undefined}
-                  >
-                    <div
-                      style={{
-                        background: "white",
-                        borderRadius: "18px",
-                        border: "1px solid rgba(226, 232, 240, 0.95)",
-                        boxShadow: "0 28px 90px rgba(15, 23, 42, 0.22)",
-                        overflow: "hidden"
-                      }}
-                    >
-                      <div style={{ height: "3px", background: quickNavMegaMenus[activeQuickNav].accent }} />
-
-                      <div style={{ padding: "18px 18px 16px 18px" }}>
-                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
-                          <div>
-                            <div style={{ fontSize: "18px", fontWeight: 900, color: "#0F172A", lineHeight: 1.15 }}>
-                              {quickNavMegaMenus[activeQuickNav].title}
-                            </div>
-                            <div style={{ marginTop: "4px", fontSize: "12px", fontWeight: 700, color: "#64748B" }}>
-                              {quickNavMegaMenus[activeQuickNav].subtitle}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div
-                          className="quick-nav-mega-grid"
+                      <div className="landing-login-wrap">
+                        <button
+                          ref={loginBtnRef}
+                          type="button"
+                          className="landing-login-btn"
+                          aria-expanded={loginDropdownOpen}
+                          aria-haspopup="menu"
+                          onClick={toggleLoginDropdown}
                           style={{
-                            marginTop: "14px",
-                            display: "grid",
-                            gridTemplateColumns: `repeat(${quickNavMegaMenus[activeQuickNav].columns}, minmax(0, 1fr))`,
-                            gap: "10px"
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0px",
+                            padding: "7px 12px",
+                            borderRadius: "18px",
+                            border: "1px solid #D5DEE9",
+                            cursor: "pointer",
+                            fontSize: "11px",
+                            fontWeight: 800,
+                            color: "#1A1A2E",
+                            background: "white",
+                            whiteSpace: "nowrap",
                           }}
                         >
-                          {quickNavMegaMenus[activeQuickNav].items.map((mi) => (
-                            <button
-                              key={mi.title}
-                              type="button"
-                              onClick={() => handleMegaItemNav(mi.title, activeQuickNav)}
-                              style={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                                gap: "10px",
-                                width: "100%",
-                                padding: "12px 12px",
-                                borderRadius: "14px",
-                                background: MEGA_ITEM_DEFAULT_BG,
-                                cursor: "pointer",
-                                border: "none",
-                                textAlign: "left",
-                                fontFamily: "inherit",
-                                touchAction: "manipulation",
-                                transition: "background 0.15s ease"
-                              }}
-                              {...megaItemHoverHandlers(quickNavMegaMenus[activeQuickNav].accent)}
-                            >
-                              <div
+                          Log In
+                        </button>
+
+                        {loginDropdownOpen && (
+                          <div
+                            ref={loginDropdownRef}
+                            className={`landing-login-dropdown${loginDropdownTop != null ? " landing-login-dropdown--mobile" : ""}`}
+                            role="menu"
+                            style={loginDropdownTop != null ? { top: loginDropdownTop } : undefined}
+                          >
+                            {loginOptions.map((option) => (
+                              <button
+                                key={option.type}
+                                type="button"
+                                role="menuitem"
+                                onClick={() => handleLogin(option.type)}
                                 style={{
-                                  width: "34px",
-                                  height: "34px",
-                                  borderRadius: "10px",
-                                  border: "1px solid rgba(232, 237, 242, 0.95)",
-                                  background: "#FFFFFF",
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyContent: "center",
-                                  flex: "0 0 auto",
-                                  fontSize: "18px"
+                                  gap: "10px",
+                                  width: "100%",
+                                  padding: "10px 10px",
+                                  borderRadius: "9px",
+                                  cursor: "pointer",
+                                  transition: "background 0.15s",
+                                  border: "none",
+                                  background: "transparent",
+                                  textAlign: "left",
+                                  fontFamily: "inherit",
                                 }}
-                                aria-hidden
+                                onMouseEnter={(e) => {
+                                  (e.currentTarget as HTMLElement).style.background = "#FAFCFF";
+                                }}
+                                onMouseLeave={(e) => {
+                                  (e.currentTarget as HTMLElement).style.background = "transparent";
+                                }}
                               >
-                                {mi.icon}
-                              </div>
+                                <span style={{ fontSize: "17px", width: "24px", textAlign: "center" }}>{option.icon}</span>
+                                <div>
+                                  <div style={{ fontSize: "12px", fontWeight: 900, color: "#1A1A2E" }}>{option.label}</div>
+                                  <div style={{ fontSize: "10px", color: "#666680", marginTop: "1px" }}>{option.desc}</div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
 
-                              <div style={{ minWidth: 0, flex: 1 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                                  <div style={{ fontSize: "13px", fontWeight: 900, color: "#0F172A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                    {mi.title}
-                                  </div>
-                                  {mi.badge && (
+                  <div className="landing-brand-socials" style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "6px" }}>
+                    {[
+                      { key: "wa", label: <MessageCircle className="h-4 w-4" />, href: "https://wa.me/919876543210" },
+                      { key: "ig", label: <Instagram className="h-4 w-4" />, href: "https://instagram.com/manas360" },
+                      { key: "yt", label: <Youtube className="h-4 w-4" />, href: "https://youtube.com/@manas360" },
+                      { key: "in", label: <Linkedin className="h-4 w-4" />, href: "https://linkedin.com/company/manas360" }
+                    ].map((s) => (
+                      <a
+                        key={s.key}
+                        href={s.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "7px",
+                          background: "transparent",
+                          border: "none",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "13px",
+                          fontWeight: 900,
+                          color: "#66708A",
+                          textDecoration: "none"
+                        }}
+                      >
+                        {s.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Top shortcuts mega menu (full width like the one below) */}
+              {activeQuickNav &&
+                (activeQuickNav === "Premium Therapy Hub" || activeQuickNav === "AI Power Hub") &&
+                quickNavMegaMenus[activeQuickNav] && (
+                  <div
+                    style={{ position: "relative" }}
+                    onMouseEnter={keepQuickNavMenuOpen}
+                    onMouseLeave={closeQuickNavMenuWithDelay}
+                  >
+                    <div style={{ position: "absolute", left: 0, right: 0, top: "10px", zIndex: 180 }}>
+                      <div
+                        style={{
+                          background: "white",
+                          borderRadius: "18px",
+                          border: "1px solid rgba(226, 232, 240, 0.95)",
+                          boxShadow: "0 28px 90px rgba(15, 23, 42, 0.22)",
+                          overflow: "hidden"
+                        }}
+                      >
+                        <div style={{ height: "3px", background: quickNavMegaMenus[activeQuickNav].accent }} />
+
+                        <div style={{ padding: "18px 18px 16px 18px" }}>
+                          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
+                            <div>
+                              <div style={{ fontSize: "18px", fontWeight: 900, color: "#0F172A", lineHeight: 1.15 }}>
+                                {quickNavMegaMenus[activeQuickNav].title}
+                              </div>
+                              <div style={{ marginTop: "4px", fontSize: "12px", fontWeight: 700, color: "#64748B" }}>
+                                {quickNavMegaMenus[activeQuickNav].subtitle}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div
+                            className="quick-nav-mega-grid"
+                            style={{
+                              marginTop: "14px",
+                              display: "grid",
+                              gridTemplateColumns: `repeat(${quickNavMegaMenus[activeQuickNav].columns}, minmax(0, 1fr))`,
+                              gap: "10px"
+                            }}
+                          >
+                            {quickNavMegaMenus[activeQuickNav].items.map((mi) => (
+                              <div
+                                key={mi.title}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "flex-start",
+                                  gap: "10px",
+                                  padding: "12px 12px",
+                                  borderRadius: "14px",
+                                  background: MEGA_ITEM_DEFAULT_BG,
+                                  cursor: "pointer",
+                                  transition: "background 0.15s ease"
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => handleMegaItemNav(mi.title, activeQuickNav)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    handleMegaItemNav(mi.title, activeQuickNav);
+                                  }
+                                }}
+                                {...megaItemHoverHandlers(quickNavMegaMenus[activeQuickNav].accent)}
+                              >
+                                <div
+                                  style={{
+                                    width: "34px",
+                                    height: "34px",
+                                    borderRadius: "10px",
+                                    border: "1px solid rgba(232, 237, 242, 0.95)",
+                                    background: "#FFFFFF",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flex: "0 0 auto",
+                                    fontSize: "18px"
+                                  }}
+                                  aria-hidden
+                                >
+                                  {mi.icon}
+                                </div>
+
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
                                     <div
                                       style={{
-                                        fontSize: "10px",
+                                        fontSize: "13px",
                                         fontWeight: 900,
-                                        padding: "2px 8px",
-                                        borderRadius: "999px",
-                                        border: "1px solid rgba(232, 237, 242, 0.95)",
-                                        background: "#F1F5F9",
                                         color: "#0F172A",
-                                        whiteSpace: "nowrap"
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis"
                                       }}
                                     >
-                                      {mi.badge}
+                                      {mi.title}
                                     </div>
-                                  )}
-                                </div>
-                                <div style={{ marginTop: "2px", fontSize: "11px", fontWeight: 700, color: "#64748B", lineHeight: 1.45 }}>
-                                  {mi.subtitle}
+                                    {mi.badge && (
+                                      <div
+                                        style={{
+                                          fontSize: "10px",
+                                          fontWeight: 900,
+                                          padding: "2px 8px",
+                                          borderRadius: "999px",
+                                          border: "1px solid rgba(232, 237, 242, 0.95)",
+                                          background: "#F1F5F9",
+                                          color: "#0F172A",
+                                          whiteSpace: "nowrap"
+                                        }}
+                                      >
+                                        {mi.badge}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div style={{ marginTop: "2px", fontSize: "11px", fontWeight: 700, color: "#64748B", lineHeight: 1.45 }}>
+                                    {mi.subtitle}
+                                  </div>
                                 </div>
                               </div>
-                            </button>
-                          ))}
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
+
+              <div
+                ref={quickNavRowRef}
+                className="quick-nav-row header-scroll-x"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "12px",
+                  padding: "10px 0 14px 0",
+                  borderTop: "1px solid rgba(232, 237, 242, 0.7)"
+                }}
+              >
+                <div
+                  className="quick-nav-scroll"
+                  style={{ position: "relative", flex: 1, minWidth: 0 }}
+                  onMouseEnter={keepQuickNavMenuOpen}
+                  onMouseLeave={closeQuickNavMenuWithDelay}
+                >
+                  <div className="quick-nav">
+                    {quickNavItems.map((item) => {
+                      const menu = quickNavMegaMenus[item.label];
+                      const isActive = activeQuickNav === item.label && !!menu;
+                      const accent = menu?.accent;
+
+                      return (
+                        <button
+                          key={item.label}
+                          type="button"
+                          aria-expanded={isActive}
+                          aria-haspopup={menu ? "menu" : undefined}
+                          onMouseEnter={() => {
+                            if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+                              openQuickNavMenu(item.label);
+                            }
+                          }}
+                          onPointerDown={handleQuickNavChipPointerDown}
+                          onPointerUp={(e) => handleQuickNavChipPointerUp(e, item.label, !!menu)}
+                          onClick={() => {
+                            if (quickNavTouchHandled.current) {
+                              quickNavTouchHandled.current = false;
+                              return;
+                            }
+                            activateQuickNavChip(item.label, !!menu);
+                          }}
+                          className="quick-nav-chip quick-nav-chip-btn"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            fontSize: "clamp(9px, 0.82vw, 11px)",
+                            fontWeight: 900,
+                            color: "#000000",
+                            opacity: 1,
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                            padding: "4px 7px",
+                            borderRadius: "999px",
+                            border: isActive && accent ? `1px solid ${accent}` : "1px solid rgba(15, 23, 42, 0.22)",
+                            background: "rgba(255,255,255,1)",
+                            boxShadow: isActive ? "0 10px 24px rgba(15, 23, 42, 0.14)" : "0 2px 4px rgba(15,23,42,0.08)",
+                            fontFamily: "inherit"
+                          }}
+                        >
+                          <span className="quick-nav-chip-icon" style={{ fontSize: "clamp(9px, 0.82vw, 11px)" }} aria-hidden>{item.icon}</span>
+                          <span className="quick-nav-chip-label">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {activeQuickNav &&
+                    quickNavMegaMenus[activeQuickNav] &&
+                    quickNavItems.some((q) => q.label === activeQuickNav) && (
+                      <div
+                        ref={quickNavMegaRef}
+                        className={`quick-nav-mega-panel${quickNavMegaTop != null ? " quick-nav-mega-panel--mobile" : ""}`}
+                        onMouseEnter={keepQuickNavMenuOpen}
+                        onMouseLeave={closeQuickNavMenuWithDelay}
+                        style={quickNavMegaTop != null ? { top: quickNavMegaTop } : undefined}
+                      >
+                        <div
+                          style={{
+                            background: "white",
+                            borderRadius: "18px",
+                            border: "1px solid rgba(226, 232, 240, 0.95)",
+                            boxShadow: "0 28px 90px rgba(15, 23, 42, 0.22)",
+                            overflow: "hidden"
+                          }}
+                        >
+                          <div style={{ height: "3px", background: quickNavMegaMenus[activeQuickNav].accent }} />
+
+                          <div style={{ padding: "18px 18px 16px 18px" }}>
+                            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
+                              <div>
+                                <div style={{ fontSize: "18px", fontWeight: 900, color: "#0F172A", lineHeight: 1.15 }}>
+                                  {quickNavMegaMenus[activeQuickNav].title}
+                                </div>
+                                <div style={{ marginTop: "4px", fontSize: "12px", fontWeight: 700, color: "#64748B" }}>
+                                  {quickNavMegaMenus[activeQuickNav].subtitle}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div
+                              className="quick-nav-mega-grid"
+                              style={{
+                                marginTop: "14px",
+                                display: "grid",
+                                gridTemplateColumns: `repeat(${quickNavMegaMenus[activeQuickNav].columns}, minmax(0, 1fr))`,
+                                gap: "10px"
+                              }}
+                            >
+                              {quickNavMegaMenus[activeQuickNav].items.map((mi) => (
+                                <button
+                                  key={mi.title}
+                                  type="button"
+                                  onClick={() => handleMegaItemNav(mi.title, activeQuickNav)}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    gap: "10px",
+                                    width: "100%",
+                                    padding: "12px 12px",
+                                    borderRadius: "14px",
+                                    background: MEGA_ITEM_DEFAULT_BG,
+                                    cursor: "pointer",
+                                    border: "none",
+                                    textAlign: "left",
+                                    fontFamily: "inherit",
+                                    touchAction: "manipulation",
+                                    transition: "background 0.15s ease"
+                                  }}
+                                  {...megaItemHoverHandlers(quickNavMegaMenus[activeQuickNav].accent)}
+                                >
+                                  <div
+                                    style={{
+                                      width: "34px",
+                                      height: "34px",
+                                      borderRadius: "10px",
+                                      border: "1px solid rgba(232, 237, 242, 0.95)",
+                                      background: "#FFFFFF",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      flex: "0 0 auto",
+                                      fontSize: "18px"
+                                    }}
+                                    aria-hidden
+                                  >
+                                    {mi.icon}
+                                  </div>
+
+                                  <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                                      <div style={{ fontSize: "13px", fontWeight: 900, color: "#0F172A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                        {mi.title}
+                                      </div>
+                                      {mi.badge && (
+                                        <div
+                                          style={{
+                                            fontSize: "10px",
+                                            fontWeight: 900,
+                                            padding: "2px 8px",
+                                            borderRadius: "999px",
+                                            border: "1px solid rgba(232, 237, 242, 0.95)",
+                                            background: "#F1F5F9",
+                                            color: "#0F172A",
+                                            whiteSpace: "nowrap"
+                                          }}
+                                        >
+                                          {mi.badge}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div style={{ marginTop: "2px", fontSize: "11px", fontWeight: 700, color: "#64748B", lineHeight: 1.45 }}>
+                                      {mi.subtitle}
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
         </div>
       </header>
       {showSearch && (
@@ -1892,7 +1913,7 @@ export const HeaderPage: React.FC = () => {
         </div>
       )}
       <style>{`${landingHeaderStyles}`}</style>
-     
+
     </>
   );
 };

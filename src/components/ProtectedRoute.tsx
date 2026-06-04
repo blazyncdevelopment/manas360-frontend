@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { hasProviderSubmittedOnboarding } from '../lib/providerOnboardingFlow';
 
 type ProtectedRouteProps = {
 	children: ReactNode;
@@ -50,13 +51,13 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 			? '/admin-portal/login'
 			: userRole === 'learner'
 				? '/certifications'
-			: userRole === 'psychologist'
-				? '/provider/dashboard'
-			: userRole === 'psychiatrist'
-				? '/provider/dashboard'
-				: userRole === 'therapist' || userRole === 'coach'
-				? '/provider/dashboard'
-				: '/patient/dashboard';
+				: userRole === 'psychologist'
+					? '/provider/dashboard'
+					: userRole === 'psychiatrist'
+						? '/provider/dashboard'
+						: userRole === 'therapist' || userRole === 'coach'
+							? '/provider/dashboard'
+							: '/patient/dashboard';
 
 		return <Navigate to={fallback} replace />;
 	}
@@ -67,11 +68,27 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 			return <>{children}</>;
 		}
 
-		const onboardingStatus = String(user?.onboardingStatus || '').toUpperCase();
 		const subscriptionRoute = '/provider/subscription';
 		const onboardingRoute = '/onboarding/provider-setup';
 		const verificationRoute = '/provider/verification-pending';
 		const verified = Boolean(user?.isTherapistVerified);
+		const profileSubmitted = hasProviderSubmittedOnboarding(user);
+
+		// Allow checkout, payment, and legal-acceptance pages through at any stage
+		const isPaymentPath = location.pathname.startsWith('/checkout') ||
+			location.pathname.startsWith('/universal/checkout') ||
+			location.pathname.startsWith('/universal/payment-success') ||
+			location.pathname.startsWith('/confirmation') ||
+			location.pathname.startsWith('/provider/plans') ||
+			location.pathname.startsWith('/provider/payment-callback');
+
+		// Allow /auth/legal-accept through without redirection — if the backend returns
+		// LEGAL_REACCEPTANCE_REQUIRED (HTTP 428) during onboarding, the user is sent here.
+		// Without this bypass the ProtectedRoute would immediately redirect them back to
+		// /onboarding/provider-setup, creating an infinite redirect loop.
+		const isLegalAcceptPath = location.pathname.startsWith('/auth/legal-accept');
+
+		if (isPaymentPath || isLegalAcceptPath) return <>{children}</>;
 
 		// Allow checkout and payment pages through at any stage
 		const isPaymentPath = location.pathname.startsWith('/checkout') ||
@@ -91,7 +108,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 		}
 
 		// Step 2: Onboarding form not submitted
-		if (onboardingStatus !== 'COMPLETED') {
+		if (!profileSubmitted) {
 			if (location.pathname !== onboardingRoute) {
 				return <Navigate to={onboardingRoute} replace />;
 			}

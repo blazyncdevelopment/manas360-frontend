@@ -22,6 +22,7 @@ import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '../../context/AuthContext';
 import { getDraftStorageKey } from '../../hooks/useAssessmentFlow';
 import { FeatureGate } from '../FeatureGate';
+import { Manas360BrandLogo } from '../common/Manas360BrandLogo';
 
 const STORAGE_KEY_MDC = 'mdc_user';
 
@@ -261,16 +262,12 @@ export default function PatientDashboardLayout() {
             }`}
         >
           <div className="flex h-20 items-center justify-between border-b border-white/70 px-5">
-            <Link to="/patient/dashboard" className="inline-flex items-center gap-3 font-display text-lg font-bold text-charcoal">
-              <img
-                src="/AppIcon.jpeg"
-                alt="MANAS360 logo"
-                className="h-10 w-10 rounded-2xl object-cover shadow-wellness-sm"
-              />
-              <div>
-                <p className="text-lg leading-none tracking-tight">MANAS360</p>
-                <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.16em] text-charcoal/45">Professional Wellness</p>
-              </div>
+            <Link
+              to="/patient/dashboard"
+              className="transition-opacity hover:opacity-90"
+              aria-label="MANAS360 dashboard home"
+            >
+              <Manas360BrandLogo size="sm" showIcon />
             </Link>
 
             <button

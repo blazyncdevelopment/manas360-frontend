@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getApiErrorMessage, signupWithPhone, verifyPhoneSignupOtp } from '../../api/auth';
+import { resolveProviderIdForOnboarding } from '../../api/providerOnboarding';
 import { clearGuestClinicalScreening, readCachedClinicalScreening } from '../../utils/guestScreeningCache';
 import { patientApi } from '../../api/patient';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { getPostLoginRoute, hasCorporateAccess, useAuth } from '../../context/AuthContext';
+import type { AuthUser } from '../../api/auth';
 
 type SignupRole = 'patient' | 'therapist' | 'psychiatrist' | 'psychologist' | 'coach';
 
@@ -34,6 +36,10 @@ const inferSignupRoleFromPath = (path: string | null | undefined): SignupRole | 
 	return null;
 };
 
+const isProviderAuthRole = (role: SignupRole | string | null): boolean => (
+	role === 'therapist' || role === 'psychiatrist' || role === 'psychologist' || role === 'coach'
+);
+
 const isSubscriptionActive = (subscription: any): boolean => {
 	if (!subscription) return false;
 
@@ -53,19 +59,21 @@ export default function LoginPage() {
 	const from = locationState?.from;
 	const afterLogin = locationState?.afterLogin;
 	const next = new URLSearchParams(location.search).get('next');
-	const signupRoleFromQuery = resolveSignupRole(new URLSearchParams(location.search).get('role'));
+	const loginSearchParams = new URLSearchParams(location.search);
+	const signupRoleFromQuery = resolveSignupRole(loginSearchParams.get('role'));
+	const signupRoleFromUserType = resolveSignupRole(loginSearchParams.get('userType'));
 	const signupRoleFromState = resolveSignupRole(locationState?.role);
 	const signupRoleFromPath = inferSignupRoleFromPath(from || afterLogin || next);
-	const signupRole = signupRoleFromState || signupRoleFromQuery || signupRoleFromPath;
+	const signupRole = signupRoleFromState || signupRoleFromQuery || signupRoleFromUserType || signupRoleFromPath;
+	const isProviderLogin = isProviderAuthRole(signupRole);
 
 	const [phone, setPhone] = useState('');
 	const [otp, setOtp] = useState('');
 	const [otpSent, setOtpSent] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [devOtp, setDevOtp] = useState<string | null>(null);
 
-	const resolvePostLoginRouteWithSubscription = async (candidate: string | null, role: string | undefined, userOverride?: any) => {
+	const resolvePostLoginRouteWithSubscription = async (candidate: string | null, role: string | undefined, userOverride?: AuthUser | null) => {
 		const effectiveUser = userOverride || user;
 
 		if (hasCorporateAccess(effectiveUser)) {
@@ -103,6 +111,17 @@ export default function LoginPage() {
 			return;
 		}
 
+		if (isProviderAuthRole(resolveSignupRole(user.role))) {
+			void resolveProviderIdForOnboarding(user);
+			if (!user.platformAccessActive) {
+				navigate('/provider/subscription', { replace: true });
+				return;
+			}
+			const providerRoute = getPostLoginRoute(user);
+			navigate(providerRoute, { replace: true });
+			return;
+		}
+
 		const candidate = from || afterLogin || next || null;
 		void (async () => {
 			const postLoginRoute = await resolvePostLoginRouteWithSubscription(candidate, user.role, user);
@@ -110,16 +129,22 @@ export default function LoginPage() {
 		})();
 	}, [afterLogin, from, isAuthenticated, navigate, next, user]);
 
+	// ── OTP request — same endpoint for all users ───────────────────────────
 	const requestOtp = async () => {
+		if (!phone.trim()) {
+			setError('Please enter your phone number.');
+			return;
+		}
+
 		setError(null);
 		setLoading(true);
 		try {
-			const res = await signupWithPhone(phone.trim());
+			// Always use /v1/auth/signup/phone regardless of role
+			const response = await signupWithPhone(phone.trim());
 			setOtpSent(true);
-			if (res?.devOtp) {
-				setDevOtp(res.devOtp);
-				setOtp(res.devOtp);
-				console.log('[DEV] OTP:', res.devOtp);
+			if (response?.devOtp) {
+				setOtp(response.devOtp);
+				console.log('[DEV] OTP:', response.devOtp);
 			}
 		} catch (err) {
 			setError(getApiErrorMessage(err, 'Failed to send OTP'));
@@ -128,11 +153,13 @@ export default function LoginPage() {
 		}
 	};
 
+	// ── OTP verification — same endpoint for all users ──────────────────────
 	const verifyOtp = async () => {
 		setError(null);
 		setLoading(true);
 		isCompletingLoginRef.current = true;
 		try {
+			// Always use /v1/auth/verify/phone-otp regardless of role
 			const guestGameToken = localStorage.getItem('guest_game_token') || undefined;
 			const cachedScreening = readCachedClinicalScreening();
 			const result = await verifyPhoneSignupOtp(phone.trim(), otp.trim(), {
@@ -153,14 +180,30 @@ export default function LoginPage() {
 
 			const resolvedUser = await syncSessionAfterOtp(result.user);
 
-			// Check corporate access first - corporate admins bypass subscription checks
+			// ── Route based on the returned user's actual role ───────────────────
+			if (isProviderAuthRole(resolveSignupRole(resolvedUser.role) ?? resolvedUser.role)) {
+				// Ensure provider_id is resolved/stored for downstream payment pages
+				await resolveProviderIdForOnboarding(resolvedUser);
+
+				if (!resolvedUser.platformAccessActive) {
+					navigate('/provider/subscription', { replace: true });
+					return;
+				}
+
+				const candidate = from || afterLogin || next || null;
+				const postLoginRoute = candidate && !candidate.startsWith('/auth/')
+					? candidate
+					: getPostLoginRoute(resolvedUser);
+				navigate(postLoginRoute, { replace: true });
+				return;
+			}
+
 			if (hasCorporateAccess(resolvedUser)) {
 				navigate('/corporate/dashboard', { replace: true });
 				return;
 			}
-			
-			// Redirect patients without subscription to plans
-			if ((resolvedUser as any)?.requiresSubscription) {
+
+			if ((resolvedUser as AuthUser)?.requiresSubscription) {
 				let hasActiveSubscription = false;
 				try {
 					const subscriptionResponse = await patientApi.getSubscription();
@@ -182,6 +225,7 @@ export default function LoginPage() {
 				navigate(`/plans?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
 				return;
 			}
+
 			const candidate = from || afterLogin || next || null;
 			const postLoginRoute = await resolvePostLoginRouteWithSubscription(candidate, resolvedUser?.role, resolvedUser);
 			navigate(postLoginRoute, { replace: true });
@@ -234,20 +278,24 @@ export default function LoginPage() {
 
 					<section className="card card-flat mx-auto w-full max-w-lg justify-self-center p-5 sm:p-8 lg:justify-self-end lg:animate-scaleIn">
 						<h1 className="font-display text-3xl font-bold leading-tight sm:text-4xl" style={{ color: 'var(--color-ink)' }}>Welcome back</h1>
-						<p className="mt-2 text-sm text-muted sm:text-base">Continue your wellness journey</p>
+						<p className="mt-2 text-sm text-muted sm:text-base">
+							{isProviderLogin ? 'Sign in with your registered mobile number' : 'Continue your wellness journey'}
+						</p>
 
 						<div className="mt-6 space-y-4">
-							<Input
-								id="login-phone"
-								label="Phone Number"
-								type="tel"
-								autoComplete="tel"
-								placeholder="+919876543210"
-								helperText="Use your phone number to continue"
-								value={phone}
-								onChange={(event) => setPhone(event.target.value)}
-								required
-							/>
+							{!otpSent ? (
+								<Input
+									id="login-phone"
+									label="Phone Number"
+									type="tel"
+									autoComplete="tel"
+									placeholder="+919876543210"
+									helperText={isProviderLogin ? 'OTP will be sent to your registered number' : 'Use your phone number to continue'}
+									value={phone}
+									onChange={(event) => setPhone(event.target.value)}
+									required
+								/>
+							) : null}
 
 							{otpSent ? (
 								<>
@@ -259,61 +307,54 @@ export default function LoginPage() {
 										maxLength={4}
 										autoComplete="one-time-code"
 										placeholder="4-digit OTP"
-										helperText="Check your WhatsApp for the OTP"
+										helperText="Enter the code sent to your phone"
 										value={otp}
 										onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
 										required
 									/>
-									{devOtp && (
-										<div className="flex items-center justify-between rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm">
-											<span className="font-mono font-bold text-yellow-800">🔑 Dev OTP: {devOtp}</span>
-											<button
-												type="button"
-												onClick={() => setDevOtp(null)}
-												className="ml-3 text-yellow-600 hover:text-yellow-900 text-xs underline"
-											>
-												Hide
-											</button>
-										</div>
-									)}
+
 								</>
 							) : null}
 
-							{!otpSent ? (
-								<Button
-									type="button"
-									fullWidth
-									loading={loading}
-									className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
-									onClick={requestOtp}
-								>
-									{loading ? 'Preparing...' : 'Continue'}
-								</Button>
-							) : (
-								<Button
-									type="button"
-									fullWidth
-									loading={loading}
-									className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
-									onClick={verifyOtp}
-								>
-									{loading ? 'Verifying...' : 'Continue to wellness'}
-								</Button>
-							)}
-						</div>
+							{
+								!otpSent ? (
+									<Button
+										type="button"
+										fullWidth
+										loading={loading}
+										className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
+										onClick={requestOtp}
+									>
+										{loading ? 'Sending OTP...' : 'Send OTP'}
+									</Button>
+								) : (
+									<Button
+										type="button"
+										fullWidth
+										loading={loading}
+										className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
+										onClick={verifyOtp}
+									>
+										{loading ? 'Verifying...' : (isProviderLogin ? 'Verify & Continue' : 'Continue to wellness')}
+									</Button>
+								)
+							}
+						</div >
 
 						<p className="callout callout-navy mt-3 text-xs font-medium">
 							🔒 Your data is secure and confidential.
 						</p>
 
-						{error ? (
-							<p role="alert" aria-live="polite" className="mt-3 text-sm text-error">
-								{error}
-							</p>
-						) : null}
+						{
+							error ? (
+								<p role="alert" aria-live="polite" className="mt-3 text-sm text-error">
+									{error}
+								</p>
+							) : null
+						}
 
 						<p className="mt-4 text-center text-sm text-muted">
-							Need to create an account?{' '}
+							{isProviderLogin ? 'New provider? ' : 'Need to create an account? '}
 							<Link
 								to={signupRole ? `/auth/signup?role=${encodeURIComponent(signupRole)}` : '/auth/signup'}
 								state={signupRole ? { role: signupRole } : undefined}
@@ -322,9 +363,9 @@ export default function LoginPage() {
 								Register here
 							</Link>
 						</p>
-					</section>
-				</div>
-			</div>
-		</div>
+					</section >
+				</div >
+			</div >
+		</div >
 	);
 }

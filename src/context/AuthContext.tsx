@@ -7,16 +7,18 @@ import {
   type AuthUser,
 } from '../api/auth';
 import { clearAuthTokens, hasStoredAccessToken } from '../utils/authToken';
+import { extractProviderId, setStoredProviderId } from '../utils/providerOnboardingStorage';
+import { hasProviderSubmittedOnboarding } from '../lib/providerOnboardingFlow';
 
-export type AppRole = 
-  | 'patient' 
+export type AppRole =
+  | 'patient'
   | 'learner'
-  | 'therapist' 
-  | 'psychiatrist' 
-  | 'psychologist' 
-  | 'coach' 
-  | 'admin' 
-  | 'superadmin' 
+  | 'therapist'
+  | 'psychiatrist'
+  | 'psychologist'
+  | 'coach'
+  | 'admin'
+  | 'superadmin'
   | 'clinicaldirector'
   | 'financemanager'
   | 'complianceofficer';
@@ -120,7 +122,6 @@ export const getPostLoginRoute = (user: AuthUser | null | undefined): string => 
 
   if (isProviderRole(user.role)) {
     const normalizedRole = normalizeRole(user.role);
-    const onboardingStatus = String(user.onboardingStatus || '').toUpperCase();
 
     // Learners only need dashboard access
     if (normalizedRole === 'learner') {
@@ -133,7 +134,7 @@ export const getPostLoginRoute = (user: AuthUser | null | undefined): string => 
     }
 
     // Step 2: Onboarding form not submitted → setup wizard
-    if (onboardingStatus !== 'COMPLETED') {
+    if (!hasProviderSubmittedOnboarding(user)) {
       return '/onboarding/provider-setup';
     }
 
@@ -222,6 +223,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const currentUser = await meApi();
+      const providerId = extractProviderId(currentUser);
+      if (providerId) {
+        setStoredProviderId(providerId);
+      }
       setUser(currentUser);
       if (typeof window !== 'undefined') {
         window.sessionStorage.removeItem(authProbeBlockKey);
@@ -247,8 +252,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.sessionStorage.removeItem(authProbeBlockKey);
     }
 
+    const providerIdFromOtp = extractProviderId(otpUser);
+    if (providerIdFromOtp) {
+      setStoredProviderId(providerIdFromOtp);
+    }
+
     try {
       const currentUser = await meApi();
+      const providerIdFromMe = extractProviderId(currentUser);
+      if (providerIdFromMe) {
+        setStoredProviderId(providerIdFromMe);
+      }
       setUser(currentUser);
       return currentUser;
     } catch {
