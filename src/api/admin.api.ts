@@ -1016,8 +1016,8 @@ export type AdminPayoutRequest = {
 	}
 };
 
-export const getAdminVerifications = async (): Promise<ApiEnvelope<AdminUser[]>> => {
-	return (await client.get<ApiEnvelope<AdminUser[]>>('/v1/admin/verifications')).data;
+export const getAdminVerifications = async (all = false): Promise<ApiEnvelope<AdminUser[]>> => {
+	return (await client.get<ApiEnvelope<AdminUser[]>>(`/v1/admin/verifications${all ? '?all=true' : ''}`)).data;
 };
 
 export const getAdminVerificationDocuments = async (userId: string): Promise<ApiEnvelope<AdminVerificationDocument[]>> => {

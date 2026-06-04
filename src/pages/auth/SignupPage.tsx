@@ -166,6 +166,7 @@ export default function SignupPage() {
 	const [otpSent, setOtpSent] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [devOtp, setDevOtp] = useState<string | null>(null);
 	const [acceptedTerms, setAcceptedTerms] = useState(false);
 	const [providerAgreementsAccepted, setProviderAgreementsAccepted] = useState<Record<ProviderAgreementKey, boolean>>({
 		THERAPIST_IC_AGREEMENT: false,
@@ -306,13 +307,18 @@ export default function SignupPage() {
 		setError(null);
 		setLoading(true);
 		try {
-			await signupWithPhone(
+			const res = await signupWithPhone(
 				phone.trim(),
 				isCertificationContext
 					? { name: name.trim(), role: 'learner' }
 					: { name: name.trim(), role: isPatientLeadFlow ? 'patient' : role },
 			);
 			setOtpSent(true);
+			if (res?.devOtp) {
+				setDevOtp(res.devOtp);
+				setOtp(res.devOtp);
+				console.log('[DEV] OTP:', res.devOtp);
+			}
 		} catch (err) {
 			setError(getApiErrorMessage(err, 'Failed to send OTP'));
 		} finally {
@@ -542,18 +548,26 @@ export default function SignupPage() {
 						) : null}
 
 						{otpSent ? (
-							<Input
-								id="signup-otp"
-								label="OTP"
-								inputMode="numeric"
-								pattern="\\d{4}"
-								maxLength={4}
-								autoComplete="one-time-code"
-								placeholder="4-digit OTP"
-								value={otp}
-								onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
-								required
-							/>
+							<>
+								<Input
+									id="signup-otp"
+									label="OTP"
+									inputMode="numeric"
+									pattern="\\d{4}"
+									maxLength={4}
+									autoComplete="one-time-code"
+									placeholder="4-digit OTP"
+									value={otp}
+									onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
+									required
+								/>
+								{devOtp && (
+									<div className="flex items-center justify-between rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm">
+										<span className="font-mono font-bold text-yellow-800">🔑 Dev OTP: {devOtp}</span>
+										<button type="button" onClick={() => setDevOtp(null)} className="ml-3 text-xs text-yellow-600 underline hover:text-yellow-900">Hide</button>
+									</div>
+								)}
+							</>
 						) : null}
 
 						{!otpSent ? (

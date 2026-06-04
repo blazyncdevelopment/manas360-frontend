@@ -735,7 +735,30 @@ export interface AppointmentRequestItem {
   durationMinutes: number;
   createdAt: string;
   expiresAt: string | null;
+  // v3 match scores (populated from patient_provider_matches when available)
+  matchScore?: number | null;
+  matchBand?: string | null;
+  scoreExpertise?: number | null;
+  scoreCommunication?: number | null;
+  scoreQuality?: number | null;
 }
+
+export interface MatchBreakdown {
+  score: number | null;
+  expertise: number;
+  communication: number;
+  quality: number;
+  band: string;
+}
+
+export const fetchMatchBreakdown = async (patientId: string): Promise<MatchBreakdown | null> => {
+  try {
+    const response = await http.get<Envelope<MatchBreakdown>>(`/v1/provider/match-score/${patientId}`);
+    return unwrap<MatchBreakdown>(response.data);
+  } catch {
+    return null;
+  }
+};
 
 export const fetchPendingAppointmentRequests = async (): Promise<AppointmentRequestItem[]> => {
   const response = await http.get<Envelope<AppointmentRequestItem[]>>('/v1/provider/appointments/pending');

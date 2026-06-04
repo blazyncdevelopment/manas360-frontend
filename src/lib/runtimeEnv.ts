@@ -70,11 +70,7 @@ export const isNativeApp = (): boolean => {
 };
 
 export const getApiBaseUrl = (): string => {
-  const appEnv = String(import.meta.env.VITE_APP_ENV || '').trim().toLowerCase();
-  if (import.meta.env.DEV || appEnv === 'development') {
-    return 'https://api.manas360.com/api';
-  }
-
+  // 1. Explicit env var always wins (set in .env.local for local dev)
   const envBase = import.meta.env.VITE_API_BASE_URL?.trim();
   if (envBase) {
     return envBase;
@@ -85,10 +81,12 @@ export const getApiBaseUrl = (): string => {
     return envApi;
   }
 
+  // 2. Native app uses hardcoded production URL
   if (isNativeApp()) {
     return APP_API_BASE_URL;
   }
 
+  // 3. Default: use Vite proxy (works for both dev and prod)
   return '/api';
 };
 

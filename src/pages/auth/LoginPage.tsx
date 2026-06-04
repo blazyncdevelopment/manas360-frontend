@@ -63,6 +63,7 @@ export default function LoginPage() {
 	const [otpSent, setOtpSent] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [devOtp, setDevOtp] = useState<string | null>(null);
 
 	const resolvePostLoginRouteWithSubscription = async (candidate: string | null, role: string | undefined, userOverride?: any) => {
 		const effectiveUser = userOverride || user;
@@ -113,8 +114,13 @@ export default function LoginPage() {
 		setError(null);
 		setLoading(true);
 		try {
-			await signupWithPhone(phone.trim());
+			const res = await signupWithPhone(phone.trim());
 			setOtpSent(true);
+			if (res?.devOtp) {
+				setDevOtp(res.devOtp);
+				setOtp(res.devOtp);
+				console.log('[DEV] OTP:', res.devOtp);
+			}
 		} catch (err) {
 			setError(getApiErrorMessage(err, 'Failed to send OTP'));
 		} finally {
@@ -129,15 +135,15 @@ export default function LoginPage() {
 		try {
 			const guestGameToken = localStorage.getItem('guest_game_token') || undefined;
 			const cachedScreening = readCachedClinicalScreening();
-			const result = await verifyPhoneSignupOtp(phone.trim(), otp.trim(), cachedScreening
-				? {
-					acceptedTerms: true,
+			const result = await verifyPhoneSignupOtp(phone.trim(), otp.trim(), {
+				acceptedTerms: true,
+				...(cachedScreening ? {
 					clinicalScreening: {
 						type: cachedScreening.type,
 						answers: cachedScreening.answers,
 					},
-				}
-				: undefined, guestGameToken);
+				} : {}),
+			}, guestGameToken);
 			if (guestGameToken) {
 				localStorage.removeItem('guest_game_token');
 			}
@@ -180,6 +186,7 @@ export default function LoginPage() {
 			const postLoginRoute = await resolvePostLoginRouteWithSubscription(candidate, resolvedUser?.role, resolvedUser);
 			navigate(postLoginRoute, { replace: true });
 		} catch (err: any) {
+			console.error('[LOGIN] verifyOtp error:', err?.response?.status, JSON.stringify(err?.response?.data));
 			const message = String(err?.response?.data?.message || '');
 			if (Number(err?.response?.status) === 422 && message.toLowerCase().includes('accept terms')) {
 				const returnToCandidate = from || afterLogin || next || '/certifications';
@@ -243,19 +250,33 @@ export default function LoginPage() {
 							/>
 
 							{otpSent ? (
-								<Input
-									id="login-otp"
-									label="One-Time Code"
-									inputMode="numeric"
-									pattern="\\d{4}"
-									maxLength={4}
-									autoComplete="one-time-code"
-									placeholder="4-digit OTP"
-									helperText="We'll send you a one-time code"
-									value={otp}
-									onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
-									required
-								/>
+								<>
+									<Input
+										id="login-otp"
+										label="One-Time Code"
+										inputMode="numeric"
+										pattern="\\d{4}"
+										maxLength={4}
+										autoComplete="one-time-code"
+										placeholder="4-digit OTP"
+										helperText="Check your WhatsApp for the OTP"
+										value={otp}
+										onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
+										required
+									/>
+									{devOtp && (
+										<div className="flex items-center justify-between rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm">
+											<span className="font-mono font-bold text-yellow-800">🔑 Dev OTP: {devOtp}</span>
+											<button
+												type="button"
+												onClick={() => setDevOtp(null)}
+												className="ml-3 text-yellow-600 hover:text-yellow-900 text-xs underline"
+											>
+												Hide
+											</button>
+										</div>
+									)}
+								</>
 							) : null}
 
 							{!otpSent ? (

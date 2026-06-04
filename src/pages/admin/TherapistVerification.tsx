@@ -11,27 +11,34 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import toast from 'react-hot-toast';
 
+const ROLE_LABELS: Record<string, { label: string; color: string }> = {
+  THERAPIST:    { label: 'Therapist',    color: 'bg-teal-50 text-teal-700 border-teal-100' },
+  PSYCHOLOGIST: { label: 'Psychologist', color: 'bg-blue-50 text-blue-700 border-blue-100' },
+  PSYCHIATRIST: { label: 'Psychiatrist', color: 'bg-purple-50 text-purple-700 border-purple-100' },
+  COACH:        { label: 'Coach',        color: 'bg-amber-50 text-amber-700 border-amber-100' },
+};
+
 export default function TherapistVerification() {
   const [verifications, setVerifications] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
   const [selectedDocs, setSelectedDocs] = useState<AdminVerificationDocument[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDocLoading, setIsDocLoading] = useState(false);
   const [selectedTherapistName, setSelectedTherapistName] = useState('');
 
   const fetchVerifications = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await getAdminVerifications();
-      // Only show PENDING verifications by default as per requirement
-      const pending = (res.data || []).filter(u => u.onboardingStatus === 'PENDING');
-      setVerifications(pending);
+      const res = await getAdminVerifications(showAll);
+      setVerifications(res.data || []);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to load pending verifications');
+      toast.error('Failed to load verifications');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showAll]);
 
   useEffect(() => {
     fetchVerifications();
@@ -74,13 +81,20 @@ export default function TherapistVerification() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Therapist Verification</h1>
-          <p className="text-sm text-gray-500 mt-1 font-medium">Review and validate clinical credentials for platform onboarding.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Provider Verification</h1>
+          <p className="text-sm text-gray-500 mt-1 font-medium">Review and approve clinical credentials for all provider types (Therapist, Psychologist, Psychiatrist, Coach).</p>
         </div>
         <div className="flex items-center gap-3">
-           <Badge variant="soft" className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50">
-             Clinical Gatekeeper
-           </Badge>
+          <button
+            type="button"
+            onClick={() => setShowAll(v => !v)}
+            className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${showAll ? 'border-slate-700 bg-slate-700 text-white' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'}`}
+          >
+            {showAll ? 'Showing All' : 'Show All Providers'}
+          </button>
+          <Badge variant="soft" className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50">
+            Clinical Gatekeeper
+          </Badge>
         </div>
       </div>
 
@@ -93,8 +107,9 @@ export default function TherapistVerification() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100 text-[11px] font-bold uppercase text-gray-400 tracking-wider">
-                <th className="px-6 py-4">Therapist Name</th>
+                <th className="px-6 py-4">Provider Name</th>
                 <th className="px-6 py-4">Contact Info</th>
+                <th className="px-6 py-4">Role</th>
                 <th className="px-6 py-4 text-center">Status</th>
                 <th className="px-6 py-4">Joined Portal</th>
                 <th className="px-6 py-4 text-center">Credentials</th>
@@ -118,10 +133,20 @@ export default function TherapistVerification() {
                       <div className="font-bold text-gray-900">{v.firstName} {v.lastName}</div>
                       <div className="font-mono font-black text-gray-300 text-[10px]">ID:{v.id.slice(-8).toUpperCase()}</div>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">{v.email}</td>
+                    <td className="px-6 py-4 text-gray-600">
+                      <div>{v.email || '—'}</div>
+                      <div className="text-xs text-gray-400">{(v as any).phone || ''}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {(() => {
+                        const roleKey = String((v as any).role || 'THERAPIST').toUpperCase();
+                        const meta = ROLE_LABELS[roleKey] || ROLE_LABELS.THERAPIST;
+                        return <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${meta.color}`}>{meta.label}</span>;
+                      })()}
+                    </td>
                     <td className="px-6 py-4 text-center">
-                      <Badge variant="soft" className="text-[10px] font-black uppercase tracking-wider bg-orange-50 text-orange-600 border-orange-100">
-                        {v.onboardingStatus}
+                      <Badge variant="soft" className={`text-[10px] font-black uppercase tracking-wider ${(v as any).isTherapistVerified ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
+                        {(v as any).isTherapistVerified ? 'VERIFIED' : v.onboardingStatus}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-xs font-medium">
