@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ProviderSidebar } from './ProviderSidebar';
 import { useAuth } from '../../context/AuthContext';
+import { hasProviderSubmittedOnboarding } from '../../lib/providerOnboardingFlow';
 import PersistentVideoLayout from './PersistentVideoLayout';
 import { Lock, FileCheck, CreditCard, RefreshCw } from 'lucide-react';
 import { http } from '../../lib/http';
@@ -44,7 +45,8 @@ export const HubLayout = () => {
     location.pathname.includes('/dashboard');
 
   const needsPlatformFee = isProvider && !user?.platformAccessActive;
-  const needsVerification = isProvider && user?.isTherapistVerified === false;
+  const profileSubmitted = isProvider && hasProviderSubmittedOnboarding(user);
+  const needsVerification = isProvider && profileSubmitted && user?.isTherapistVerified === false;
 
   const showClinicalLockout = isProvider && isClinicalRoute && (needsPlatformFee || needsVerification);
 
@@ -136,10 +138,26 @@ export const HubLayout = () => {
                   </div>
 
                   <button
-                    onClick={() => navigate(needsPlatformFee ? '/provider/subscription' : '/onboarding/provider-setup')}
+                    onClick={() => {
+                      if (needsPlatformFee) {
+                        navigate('/provider/subscription');
+                        return;
+                      }
+                      if (!profileSubmitted) {
+                        navigate('/onboarding/provider-setup');
+                        return;
+                      }
+                      navigate('/provider/verification-pending');
+                    }}
                     className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                   >
-                    <span>{needsPlatformFee ? 'Pay Platform Fee to Start' : 'Complete Verification'}</span>
+                    <span>
+                      {needsPlatformFee
+                        ? 'Pay Platform Fee to Start'
+                        : !profileSubmitted
+                          ? 'Complete Profile Setup'
+                          : 'View Verification Status'}
+                    </span>
                   </button>
 
                   <button

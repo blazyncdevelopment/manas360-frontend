@@ -1,5 +1,5 @@
 /* Keep global font payload minimal to avoid blocking admin route rendering */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;500;700&family=Noto+Sans+Kannada:wght@400;500;700&family=Noto+Sans+Tamil:wght@400;500;700&family=Noto+Sans+Telugu:wght@400;500;700&display=swap');
 
 /* Tailwind CSS */
 @tailwind base;
@@ -73,7 +73,15 @@
 
   body {
     @apply font-sans text-wellness-text bg-wellness-bg overflow-x-hidden antialiased;
-    font-family: 'DM Sans', 'Inter', 'Outfit', sans-serif;
+    font-family:
+      'DM Sans',
+      'Noto Sans Devanagari',
+      'Noto Sans Kannada',
+      'Noto Sans Tamil',
+      'Noto Sans Telugu',
+      'Outfit',
+      system-ui,
+      sans-serif;
     font-size: 1rem;
     background:
       radial-gradient(900px 480px at 10% -10%, rgba(133, 167, 154, 0.16), transparent 62%),

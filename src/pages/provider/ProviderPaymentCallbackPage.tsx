@@ -6,8 +6,13 @@ import {
 	verifyPlatformPaymentSettled,
 	type PlatformPaymentVerificationOutcome,
 } from '../../api/providerOnboarding';
+import { me } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
-import { setStoredPlatformTransactionId, getStoredPlatformTransactionId } from '../../utils/providerOnboardingStorage';
+import {
+	setStoredPlatformTransactionId,
+	getStoredPlatformTransactionId,
+	clearOnboardingSubmittedFlag,
+} from '../../utils/providerOnboardingStorage';
 
 type VerifyState = 'idle' | 'verifying' | 'success' | 'timeout' | 'failed' | 'no_provider';
 
@@ -62,6 +67,18 @@ export default function ProviderPaymentCallbackPage() {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	const { checkAuth } = useAuth();
+
+	const clearProfileSubmittedForCurrentUser = async () => {
+		try {
+			const freshUser = await me();
+			const userKey = String(freshUser.id || freshUser.phone || freshUser.email || '').trim();
+			if (userKey) {
+				clearOnboardingSubmittedFlag(userKey);
+			}
+		} catch {
+			// ignore — route guard will still send user to profile setup
+		}
+	};
 	const [verifyState, setVerifyState] = useState<VerifyState>('idle');
 	const [message, setMessage] = useState('Setting up your provider access…');
 	const [errorDetail, setErrorDetail] = useState<string | null>(null);
@@ -115,6 +132,7 @@ export default function ProviderPaymentCallbackPage() {
 			setVerifyState('success');
 			setMessage('Access activated! Taking you to profile setup…');
 			await checkAuth({ force: true });
+			await clearProfileSubmittedForCurrentUser();
 			window.setTimeout(() => {
 				navigate('/onboarding/provider-setup', { replace: true });
 			}, 1200);
@@ -198,7 +216,11 @@ export default function ProviderPaymentCallbackPage() {
 							</button>
 							<button
 								type="button"
-								onClick={() => navigate('/onboarding/provider-setup', { replace: true })}
+								onClick={() => {
+									void clearProfileSubmittedForCurrentUser().finally(() => {
+										navigate('/onboarding/provider-setup', { replace: true });
+									});
+								}}
 								className="w-full rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
 							>
 								Continue to Profile Setup →

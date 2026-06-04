@@ -161,8 +161,8 @@ const ProviderDashboard = lazy(() => import('./pages/provider/Dashboard/Provider
 const ProviderPortalPage = lazy(() => import('./pages/provider/ProviderPortalPage'));
 const ProviderLandingPage = lazy(() => import('./pages/provider/ProviderLandingPage'));
 const ProviderSubscriptionPage = lazy(() => import('./pages/provider/ProviderSubscriptionPage'));
-const ProviderPaymentCallbackPage = lazy(() => import('./pages/provider/ProviderPaymentCallbackPage'));
 const ProviderSubscriptionAddonsPage = lazy(() => import('./pages/provider/ProviderSubscriptionAddonsPage'));
+const ProviderPaymentCallbackPage = lazy(() => import('./pages/provider/ProviderPaymentCallbackPage'));
 const AppointmentRequestsPage = lazy(() => import('./pages/provider/AppointmentRequests'));
 const ProviderMarketplacePage = lazy(() => import('./pages/provider/ProviderMarketplacePage'));
 const ProviderOnboardingPage = lazy(() => import('./pages/provider/ProviderOnboardingPage'));
@@ -468,6 +468,10 @@ function App() {
                         }
                       />
                       <Route
+                        path="payment-callback"
+                        element={<ProviderPaymentCallbackPage />}
+                      />
+                      <Route
                         path="plans"
                         element={
                           <ProtectedRoute allowedRoles={['therapist', 'psychiatrist', 'psychologist', 'coach']}>
@@ -535,7 +539,6 @@ function App() {
                       }
                     />
                     <Route path="/payment/status" element={<PaymentStatusPage />} />
-                    <Route path="/provider/payment-callback" element={<ProviderPaymentCallbackPage />} />
                     <Route path="/hit-a-sixer" element={<HitASixerGamePage />} />
                     <Route
                       path="/plans"

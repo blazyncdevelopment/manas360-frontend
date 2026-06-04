@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Clock, AlertCircle, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import { hasProviderSubmittedOnboarding } from '../../../lib/providerOnboardingFlow';
 import { useProviderDashboard } from '../../../hooks/useProviderDashboard';
 import { useQuery } from '@tanstack/react-query';
 import { fetchProviderEarnings, fetchProviderMyQr, fetchProviderMyQrAnalytics } from '../../../api/provider';
@@ -208,7 +209,7 @@ export default function ProviderDashboard() {
 
   // Account status steps
   const platformPaid = Boolean(user?.platformAccessActive);
-  const onboardingDone = String(user?.onboardingStatus || '').toUpperCase() === 'COMPLETED';
+  const onboardingDone = hasProviderSubmittedOnboarding(user);
   const verified = Boolean(user?.isTherapistVerified);
   const steps = [
     { label: 'Platform fee paid', done: platformPaid, route: '/provider/subscription' },

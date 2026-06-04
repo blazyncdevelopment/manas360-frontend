@@ -12,6 +12,14 @@ const STORAGE_KEY = "manas360.selectedLanguage";
 
 const VALID_LANGUAGES: readonly AppLanguage[] = ["English", "Hindi", "Kannada", "Tamil", "Telugu"];
 
+const languageToHtmlLang: Record<AppLanguage, string> = {
+  English: "en",
+  Hindi: "hi",
+  Kannada: "kn",
+  Tamil: "ta",
+  Telugu: "te",
+};
+
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
 const isValidLanguage = (value: string): value is AppLanguage => {
@@ -34,6 +42,13 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(STORAGE_KEY, selectedLanguage);
+  }, [selectedLanguage]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    root.setAttribute("lang", languageToHtmlLang[selectedLanguage] ?? "en");
+    root.setAttribute("data-app-language", selectedLanguage);
   }, [selectedLanguage]);
 
   const value = useMemo<LanguageContextValue>(

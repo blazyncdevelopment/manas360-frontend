@@ -774,7 +774,6 @@ export default function SessionsPage() {
   };
 
   const nextSession = upcoming[0];
-  const nextSessionProviderName = nextSession?.provider?.name || 'your provider';
   const isLockedSession = Boolean(nextSession?.isLocked ?? nextSession?.is_locked);
 
   const previousConsultedProviders = useMemo(() => {

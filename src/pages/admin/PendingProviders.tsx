@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getAdminUsers, approveProvider, type AdminUser } from '../../api/admin.api';
+import { getAdminUsers, approveProvider, updateAdminVerification, type AdminUser } from '../../api/admin.api';
 import { getApiErrorMessage } from '../../api/auth';
 
 const formatDate = (value: string | undefined | null): string => {
@@ -15,6 +15,7 @@ export default function AdminPendingProvidersPage() {
   const [providers, setProviders] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>('therapist');
@@ -24,8 +25,11 @@ export default function AdminPendingProvidersPage() {
     setError(null);
     try {
       const response = await getAdminUsers({ page: 1, limit: 100, role: roleFilter as AdminUser['role'], status: 'active' });
-      // Filter to providers with onboardingStatus PENDING (field may not yet be returned; show all non-verified)
-      const pendingList = response.data.data.filter((u) => !u.isTherapistVerified);
+      const pendingList = response.data.data.filter((u) => {
+        if (u.isTherapistVerified) return false;
+        const status = String(u.onboardingStatus || '').toUpperCase();
+        return status === 'PENDING' || status === 'COMPLETED';
+      });
       setProviders(pendingList);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Unable to load providers.'));
@@ -38,6 +42,24 @@ export default function AdminPendingProvidersPage() {
     void loadProviders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleFilter]);
+
+  const onReject = async (providerId: string, providerName: string) => {
+    const reason = window.prompt(`Enter rejection reason for ${providerName}:`) || '';
+    if (!reason.trim()) return;
+
+    setRejectingId(providerId);
+    setError(null);
+    setSuccess(null);
+    try {
+      await updateAdminVerification(providerId, 'reject', reason.trim());
+      setSuccess(`${providerName} has been rejected.`);
+      await loadProviders();
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Rejection failed. Please try again.'));
+    } finally {
+      setRejectingId(null);
+    }
+  };
 
   const onApprove = async (providerId: string, providerName: string) => {
     setApprovingId(providerId);
@@ -61,7 +83,7 @@ export default function AdminPendingProvidersPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#5C7A72]">Admin · Provider Management</p>
         <h1 className="mt-3 text-3xl font-semibold text-[#23313A]">Pending Provider Approvals</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Review providers who have submitted their onboarding application and are awaiting credential verification. Approving a provider sets their onboarding status to <strong>COMPLETED</strong> and unlocks their dashboard.
+          Review providers who have submitted their 7-step onboarding application and are awaiting credential verification. Approving unlocks their provider dashboard.
         </p>
       </section>
 
@@ -122,6 +144,7 @@ export default function AdminPendingProvidersPage() {
                 providers.map((provider) => {
                   const name = `${provider.firstName ?? ''} ${provider.lastName ?? ''}`.trim() || 'Unnamed Provider';
                   const isApproving = approvingId === provider.id;
+                  const isRejecting = rejectingId === provider.id;
                   return (
                     <tr key={provider.id} className="hover:bg-[#F9FBF8] transition-colors">
                       <td className="px-5 py-4">
@@ -159,21 +182,31 @@ export default function AdminPendingProvidersPage() {
                         {provider.isTherapistVerified ? (
                           <span className="text-xs text-slate-400">Already approved</span>
                         ) : (
-                          <button
-                            type="button"
-                            disabled={isApproving}
-                            onClick={() => void onApprove(provider.id, name)}
-                            className="rounded-lg bg-[#285947] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#1f4437] disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {isApproving ? (
-                              <span className="flex items-center gap-1.5">
-                                <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                                Approving…
-                              </span>
-                            ) : (
-                              'Approve & Activate'
-                            )}
-                          </button>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              disabled={isApproving || isRejecting}
+                              onClick={() => void onApprove(provider.id, name)}
+                              className="rounded-lg bg-[#285947] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#1f4437] disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {isApproving ? (
+                                <span className="flex items-center gap-1.5">
+                                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                  Approving…
+                                </span>
+                              ) : (
+                                'Approve'
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isApproving || isRejecting}
+                              onClick={() => void onReject(provider.id, name)}
+                              className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {isRejecting ? 'Rejecting…' : 'Reject'}
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>

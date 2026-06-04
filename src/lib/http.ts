@@ -125,6 +125,15 @@ if (http && http.interceptors && http.interceptors.request && typeof http.interc
 			config.headers = Object.assign(config.headers || {}, { 'x-csrf-token': csrfToken });
 		}
 
+		// Must run after header merges — axios defaults Content-Type to application/json which breaks FormData uploads.
+		if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+			if (config.headers?.set) {
+				config.headers.set('Content-Type', false);
+			} else if (config.headers) {
+				delete config.headers['Content-Type'];
+			}
+		}
+
 		return config;
 	});
 }

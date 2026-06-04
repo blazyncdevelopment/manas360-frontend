@@ -1,6 +1,7 @@
 const PROVIDER_ID_KEY = 'manas360_provider_onboarding_id';
 const PROVIDER_TXN_KEY = 'manas360_provider_platform_txn';
 const PROVIDER_FEE_VERIFIED_KEY = 'manas360_provider_fee_verified_at';
+const ONBOARDING_SUBMITTED_PREFIX = 'manas360_provider_onboarding_submitted_';
 
 /** TTL in milliseconds for the client-side fee-verified flag (10 minutes). */
 const FEE_VERIFIED_TTL_MS = 10 * 60 * 1000;
@@ -87,6 +88,44 @@ export const isFeeVerifiedFlagSet = (): boolean => {
 export const clearFeeVerifiedFlag = (): void => {
 	if (typeof window === 'undefined') return;
 	sessionStorage.removeItem(PROVIDER_FEE_VERIFIED_KEY);
+};
+
+const onboardingSubmittedKey = (userKey: string): string =>
+	`${ONBOARDING_SUBMITTED_PREFIX}${userKey.trim()}`;
+
+/** Set after successful POST /v1/provider/onboarding (survives refresh until cleared). */
+export const setOnboardingSubmittedFlag = (userKey: string): void => {
+	if (typeof window === 'undefined' || !userKey.trim()) return;
+	const key = onboardingSubmittedKey(userKey);
+	try {
+		sessionStorage.setItem(key, '1');
+		localStorage.setItem(key, '1');
+	} catch {
+		// ignore
+	}
+};
+
+export const isOnboardingSubmittedFlagSet = (userKey: string): boolean => {
+	if (typeof window === 'undefined' || !userKey.trim()) return false;
+	const key = onboardingSubmittedKey(userKey);
+	try {
+		if (sessionStorage.getItem(key) === '1') return true;
+		return localStorage.getItem(key) === '1';
+	} catch {
+		return false;
+	}
+};
+
+/** Clears profile-submitted hint — call when platform fee activates so user can fill the 7-step form. */
+export const clearOnboardingSubmittedFlag = (userKey: string): void => {
+	if (typeof window === 'undefined' || !userKey.trim()) return;
+	const key = onboardingSubmittedKey(userKey);
+	try {
+		sessionStorage.removeItem(key);
+		localStorage.removeItem(key);
+	} catch {
+		// ignore
+	}
 };
 
 export const extractProviderId = (payload: unknown): string | null => {

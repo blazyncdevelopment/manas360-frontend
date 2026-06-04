@@ -175,7 +175,6 @@ export default function SignupPage() {
 	const [phone, setPhone] = useState('');
 	const [role, setRole] = useState<SignupRole>(initialRole);
 	const [otp, setOtp] = useState('');
-	const [devOtp, setDevOtp] = useState<string | null>(null);
 	const [otpSent, setOtpSent] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -345,7 +344,6 @@ export default function SignupPage() {
 					if (response.provider_id) {
 						setStoredProviderId(response.provider_id);
 					}
-					setDevOtp(response.devOtp || null);
 					if (response.devOtp) {
 						setOtp(response.devOtp);
 					}
@@ -358,7 +356,6 @@ export default function SignupPage() {
 							setStoredProviderId(conflictProviderId);
 						}
 						const extractedOtp = extractDevOtp(conflictPayload);
-						setDevOtp(extractedOtp || null);
 						if (extractedOtp) {
 							setOtp(extractedOtp);
 						}
@@ -376,7 +373,6 @@ export default function SignupPage() {
 					? { name: name.trim(), role: 'learner' }
 					: { name: name.trim(), role: isPatientLeadFlow ? 'patient' : role },
 			);
-			setDevOtp(response.devOtp || null);
 			setOtpSent(true);
 			if (response.devOtp) {
 				setOtp(response.devOtp);
@@ -691,16 +687,7 @@ export default function SignupPage() {
 									onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, isProviderFlow ? 6 : 4))}
 									required
 								/>
-								{/* {devOtp ? (
-									<div
-										role="status"
-										className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
-									>
-										<p className="font-semibold">Development OTP</p>
-										<p className="mt-1 font-mono text-lg tracking-widest">{devOtp}</p>
-										<p className="mt-1 text-xs text-amber-800">Use this code if SMS is unavailable in your environment.</p>
-									</div>
-								) : null} */}
+
 							</>
 						) : null}
 

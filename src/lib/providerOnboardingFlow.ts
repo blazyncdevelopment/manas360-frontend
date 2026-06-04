@@ -1,5 +1,8 @@
 import type { AuthUser } from '../api/auth';
-import { isFeeVerifiedFlagSet } from '../utils/providerOnboardingStorage';
+import { isFeeVerifiedFlagSet, isOnboardingSubmittedFlagSet } from '../utils/providerOnboardingStorage';
+
+const providerUserKey = (user: AuthUser): string =>
+	String(user.id || user.phone || user.email || '').trim();
 
 /**
  * Describes the current position in the provider onboarding journey.
@@ -26,6 +29,34 @@ export const isProviderOnboardingRole = (role: unknown): boolean =>
 	PROVIDER_ROLES.has(String(role || '').toLowerCase());
 
 /**
+ * True only after the 7-step profile form was submitted (POST /v1/provider/onboarding).
+ * Do not treat bare onboardingStatus "PENDING" as submitted — the API may return PENDING
+ * right after platform fee payment before the profile form is filled.
+ */
+export const hasProviderSubmittedOnboarding = (user: AuthUser | null | undefined): boolean => {
+	if (!user) return false;
+
+	const status = String(user.onboardingStatus || '').toUpperCase();
+	if (status === 'REJECTED') return false;
+
+	if (user.providerOnboardingCompleted === true) return true;
+
+	const key = providerUserKey(user);
+	if (key && isOnboardingSubmittedFlagSet(key)) return true;
+
+	if (status === 'COMPLETED') return true;
+
+	return false;
+};
+
+/** Platform fee paid but the 7-step form is not yet submitted. */
+export const needsProviderOnboardingForm = (user: AuthUser | null | undefined): boolean => {
+	if (!user || !isProviderOnboardingRole(user.role)) return false;
+	if (!user.platformAccessActive && !isFeeVerifiedFlagSet()) return false;
+	return !hasProviderSubmittedOnboarding(user);
+};
+
+/**
  * Resolves the current step in the provider onboarding flow based on the
  * authenticated user's state. This is the single source of truth for navigation.
  *
@@ -46,10 +77,8 @@ export const resolveProviderFlowStep = (
 		return 'subscription';
 	}
 
-	const onboardingStatus = String(user.onboardingStatus || '').toUpperCase();
-
-	// Fee paid (or optimistically flagged) → go to profile setup
-	if (onboardingStatus !== 'COMPLETED') {
+	// Fee paid (or optimistically flagged) → profile setup until form is submitted
+	if (needsProviderOnboardingForm(user)) {
 		return 'setup';
 	}
 

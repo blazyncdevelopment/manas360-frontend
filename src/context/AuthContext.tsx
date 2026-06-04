@@ -8,6 +8,7 @@ import {
 } from '../api/auth';
 import { clearAuthTokens, hasStoredAccessToken } from '../utils/authToken';
 import { extractProviderId, setStoredProviderId } from '../utils/providerOnboardingStorage';
+import { hasProviderSubmittedOnboarding } from '../lib/providerOnboardingFlow';
 
 export type AppRole =
   | 'patient'
@@ -121,7 +122,6 @@ export const getPostLoginRoute = (user: AuthUser | null | undefined): string => 
 
   if (isProviderRole(user.role)) {
     const normalizedRole = normalizeRole(user.role);
-    const onboardingStatus = String(user.onboardingStatus || '').toUpperCase();
 
     // Learners only need dashboard access
     if (normalizedRole === 'learner') {
@@ -134,7 +134,7 @@ export const getPostLoginRoute = (user: AuthUser | null | undefined): string => 
     }
 
     // Step 2: Onboarding form not submitted → setup wizard
-    if (onboardingStatus !== 'COMPLETED') {
+    if (!hasProviderSubmittedOnboarding(user)) {
       return '/onboarding/provider-setup';
     }
 
