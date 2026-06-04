@@ -1379,7 +1379,7 @@ export default function SessionsPage() {
                 <div className="rounded-2xl bg-white/90 p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-teal-700/70">Communication Preference</p>
                   <p className="mt-1 text-sm font-semibold text-charcoal">
-                    {smartMatchSummary.preferences?.language || 'Any language'}
+                    {({'en':'English','hi':'Hindi','kn':'Kannada','ta':'Tamil','te':'Telugu','mr':'Marathi','bn':'Bengali','gu':'Gujarati'} as Record<string,string>)[smartMatchSummary.preferences?.language || ''] || smartMatchSummary.preferences?.language || 'Any language'}
                   </p>
                   <p className="text-sm text-charcoal/70">{smartMatchSummary.preferences?.mode || 'Any mode'}</p>
                 </div>

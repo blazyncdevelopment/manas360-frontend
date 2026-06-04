@@ -236,17 +236,15 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
                 <button
                   key={slot.startTime}
                   onClick={() => {
-                    if (slot.availableCount === 0 || timeSlotsLoading) return;
+                    if (timeSlotsLoading) return;
                     setSelectedTime(slot.startTime);
                     onDateTimeSelect(selectedDate, slot.startTime);
                   }}
-                  disabled={slot.availableCount === 0 || timeSlotsLoading}
+                  disabled={timeSlotsLoading}
                   className={`w-full rounded-lg border px-4 py-3 text-left transition-all ${
                     selectedTime === slot.startTime
                       ? 'border-teal-500 bg-teal-50'
-                      : slot.availableCount === 0
-                        ? 'border-calm-sage/15 bg-calm-sage/5 opacity-60 cursor-not-allowed'
-                        : 'border-calm-sage/20 hover:border-teal-300 hover:bg-teal-50/30'
+                      : 'border-calm-sage/20 hover:border-teal-300 hover:bg-teal-50/30'
                   }`}
                 >
                   <div className="flex items-center justify-between">

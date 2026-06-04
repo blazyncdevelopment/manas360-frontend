@@ -171,14 +171,20 @@ export default function PricingPage() {
   const hasPaidActiveSubscription = subscriptionActive && !onFreePlan;
 
   const activePlanId = useMemo(() => {
+    // Subscription API result is always fresher than the JWT — prefer it when it
+    // shows a paid plan, to avoid stale "free" from auth context overriding it.
+    const fromApi = resolveActivePatientPlanId(subscription);
+    if (fromApi && fromApi !== 'free') return fromApi;
+
     if (user?.patientSubscriptionPlan) {
       const fromAuth = resolveActivePatientPlanId({
         planKey: user.patientSubscriptionPlan,
         status: 'active',
       });
-      if (fromAuth) return fromAuth;
+      if (fromAuth && fromAuth !== 'free') return fromAuth;
     }
-    return resolveActivePatientPlanId(subscription);
+
+    return fromApi ?? 'free';
   }, [user?.patientSubscriptionPlan, subscription]);
 
   const renewalLabel = useMemo(() => {

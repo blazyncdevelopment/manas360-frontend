@@ -9,11 +9,32 @@ interface MarketplaceLead {
   id: string;
   leadType: string;
   matchScore: number | null;
+  matchBand?: string | null;
+  scoreExpertise?: number | null;
+  scoreCommunication?: number | null;
+  scoreQuality?: number | null;
+  issue?: string[];
+  quality?: number;
   basePrice: number;
   discount: number;
   finalPrice: number;
   createdAt: string;
 }
+
+const ScoreBar = ({ label, value, max, color }: { label: string; value: number | null | undefined; max: number; color: string }) => {
+  const pct = value != null ? Math.round((value / max) * 100) : 0;
+  return (
+    <div className="space-y-0.5">
+      <div className="flex justify-between text-[10px] font-semibold text-slate-500">
+        <span>{label}</span>
+        <span>{value ?? '—'}/{max}</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+        <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+};
 
 interface LeadStats {
   currentPlan: string;
@@ -41,7 +62,7 @@ export default function ProviderMarketplacePage() {
   const isPlatformActive = user?.platformAccessActive;
   const leadsRemaining = stats?.leadsRemaining ?? 0;
   const isQuotaExhausted = leadsRemaining === 0;
-  const canPurchase = isPlatformActive && isQuotaExhausted;
+  const canPurchase = Boolean(isPlatformActive); // Allow purchase anytime with active platform
 
   useEffect(() => {
     Promise.all([
@@ -131,26 +152,13 @@ export default function ProviderMarketplacePage() {
 
       <div className="mx-auto max-w-7xl px-6 mt-10">
         
-        {/* Requirement Banner */}
-        {!canPurchase && isPlatformActive && (
-          <div className="mb-10 p-6 rounded-3xl bg-amber-50 border border-amber-200 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm shadow-amber-200/50">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600">
-                <AlertCircle className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-amber-900 leading-tight">Weekly Quota Detected</h3>
-                <p className="text-sm text-amber-700 font-medium mt-0.5">
-                  Finish your {leadsRemaining} remaining weekly leads before purchasing one-time add-ons.
-                </p>
-              </div>
-            </div>
-            <button 
-              onClick={() => navigate('/provider/dashboard')}
-              className="px-6 py-2.5 rounded-xl bg-amber-600 text-white font-black text-sm hover:bg-amber-700 transition"
-            >
-               View Current Leads →
-            </button>
+        {/* Info Banner: show remaining weekly leads as info only */}
+        {isPlatformActive && !isQuotaExhausted && (
+          <div className="mb-6 p-4 rounded-2xl bg-teal-50 border border-teal-100 flex items-center gap-3">
+            <Info className="h-4 w-4 text-teal-600 flex-shrink-0" />
+            <p className="text-sm text-teal-800 font-medium">
+              You have <strong>{leadsRemaining}</strong> free weekly leads remaining. Marketplace leads are additional one-time purchases.
+            </p>
           </div>
         )}
 
@@ -237,6 +245,25 @@ export default function ProviderMarketplacePage() {
                           </div>
                         )}
                       </div>
+
+                      {/* V3 Match Scores */}
+                      {(lead.scoreExpertise != null || lead.scoreCommunication != null || lead.scoreQuality != null) && (
+                        <div className="mb-5 space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Match Breakdown (v3)</p>
+                          <ScoreBar label="Expertise" value={lead.scoreExpertise} max={40} color="bg-violet-500" />
+                          <ScoreBar label="Communication" value={lead.scoreCommunication} max={35} color="bg-sky-500" />
+                          <ScoreBar label="Quality" value={lead.scoreQuality} max={25} color="bg-amber-500" />
+                        </div>
+                      )}
+                      {lead.issue && lead.issue.length > 0 && (
+                        <div className="mb-4 flex flex-wrap gap-1">
+                          {lead.issue.map((tag: string) => (
+                            <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 font-semibold capitalize">
+                              {tag.replace(/_/g, ' ')}
+                            </span>
+                          ))}
+                        </div>
+                      )}
 
                       {/* Price Section */}
                       <div className="mb-8">

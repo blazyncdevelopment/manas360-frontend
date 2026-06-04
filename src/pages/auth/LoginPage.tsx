@@ -72,6 +72,7 @@ export default function LoginPage() {
 	const [otpSent, setOtpSent] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [devOtp, setDevOtp] = useState<string | null>(null);
 
 	const resolvePostLoginRouteWithSubscription = async (candidate: string | null, role: string | undefined, userOverride?: AuthUser | null) => {
 		const effectiveUser = userOverride || user;
@@ -144,6 +145,7 @@ export default function LoginPage() {
 			setOtpSent(true);
 			if (response?.devOtp) {
 				setOtp(response.devOtp);
+				setDevOtp(response.devOtp);
 				console.log('[DEV] OTP:', response.devOtp);
 			}
 		} catch (err) {
@@ -307,12 +309,17 @@ export default function LoginPage() {
 										maxLength={4}
 										autoComplete="one-time-code"
 										placeholder="4-digit OTP"
-										helperText="Enter the code sent to your phone"
+										helperText="Enter the code sent to your WhatsApp"
 										value={otp}
 										onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
 										required
 									/>
-
+									{devOtp && (
+										<div className="mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-center">
+											<p className="text-[11px] text-amber-600 font-medium uppercase tracking-wide">Dev OTP</p>
+											<p className="text-xl font-mono font-bold text-amber-800 tracking-[0.3em]">{devOtp}</p>
+										</div>
+									)}
 								</>
 							) : null}
 

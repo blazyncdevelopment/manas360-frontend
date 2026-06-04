@@ -90,15 +90,6 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 
 		if (isPaymentPath || isLegalAcceptPath) return <>{children}</>;
 
-		// Allow checkout and payment pages through at any stage
-		const isPaymentPath = location.pathname.startsWith('/checkout') ||
-			location.pathname.startsWith('/universal/checkout') ||
-			location.pathname.startsWith('/universal/payment-success') ||
-			location.pathname.startsWith('/confirmation') ||
-			location.pathname.startsWith('/provider/plans');
-
-		if (isPaymentPath) return <>{children}</>;
-
 		// Step 1: Platform fee not paid
 		if (!user?.platformAccessActive) {
 			if (location.pathname !== subscriptionRoute) {

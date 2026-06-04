@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, Check, ChevronLeft, ChevronRight, Loader2, Users } from 'lucide-react';
 import { patientApi } from '../../../api/patient';
 
@@ -154,7 +154,17 @@ export default function ProviderSelectionStep({
   const [preferredMode, setPreferredMode] = useState('');
   const [matchContext, setMatchContext] = useState<'Standard' | 'Corporate' | 'Night' | 'Buddy' | 'Crisis'>('Standard');
 
-  const parsedConcerns = concernsInput
+  // Debounced values — only update after user stops typing for 600ms
+  const [debouncedConcerns, setDebouncedConcerns] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleConcernsChange = (value: string) => {
+    setConcernsInput(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedConcerns(value), 600);
+  };
+
+  const parsedConcerns = debouncedConcerns
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean)
@@ -199,7 +209,8 @@ export default function ProviderSelectionStep({
     };
 
     fetchProviders();
-  }, [availabilityPrefs, providerType, concernsInput, preferredLanguage, preferredMode, matchContext, presetEntryType, sourceFunnel, timezoneRegion, selectedDate]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(availabilityPrefs), providerType, debouncedConcerns, preferredLanguage, preferredMode, matchContext, presetEntryType, sourceFunnel, timezoneRegion, selectedDate?.toISOString()]);
 
   const toggleProvider = (providerId: string) => {
     setSelectedIds((prev) => {
@@ -292,12 +303,21 @@ export default function ProviderSelectionStep({
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-xs text-charcoal/70">
               Preferred Language
-              <input
+              <select
                 value={preferredLanguage}
                 onChange={(e) => setPreferredLanguage(e.target.value)}
-                placeholder="English"
                 className="mt-1 w-full rounded-lg border border-calm-sage/20 bg-white px-3 py-2 text-sm text-charcoal outline-none focus:border-teal-400"
-              />
+              >
+                <option value="">Any</option>
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="kn">Kannada</option>
+                <option value="ta">Tamil</option>
+                <option value="te">Telugu</option>
+                <option value="mr">Marathi</option>
+                <option value="bn">Bengali</option>
+                <option value="gu">Gujarati</option>
+              </select>
             </label>
             <label className="text-xs text-charcoal/70">
               Session Mode
@@ -317,7 +337,7 @@ export default function ProviderSelectionStep({
               Top Concerns (comma separated)
               <input
                 value={concernsInput}
-                onChange={(e) => setConcernsInput(e.target.value)}
+                onChange={(e) => handleConcernsChange(e.target.value)}
                 placeholder="anxiety, sleep, relationships"
                 className="mt-1 w-full rounded-lg border border-calm-sage/20 bg-white px-3 py-2 text-sm text-charcoal outline-none focus:border-teal-400"
               />

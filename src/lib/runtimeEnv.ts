@@ -133,8 +133,9 @@ export const AI_ENGINE_WS_URL =
   `${toWebsocketOrigin(stripTrailingApiSegment(FRONTEND_URL))}/ai-engine`;
 
 // ── Local tunnel config ───────────────────────────────────────
+// Set USE_LOCAL_TUNNEL = true only when testing via devtunnel
 const LOCAL_TUNNEL_BASE = 'https://9lc0tr74-4000.inc1.devtunnels.ms';
-const USE_LOCAL_TUNNEL = true; // flip to false when done testing
+const USE_LOCAL_TUNNEL = false;
 // ─────────────────────────────────────────────────────────────
 
 const getWindowCapacitor = (): any => {
@@ -166,11 +167,6 @@ export const isNativeApp = (): boolean => {
 export const getApiBaseUrl = (): string => {
   if (USE_LOCAL_TUNNEL) {
     return `${LOCAL_TUNNEL_BASE}/api`;
-  }
-
-  const appEnv = String(import.meta.env.VITE_APP_ENV || '').trim().toLowerCase();
-  if (import.meta.env.DEV || appEnv === 'development') {
-    return 'https://api.manas360.com/api';
   }
 
   const envBase = import.meta.env.VITE_API_BASE_URL?.trim();
