@@ -37,15 +37,15 @@ export const HubLayout = () => {
 
   const providerRoles = ['THERAPIST', 'PSYCHIATRIST', 'PSYCHOLOGIST', 'COACH'];
   const isProvider = providerRoles.includes(String(user?.role).toUpperCase());
-  const isClinicalRoute = location.pathname.includes('/patients') || 
-                          location.pathname.includes('/calendar') || 
-                          location.pathname.includes('/appointments') || 
-                          location.pathname.includes('/portal') ||
-                          location.pathname.includes('/dashboard');
+  const isClinicalRoute = location.pathname.includes('/patients') ||
+    location.pathname.includes('/calendar') ||
+    location.pathname.includes('/appointments') ||
+    location.pathname.includes('/portal') ||
+    location.pathname.includes('/dashboard');
 
   const needsPlatformFee = isProvider && !user?.platformAccessActive;
   const needsVerification = isProvider && user?.isTherapistVerified === false;
-  
+
   const showClinicalLockout = isProvider && isClinicalRoute && (needsPlatformFee || needsVerification);
 
   const handleHeaderLogout = async () => {
@@ -74,7 +74,7 @@ export const HubLayout = () => {
                 <span className="w-2 h-2 bg-[#4A6741] rounded-full animate-pulse"></span>
                 Online
               </div>
- 
+
               {/* Notification Bell */}
               <button className="relative p-2 rounded-lg hover:bg-gray-100 transition">
                 <span className="text-xl">🔔</span>
@@ -104,16 +104,16 @@ export const HubLayout = () => {
               <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm p-6">
                 <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
-                  
+
                   <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
                     <Lock className="w-10 h-10 text-emerald-600" />
                   </div>
-                  
+
                   <h2 className="text-2xl font-bold text-gray-900 mb-3">Clinical Dashboard Locked</h2>
                   <p className="text-gray-500 mb-8 leading-relaxed">
                     You currently have certification-only access. To unlock lead matching, patient calendar, and full clinical tools, you must complete the clinical verification process.
                   </p>
-                  
+
                   <div className="space-y-4 mb-8 text-left bg-gray-50 p-4 rounded-xl">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${!needsPlatformFee ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-400'}`}>

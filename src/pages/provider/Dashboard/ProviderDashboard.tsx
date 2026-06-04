@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { CheckCircle, Clock, AlertCircle, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { useProviderDashboard } from '../../../hooks/useProviderDashboard';
 import { useQuery } from '@tanstack/react-query';
@@ -205,8 +206,66 @@ export default function ProviderDashboard() {
   const todaySessions = data?.todaySessions || [];
   const availableMinor = Math.max(0, Number(earningsQuery.data?.summary?.availableBalanceMinor ?? 0));
 
+  // Account status steps
+  const platformPaid = Boolean(user?.platformAccessActive);
+  const onboardingDone = String(user?.onboardingStatus || '').toUpperCase() === 'COMPLETED';
+  const verified = Boolean(user?.isTherapistVerified);
+  const steps = [
+    { label: 'Platform fee paid', done: platformPaid, route: '/provider/subscription' },
+    { label: 'Onboarding submitted', done: onboardingDone, route: '/onboarding/provider-setup' },
+    { label: 'Admin verification', done: verified, route: null },
+  ];
+  const allDone = platformPaid && onboardingDone && verified;
+  const nextStep = steps.find((s) => !s.done);
+
   return (
     <div className="space-y-6">
+      {/* Account status banner — shown until fully active */}
+      {!allDone && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-900">Account setup in progress</p>
+              <p className="mt-0.5 text-xs text-amber-700">Complete all steps to unlock full platform access.</p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {steps.map((s, i) => (
+                  <div key={s.label} className="flex items-center gap-1.5">
+                    {s.done
+                      ? <CheckCircle className="h-4 w-4 text-emerald-500" />
+                      : i === steps.findIndex((x) => !x.done)
+                        ? <Clock className="h-4 w-4 text-amber-500" />
+                        : <AlertCircle className="h-4 w-4 text-slate-300" />}
+                    <span className={`text-xs font-medium ${s.done ? 'text-emerald-700 line-through' : 'text-amber-800'}`}>
+                      {s.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {nextStep?.route && (
+              <button
+                type="button"
+                onClick={() => navigate(nextStep.route!)}
+                className="flex shrink-0 items-center gap-1 rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700"
+              >
+                Continue <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {!nextStep?.route && nextStep && (
+              <span className="flex shrink-0 items-center gap-1 rounded-lg border border-amber-300 bg-white px-4 py-2 text-xs font-semibold text-amber-700">
+                <Clock className="h-3.5 w-3.5" /> Awaiting admin review
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+      {allDone && (
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5">
+          <CheckCircle className="h-4 w-4 text-emerald-500" />
+          <span className="text-xs font-semibold text-emerald-700">Account fully active — all verifications complete</span>
+        </div>
+      )}
+
       <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">

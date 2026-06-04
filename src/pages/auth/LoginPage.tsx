@@ -139,8 +139,12 @@ export default function LoginPage() {
 		try {
 			// Always use /v1/auth/signup/phone regardless of role
 			const response = await signupWithPhone(phone.trim());
-			setDevOtp(response.devOtp || null);
 			setOtpSent(true);
+			if (response?.devOtp) {
+				setDevOtp(response.devOtp);
+				setOtp(response.devOtp);
+				console.log('[DEV] OTP:', response.devOtp);
+			}
 		} catch (err) {
 			setError(getApiErrorMessage(err, 'Failed to send OTP'));
 		} finally {
@@ -157,22 +161,15 @@ export default function LoginPage() {
 			// Always use /v1/auth/verify/phone-otp regardless of role
 			const guestGameToken = localStorage.getItem('guest_game_token') || undefined;
 			const cachedScreening = readCachedClinicalScreening();
-
-			const result = await verifyPhoneSignupOtp(
-				phone.trim(),
-				otp.trim(),
-				cachedScreening
-					? {
-						acceptedTerms: true,
-						clinicalScreening: {
-							type: cachedScreening.type,
-							answers: cachedScreening.answers,
-						},
-					}
-					: undefined,
-				guestGameToken,
-			);
-
+			const result = await verifyPhoneSignupOtp(phone.trim(), otp.trim(), {
+				acceptedTerms: true,
+				...(cachedScreening ? {
+					clinicalScreening: {
+						type: cachedScreening.type,
+						answers: cachedScreening.answers,
+					},
+				} : {}),
+			}, guestGameToken);
 			if (guestGameToken) {
 				localStorage.removeItem('guest_game_token');
 			}
@@ -231,10 +228,10 @@ export default function LoginPage() {
 			const candidate = from || afterLogin || next || null;
 			const postLoginRoute = await resolvePostLoginRouteWithSubscription(candidate, resolvedUser?.role, resolvedUser);
 			navigate(postLoginRoute, { replace: true });
-		} catch (err: unknown) {
-			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } };
-			const message = String(axiosErr?.response?.data?.message || '');
-			if (Number(axiosErr?.response?.status) === 422 && message.toLowerCase().includes('accept terms')) {
+		} catch (err: any) {
+			console.error('[LOGIN] verifyOtp error:', err?.response?.status, JSON.stringify(err?.response?.data));
+			const message = String(err?.response?.data?.message || '');
+			if (Number(err?.response?.status) === 422 && message.toLowerCase().includes('accept terms')) {
 				const returnToCandidate = from || afterLogin || next || '/certifications';
 				const searchParams = new URLSearchParams({ phone: phone.trim() });
 				searchParams.set('returnTo', returnToCandidate);
@@ -314,7 +311,7 @@ export default function LoginPage() {
 										onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
 										required
 									/>
-									{devOtp ? (
+									{/* {devOtp ? (
 										<div
 											role="status"
 											className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
@@ -323,42 +320,46 @@ export default function LoginPage() {
 											<p className="mt-1 font-mono text-lg tracking-widest">{devOtp}</p>
 											<p className="mt-1 text-xs text-amber-800">Use this code if SMS is unavailable in your environment.</p>
 										</div>
-									) : null}
+									) : null} */}
 								</>
 							) : null}
 
-							{!otpSent ? (
-								<Button
-									type="button"
-									fullWidth
-									loading={loading}
-									className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
-									onClick={requestOtp}
-								>
-									{loading ? 'Sending OTP...' : 'Send OTP'}
-								</Button>
-							) : (
-								<Button
-									type="button"
-									fullWidth
-									loading={loading}
-									className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
-									onClick={verifyOtp}
-								>
-									{loading ? 'Verifying...' : (isProviderLogin ? 'Verify & Continue' : 'Continue to wellness')}
-								</Button>
-							)}
-						</div>
+							{
+								!otpSent ? (
+									<Button
+										type="button"
+										fullWidth
+										loading={loading}
+										className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
+										onClick={requestOtp}
+									>
+										{loading ? 'Sending OTP...' : 'Send OTP'}
+									</Button>
+								) : (
+									<Button
+										type="button"
+										fullWidth
+										loading={loading}
+										className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
+										onClick={verifyOtp}
+									>
+										{loading ? 'Verifying...' : (isProviderLogin ? 'Verify & Continue' : 'Continue to wellness')}
+									</Button>
+								)
+							}
+						</div >
 
 						<p className="callout callout-navy mt-3 text-xs font-medium">
 							🔒 Your data is secure and confidential.
 						</p>
 
-						{error ? (
-							<p role="alert" aria-live="polite" className="mt-3 text-sm text-error">
-								{error}
-							</p>
-						) : null}
+						{
+							error ? (
+								<p role="alert" aria-live="polite" className="mt-3 text-sm text-error">
+									{error}
+								</p>
+							) : null
+						}
 
 						<p className="mt-4 text-center text-sm text-muted">
 							{isProviderLogin ? 'New provider? ' : 'Need to create an account? '}
@@ -370,9 +371,9 @@ export default function LoginPage() {
 								Register here
 							</Link>
 						</p>
-					</section>
-				</div>
-			</div>
-		</div>
+					</section >
+				</div >
+			</div >
+		</div >
 	);
 }

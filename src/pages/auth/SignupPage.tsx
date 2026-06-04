@@ -346,6 +346,9 @@ export default function SignupPage() {
 						setStoredProviderId(response.provider_id);
 					}
 					setDevOtp(response.devOtp || null);
+					if (response.devOtp) {
+						setOtp(response.devOtp);
+					}
 					setOtpSent(true);
 				} catch (err) {
 					if (isProviderAlreadyRegisteredError(err)) {
@@ -354,7 +357,11 @@ export default function SignupPage() {
 						if (conflictProviderId) {
 							setStoredProviderId(conflictProviderId);
 						}
-						setDevOtp(extractDevOtp(conflictPayload));
+						const extractedOtp = extractDevOtp(conflictPayload);
+						setDevOtp(extractedOtp || null);
+						if (extractedOtp) {
+							setOtp(extractedOtp);
+						}
 						setOtpSent(true);
 						return;
 					}
@@ -371,6 +378,10 @@ export default function SignupPage() {
 			);
 			setDevOtp(response.devOtp || null);
 			setOtpSent(true);
+			if (response.devOtp) {
+				setOtp(response.devOtp);
+				console.log('[DEV] OTP:', response.devOtp);
+			}
 		} catch (err) {
 			setError(
 				isProviderFlow
@@ -582,21 +593,21 @@ export default function SignupPage() {
 						) : null}
 
 						{!isCertificationContext && !isPatientLeadFlow ? (
-						<div>
-							<label htmlFor="signup-role" className="mb-2 block text-sm font-medium" style={{ color: 'var(--color-ink)' }}>Role</label>
-							<select
-								id="signup-role"
-								value={role}
-								onChange={(event) => setRole(event.target.value as SignupRole)}
-								className="input w-full"
-							>
-								<option value="patient">Patient</option>
-								<option value="therapist">Therapist</option>
-								<option value="psychiatrist">Psychiatrist</option>
-								<option value="psychologist">Psychologist</option>
-								<option value="coach">Coach</option>
-							</select>
-						</div>
+							<div>
+								<label htmlFor="signup-role" className="mb-2 block text-sm font-medium" style={{ color: 'var(--color-ink)' }}>Role</label>
+								<select
+									id="signup-role"
+									value={role}
+									onChange={(event) => setRole(event.target.value as SignupRole)}
+									className="input w-full"
+								>
+									<option value="patient">Patient</option>
+									<option value="therapist">Therapist</option>
+									<option value="psychiatrist">Psychiatrist</option>
+									<option value="psychologist">Psychologist</option>
+									<option value="coach">Coach</option>
+								</select>
+							</div>
 						) : null}
 
 						{isProviderFlow ? (
@@ -680,7 +691,7 @@ export default function SignupPage() {
 									onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, isProviderFlow ? 6 : 4))}
 									required
 								/>
-								{devOtp ? (
+								{/* {devOtp ? (
 									<div
 										role="status"
 										className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
@@ -689,7 +700,7 @@ export default function SignupPage() {
 										<p className="mt-1 font-mono text-lg tracking-widest">{devOtp}</p>
 										<p className="mt-1 text-xs text-amber-800">Use this code if SMS is unavailable in your environment.</p>
 									</div>
-								) : null}
+								) : null} */}
 							</>
 						) : null}
 

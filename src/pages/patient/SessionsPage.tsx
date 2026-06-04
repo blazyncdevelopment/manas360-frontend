@@ -847,13 +847,13 @@ export default function SessionsPage() {
     if (isConsultingPatient) {
       setSmartMatchPreferences(adPresetProviderType
         ? {
-            initialProviderType: adPresetProviderType,
-            lockProviderType: true,
-          }
+          initialProviderType: adPresetProviderType,
+          lockProviderType: true,
+        }
         : {
-            initialProviderType: 'ALL',
-            lockProviderType: false,
-          });
+          initialProviderType: 'ALL',
+          lockProviderType: false,
+        });
       setIsSmartMatchOpen(true);
       return;
     }
@@ -861,13 +861,13 @@ export default function SessionsPage() {
     // Open smart match to browse providers
     setSmartMatchPreferences(adPresetProviderType
       ? {
-          initialProviderType: adPresetProviderType,
-          lockProviderType: true,
-        }
+        initialProviderType: adPresetProviderType,
+        lockProviderType: true,
+      }
       : {
-          initialProviderType: 'ALL',
-          lockProviderType: false,
-        });
+        initialProviderType: 'ALL',
+        lockProviderType: false,
+      });
     setIsSmartMatchOpen(true);
   };
 
@@ -881,13 +881,13 @@ export default function SessionsPage() {
 
     setSmartMatchPreferences(adPresetProviderType
       ? {
-          initialProviderType: adPresetProviderType,
-          lockProviderType: true,
-        }
+        initialProviderType: adPresetProviderType,
+        lockProviderType: true,
+      }
       : {
-          initialProviderType: 'ALL',
-          lockProviderType: false,
-        });
+        initialProviderType: 'ALL',
+        lockProviderType: false,
+      });
     setIsSmartMatchOpen(true);
   };
 
@@ -941,11 +941,10 @@ export default function SessionsPage() {
                     key={key}
                     type="button"
                     onClick={() => setClinicalStartWith(key)}
-                    className={`rounded-xl border p-3 text-left transition ${
-                      clinicalStartWith === key
-                        ? 'border-teal-400 bg-teal-50'
-                        : 'border-calm-sage/20 bg-white hover:bg-calm-sage/5'
-                    }`}
+                    className={`rounded-xl border p-3 text-left transition ${clinicalStartWith === key
+                      ? 'border-teal-400 bg-teal-50'
+                      : 'border-calm-sage/20 bg-white hover:bg-calm-sage/5'
+                      }`}
                   >
                     <p className="text-sm font-semibold text-charcoal">Start with {key}</p>
                   </button>
@@ -996,11 +995,10 @@ export default function SessionsPage() {
                       type="button"
                       onClick={() => void onStructuredOptionSelect(structuredAttempt.questions[currentStructuredQuestionIndex], option.optionIndex)}
                       disabled={clinicalFlowLoading}
-                      className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
-                        structuredAnswers[structuredAttempt.questions[currentStructuredQuestionIndex].questionId] === option.optionIndex
-                          ? 'border-teal-400 bg-teal-50 text-charcoal'
-                          : 'border-calm-sage/20 bg-white text-charcoal/85 hover:bg-calm-sage/5'
-                      } disabled:opacity-60`}
+                      className={`rounded-xl border px-4 py-3 text-left text-sm transition ${structuredAnswers[structuredAttempt.questions[currentStructuredQuestionIndex].questionId] === option.optionIndex
+                        ? 'border-teal-400 bg-teal-50 text-charcoal'
+                        : 'border-calm-sage/20 bg-white text-charcoal/85 hover:bg-calm-sage/5'
+                        } disabled:opacity-60`}
                     >
                       {option.label}
                     </button>
@@ -1240,54 +1238,57 @@ export default function SessionsPage() {
       ) : (
         <>
           {hasUrgentSession ? (
-            <section className="relative overflow-hidden rounded-3xl border border-calm-sage/15 bg-charcoal p-1 shadow-lg">
-              <div className="absolute inset-0 bg-gradient-to-r from-teal-900/40 to-transparent" />
-              <div className="relative flex flex-col items-center justify-between gap-6 rounded-[20px] bg-charcoal/90 p-6 backdrop-blur-xl md:flex-row md:p-8">
-                <div className="flex w-full items-center gap-5 md:w-auto">
-                  <div className="relative">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-800 text-xl font-bold text-teal-100">
-                      {(nextSession.provider?.name || 'T').charAt(0)}
-                    </div>
+            <section className="overflow-hidden rounded-2xl bg-[#1a2e2a] shadow-lg">
+              <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:gap-6 md:p-6">
+
+                {/* Avatar + Name */}
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-teal-700 text-xl font-bold text-teal-100">
+                    {(nextSession.provider?.name || 'T').charAt(0)}
                   </div>
-                  <div>
-                    <h2 className="text-sm font-semibold uppercase tracking-wider text-teal-300">Next Appointment</h2>
-                    <p className="mt-1 text-2xl font-bold text-white">{nextSession.provider?.name || 'Assigned Therapist'}</p>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-teal-400">Next Appointment</p>
+                    <p className="mt-0.5 truncate text-xl font-bold text-white">{nextSession.provider?.name || 'Assigned Therapist'}</p>
+                    {nextSession.dateTime && (
+                      <p className="text-xs text-white/50 mt-0.5">
+                        {new Date(nextSession.dateTime).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                        {' · '}
+                        {new Date(nextSession.dateTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {isLockedSession ? (
-                  <div className="w-full md:w-auto">
-                    <span className="inline-flex items-center rounded-full bg-green-500 px-3 py-1 text-xs font-bold text-white shadow-sm">
-                      Confirmed by Dr. {nextSessionProviderName}
-                    </span>
-                  </div>
-                ) : null}
+                {/* Status badge */}
+                {isLockedSession && (
+                  <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-green-500/20 border border-green-500/40 px-3 py-1.5 text-xs font-semibold text-green-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
+                    Confirmed
+                  </span>
+                )}
 
-                <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
+                {/* Join / countdown button */}
+                <div className="shrink-0">
                   {isWithin10Minutes && !needsPreSessionCheckin ? (
                     <Link
                       to={`/video-session/${nextSession.id}`}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-500 px-6 py-3.5 text-sm font-bold text-charcoal shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all hover:bg-green-400"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-green-400"
                     >
                       <Video className="h-4 w-4" />
-                      Join Video Room
+                      Join Session
                     </Link>
                   ) : (
-                    <button
-                      disabled
-                      className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-white/10 px-6 py-3.5 text-sm font-bold text-white/50"
-                    >
-                      <Video className="h-4 w-4" />
-                      {needsPreSessionCheckin ? 'Complete Check-in First' : 'Opens 10 mins prior'}
-                    </button>
+                    <div className="rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-center">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                        {needsPreSessionCheckin ? 'Action required' : 'Join link opens'}
+                      </p>
+                      <p className="mt-0.5 text-sm font-bold text-white/70">
+                        {needsPreSessionCheckin ? 'Complete check-in' : '10 min before'}
+                      </p>
+                    </div>
                   )}
                 </div>
 
-                {isLockedSession ? (
-                  <p className="w-full text-xs text-white/80 md:mt-1">
-                    This session time is fixed to ensure clinical consistency. Please contact support for emergency cancellations.
-                  </p>
-                ) : null}
               </div>
             </section>
           ) : null}
@@ -1465,11 +1466,10 @@ export default function SessionsPage() {
                           <p className="text-sm font-semibold text-charcoal">{result.type}</p>
                           <p className="text-xs text-charcoal/60">Score: {result.score}</p>
                         </div>
-                        <span className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${
-                          result.severity.includes('severe') ? 'bg-red-100 text-red-700' :
+                        <span className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${result.severity.includes('severe') ? 'bg-red-100 text-red-700' :
                           result.severity.includes('moderate') ? 'bg-amber-100 text-amber-700' :
-                          'bg-green-100 text-green-700'
-                        }`}>
+                            'bg-green-100 text-green-700'
+                          }`}>
                           {result.severity}
                         </span>
                       </div>

@@ -117,18 +117,50 @@ export default function Settings() {
   const planStatus = sub?.status || 'inactive';
   const expiryDate = sub?.expiryDate ? new Date(sub.expiryDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
 
-  // Real Progress Calculation
-  const progressPercent = useMemo(() => {
-    let score = 0;
-    if (profileImageUrl.trim()) score += 15;
-    if (specialties.length > 0) score += 15;
-    if (bio.trim().length > 50) score += 20;
-    if (enabledDayCount > 0) score += 20;
-    if (selectedLanguages.length > 0) score += 10;
-    if (consultationFee > 0) score += 10;
-    if (tagline.trim()) score += 10;
-    return score;
-  }, [profileImageUrl, specialties, bio, enabledDayCount, selectedLanguages, consultationFee, tagline]);
+  const progressItems = useMemo(() => [
+    {
+      label: 'Specialties',
+      description: specialties.length > 0 ? `${specialties.length} selected` : 'Add at least one specialty',
+      points: 15,
+      done: specialties.length > 0,
+    },
+    {
+      label: 'Professional bio',
+      description: bio.trim().length > 50 ? 'Bio is long enough' : 'Write at least 50 characters',
+      points: 20,
+      done: bio.trim().length > 50,
+    },
+    {
+      label: 'Working hours',
+      description: enabledDayCount > 0 ? `${enabledDayCount} active day${enabledDayCount === 1 ? '' : 's'}` : 'Activate at least one day',
+      points: 20,
+      done: enabledDayCount > 0,
+    },
+    {
+      label: 'Session languages',
+      description: selectedLanguages.length > 0 ? selectedLanguages.join(', ') : 'Select at least one language',
+      points: 15,
+      done: selectedLanguages.length > 0,
+    },
+    {
+      label: 'Session rate',
+      description: consultationFee > 0 ? `INR ${consultationFee}` : 'Enter a rate above 0',
+      points: 15,
+      done: consultationFee > 0,
+    },
+    {
+      label: 'Professional tagline',
+      description: tagline.trim() ? 'Tagline added' : 'Add a short tagline',
+      points: 15,
+      done: Boolean(tagline.trim()),
+    },
+  ], [specialties, bio, enabledDayCount, selectedLanguages, consultationFee, tagline]);
+
+  const progressPercent = useMemo(
+    () => progressItems.reduce((score, item) => score + (item.done ? item.points : 0), 0),
+    [progressItems],
+  );
+  const missingProgressItems = progressItems.filter((item) => !item.done);
 
   return (
     <div className="space-y-6 text-[#23313A]">
@@ -183,8 +215,48 @@ export default function Settings() {
               <svg className="h-5 w-5 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <span>Your profile is currently <span className="font-bold underline">HIDDEN</span> from the patient marketplace. Please complete all required fields in the onboarding flow to go live.</span>
+              <span>Your profile is currently <span className="font-bold underline">HIDDEN</span> from the patient marketplace. Complete the missing items below to go live.</span>
            </div>
+        )}
+
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {progressItems.map((item) => (
+            <div
+              key={item.label}
+              className={`rounded-2xl border p-4 ${
+                item.done
+                  ? 'border-emerald-100 bg-emerald-50/70'
+                  : 'border-amber-100 bg-amber-50/70'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className={`text-sm font-semibold ${item.done ? 'text-emerald-900' : 'text-amber-900'}`}>
+                    {item.label}
+                  </p>
+                  <p className={`mt-1 text-xs leading-5 ${item.done ? 'text-emerald-700' : 'text-amber-700'}`}>
+                    {item.description}
+                  </p>
+                </div>
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${
+                  item.done
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {item.done ? 'Done' : 'Missing'}
+                </span>
+              </div>
+              <p className={`mt-3 text-xs font-semibold ${item.done ? 'text-emerald-700' : 'text-amber-700'}`}>
+                {item.done ? '+' : ''}{item.done ? item.points : 0}/{item.points} points
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {missingProgressItems.length > 0 && (
+          <p className="mt-4 text-xs font-medium text-slate-500">
+            Missing now: {missingProgressItems.map((item) => item.label).join(', ')}.
+          </p>
         )}
       </section>
 

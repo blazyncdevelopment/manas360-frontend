@@ -9,15 +9,15 @@ import {
 import { clearAuthTokens, hasStoredAccessToken } from '../utils/authToken';
 import { extractProviderId, setStoredProviderId } from '../utils/providerOnboardingStorage';
 
-export type AppRole = 
-  | 'patient' 
+export type AppRole =
+  | 'patient'
   | 'learner'
-  | 'therapist' 
-  | 'psychiatrist' 
-  | 'psychologist' 
-  | 'coach' 
-  | 'admin' 
-  | 'superadmin' 
+  | 'therapist'
+  | 'psychiatrist'
+  | 'psychologist'
+  | 'coach'
+  | 'admin'
+  | 'superadmin'
   | 'clinicaldirector'
   | 'financemanager'
   | 'complianceofficer';
@@ -120,29 +120,30 @@ export const getPostLoginRoute = (user: AuthUser | null | undefined): string => 
   }
 
   if (isProviderRole(user.role)) {
-    // Dev/testing bypass only: never allow onboarding skip in production builds.
-    const isProductionBuild = import.meta.env.PROD === true || String(import.meta.env.MODE || '').toLowerCase() === 'production';
-    const skipFlagEnabled = (import.meta.env.VITE_SKIP_ONBOARDING || '').toString() === 'true';
-    const skipOnboarding = import.meta.env.DEV === true || (!isProductionBuild && skipFlagEnabled);
-    if (skipOnboarding) return '/provider/dashboard';
-
     const normalizedRole = normalizeRole(user.role);
     const onboardingStatus = String(user.onboardingStatus || '').toUpperCase();
 
-    // Learners can bypass subscription and setup screens to access their dashboard/certifications
+    // Learners only need dashboard access
     if (normalizedRole === 'learner') {
       return '/provider/dashboard';
     }
 
+    // Step 1: Platform fee not paid → subscription page
     if (!user.platformAccessActive) {
       return '/provider/subscription';
     }
+
+    // Step 2: Onboarding form not submitted → setup wizard
     if (onboardingStatus !== 'COMPLETED') {
       return '/onboarding/provider-setup';
     }
+
+    // Step 3: Admin hasn't verified yet → verification pending
     if (!user.isTherapistVerified) {
       return '/provider/verification-pending';
     }
+
+    // All steps done → dashboard
     return '/provider/dashboard';
   }
 

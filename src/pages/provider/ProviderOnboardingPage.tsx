@@ -127,8 +127,11 @@ export default function ProviderOnboardingPageWrapper() {
     if (!loading && user) {
       const providerRoles = ['therapist', 'psychiatrist', 'psychologist', 'coach'];
       const role = String(user.role || '').toLowerCase();
+      const onboardingStatus = String(user.onboardingStatus || '').toUpperCase();
       if (providerRoles.includes(role) && !user.platformAccessActive) {
         navigate('/provider/subscription', { replace: true });
+      } else if (providerRoles.includes(role) && onboardingStatus === 'COMPLETED') {
+        navigate(user.isTherapistVerified ? '/provider/dashboard' : '/provider/verification-pending', { replace: true });
       }
     }
   }, [user, loading, navigate]);
@@ -250,9 +253,16 @@ function ProviderOnboardingPage() {
       localStorage.removeItem(`${ONBOARDING_CACHE_KEY}_form`);
       localStorage.removeItem(`${ONBOARDING_CACHE_KEY}_step`);
       await checkAuth();
-      navigate('/onboarding/provider-setup', { replace: true });
-    } catch (err) {
-      setError(getApiErrorMessage(err, 'Unable to submit provider onboarding.'));
+      navigate('/provider/verification-pending', { replace: true });
+    } catch (err: any) {
+      const msg = getApiErrorMessage(err, 'Unable to submit provider onboarding.');
+      // If profile already exists, redirect to verification pending instead of showing error
+      if (msg.toLowerCase().includes('already in progress') || err?.response?.status === 400) {
+        await checkAuth();
+        navigate('/provider/verification-pending', { replace: true });
+        return;
+      }
+      setError(msg);
     } finally {
       setSubmitting(false);
     }

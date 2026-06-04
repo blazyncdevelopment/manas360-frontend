@@ -1,6 +1,19 @@
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ProviderVerificationPendingPage() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleGoToLogin = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error('Logout failed during login redirection:', err);
+    }
+    navigate('/auth/login', { replace: true });
+  };
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10">
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
@@ -21,9 +34,13 @@ export default function ProviderVerificationPendingPage() {
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link to="/auth/login" className="rounded-lg bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800">
+          <button
+            type="button"
+            onClick={() => void handleGoToLogin()}
+            className="rounded-lg bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800 transition"
+          >
             Go to Login
-          </Link>
+          </button>
           <Link to="/" className="rounded-lg border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100">
             Back to Home
           </Link>
@@ -32,3 +49,4 @@ export default function ProviderVerificationPendingPage() {
     </div>
   );
 }
+

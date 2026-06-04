@@ -79,6 +79,38 @@ export const landingHeaderStyles = `
           top: 10px;
           z-index: 5;
           will-change: box-shadow;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          text-decoration: none;
+        }
+        .landing-brand-text {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 2px;
+        }
+        .landing-brand-name {
+          font-size: 15px;
+          font-weight: 900;
+          color: #0B2D5E;
+          letter-spacing: -0.2px;
+          line-height: 1.15;
+          font-family: "DM Sans", sans-serif;
+          white-space: nowrap;
+        }
+        .landing-brand-tagline {
+          font-size: 8px;
+          font-weight: 700;
+          color: #4A7C59;
+          letter-spacing: 0.3px;
+          text-transform: uppercase;
+          white-space: nowrap;
+          line-height: 1.2;
+        }
+        @media (max-width: 600px) {
+          .landing-brand-tagline { display: none; }
+          .landing-brand-name { font-size: 13px; }
         }
         .landing-sticky-header {
           isolation: isolate;
@@ -110,7 +142,12 @@ export const landingHeaderStyles = `
           transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
         }
         .brand-bar > div {
-          padding-left: calc(var(--landing-logo-size) + 24px);
+          padding-left: 176px;
+        }
+        @media (max-width: 600px) {
+          .brand-bar > div {
+            padding-left: 96px;
+          }
         }
         .brand-bar.scrolled {
           background: rgba(255, 255, 255, 0.94);
@@ -1071,13 +1108,15 @@ export const HeaderPage: React.FC = () => {
             className="landing-fixed-logo"
             href="/landing"
             aria-label="MANAS360 Home"
-            style={{
+          >
+            {/* Logo icon */}
+            <div style={{
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              width: "68px",
-              height: "68px",
-              borderRadius: "18px",
+              width: "54px",
+              height: "54px",
+              borderRadius: "14px",
               padding: "3px",
               boxSizing: "border-box",
               overflow: "hidden",
@@ -1085,23 +1124,24 @@ export const HeaderPage: React.FC = () => {
               border: "1px solid rgba(226, 232, 240, 0.92)",
               backdropFilter: "blur(10px)",
               boxShadow: isScrolled ? "0 10px 24px rgba(15,23,42,0.14)" : "0 6px 16px rgba(15,23,42,0.10)",
-              textDecoration: "none",
+              flexShrink: 0,
               transition: "box-shadow 0.28s ease"
-            }}
-          >
-            <img
-              src={logo}
-              alt="MANAS360"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                objectPosition: "center",
-                display: "block",
-                borderRadius: "12px",
-                background: "#FFFFFF"
-              }}
-            />
+            }}>
+              <img
+                src={logo}
+                alt="MANAS360"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  display: "block",
+                  borderRadius: "12px",
+                  background: "#FFFFFF"
+                }}
+              />
+            </div>
+
           </a>
         <div className={`brand-bar${isScrolled ? " scrolled" : ""}`}>
           <div style={{ maxWidth: "1260px", margin: "0 auto", padding: "0 16px" }}>

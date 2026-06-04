@@ -1,4 +1,4 @@
-import { Calendar, CheckCircle, Clock, User, XCircle, X } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, User, XCircle, X, Brain, MessageSquare, Star } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -143,6 +143,49 @@ export default function AppointmentRequestsPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* v3 match score breakdown */}
+                  {req.matchScore != null && (
+                    <div className="mt-3 rounded-lg border border-[#E5E5E5] bg-[#F6FAF6] px-4 py-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold text-[#4A6741]">Match Score: {req.matchScore}/100</p>
+                        {req.matchBand && (
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                            req.matchBand === 'PLATINUM' ? 'bg-purple-100 text-purple-700' :
+                            req.matchBand === 'HOT' ? 'bg-red-100 text-red-700' :
+                            req.matchBand === 'WARM' ? 'bg-amber-100 text-amber-700' :
+                            'bg-blue-100 text-blue-700'
+                          }`}>{req.matchBand}</span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="text-center">
+                          <Brain className="mx-auto h-3.5 w-3.5 text-slate-400 mb-0.5" />
+                          <p className="text-[10px] text-slate-500">Expertise</p>
+                          <div className="mt-0.5 h-1.5 rounded-full bg-slate-200">
+                            <div className="h-full rounded-full bg-[#4A6741]" style={{ width: `${((req.scoreExpertise ?? 0) / 40) * 100}%` }} />
+                          </div>
+                          <p className="text-[10px] font-semibold text-[#2D4128] mt-0.5">{req.scoreExpertise ?? 0}/40</p>
+                        </div>
+                        <div className="text-center">
+                          <MessageSquare className="mx-auto h-3.5 w-3.5 text-slate-400 mb-0.5" />
+                          <p className="text-[10px] text-slate-500">Communication</p>
+                          <div className="mt-0.5 h-1.5 rounded-full bg-slate-200">
+                            <div className="h-full rounded-full bg-teal-500" style={{ width: `${((req.scoreCommunication ?? 0) / 35) * 100}%` }} />
+                          </div>
+                          <p className="text-[10px] font-semibold text-[#2D4128] mt-0.5">{req.scoreCommunication ?? 0}/35</p>
+                        </div>
+                        <div className="text-center">
+                          <Star className="mx-auto h-3.5 w-3.5 text-slate-400 mb-0.5" />
+                          <p className="text-[10px] text-slate-500">Quality</p>
+                          <div className="mt-0.5 h-1.5 rounded-full bg-slate-200">
+                            <div className="h-full rounded-full bg-amber-500" style={{ width: `${((req.scoreQuality ?? 0) / 25) * 100}%` }} />
+                          </div>
+                          <p className="text-[10px] font-semibold text-[#2D4128] mt-0.5">{req.scoreQuality ?? 0}/25</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
