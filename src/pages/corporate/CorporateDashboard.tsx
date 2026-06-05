@@ -269,13 +269,13 @@ export default function CorporateDashboard() {
 
       const raw: LeaderboardApiItem[] = Array.isArray(source.departmentBreakdown) && source.departmentBreakdown.length > 0
         ? source.departmentBreakdown.map((row, index): LeaderboardApiItem => ({
-            id: String(index + 1),
-            userId: `dept-${index + 1}`,
-            name: String(row.department || '').trim(),
-            department: 'Department',
-            points: Number(row.utilizationPct ?? row.sessionsUsed ?? 0),
-            streakDays: Number(row.active ?? 0),
-          }))
+          id: String(index + 1),
+          userId: `dept-${index + 1}`,
+          name: String(row.department || '').trim(),
+          department: 'Department',
+          points: Number(row.utilizationPct ?? row.sessionsUsed ?? 0),
+          streakDays: Number(row.active ?? 0),
+        }))
         : Array.isArray(source.leaderboard)
           ? source.leaderboard
           : Array.isArray(source.topPerformers)

@@ -37,7 +37,7 @@ font {
 
 /* Reusable single-line clip (same footprint as English) */
 .manas-text-clip,
-.manas-text-clip > * {
+.manas-text-clip>* {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -159,7 +159,7 @@ html[data-app-language='Telugu'] .landing-side-rail-expanded .landing-side-pill 
   overflow: hidden;
 }
 
-.landing-top-shortcut-btn > span:last-child {
+.landing-top-shortcut-btn>span:last-child {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -173,7 +173,7 @@ html[data-app-language]:not([data-app-language='English']) .landing-top-shortcut
   max-width: 108px;
 }
 
-html[data-app-language]:not([data-app-language='English']) .landing-top-shortcut-btn > span:last-child {
+html[data-app-language]:not([data-app-language='English']) .landing-top-shortcut-btn>span:last-child {
   max-width: 78px;
 }
 
@@ -190,6 +190,44 @@ html[data-app-language]:not([data-app-language='English']) .landing-top-shortcut
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
+}
+
+@media (min-width: 981px) {
+  /* Kannada specific tuning */
+  html[data-app-language='Kannada'] .quick-nav {
+    gap: 2.5px !important;
+  }
+  html[data-app-language='Kannada'] .quick-nav-chip {
+    font-size: clamp(7.8px, 0.71vw, 9.2px) !important;
+    padding: 3px 5px !important;
+  }
+  html[data-app-language='Kannada'] .quick-nav-chip-icon {
+    font-size: clamp(7.8px, 0.71vw, 9.2px) !important;
+  }
+
+  /* Tamil specific tuning */
+  html[data-app-language='Tamil'] .quick-nav {
+    gap: 2.2px !important;
+  }
+  html[data-app-language='Tamil'] .quick-nav-chip {
+    font-size: clamp(7.5px, 0.68vw, 8.8px) !important;
+    padding: 2px 4px !important;
+  }
+  html[data-app-language='Tamil'] .quick-nav-chip-icon {
+    font-size: clamp(7.5px, 0.68vw, 8.8px) !important;
+  }
+
+  /* Telugu specific tuning */
+  html[data-app-language='Telugu'] .quick-nav {
+    gap: 3.5px !important;
+  }
+  html[data-app-language='Telugu'] .quick-nav-chip {
+    font-size: clamp(8.1px, 0.74vw, 9.8px) !important;
+    padding: 3px 5.5px !important;
+  }
+  html[data-app-language='Telugu'] .quick-nav-chip-icon {
+    font-size: clamp(8.1px, 0.74vw, 9.8px) !important;
+  }
 }
 
 @media (max-width: 900px) {

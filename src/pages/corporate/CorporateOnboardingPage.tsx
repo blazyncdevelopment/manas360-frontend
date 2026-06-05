@@ -192,18 +192,16 @@ export default function CorporateOnboardingPage() {
               <button
                 type="button"
                 onClick={() => { setMode('create'); setCreateStep('details'); setError(null); setSuccess(null); navigate('/corporate', { replace: true }); }}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                  mode === 'create' ? 'bg-white text-[#1B4F49] shadow-sm' : 'text-[#4F6E69]'
-                }`}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${mode === 'create' ? 'bg-white text-[#1B4F49] shadow-sm' : 'text-[#4F6E69]'
+                  }`}
               >
                 Create Account
               </button>
               <button
                 type="button"
                 onClick={() => { setMode('demo'); setCreateStep('details'); setError(null); setSuccess(null); navigate('/corporate', { replace: true }); }}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                  mode === 'demo' ? 'bg-white text-[#1B4F49] shadow-sm' : 'text-[#4F6E69]'
-                }`}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${mode === 'demo' ? 'bg-white text-[#1B4F49] shadow-sm' : 'text-[#4F6E69]'
+                  }`}
               >
                 Request Demo
               </button>
@@ -317,8 +315,8 @@ export default function CorporateOnboardingPage() {
               </button>
 
               <p className="text-xs text-[#5A7873]">
-                {mode === 'demo' 
-                  ? 'Our enterprise team will contact you to discuss your requirements and timeline.' 
+                {mode === 'demo'
+                  ? 'Our enterprise team will contact you to discuss your requirements and timeline.'
                   : 'Employees will continue to use the same normal login flow. Corporate access is enabled automatically by account mapping.'}
               </p>
             </form>

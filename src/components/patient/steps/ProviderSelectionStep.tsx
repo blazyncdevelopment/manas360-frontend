@@ -154,15 +154,40 @@ export default function ProviderSelectionStep({
   const [preferredMode, setPreferredMode] = useState('');
   const [matchContext, setMatchContext] = useState<'Standard' | 'Corporate' | 'Night' | 'Buddy' | 'Crisis'>('Standard');
 
-  // Debounced values — only update after user stops typing for 600ms
+  // Debounced values — only update after user stops typing
   const [debouncedConcerns, setDebouncedConcerns] = useState('');
+  const [debouncedLanguage, setDebouncedLanguage] = useState('');
+  const [debouncedMode, setDebouncedMode] = useState('');
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const languageDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const modeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleConcernsChange = (value: string) => {
     setConcernsInput(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => setDebouncedConcerns(value), 600);
   };
+
+  const handleLanguageChange = (value: string) => {
+    setPreferredLanguage(value);
+    if (languageDebounceRef.current) clearTimeout(languageDebounceRef.current);
+    languageDebounceRef.current = setTimeout(() => setDebouncedLanguage(value), 1000);
+  };
+
+  const handleModeChange = (value: string) => {
+    setPreferredMode(value);
+    if (modeDebounceRef.current) clearTimeout(modeDebounceRef.current);
+    modeDebounceRef.current = setTimeout(() => setDebouncedMode(value), 1000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (languageDebounceRef.current) clearTimeout(languageDebounceRef.current);
+      if (modeDebounceRef.current) clearTimeout(modeDebounceRef.current);
+    };
+  }, []);
 
   const parsedConcerns = debouncedConcerns
     .split(',')
@@ -173,11 +198,11 @@ export default function ProviderSelectionStep({
   useEffect(() => {
     onPreferencesChange?.({
       concerns: parsedConcerns,
-      language: preferredLanguage,
-      mode: preferredMode,
+      language: debouncedLanguage,
+      mode: debouncedMode,
       context: matchContext,
     });
-  }, [parsedConcerns, preferredLanguage, preferredMode, matchContext, onPreferencesChange]);
+  }, [parsedConcerns, debouncedLanguage, debouncedMode, matchContext, onPreferencesChange]);
 
   useEffect(() => {
     const fetchProviders = async () => {
@@ -189,8 +214,8 @@ export default function ProviderSelectionStep({
           providerType,
           {
             concerns: parsedConcerns,
-            languages: preferredLanguage ? [preferredLanguage] : [],
-            modes: preferredMode ? [preferredMode] : [],
+            languages: debouncedLanguage.trim() ? [debouncedLanguage.trim()] : [],
+            modes: debouncedMode.trim() ? [debouncedMode.trim()] : [],
             context: matchContext,
             presetEntryType,
             sourceFunnel,
@@ -209,8 +234,8 @@ export default function ProviderSelectionStep({
     };
 
     fetchProviders();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(availabilityPrefs), providerType, debouncedConcerns, preferredLanguage, preferredMode, matchContext, presetEntryType, sourceFunnel, timezoneRegion, selectedDate?.toISOString()]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(availabilityPrefs), providerType, debouncedConcerns, debouncedLanguage, debouncedMode, matchContext, presetEntryType, sourceFunnel, timezoneRegion, selectedDate?.toISOString()]);
 
   const toggleProvider = (providerId: string) => {
     setSelectedIds((prev) => {
@@ -229,10 +254,10 @@ export default function ProviderSelectionStep({
     try {
       setSubmitting(true);
       setError(null);
-       // Collect selected provider data
-       const selectedProviders = providers.filter((p) => selectedIds.includes(p.id));
-       // Pass back selected providers without creating request yet (payment happens first)
-       onSuccess(selectedProviders);
+      // Collect selected provider data
+      const selectedProviders = providers.filter((p) => selectedIds.includes(p.id));
+      // Pass back selected providers without creating request yet (payment happens first)
+      onSuccess(selectedProviders);
     } catch (err: any) {
       setError(err?.message || 'Failed to continue with selected providers');
     } finally {
@@ -289,11 +314,10 @@ export default function ProviderSelectionStep({
                   key={context}
                   type="button"
                   onClick={() => setMatchContext(context)}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                    matchContext === context
-                      ? 'border-teal-500 bg-teal-500 text-white'
-                      : 'border-calm-sage/20 bg-white text-charcoal hover:border-teal-300 hover:text-teal-700'
-                  }`}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${matchContext === context
+                    ? 'border-teal-500 bg-teal-500 text-white'
+                    : 'border-calm-sage/20 bg-white text-charcoal hover:border-teal-300 hover:text-teal-700'
+                    }`}
                 >
                   {context}
                 </button>
@@ -303,35 +327,23 @@ export default function ProviderSelectionStep({
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-xs text-charcoal/70">
               Preferred Language
-              <select
+              <input
+                type="text"
                 value={preferredLanguage}
-                onChange={(e) => setPreferredLanguage(e.target.value)}
+                onChange={(e) => handleLanguageChange(e.target.value)}
+                placeholder="e.g. English, Hindi, Tamil"
                 className="mt-1 w-full rounded-lg border border-calm-sage/20 bg-white px-3 py-2 text-sm text-charcoal outline-none focus:border-teal-400"
-              >
-                <option value="">Any</option>
-                <option value="en">English</option>
-                <option value="hi">Hindi</option>
-                <option value="kn">Kannada</option>
-                <option value="ta">Tamil</option>
-                <option value="te">Telugu</option>
-                <option value="mr">Marathi</option>
-                <option value="bn">Bengali</option>
-                <option value="gu">Gujarati</option>
-              </select>
+              />
             </label>
             <label className="text-xs text-charcoal/70">
               Session Mode
-              <select
+              <input
+                type="text"
                 value={preferredMode}
-                onChange={(e) => setPreferredMode(e.target.value)}
+                onChange={(e) => handleModeChange(e.target.value)}
+                placeholder="e.g. video, audio, chat, in-person"
                 className="mt-1 w-full rounded-lg border border-calm-sage/20 bg-white px-3 py-2 text-sm text-charcoal outline-none focus:border-teal-400"
-              >
-                <option value="">Any</option>
-                <option value="video">Video</option>
-                <option value="audio">Audio</option>
-                <option value="chat">Chat</option>
-                <option value="in-person">In-Person</option>
-              </select>
+              />
             </label>
             <label className="text-xs text-charcoal/70">
               Top Concerns (comma separated)
@@ -353,94 +365,92 @@ export default function ProviderSelectionStep({
             const providerBanner = getProviderBanner(provider);
             const estimatedChance = getEstimatedMatchChance(provider);
             return (
-            <button
-              key={provider.id}
-              onClick={() => toggleProvider(provider.id)}
-              className={`w-full rounded-lg border px-4 py-4 text-left transition-all ${
-                selectedIds.includes(provider.id)
+              <button
+                key={provider.id}
+                onClick={() => toggleProvider(provider.id)}
+                className={`w-full rounded-lg border px-4 py-4 text-left transition-all ${selectedIds.includes(provider.id)
                   ? 'border-teal-500 bg-teal-50 shadow-sm'
                   : 'border-calm-sage/20 hover:border-teal-300 hover:bg-teal-50/30'
-              }`}
-            >
-              <div className="flex gap-3">
-                <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded border-2 border-calm-sage/20 mt-0.5">
-                  {selectedIds.includes(provider.id) && (
-                    <Check className="h-4 w-4 text-teal-600" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-semibold text-charcoal">{provider.name}</h4>
-                    <div className="flex items-center gap-2">
-                      {provider.tier && (
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${tierChipClass(provider.tier)}`}>
-                          {provider.matchBand === 'PLATINUM'
-                            ? '🔥 PLATINUM HOT'
-                            : provider.tier === 'HOT'
-                              ? '🔥 HOT'
-                              : provider.tier === 'WARM'
-                                ? '🌟 WARM'
-                                : '❄️ COLD'}
-                        </span>
-                      )}
-                      {provider.score != null && (
-                        <div className="text-xs font-semibold text-teal-700">{getTierLabel(provider)} {provider.score}</div>
-                      )}
-                      {provider.averageRating && (
-                        <div className="text-xs font-medium text-amber-600">
-                          ⭐ {provider.averageRating.toFixed(1)}
-                        </div>
-                      )}
-                    </div>
+                  }`}
+              >
+                <div className="flex gap-3">
+                  <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded border-2 border-calm-sage/20 mt-0.5">
+                    {selectedIds.includes(provider.id) && (
+                      <Check className="h-4 w-4 text-teal-600" />
+                    )}
                   </div>
-                  <p className="text-xs text-charcoal/60 mt-0.5">
-                    {getProviderTypeLabel(provider.providerType)}
-                  </p>
-                  {providerBanner && (
-                    <div
-                      className={`mt-2 rounded-md px-2 py-1 text-[11px] font-medium ${
-                        providerBanner.type === 'locked'
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="font-semibold text-charcoal">{provider.name}</h4>
+                      <div className="flex items-center gap-2">
+                        {provider.tier && (
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${tierChipClass(provider.tier)}`}>
+                            {provider.matchBand === 'PLATINUM'
+                              ? '🔥 PLATINUM HOT'
+                              : provider.tier === 'HOT'
+                                ? '🔥 HOT'
+                                : provider.tier === 'WARM'
+                                  ? '🌟 WARM'
+                                  : '❄️ COLD'}
+                          </span>
+                        )}
+                        {provider.score != null && (
+                          <div className="text-xs font-semibold text-teal-700">{getTierLabel(provider)} {provider.score}</div>
+                        )}
+                        {provider.averageRating && (
+                          <div className="text-xs font-medium text-amber-600">
+                            ⭐ {provider.averageRating.toFixed(1)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-xs text-charcoal/60 mt-0.5">
+                      {getProviderTypeLabel(provider.providerType)}
+                    </p>
+                    {providerBanner && (
+                      <div
+                        className={`mt-2 rounded-md px-2 py-1 text-[11px] font-medium ${providerBanner.type === 'locked'
                           ? 'border border-red-200 bg-red-50 text-red-700'
                           : 'border border-amber-200 bg-amber-50 text-amber-700'
-                      }`}
-                    >
-                      {providerBanner.text}
-                    </div>
-                  )}
-                  {provider.matchChancePct != null && (
-                    <p className="text-[11px] text-teal-700 mt-1">{provider.matchChancePct}% chance you will connect well</p>
-                  )}
-                  <p className="text-[11px] text-charcoal/70 mt-1">~{estimatedChance}% chance of good connection</p>
-                  {provider.specializations && provider.specializations.length > 0 && (
-                    <p className="text-xs text-charcoal/50 mt-1 line-clamp-1">
-                      {provider.specializations.slice(0, 2).join(', ')}
-                    </p>
-                  )}
-                  {provider.breakdown && (
-                    <div className="mt-2 space-y-1">
-                      <div>
-                        <div className="flex justify-between text-[10px] text-charcoal/60"><span>Expertise</span><span>{provider.breakdown.expertise}/40</span></div>
-                        <div className="h-1.5 rounded bg-calm-sage/15"><div className="h-1.5 rounded bg-violet-500" style={{ width: barWidth(provider.breakdown.expertise, 40) }} /></div>
+                          }`}
+                      >
+                        {providerBanner.text}
                       </div>
-                      <div>
-                        <div className="flex justify-between text-[10px] text-charcoal/60"><span>Communication</span><span>{provider.breakdown.communication}/35</span></div>
-                        <div className="h-1.5 rounded bg-calm-sage/15"><div className="h-1.5 rounded bg-sky-500" style={{ width: barWidth(provider.breakdown.communication, 35) }} /></div>
+                    )}
+                    {provider.matchChancePct != null && (
+                      <p className="text-[11px] text-teal-700 mt-1">{provider.matchChancePct}% chance you will connect well</p>
+                    )}
+                    <p className="text-[11px] text-charcoal/70 mt-1">~{estimatedChance}% chance of good connection</p>
+                    {provider.specializations && provider.specializations.length > 0 && (
+                      <p className="text-xs text-charcoal/50 mt-1 line-clamp-1">
+                        {provider.specializations.slice(0, 2).join(', ')}
+                      </p>
+                    )}
+                    {provider.breakdown && (
+                      <div className="mt-2 space-y-1">
+                        <div>
+                          <div className="flex justify-between text-[10px] text-charcoal/60"><span>Expertise</span><span>{provider.breakdown.expertise}/40</span></div>
+                          <div className="h-1.5 rounded bg-calm-sage/15"><div className="h-1.5 rounded bg-violet-500" style={{ width: barWidth(provider.breakdown.expertise, 40) }} /></div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[10px] text-charcoal/60"><span>Communication</span><span>{provider.breakdown.communication}/35</span></div>
+                          <div className="h-1.5 rounded bg-calm-sage/15"><div className="h-1.5 rounded bg-sky-500" style={{ width: barWidth(provider.breakdown.communication, 35) }} /></div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[10px] text-charcoal/60"><span>Quality</span><span>{provider.breakdown.quality}/25</span></div>
+                          <div className="h-1.5 rounded bg-calm-sage/15"><div className="h-1.5 rounded bg-amber-500" style={{ width: barWidth(provider.breakdown.quality, 25) }} /></div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="flex justify-between text-[10px] text-charcoal/60"><span>Quality</span><span>{provider.breakdown.quality}/25</span></div>
-                        <div className="h-1.5 rounded bg-calm-sage/15"><div className="h-1.5 rounded bg-amber-500" style={{ width: barWidth(provider.breakdown.quality, 25) }} /></div>
-                      </div>
-                    </div>
-                  )}
-                  {(nriFixedFeeMinor || provider.consultationFee) && (
-                    <p className="text-sm font-semibold text-teal-600 mt-2">
-                      {formatPrice(nriFixedFeeMinor || Number(provider.consultationFee || 0))}
-                      {nriFixedFeeMinor ? ' • NRI fixed session rate' : ''}
-                    </p>
-                  )}
+                    )}
+                    {(nriFixedFeeMinor || provider.consultationFee) && (
+                      <p className="text-sm font-semibold text-teal-600 mt-2">
+                        {formatPrice(nriFixedFeeMinor || Number(provider.consultationFee || 0))}
+                        {nriFixedFeeMinor ? ' • NRI fixed session rate' : ''}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </button>
+              </button>
             );
           })}
         </div>
@@ -511,11 +521,10 @@ export default function ProviderSelectionStep({
         <button
           onClick={handleSubmit}
           disabled={!isValid || submitting}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-all ${
-            isValid && !submitting
-              ? 'bg-teal-500 text-white hover:bg-teal-600 shadow-sm'
-              : 'bg-calm-sage/10 text-charcoal/40 cursor-not-allowed'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-all ${isValid && !submitting
+            ? 'bg-teal-500 text-white hover:bg-teal-600 shadow-sm'
+            : 'bg-calm-sage/10 text-charcoal/40 cursor-not-allowed'
+            }`}
         >
           {submitting ? (
             <>

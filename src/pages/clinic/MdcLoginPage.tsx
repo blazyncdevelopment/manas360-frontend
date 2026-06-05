@@ -38,11 +38,11 @@ export default function MdcLoginPage() {
         loginSuffix: formData.loginSuffix,
         phone: formData.phone,
       });
-      
+
       if (response.data.devOtp) {
         setDevOtp(response.data.devOtp);
       }
-      
+
       setStep('otp');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to send OTP');
@@ -66,7 +66,7 @@ export default function MdcLoginPage() {
 
       const { accessToken, user } = response.data;
       setAuthToken(accessToken);
-      
+
       // Store MDC specific user info
       localStorage.setItem('mdc_user', JSON.stringify(user));
 

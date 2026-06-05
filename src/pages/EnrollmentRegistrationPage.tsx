@@ -171,51 +171,51 @@ const EnrollmentRegistrationPage: React.FC = () => {
 
             {isAuthenticated ? (
               <div className="text-center py-6">
-                 <div className="mx-auto w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mb-4">
-                    <FastForward className="text-teal-600 w-8 h-8" />
-                 </div>
-                 <h2 className="text-xl font-bold text-slate-800 mb-2">Welcome Back, {providerName}!</h2>
-                 <p className="text-slate-500 text-sm mb-6">
+                <div className="mx-auto w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mb-4">
+                  <FastForward className="text-teal-600 w-8 h-8" />
+                </div>
+                <h2 className="text-xl font-bold text-slate-800 mb-2">Welcome Back, {providerName}!</h2>
+                <p className="text-slate-500 text-sm mb-6">
                   {isLoggedInProvider
-                   ? "You're already logged in as a provider. Skip auth and enroll instantly."
-                   : 'You are already logged in. Continue with quick enrollment.'}
-                 </p>
-                 
-                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-left mb-6">
-                    <div className="flex justify-between items-center mb-2">
-                       <span className="font-bold text-slate-800 text-sm">Program Fee</span>
-                       <span className="font-bold text-purple-600 text-base">{price}</span>
-                    </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-2">
-                       <ShieldCheck size={14} className="text-teal-500" />
-                       Includes +30 Lead Match Boost after clinical verification
-                    </div>
-                 </div>
+                    ? "You're already logged in as a provider. Skip auth and enroll instantly."
+                    : 'You are already logged in. Continue with quick enrollment.'}
+                </p>
 
-                 <div className="grid grid-cols-2 gap-2 mb-5">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentPlan('full')}
-                      className={`rounded-lg border px-3 py-2 text-xs font-bold ${paymentPlan === 'full' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-slate-200 text-slate-600'}`}
-                    >
-                      Pay Full
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentPlan('installment')}
-                      className={`rounded-lg border px-3 py-2 text-xs font-bold flex items-center justify-center gap-1 ${paymentPlan === 'installment' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-slate-200 text-slate-600'}`}
-                    >
-                      <Calendar size={12} /> Installments
-                    </button>
-                 </div>
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-left mb-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-bold text-slate-800 text-sm">Program Fee</span>
+                    <span className="font-bold text-purple-600 text-base">{price}</span>
+                  </div>
+                  <div className="text-xs text-slate-500 flex items-center gap-2">
+                    <ShieldCheck size={14} className="text-teal-500" />
+                    Includes +30 Lead Match Boost after clinical verification
+                  </div>
+                </div>
 
-                 <button
-                    onClick={handleQuickEnroll}
-                    disabled={processing}
-                    className="w-full bg-gradient-to-r from-teal-500 to-purple-600 text-white font-bold py-4 rounded-xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2"
-                 >
-                    {processing ? <><Loader2 size={16} className="animate-spin" /> Preparing Checkout...</> : `Confirm & Pay ${price} →`}
-                 </button>
+                <div className="grid grid-cols-2 gap-2 mb-5">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentPlan('full')}
+                    className={`rounded-lg border px-3 py-2 text-xs font-bold ${paymentPlan === 'full' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-slate-200 text-slate-600'}`}
+                  >
+                    Pay Full
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentPlan('installment')}
+                    className={`rounded-lg border px-3 py-2 text-xs font-bold flex items-center justify-center gap-1 ${paymentPlan === 'installment' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-slate-200 text-slate-600'}`}
+                  >
+                    <Calendar size={12} /> Installments
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleQuickEnroll}
+                  disabled={processing}
+                  className="w-full bg-gradient-to-r from-teal-500 to-purple-600 text-white font-bold py-4 rounded-xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {processing ? <><Loader2 size={16} className="animate-spin" /> Preparing Checkout...</> : `Confirm & Pay ${price} →`}
+                </button>
               </div>
             ) : (
               <form onSubmit={otpSent ? handleVerifyOtpAndEnroll : handleSendOtp} className="space-y-4" noValidate>
@@ -289,63 +289,63 @@ const EnrollmentRegistrationPage: React.FC = () => {
                   </button>
                 </div>
 
-              {/* Fee Summary */}
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="font-bold text-slate-800 text-sm">Program Fee</span>
-                  <span className="font-bold text-purple-600 text-base">{price}</span>
+                {/* Fee Summary */}
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="font-bold text-slate-800 text-sm">Program Fee</span>
+                    <span className="font-bold text-purple-600 text-base">{price}</span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {[
+                      'Lifetime access to modules',
+                      'Certificate with blockchain verification',
+                      'Listed on MANAS360 Coach Directory',
+                      'Patient matching after certification',
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
+                        <CheckCircle size={12} className="text-teal-500 flex-shrink-0" />
+                        {item}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  {[
-                    'Lifetime access to modules',
-                    'Certificate with blockchain verification',
-                    'Listed on MANAS360 Coach Directory',
-                    'Patient matching after certification',
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
-                      <CheckCircle size={12} className="text-teal-500 flex-shrink-0" />
-                      {item}
-                    </div>
-                  ))}
+
+                {/* Money Back */}
+                <div className="flex items-start gap-3 bg-blue-50 p-3 rounded-xl border border-blue-100">
+                  <ShieldCheck size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-700 font-medium">
+                    30-Day Money Back Guarantee — No questions asked.
+                  </p>
                 </div>
-              </div>
 
-              {/* Money Back */}
-              <div className="flex items-start gap-3 bg-blue-50 p-3 rounded-xl border border-blue-100">
-                <ShieldCheck size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700 font-medium">
-                  30-Day Money Back Guarantee — No questions asked.
-                </p>
-              </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={processing}
-                className="w-full bg-gradient-to-r from-teal-500 to-purple-600 text-white font-bold py-4 rounded-xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all text-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2"
-              >
-                {processing ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    {otpSent ? 'Verifying OTP...' : 'Sending OTP...'}
-                  </>
-                ) : (
-                  otpSent ? `Verify OTP & Pay ${price} ->` : 'Get OTP to Continue'
-                )}
-              </button>
-
-              {otpSent && (
+                {/* Submit */}
                 <button
-                  type="button"
-                  onClick={handleSendOtp}
+                  type="submit"
                   disabled={processing}
-                  className="w-full text-xs text-slate-500 hover:text-slate-700 font-semibold"
+                  className="w-full bg-gradient-to-r from-teal-500 to-purple-600 text-white font-bold py-4 rounded-xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all text-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2"
                 >
-                  Resend OTP
+                  {processing ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      {otpSent ? 'Verifying OTP...' : 'Sending OTP...'}
+                    </>
+                  ) : (
+                    otpSent ? `Verify OTP & Pay ${price} ->` : 'Get OTP to Continue'
+                  )}
                 </button>
-              )}
 
-            </form>
+                {otpSent && (
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={processing}
+                    className="w-full text-xs text-slate-500 hover:text-slate-700 font-semibold"
+                  >
+                    Resend OTP
+                  </button>
+                )}
+
+              </form>
             )}
           </div>
         </div>

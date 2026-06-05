@@ -8,7 +8,6 @@ type LanguageContextValue = {
 };
 
 const DEFAULT_LANGUAGE: AppLanguage = "English";
-const STORAGE_KEY = "manas360.selectedLanguage";
 
 const VALID_LANGUAGES: readonly AppLanguage[] = ["English", "Hindi", "Kannada", "Tamil", "Telugu"];
 
@@ -27,21 +26,12 @@ const isValidLanguage = (value: string): value is AppLanguage => {
 };
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [selectedLanguage, setSelectedLanguage] = useState<AppLanguage>(() => {
-    if (typeof window === "undefined") return DEFAULT_LANGUAGE;
-    const stored = String(window.localStorage.getItem(STORAGE_KEY) || "").trim();
-    return stored && isValidLanguage(stored) ? stored : DEFAULT_LANGUAGE;
-  });
+  const [selectedLanguage, setSelectedLanguage] = useState<AppLanguage>(DEFAULT_LANGUAGE);
 
   useEffect(() => {
     if (!isValidLanguage(selectedLanguage)) {
       setSelectedLanguage(DEFAULT_LANGUAGE);
     }
-  }, [selectedLanguage]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(STORAGE_KEY, selectedLanguage);
   }, [selectedLanguage]);
 
   useEffect(() => {

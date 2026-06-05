@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { type AppLanguage, useLanguage } from "../../context/LanguageContext";
 import { useLocation } from "react-router-dom";
 
@@ -277,6 +277,7 @@ const hideGoogleBanner = (): (() => void) => {
 const GoogleTranslateController: React.FC = () => {
   const { selectedLanguage } = useLanguage();
   const location = useLocation();
+  const lastLanguageRef = useRef<AppLanguage | null>(null);
 
   useEffect(() => {
     ensureHiddenContainer();
@@ -289,8 +290,28 @@ const GoogleTranslateController: React.FC = () => {
 
     const run = async () => {
       try {
+        const prevLanguage = lastLanguageRef.current;
+        lastLanguageRef.current = selectedLanguage;
+
         const languageCode = languageToGoogleCode[selectedLanguage];
         setGoogleTranslateCookie(languageCode);
+
+        // Switch from one translated language to another translated language
+        // requires reverting to English first to clean up the DOM and prevent double translation.
+        if (
+          prevLanguage &&
+          prevLanguage !== "English" &&
+          selectedLanguage !== "English" &&
+          prevLanguage !== selectedLanguage
+        ) {
+          const combo = document.querySelector<HTMLSelectElement>(".goog-te-combo");
+          if (combo || window.google?.translate?.TranslateElement) {
+            await ensureGoogleTranslateScript();
+            ensureTranslatorMounted();
+            await selectGoogleLanguage(DEFAULT_LANGUAGE_CODE);
+            await wait(250); // Wait for the DOM to revert back to English
+          }
+        }
 
         // IMPORTANT: For English, do not mount/drive Google Translate at all.
         // If the page ends up auto-translated (usually from a stale cookie/state),

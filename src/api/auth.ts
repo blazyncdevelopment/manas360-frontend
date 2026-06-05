@@ -224,14 +224,31 @@ export const getRequiredLegalDocuments = async (): Promise<{
 	return response.data.data;
 };
 
-export const acceptLegalDocuments = async (documentIds: string[]): Promise<{
+export const acceptLegalDocuments = async (
+	documents: string[] | { id: string; version: number }[]
+): Promise<{
 	legalAcceptanceRequired: boolean;
 	pendingDocuments: LegalDocument[];
 }> => {
+	let acceptedDocuments: { id: string; version: number }[] = [];
+	let documentIds: string[] = [];
+
+	if (documents.length > 0) {
+		if (typeof documents[0] === 'string') {
+			documentIds = documents as string[];
+			acceptedDocuments = documentIds.map((id) => ({ id, version: 1 }));
+		} else {
+			const docObjects = documents as { id: string; version: number }[];
+			acceptedDocuments = docObjects;
+			documentIds = docObjects.map((d) => d.id);
+		}
+	}
+
 	const response = await http.post<ApiEnvelope<{
 		legalAcceptanceRequired: boolean;
 		pendingDocuments: LegalDocument[];
 	}>>('/v1/auth/legal/accept', {
+		acceptedDocuments,
 		documentIds,
 	});
 

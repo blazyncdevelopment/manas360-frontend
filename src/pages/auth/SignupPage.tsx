@@ -178,7 +178,6 @@ export default function SignupPage() {
 	const [otpSent, setOtpSent] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [devOtp, setDevOtp] = useState<string | null>(null);
 	const [acceptedTerms, setAcceptedTerms] = useState(false);
 	const [providerAgreementsAccepted, setProviderAgreementsAccepted] = useState<Record<ProviderAgreementKey, boolean>>({
 		THERAPIST_IC_AGREEMENT: false,

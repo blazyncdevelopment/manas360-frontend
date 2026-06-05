@@ -141,6 +141,7 @@ export default function SessionsPage() {
   const [currentStructuredQuestionIndex, setCurrentStructuredQuestionIndex] = useState(0);
   const [clinicalFlowLoading, setClinicalFlowLoading] = useState(false);
   const [clinicalFlowError, setClinicalFlowError] = useState<string | null>(null);
+  const [isPlanRequiredError, setIsPlanRequiredError] = useState(false);
   const [clinicalJourney, setClinicalJourney] = useState<JourneyPayload | null>(null);
   const [clinicalResults, setClinicalResults] = useState<Array<{ type: ClinicalAssessmentKey; score: number; severity: string }>>([]);
   const [suggestedProviders, setSuggestedProviders] = useState<any[]>([]);
@@ -351,6 +352,7 @@ export default function SessionsPage() {
     setCurrentStructuredQuestionIndex(0);
     setClinicalFlowLoading(false);
     setClinicalFlowError(null);
+    setIsPlanRequiredError(false);
     setClinicalJourney(null);
     setClinicalResults([]);
     setSuggestedProviders([]);
@@ -380,6 +382,7 @@ export default function SessionsPage() {
       setAssessmentDraft(null);
       resetClinicalAssessmentState();
     }
+    setIsPlanRequiredError(false);
     setIsClinicalAssessmentOpen(true);
   };
 
@@ -390,6 +393,7 @@ export default function SessionsPage() {
     setIsClinicalAssessmentOpen(false);
     setClinicalFlowPhase('intro');
     setClinicalFlowError(null);
+    setIsPlanRequiredError(false);
   };
 
   const loadStructuredAssessment = async (assessmentType: ClinicalAssessmentKey) => {
@@ -419,13 +423,18 @@ export default function SessionsPage() {
     setClinicalJourney(null);
     setClinicalResults([]);
     setClinicalFlowError(null);
+    setIsPlanRequiredError(false);
     setClinicalFlowLoading(true);
 
     try {
       await loadStructuredAssessment(order[0]);
       setClinicalFlowPhase('question');
     } catch (error: any) {
-      setClinicalFlowError(error?.message || 'Unable to load clinical assessment right now.');
+      if (error?.response?.status === 403 || String(error?.message).includes('403')) {
+        setIsPlanRequiredError(true);
+      } else {
+        setClinicalFlowError(error?.message || 'Unable to load clinical assessment right now.');
+      }
     } finally {
       setClinicalFlowLoading(false);
     }
@@ -437,6 +446,7 @@ export default function SessionsPage() {
     const activeType = assessmentOrder[activeAssessmentIndex];
     setClinicalFlowLoading(true);
     setClinicalFlowError(null);
+    setIsPlanRequiredError(false);
 
     try {
       const numericAnswers = structuredAttempt.questions.map((question) => answerMap[question.questionId]);
@@ -474,7 +484,11 @@ export default function SessionsPage() {
         void loadAssessmentHistory(); // This will update hasCompletedCheckin based on backend data
       }
     } catch (error: any) {
-      setClinicalFlowError(error?.message || 'Unable to submit assessment right now. Please try again.');
+      if (error?.response?.status === 403 || String(error?.message).includes('403')) {
+        setIsPlanRequiredError(true);
+      } else {
+        setClinicalFlowError(error?.message || 'Unable to submit assessment right now. Please try again.');
+      }
     } finally {
       setClinicalFlowLoading(false);
     }
@@ -1186,6 +1200,21 @@ export default function SessionsPage() {
               {clinicalFlowError}
             </div>
           ) : null}
+
+          {isPlanRequiredError ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center shadow-sm">
+              <p className="text-sm font-semibold text-amber-800">
+                Please buy a plan to continue the Assessment.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/plans')}
+                className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-2 text-xs font-bold text-white hover:bg-teal-700 transition"
+              >
+                Buy a plan to continue the Assessment
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -1379,7 +1408,7 @@ export default function SessionsPage() {
                 <div className="rounded-2xl bg-white/90 p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-teal-700/70">Communication Preference</p>
                   <p className="mt-1 text-sm font-semibold text-charcoal">
-                    {({'en':'English','hi':'Hindi','kn':'Kannada','ta':'Tamil','te':'Telugu','mr':'Marathi','bn':'Bengali','gu':'Gujarati'} as Record<string,string>)[smartMatchSummary.preferences?.language || ''] || smartMatchSummary.preferences?.language || 'Any language'}
+                    {({ 'en': 'English', 'hi': 'Hindi', 'kn': 'Kannada', 'ta': 'Tamil', 'te': 'Telugu', 'mr': 'Marathi', 'bn': 'Bengali', 'gu': 'Gujarati' } as Record<string, string>)[smartMatchSummary.preferences?.language || ''] || smartMatchSummary.preferences?.language || 'Any language'}
                   </p>
                   <p className="text-sm text-charcoal/70">{smartMatchSummary.preferences?.mode || 'Any mode'}</p>
                 </div>

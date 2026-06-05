@@ -396,6 +396,7 @@ export const landingHeaderStyles = `
             flex: 0 0 auto;
             min-height: 44px;
             align-items: center;
+            flex-wrap: nowrap !important;
           }
           .quick-nav-chip {
             flex: 0 0 auto;
@@ -666,13 +667,13 @@ export const HeaderPage: React.FC = () => {
 
   const menuFallbackRoutes: Record<string, string> = {
     "I Need a Helping Hand": "/helping-hand",
-    "AI Power Hub": "/ai-power-hub",
+    "A I Power Hub": "/ai-power-hub",
     "Find a Spark Again": "/find-spark",
     "Self-Help Tools": "/self-help",
     "For Corporates / Edu / Healthcare": "/corporate-landing",
     "Premium Therapy Hub": "/premium-theraphy",
     "MyDigitalClinic": "/my-digital-clinic",
-    "Certify2EarnMore": "/certifications",
+    "Certify 2 Earn More": "/certifications",
     "Digital Pets4Happy Hormones": "/pet",
     "NRI | Global Inc": "/nri-landing",
   };
@@ -709,7 +710,7 @@ export const HeaderPage: React.FC = () => {
       { icon: "\uD83E\uDDF0", label: "Self-Help Tools" },
       { icon: "\u2728", label: "Find a Spark Again" },
       { icon: "\uD83C\uDFDB\uFE0F", label: "For Corporates / Edu / Healthcare" },
-      { icon: "\uD83C\uDF93", label: "Certify2EarnMore" },
+      { icon: "\uD83C\uDF93", label: "Certify 2 Earn More" },
       { icon: "\uD83D\uDCCB", label: "MyDigitalClinic" },
       { icon: "\uD83C\uDF10", label: "NRI | Global Inc" }
     ],
@@ -819,9 +820,9 @@ export const HeaderPage: React.FC = () => {
           { icon: "\uD83C\uDFDB\uFE0F", title: "Government Agency", subtitle: "Tele-MANAS & ASHA worker programs" }
         ]
       },
-      Certify2EarnMore: {
+      "Certify 2 Earn More": {
         accent: "#16A34A",
-        title: "Certify2EarnMore",
+        title: "Certify 2 Earn More",
         subtitle: "Certifications, training & shop",
         columns: 4,
         items: [
@@ -1072,7 +1073,7 @@ export const HeaderPage: React.FC = () => {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0 }}>
-                <span style={{ opacity: 0.95 }}>&#127951;</span>
+                <span className="notranslate" translate="no" style={{ opacity: 0.95 }}>&#127951;</span>
                 <span style={{ whiteSpace: "nowrap" }}>HIT A SIXER!</span>
                 <span style={{ opacity: 0.95, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>
                   Refer a friend & both get <span style={{ color: "#FFE082" }}>10% off</span> next therapy session
@@ -1094,7 +1095,7 @@ export const HeaderPage: React.FC = () => {
                   whiteSpace: "nowrap"
                 }}
               >
-                CLAIM &#8377;70 CREDIT &#9889;
+                CLAIM &#8377;70 CREDIT <span className="notranslate" translate="no">&#9889;</span>
               </button>
 
               <span style={{ fontSize: "11px", fontWeight: 600, opacity: 0.9, whiteSpace: "nowrap" }}>
@@ -1227,7 +1228,7 @@ export const HeaderPage: React.FC = () => {
                           whiteSpace: "nowrap"
                         }}
                       >
-                        <span aria-hidden>{item.icon}</span>
+                        <span aria-hidden className="notranslate" translate="no">{item.icon}</span>
                         <span>{item.label}</span>
                       </button>
                     ))}
@@ -1271,7 +1272,7 @@ export const HeaderPage: React.FC = () => {
                       minWidth: "150px"
                     }}
                   >
-                    <span style={{ fontSize: "12px", color: "#2563EB" }}>&#128269;</span>
+                    <span className="notranslate" translate="no" style={{ fontSize: "12px", color: "#2563EB" }}>&#128269;</span>
                     <span style={{ fontSize: "10px", color: "#64748B", flex: 1, textAlign: "left", fontWeight: 700 }}>Search...</span>
                     <span
                       style={{
@@ -1397,7 +1398,7 @@ export const HeaderPage: React.FC = () => {
                                   (e.currentTarget as HTMLElement).style.background = "transparent";
                                 }}
                               >
-                                <span style={{ fontSize: "17px", width: "24px", textAlign: "center" }}>{option.icon}</span>
+                                <span className="notranslate" translate="no" style={{ fontSize: "17px", width: "24px", textAlign: "center" }}>{option.icon}</span>
                                 <div>
                                   <div style={{ fontSize: "12px", fontWeight: 900, color: "#1A1A2E" }}>{option.label}</div>
                                   <div style={{ fontSize: "10px", color: "#666680", marginTop: "1px" }}>{option.desc}</div>
@@ -1437,7 +1438,7 @@ export const HeaderPage: React.FC = () => {
                           textDecoration: "none"
                         }}
                       >
-                        {s.label}
+                        <span className="notranslate" translate="no">{s.label}</span>
                       </a>
                     ))}
                   </div>
@@ -1511,6 +1512,8 @@ export const HeaderPage: React.FC = () => {
                                 {...megaItemHoverHandlers(quickNavMegaMenus[activeQuickNav].accent)}
                               >
                                 <div
+                                  className="notranslate"
+                                  translate="no"
                                   style={{
                                     width: "34px",
                                     height: "34px",
@@ -1635,7 +1638,7 @@ export const HeaderPage: React.FC = () => {
                             fontFamily: "inherit"
                           }}
                         >
-                          <span className="quick-nav-chip-icon" style={{ fontSize: "clamp(9px, 0.82vw, 11px)" }} aria-hidden>{item.icon}</span>
+                          <span className="quick-nav-chip-icon notranslate" translate="no" style={{ fontSize: "clamp(9px, 0.82vw, 11px)" }} aria-hidden>{item.icon}</span>
                           <span className="quick-nav-chip-label">{item.label}</span>
                         </button>
                       );
@@ -1707,6 +1710,8 @@ export const HeaderPage: React.FC = () => {
                                   {...megaItemHoverHandlers(quickNavMegaMenus[activeQuickNav].accent)}
                                 >
                                   <div
+                                    className="notranslate"
+                                    translate="no"
                                     style={{
                                       width: "34px",
                                       height: "34px",
@@ -1804,7 +1809,7 @@ export const HeaderPage: React.FC = () => {
                 borderBottom: "1px solid #E8EDF2"
               }}
             >
-              <span style={{ fontSize: "14px", color: "#64748B", flexShrink: 0 }} aria-hidden>
+              <span className="notranslate" translate="no" style={{ fontSize: "14px", color: "#64748B", flexShrink: 0 }} aria-hidden>
                 &#128269;
               </span>
               <input

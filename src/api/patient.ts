@@ -260,8 +260,8 @@ export const patientApi = {
       answers: payload.answers,
     })).data;
   },
-	submitPHQ9: async (answers: number[]) =>
-		(await http.post('/v1/patient-journey/clinical-screening', { type: 'PHQ-9', answers })).data,
+  submitPHQ9: async (answers: number[]) =>
+    (await http.post('/v1/patient-journey/clinical-screening', { type: 'PHQ-9', answers })).data,
   submitQuickScreeningJourney: async (payload: JourneyQuickScreeningRequest): Promise<JourneyRecommendationResponse> =>
     (await http.post('/v1/patient-journey/quick-screening', payload)).data,
   submitClinicalJourney: async (payload: JourneyClinicalRequest): Promise<JourneyRecommendationResponse> =>
@@ -610,95 +610,95 @@ export const patientApi = {
     (await http.get(`/v1/risk/${encodeURIComponent(userId)}/current`)).data,
   getNotifications: async () => (await http.get('/v1/notifications')).data,
   markNotificationRead: async (id: string) => (await http.patch(`/v1/notifications/${encodeURIComponent(id)}/read`)).data,
-    // Progress & Analytics
-    getInsights: async () => {
-      const res = await http.get('/v1/patient/insights');
-      return res.data?.data ?? res.data;
-    },
-    getReports: async () => (await http.get('/v1/patient/reports')).data,
-    getSharedReportMeta: async (id: string) => (await http.get(`/v1/patient/reports/shared/${encodeURIComponent(id)}`)).data,
-    downloadSharedReport: async (id: string) =>
-      (await http.get(`/v1/patient/reports/shared/${encodeURIComponent(id)}/download`, { responseType: 'blob' })).data,
-    generateCompleteHealthSummary: async () => {
-      const resp = await http.post('/v1/patient/reports/health-summary', {}, { responseType: 'blob' });
-      return resp.data;
-    },
-    getRecordSecureUrl: async (id: string) => (await http.get(`/v1/patient/records/${encodeURIComponent(id)}/url`)).data,
-    createRecordShareLink: async (id: string) => (await http.post(`/v1/patient/records/${encodeURIComponent(id)}/share`)).data,
-    // Documents
-    getDocuments: async () => (await http.get('/v1/patient/documents')).data,
-    uploadDocument: async (payload: FormData) =>
-      (await http.post('/v1/patient/documents/upload', payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })).data,
-    getDocumentDownloadUrl: async (id: string) => (await http.get(`/v1/patient/documents/${encodeURIComponent(id)}/download`)).data,
-    // Care Team
-    getMyProviders: async () => (await http.get('/v1/patient/care-team')).data,
-    getAvailableProviders: async (params?: { specialization?: string; language?: string; maxPrice?: number; role?: string }) => {
-      const result = await patientApi.getAvailableProvidersForSmartMatch(
-        DEFAULT_SMART_MATCH_AVAILABILITY,
-        params?.role,
-        {
-          languages: params?.language ? [params.language] : undefined,
-        },
-      );
+  // Progress & Analytics
+  getInsights: async () => {
+    const res = await http.get('/v1/patient/insights');
+    return res.data?.data ?? res.data;
+  },
+  getReports: async () => (await http.get('/v1/patient/reports')).data,
+  getSharedReportMeta: async (id: string) => (await http.get(`/v1/patient/reports/shared/${encodeURIComponent(id)}`)).data,
+  downloadSharedReport: async (id: string) =>
+    (await http.get(`/v1/patient/reports/shared/${encodeURIComponent(id)}/download`, { responseType: 'blob' })).data,
+  generateCompleteHealthSummary: async () => {
+    const resp = await http.post('/v1/patient/reports/health-summary', {}, { responseType: 'blob' });
+    return resp.data;
+  },
+  getRecordSecureUrl: async (id: string) => (await http.get(`/v1/patient/records/${encodeURIComponent(id)}/url`)).data,
+  createRecordShareLink: async (id: string) => (await http.post(`/v1/patient/records/${encodeURIComponent(id)}/share`)).data,
+  // Documents
+  getDocuments: async () => (await http.get('/v1/patient/documents')).data,
+  uploadDocument: async (payload: FormData) =>
+    (await http.post('/v1/patient/documents/upload', payload, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })).data,
+  getDocumentDownloadUrl: async (id: string) => (await http.get(`/v1/patient/documents/${encodeURIComponent(id)}/download`)).data,
+  // Care Team
+  getMyProviders: async () => (await http.get('/v1/patient/care-team')).data,
+  getAvailableProviders: async (params?: { specialization?: string; language?: string; maxPrice?: number; role?: string }) => {
+    const result = await patientApi.getAvailableProvidersForSmartMatch(
+      DEFAULT_SMART_MATCH_AVAILABILITY,
+      params?.role,
+      {
+        languages: params?.language ? [params.language] : undefined,
+      },
+    );
 
-      let providers = Array.isArray(result.providers) ? result.providers : [];
-      if (params?.specialization) {
-        const specialization = String(params.specialization).toLowerCase();
-        providers = providers.filter((provider: any) => {
-          const specializations = Array.isArray(provider?.specializations)
-            ? provider.specializations
-            : [provider?.specialization].filter(Boolean);
-          return specializations.some((item: string) => String(item).toLowerCase().includes(specialization));
-        });
-      }
-      if (typeof params?.maxPrice === 'number') {
-        providers = providers.filter((provider: any) => Number(provider?.sessionPrice || provider?.session_rate || 0) <= Number(params.maxPrice));
-      }
+    let providers = Array.isArray(result.providers) ? result.providers : [];
+    if (params?.specialization) {
+      const specialization = String(params.specialization).toLowerCase();
+      providers = providers.filter((provider: any) => {
+        const specializations = Array.isArray(provider?.specializations)
+          ? provider.specializations
+          : [provider?.specialization].filter(Boolean);
+        return specializations.some((item: string) => String(item).toLowerCase().includes(specialization));
+      });
+    }
+    if (typeof params?.maxPrice === 'number') {
+      providers = providers.filter((provider: any) => Number(provider?.sessionPrice || provider?.session_rate || 0) <= Number(params.maxPrice));
+    }
 
-      return {
-        data: {
-          items: providers,
-          total: providers.length,
-          page: 1,
-          limit: providers.length,
-        },
-      };
-    },
-      requestAppointmentToPreferredProviders: async (payload: {
-        providerIds: string[];
-        preferredLanguage?: string;
-        preferredTime?: string;
-        preferredSpecialization?: string;
-        carePath?: string;
-        urgency?: string;
-        note?: string;
-      }) =>
-        (await http.post('/v1/patient/appointments/smart-match', {
-          availabilityPrefs: DEFAULT_SMART_MATCH_AVAILABILITY,
-          providerIds: payload.providerIds,
-          preferredSpecialization: payload.preferredSpecialization,
-          context: payload.carePath,
-          languages: payload.preferredLanguage ? [payload.preferredLanguage] : undefined,
-          note: payload.note,
-        })).data,
-      confirmProposedAppointmentSlot: async (payload: {
-        requestRef: string;
-        providerId: string;
-        proposedStartAt?: string;
-        accept: boolean;
-      }) =>
-        (await http.post('/v1/patient/appointments/smart-match/confirm-slot', payload)).data,
-    // Messaging
-    getConversations: async () => (await http.get('/v1/patient/messages/conversations')).data,
-    getMessages: async (conversationId: string) => (await http.get(`/v1/patient/messages/${encodeURIComponent(conversationId)}`)).data,
-    sendMessage: async (payload: { conversationId: string; content: string }) =>
-      (await http.post('/v1/patient/messages', payload)).data,
-      startConversation: async (payload: { providerId: string }) =>
-        (await http.post('/v1/patient/messages/start', payload)).data,
-      markMessagesRead: async (conversationId: string) =>
-        (await http.post(`/v1/patient/messages/${encodeURIComponent(conversationId)}/read`, {})).data,
+    return {
+      data: {
+        items: providers,
+        total: providers.length,
+        page: 1,
+        limit: providers.length,
+      },
+    };
+  },
+  requestAppointmentToPreferredProviders: async (payload: {
+    providerIds: string[];
+    preferredLanguage?: string;
+    preferredTime?: string;
+    preferredSpecialization?: string;
+    carePath?: string;
+    urgency?: string;
+    note?: string;
+  }) =>
+    (await http.post('/v1/patient/appointments/smart-match', {
+      availabilityPrefs: DEFAULT_SMART_MATCH_AVAILABILITY,
+      providerIds: payload.providerIds,
+      preferredSpecialization: payload.preferredSpecialization,
+      context: payload.carePath,
+      languages: payload.preferredLanguage ? [payload.preferredLanguage] : undefined,
+      note: payload.note,
+    })).data,
+  confirmProposedAppointmentSlot: async (payload: {
+    requestRef: string;
+    providerId: string;
+    proposedStartAt?: string;
+    accept: boolean;
+  }) =>
+    (await http.post('/v1/patient/appointments/smart-match/confirm-slot', payload)).data,
+  // Messaging
+  getConversations: async () => (await http.get('/v1/patient/messages/conversations')).data,
+  getMessages: async (conversationId: string) => (await http.get(`/v1/patient/messages/${encodeURIComponent(conversationId)}`)).data,
+  sendMessage: async (payload: { conversationId: string; content: string }) =>
+    (await http.post('/v1/patient/messages', payload)).data,
+  startConversation: async (payload: { providerId: string }) =>
+    (await http.post('/v1/patient/messages/start', payload)).data,
+  markMessagesRead: async (conversationId: string) =>
+    (await http.post(`/v1/patient/messages/${encodeURIComponent(conversationId)}/read`, {})).data,
 
   // Smart Match Appointment Booking
   getAvailableProvidersForSmartMatch: async (
@@ -783,4 +783,4 @@ export const patientApi = {
 
   getPaymentPendingRequest: async () =>
     (await http.get('/v1/patient/appointments/payment-pending')).data,
-  };
+};

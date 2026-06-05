@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import ProviderSelectionStep from './steps/ProviderSelectionStep';
 import PendingRequestStep from './steps/PendingRequestStep';
 import PreBookingPaymentStep from './steps/PreBookingPaymentStep';
@@ -18,7 +19,7 @@ interface SmartMatchFlowProps {
   timezoneRegion?: string;
 }
 
-type FlowStep = 'calendar' | 'domain-selection' | 'provider-selection' | 'pre-payment' | 'pending';
+type FlowStep = 'calendar' | 'provider-selection' | 'pre-payment' | 'pending';
 
 type SmartMatchPreferences = {
   concerns: string[];
@@ -59,7 +60,7 @@ export default function SmartMatchFlow({
   onClose,
   onSuccess,
   initialProviderType = 'ALL',
-  lockProviderType = false,
+  lockProviderType: _lockProviderType = false,
   presetEntryType,
   sourceFunnel,
   timezoneRegion,
@@ -85,9 +86,7 @@ export default function SmartMatchFlow({
     context: 'Standard',
   });
 
-  const flowSteps: FlowStep[] = lockProviderType
-    ? ['calendar', 'provider-selection', 'pre-payment', 'pending']
-    : ['calendar', 'domain-selection', 'provider-selection', 'pre-payment', 'pending'];
+  const flowSteps: FlowStep[] = ['calendar', 'provider-selection', 'pre-payment', 'pending'];
 
   const getAvailabilityPrefs = () => {
     if (!calendarSelection) {
@@ -156,7 +155,6 @@ export default function SmartMatchFlow({
   const getStepTitle = (): string => {
     const titles: Record<FlowStep, string> = {
       'calendar': 'Book a Session',
-      'domain-selection': 'Choose Specialist Type',
       'provider-selection': 'Choose Providers',
       'pre-payment': 'Confirm & Pay',
       'pending': 'Request Pending',
@@ -164,7 +162,7 @@ export default function SmartMatchFlow({
     return titles[step];
   };
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -185,13 +183,12 @@ export default function SmartMatchFlow({
                   (s, i) => (
                     <div
                       key={s}
-                      className={`h-1 flex-1 rounded-full transition-all ${
-                        step === s
-                          ? 'bg-teal-500'
-                          : flowSteps.indexOf(step) > i
-                            ? 'bg-teal-200'
-                            : 'bg-calm-sage/15'
-                      }`}
+                      className={`h-1 flex-1 rounded-full transition-all ${step === s
+                        ? 'bg-teal-500'
+                        : flowSteps.indexOf(step) > i
+                          ? 'bg-teal-200'
+                          : 'bg-calm-sage/15'
+                        }`}
                     />
                   )
                 )}
@@ -256,64 +253,11 @@ export default function SmartMatchFlow({
               <CalendarSelection
                 onDateTimeSelect={(date, time) => {
                   setCalendarSelection({ date, time });
-                  if (lockProviderType) {
-                    setSelectedProviderType(initialProviderType);
-                    setStep('provider-selection');
-                    return;
-                  }
-                  setStep('domain-selection');
+                  setSelectedProviderType(initialProviderType);
+                  setStep('provider-selection');
                 }}
                 onCancel={handleClose}
               />
-            )}
-
-            {!isCheckingSubscription && !isFreeBlocked && step === 'domain-selection' && (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-700">
-                      2
-                    </div>
-                    <h3 className="text-lg font-semibold text-charcoal">Choose specialist type</h3>
-                  </div>
-                  <p className="text-sm text-charcoal/60 ml-10">Pick which domain you want to book from</p>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {[
-                    { key: 'THERAPIST', label: 'Therapist' },
-                    { key: 'PSYCHOLOGIST', label: 'Psychologist' },
-                    { key: 'PSYCHIATRIST', label: 'Psychiatrist' },
-                    { key: 'COACH', label: 'Coach' },
-                  ].map((option) => (
-                    <button
-                      key={option.key}
-                      onClick={() => {
-                        setSelectedProviderType(option.key as any);
-                        setStep('provider-selection');
-                      }}
-                      className="rounded-xl border border-calm-sage/20 bg-white px-4 py-4 text-left transition-colors hover:border-teal-300 hover:bg-teal-50/40"
-                    >
-                      <p className="font-semibold text-charcoal">{option.label}</p>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => setStep('calendar')}
-                    className="flex-1 rounded-lg border border-calm-sage/20 px-4 py-3 text-sm font-medium text-charcoal transition-colors hover:bg-calm-sage/5"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={handleClose}
-                    className="flex-1 rounded-lg border border-calm-sage/20 px-4 py-3 text-sm font-medium text-charcoal transition-colors hover:bg-calm-sage/5"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
             )}
 
             {!isCheckingSubscription && !isFreeBlocked && step === 'provider-selection' && calendarSelection && (
@@ -325,27 +269,23 @@ export default function SmartMatchFlow({
                 sourceFunnel={sourceFunnel}
                 timezoneRegion={timezoneRegion}
                 onPreferencesChange={setMatchPreferences}
-                 onSuccess={(providers: any) => {
-                   // Convert ProviderMatch to SelectedProvider format
-                   const selectedProviders = providers.map((p: any) => ({
-                     id: p.id,
-                     name: p.name || p.displayName || 'Provider',
-                     type: p.providerType || 'Therapist',
-                     fee: nriFixedFeeMinor || p.consultationFee || 69900,
-                     score: p.score,
-                     tier: p.tier,
-                     matchBand: p.matchBand,
-                     breakdown: p.breakdown,
-                   }));
-                   setSelectedProviders(selectedProviders);
+                onSuccess={(providers: any) => {
+                  // Convert ProviderMatch to SelectedProvider format
+                  const selectedProviders = providers.map((p: any) => ({
+                    id: p.id,
+                    name: p.name || p.displayName || 'Provider',
+                    type: p.providerType || 'Therapist',
+                    fee: nriFixedFeeMinor || p.consultationFee || 69900,
+                    score: p.score,
+                    tier: p.tier,
+                    matchBand: p.matchBand,
+                    breakdown: p.breakdown,
+                  }));
+                  setSelectedProviders(selectedProviders);
                   setStep('pre-payment');
                 }}
                 onBack={() => {
-                  if (lockProviderType) {
-                    setStep('calendar');
-                    return;
-                  }
-                  setStep('domain-selection');
+                  setStep('calendar');
                 }}
                 onCancel={handleClose}
               />
@@ -374,6 +314,7 @@ export default function SmartMatchFlow({
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

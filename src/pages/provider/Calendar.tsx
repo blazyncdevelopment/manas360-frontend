@@ -8,7 +8,12 @@ const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const monthStart = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), 1);
 const monthEnd = (date: Date): Date => new Date(date.getFullYear(), date.getMonth() + 1, 0);
-const dayKey = (date: Date): string => date.toISOString().slice(0, 10);
+const dayKey = (date: Date): string => {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const day = String(date.getDate()).padStart(2, '0');
+	return `${year}-${month}-${day}`;
+};
 
 const buildGridDays = (visibleMonth: Date): Date[] => {
 	const start = monthStart(visibleMonth);
@@ -141,9 +146,8 @@ export default function Calendar() {
 								return (
 									<div
 										key={key}
-										className={`min-h-[164px] rounded-2xl border p-3 ${
-											inCurrentMonth ? 'border-[#E3E9E0] bg-white' : 'border-[#EEF2EA] bg-[#FAFBF9]'
-										}`}
+										className={`min-h-[164px] rounded-2xl border p-3 ${inCurrentMonth ? 'border-[#E3E9E0] bg-white' : 'border-[#EEF2EA] bg-[#FAFBF9]'
+											}`}
 									>
 										<div className="flex items-center justify-between">
 											<span className={`text-sm font-semibold ${inCurrentMonth ? 'text-[#23313A]' : 'text-slate-400'}`}>{day.getDate()}</span>

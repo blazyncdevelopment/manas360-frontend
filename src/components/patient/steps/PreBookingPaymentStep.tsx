@@ -140,7 +140,7 @@ export default function PreBookingPaymentStep({
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-700">
-            4
+            3
           </div>
           <h3 className="text-lg font-semibold text-charcoal">Confirm & Pay</h3>
         </div>
@@ -157,85 +157,85 @@ export default function PreBookingPaymentStep({
 
       {/* Session Details Card */}
       <div className="rounded-lg border border-calm-sage/20 bg-white/50 p-4 space-y-3">
-          <div>
-            <p className="text-xs text-charcoal/60 uppercase tracking-wider font-semibold">
-              Date & Time
-            </p>
-            <p className="text-sm font-semibold text-charcoal mt-1">
-              {selectedDateTime.date.toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
-              {' '}at {selectedDateTime.time}
-            </p>
-          </div>
+        <div>
+          <p className="text-xs text-charcoal/60 uppercase tracking-wider font-semibold">
+            Date & Time
+          </p>
+          <p className="text-sm font-semibold text-charcoal mt-1">
+            {selectedDateTime.date.toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+            })}
+            {' '}at {selectedDateTime.time}
+          </p>
+        </div>
 
-          <div>
-            <p className="text-xs text-charcoal/60 uppercase tracking-wider font-semibold">
-              Providers
-            </p>
-            <p className="text-sm font-semibold text-charcoal mt-1">
-              {selectedProviders.length} provider{selectedProviders.length !== 1 ? 's' : ''} selected
-            </p>
-            <div className="space-y-1 mt-2">
-              {selectedProviders.map((provider) => (
-                <p key={provider.id} className="text-xs text-charcoal/70">
-                  • {provider.name} ({provider.type})
-                </p>
-              ))}
-            </div>
-          </div>
-
-          <div className="border-t border-calm-sage/15 pt-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-charcoal">Session Fee</p>
-              <p className="text-lg font-bold text-teal-600">₹{feeInRupees.toFixed(0)}</p>
-            </div>
-            <p className="text-xs text-charcoal/60 mt-2">
-              Booking will be sent to your selected providers after payment confirmation. The first provider to accept will deliver your session.
-            </p>
-            {nriFixedFeeMinor ? (
-              <p className="text-xs text-blue-700 mt-2">
-                Indian provider terms: fixed per-session price is applied for this consultation flow.
+        <div>
+          <p className="text-xs text-charcoal/60 uppercase tracking-wider font-semibold">
+            Providers
+          </p>
+          <p className="text-sm font-semibold text-charcoal mt-1">
+            {selectedProviders.length} provider{selectedProviders.length !== 1 ? 's' : ''} selected
+          </p>
+          <div className="space-y-1 mt-2">
+            {selectedProviders.map((provider) => (
+              <p key={provider.id} className="text-xs text-charcoal/70">
+                • {provider.name} ({provider.type})
               </p>
-            ) : null}
+            ))}
           </div>
+        </div>
+
+        <div className="border-t border-calm-sage/15 pt-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-charcoal">Session Fee</p>
+            <p className="text-lg font-bold text-teal-600">₹{feeInRupees.toFixed(0)}</p>
+          </div>
+          <p className="text-xs text-charcoal/60 mt-2">
+            Booking will be sent to your selected providers after payment confirmation. The first provider to accept will deliver your session.
+          </p>
+          {nriFixedFeeMinor ? (
+            <p className="text-xs text-blue-700 mt-2">
+              Indian provider terms: fixed per-session price is applied for this consultation flow.
+            </p>
+          ) : null}
+        </div>
       </div>
 
       {/* Payment Info */}
       <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-4 flex gap-3">
-          <Lock className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-700">
-            <p className="font-semibold">Secure Payment</p>
-            <p className="text-xs mt-1">Your payment is processed securely by PhonePe.</p>
-          </div>
+        <Lock className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-blue-700">
+          <p className="font-semibold">Secure Payment</p>
+          <p className="text-xs mt-1">Your payment is processed securely by PhonePe.</p>
+        </div>
       </div>
 
       {/* Action Buttons */}
       <div className="space-y-2">
-          <button
-            onClick={handlePhonePePayment}
-            disabled={loading}
-            className="w-full rounded-lg bg-teal-500 px-4 py-3 font-semibold text-white transition-all hover:bg-teal-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {loading ? 'Processing...' : `Pay ₹${feeInRupees.toFixed(0)}`}
-          </button>
-          <button
-            onClick={onBack}
-            disabled={loading}
-            className="w-full rounded-lg px-4 py-2 border border-calm-sage/20 text-charcoal font-medium hover:bg-calm-sage/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            ← Back to Providers
-          </button>
-          <button
-            onClick={onCancel}
-            disabled={loading}
-            className="w-full rounded-lg px-4 py-2 border border-red-200 text-red-600 font-medium hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Cancel
-          </button>
+        <button
+          onClick={handlePhonePePayment}
+          disabled={loading}
+          className="w-full rounded-lg bg-teal-500 px-4 py-3 font-semibold text-white transition-all hover:bg-teal-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {loading ? 'Processing...' : `Pay ₹${feeInRupees.toFixed(0)}`}
+        </button>
+        <button
+          onClick={onBack}
+          disabled={loading}
+          className="w-full rounded-lg px-4 py-2 border border-calm-sage/20 text-charcoal font-medium hover:bg-calm-sage/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          ← Back to Providers
+        </button>
+        <button
+          onClick={onCancel}
+          disabled={loading}
+          className="w-full rounded-lg px-4 py-2 border border-red-200 text-red-600 font-medium hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );

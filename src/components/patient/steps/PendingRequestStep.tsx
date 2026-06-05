@@ -91,7 +91,7 @@ export default function PendingRequestStep({
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-700">
-            3
+            4
           </div>
           <h3 className="text-lg font-semibold text-charcoal">Waiting for confirmation</h3>
         </div>
