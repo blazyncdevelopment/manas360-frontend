@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ShoppingCart, Filter, Lock, Info, CheckCircle2, AlertCircle } from 'lucide-react';
-import { fetchProviderMarketplace, fetchProviderLeadStats, purchaseProviderLead } from '../../api/provider';
+import { fetchProviderMarketplace, fetchProviderLeadStats, fetchProviderLeads, purchaseProviderLead } from '../../api/provider';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -53,7 +53,9 @@ const typeColors: Record<string, { bg: string; text: string; label: string; emoj
 export default function ProviderMarketplacePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [tab, setTab] = useState<'marketplace' | 'purchased'>('marketplace');
   const [leads, setLeads] = useState<MarketplaceLead[]>([]);
+  const [purchasedLeads, setPurchasedLeads] = useState<any[]>([]);
   const [stats, setStats] = useState<LeadStats | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
@@ -62,42 +64,44 @@ export default function ProviderMarketplacePage() {
   const isPlatformActive = user?.platformAccessActive;
   const leadsRemaining = stats?.leadsRemaining ?? 0;
   const isQuotaExhausted = leadsRemaining === 0;
-  const canPurchase = Boolean(isPlatformActive); // Allow purchase anytime with active platform
+  const canPurchase = Boolean(isPlatformActive);
 
-  useEffect(() => {
+  const loadData = () => {
+    setLoading(true);
     Promise.all([
       fetchProviderMarketplace(),
-      fetchProviderLeadStats().catch(() => null)
+      fetchProviderLeadStats().catch(() => null),
+      fetchProviderLeads().catch(() => []),
     ])
-      .then(([marketplaceData, statsData]) => {
+      .then(([marketplaceData, statsData, myLeads]) => {
         setLeads(marketplaceData || []);
         setStats(statsData);
+        setPurchasedLeads(Array.isArray(myLeads) ? myLeads : []);
       })
       .catch((err: any) => {
-        if (err?.response?.status === 403) {
-          toast.error('Access restricted');
-        }
+        if (err?.response?.status === 403) toast.error('Access restricted');
       })
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadData(); }, []);
 
   const filteredLeads = filter === 'all' ? leads : leads.filter((l) => l.leadType === filter);
 
   const onPurchase = async (leadId: string) => {
-    if (!canPurchase) {
-      toast.error('Please exhaust your weekly quota first');
-      return;
-    }
+    if (!canPurchase) return;
     setPurchasing(leadId);
     try {
       const result: any = await purchaseProviderLead(leadId);
-      const redirectUrl = result?.redirectUrl || result?.data?.redirectUrl;
+      // Backend returns PhonePe redirect URL — send provider to payment
+      const redirectUrl = result?.redirectUrl;
       if (redirectUrl) {
         window.location.href = redirectUrl;
         return;
       }
+      // If no redirect (e.g. free lead), refresh data
       toast.success('Lead purchased successfully!');
-      setLeads((prev) => prev.filter((l) => l.id !== leadId));
+      loadData();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Purchase failed');
     } finally {
@@ -151,7 +155,65 @@ export default function ProviderMarketplacePage() {
       </section>
 
       <div className="mx-auto max-w-7xl px-6 mt-10">
-        
+
+        {/* Tabs */}
+        <div className="mb-8 flex gap-2 border-b border-slate-200">
+          {(['marketplace', 'purchased'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-5 py-3 text-sm font-bold capitalize transition-all border-b-2 -mb-px ${
+                tab === t ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              {t === 'marketplace' ? `Buy Leads (${leads.length})` : `My Purchased (${purchasedLeads.length})`}
+            </button>
+          ))}
+        </div>
+
+        {/* Purchased Leads Tab */}
+        {tab === 'purchased' && (
+          <div className="space-y-4">
+            {purchasedLeads.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-dashed border-slate-200 py-20 flex flex-col items-center gap-3">
+                <ShoppingCart className="h-10 w-10 text-slate-300" />
+                <p className="text-slate-400 font-bold">No purchased leads yet</p>
+                <p className="text-slate-400 text-sm">Buy leads from the marketplace to see patient details here</p>
+              </div>
+            ) : (
+              purchasedLeads.map((lead: any) => (
+                <div key={lead.id} className="bg-white rounded-2xl border border-slate-200 p-5 flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Purchased</span>
+                      {lead.tier && <span className="text-xs text-slate-500 font-semibold">{lead.tier}</span>}
+                    </div>
+                    <p className="font-bold text-charcoal">{lead.patientName || 'Patient'}</p>
+                    {lead.issue && lead.issue.length > 0 && (
+                      <div className="flex gap-1 flex-wrap">
+                        {lead.issue.map((tag: string) => (
+                          <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 font-semibold capitalize">
+                            {tag.replace(/_/g, ' ')}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs text-slate-400">Match Score: {lead.matchScore ?? '—'}</p>
+                    <p className="text-xs text-slate-400">Purchased: {new Date(lead.purchasedAt || lead.createdAt).toLocaleDateString('en-IN')}</p>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/provider/appointments`)}
+                    className="px-4 py-2 rounded-xl bg-teal-600 text-white text-xs font-black hover:bg-teal-700 transition whitespace-nowrap"
+                  >
+                    View Request →
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {tab === 'marketplace' && <>
         {/* Info Banner: show remaining weekly leads as info only */}
         {isPlatformActive && !isQuotaExhausted && (
           <div className="mb-6 p-4 rounded-2xl bg-teal-50 border border-teal-100 flex items-center gap-3">
@@ -308,6 +370,7 @@ export default function ProviderMarketplacePage() {
             )}
           </>
         )}
+        </> }
       </div>
     </div>
   );
