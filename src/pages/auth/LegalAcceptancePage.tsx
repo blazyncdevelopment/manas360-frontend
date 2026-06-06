@@ -188,8 +188,8 @@ export default function LegalAcceptancePage() {
                   <div
                     key={document.id}
                     className={`rounded-2xl border p-4.5 transition-all duration-300 flex items-start gap-3.5 ${isDocChecked
-                        ? 'border-emerald-500/40 bg-emerald-50/10 shadow-soft-xs'
-                        : 'border-calm-sage/20 bg-white hover:border-[#2F7A5F]/40'
+                      ? 'border-emerald-500/40 bg-emerald-50/10 shadow-soft-xs'
+                      : 'border-calm-sage/20 bg-white hover:border-[#2F7A5F]/40'
                       }`}
                   >
                     <div className="flex items-center h-5 mt-1">

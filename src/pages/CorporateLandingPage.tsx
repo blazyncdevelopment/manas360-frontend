@@ -149,7 +149,7 @@ const CorporateLandingPage: React.FC = () => {
           <h1>For Corporates, Education & Healthcare</h1>
           <p>Employee wellness, student mental health, and hospital integration - scalable programs for institutions.</p>
           <Link className="corporate-landing-primary" to="/corporate">
-            How it works ? →
+            How it works
           </Link>
         </div>
       </section>

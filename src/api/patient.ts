@@ -182,7 +182,7 @@ export type SmartMatchProvidersResult = {
 
 const DEFAULT_SMART_MATCH_AVAILABILITY = {
   daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
-  timeSlots: [{ startMinute: 0, endMinute: 1439 }],
+  timeSlots: ['0-1439'],
 };
 
 const unwrapPayload = <T = any>(value: any): T => {
@@ -704,7 +704,7 @@ export const patientApi = {
   getAvailableProvidersForSmartMatch: async (
     availabilityPrefs: {
       daysOfWeek: number[];
-      timeSlots: Array<{ startMinute: number; endMinute: number }>;
+      timeSlots: Array<string | { startMinute: number; endMinute: number }>;
     },
     providerType?: string,
     options?: {
@@ -716,15 +716,21 @@ export const patientApi = {
       timezoneRegion?: string;
       sourceFunnel?: string;
       selectedDate?: string;
+      buddy?: boolean;
+      night?: boolean;
+      crisis?: boolean;
     },
   ): Promise<SmartMatchProvidersResult> => {
     const query = new URLSearchParams();
-    availabilityPrefs.daysOfWeek.forEach((day) => {
-      query.append('daysOfWeek', String(day));
-    });
-    availabilityPrefs.timeSlots.forEach((slot) => {
-      query.append(`timeSlots`, `${slot.startMinute}-${slot.endMinute}`);
-    });
+    query.append('daysOfWeek', availabilityPrefs.daysOfWeek.join(','));
+    const timeSlotsStr = availabilityPrefs.timeSlots
+      .map((slot) => {
+        if (typeof slot === 'string') return slot;
+        return `${slot.startMinute}-${slot.endMinute}`;
+      })
+      .join(',');
+    query.append('timeSlots', timeSlotsStr);
+
     if (providerType && providerType !== 'ALL') {
       query.append('providerType', providerType);
     }
@@ -736,6 +742,10 @@ export const patientApi = {
     if (options?.timezoneRegion) query.append('timezoneRegion', options.timezoneRegion);
     if (options?.sourceFunnel) query.append('sourceFunnel', options.sourceFunnel);
     if (options?.selectedDate) query.append('selectedDate', options.selectedDate);
+    if (options?.buddy) query.append('buddy', 'true');
+    if (options?.night) query.append('night', 'true');
+    if (options?.crisis) query.append('crisis', 'true');
+
     try {
       const response = (await http.get(`/v1/patient/providers/smart-match?${query}`)).data;
       const payload = response?.data ?? response;
@@ -756,7 +766,7 @@ export const patientApi = {
   createAppointmentRequest: async (payload: {
     availabilityPrefs: {
       daysOfWeek: number[];
-      timeSlots: Array<{ startMinute: number; endMinute: number }>;
+      timeSlots: string[];
     };
     providerIds: string[];
     preferredSpecialization?: string;
@@ -775,6 +785,11 @@ export const patientApi = {
     }>;
     payment?: {
       merchantTransactionId?: string;
+    };
+    specialNeeds?: {
+      buddy: boolean;
+      night: boolean;
+      crisis: boolean;
     };
   }) => (await http.post('/v1/patient/appointments/smart-match', payload)).data,
 

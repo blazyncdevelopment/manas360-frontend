@@ -272,10 +272,10 @@ function App() {
   //   !location.pathname.startsWith('/patient');
 
   const isDashboardRoute =
-    location.pathname.startsWith('/patient') ||
-    location.pathname.startsWith('/provider') ||
-    location.pathname.startsWith('/admin')
-  // location.pathname.startsWith('/corporate');
+    location.pathname.startsWith('/patient/') || location.pathname === '/patient' ||
+    location.pathname.startsWith('/provider/') || location.pathname === '/provider' ||
+    location.pathname.startsWith('/admin/') || location.pathname === '/admin' ||
+    (location.pathname.startsWith('/corporate/') && !['/corporate/onboarding', '/corporate/landing'].includes(location.pathname));
 
   const showHeaderFooter =
     !hideHeaderFooterRoutes.includes(location.pathname) &&

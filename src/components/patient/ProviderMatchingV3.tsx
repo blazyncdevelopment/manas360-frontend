@@ -97,6 +97,9 @@ const ProviderMatchingV3: React.FC<ProviderMatchingV3Props> = ({
   const [selectedTimes, setSelectedTimes] = useState<string[]>(['Evening']);
   const [selectedModes, setSelectedModes] = useState<string[]>(['Video']);
   const [context, setContext] = useState<MatchContext>('Standard');
+  const [needsBuddySupport, setNeedsBuddySupport] = useState(false);
+  const [needsNightSessions, setNeedsNightSessions] = useState(false);
+  const [needsCrisisCalls, setNeedsCrisisCalls] = useState(false);
 
   // Fetch providers based on current filters
   const fetchProviders = useCallback(async () => {
@@ -115,6 +118,9 @@ const ProviderMatchingV3: React.FC<ProviderMatchingV3Props> = ({
           presetEntryType,
           sourceFunnel,
           timezoneRegion,
+          buddy: needsBuddySupport,
+          night: needsNightSessions,
+          crisis: needsCrisisCalls,
         },
       );
 
@@ -136,6 +142,9 @@ const ProviderMatchingV3: React.FC<ProviderMatchingV3Props> = ({
     presetEntryType,
     sourceFunnel,
     timezoneRegion,
+    needsBuddySupport,
+    needsNightSessions,
+    needsCrisisCalls,
   ]);
 
   // Auto-fetch when filters change
@@ -323,6 +332,53 @@ const ProviderMatchingV3: React.FC<ProviderMatchingV3Props> = ({
                     {ctx}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* New V3 Hard Filters Toggles */}
+            <div className="sm:col-span-2">
+              <label className="text-xs font-semibold text-charcoal/70 mb-2 block">
+                🚨 Special Needs (V3 Hard Filters)
+              </label>
+              <div className="grid gap-2 sm:grid-cols-3">
+                <label className="flex items-center gap-2 rounded-xl border border-calm-sage/15 bg-white px-3 py-2 cursor-pointer select-none transition hover:border-teal-300">
+                  <input
+                    type="checkbox"
+                    checked={needsBuddySupport}
+                    onChange={(e) => setNeedsBuddySupport(e.target.checked)}
+                    className="rounded text-teal-600 focus:ring-teal-500 h-4 w-4"
+                  />
+                  <div>
+                    <p className="text-[11px] font-bold text-charcoal">Buddy Support</p>
+                    <p className="text-[9px] text-charcoal/50">Requires Buddy assistance</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2 rounded-xl border border-calm-sage/15 bg-white px-3 py-2 cursor-pointer select-none transition hover:border-teal-300">
+                  <input
+                    type="checkbox"
+                    checked={needsNightSessions}
+                    onChange={(e) => setNeedsNightSessions(e.target.checked)}
+                    className="rounded text-teal-600 focus:ring-teal-500 h-4 w-4"
+                  />
+                  <div>
+                    <p className="text-[11px] font-bold text-charcoal">Night Sessions</p>
+                    <p className="text-[9px] text-charcoal/50">Sessions post 9 PM</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2 rounded-xl border border-calm-sage/15 bg-white px-3 py-2 cursor-pointer select-none transition hover:border-teal-300">
+                  <input
+                    type="checkbox"
+                    checked={needsCrisisCalls}
+                    onChange={(e) => setNeedsCrisisCalls(e.target.checked)}
+                    className="rounded text-teal-600 focus:ring-teal-500 h-4 w-4"
+                  />
+                  <div>
+                    <p className="text-[11px] font-bold text-charcoal">Crisis Support</p>
+                    <p className="text-[9px] text-charcoal/50">24/7 emergency calls</p>
+                  </div>
+                </label>
               </div>
             </div>
           </div>

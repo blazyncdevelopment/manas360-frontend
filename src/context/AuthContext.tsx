@@ -21,7 +21,8 @@ export type AppRole =
   | 'superadmin'
   | 'clinicaldirector'
   | 'financemanager'
-  | 'complianceofficer';
+  | 'complianceofficer'
+  | 'corporate';
 
 const normalizeRole = (value: unknown): AppRole | null => {
   if (typeof value !== 'string') {
@@ -40,7 +41,8 @@ const normalizeRole = (value: unknown): AppRole | null => {
     normalized === 'superadmin' ||
     normalized === 'clinicaldirector' ||
     normalized === 'financemanager' ||
-    normalized === 'complianceofficer'
+    normalized === 'complianceofficer' ||
+    normalized === 'corporate'
   ) {
     return normalized as AppRole;
   }
@@ -75,12 +77,35 @@ const toBoolean = (value: unknown): boolean => value === true || value === 'true
 export const hasCorporateAccess = (user: AuthUser | null | undefined): boolean => {
   if (!user) return false;
 
-  const explicitAdminFlag = toBoolean(user.isCompanyAdmin) || toBoolean(user.is_company_admin);
-  if (explicitAdminFlag) return true;
+  // 1. Explicit role
+  if (normalizeRole(user.role) === 'corporate') return true;
 
-  // Fallback for legacy payloads that expose company key but not the boolean flag.
-  const companyKey = user.companyKey ?? user.company_key;
-  return typeof companyKey === 'string' && companyKey.trim().length > 0;
+  // 2. Explicit boolean flag — check every casing the backend might return
+  const raw = user as any;
+  const adminFlag =
+    toBoolean(raw.isCompanyAdmin) ||
+    toBoolean(raw.is_company_admin) ||
+    toBoolean(raw.isCorpAdmin) ||
+    toBoolean(raw.is_corp_admin) ||
+    toBoolean(raw.corporateAdmin) ||
+    toBoolean(raw.corporate_admin) ||
+    toBoolean(raw.isAdmin) ||
+    toBoolean(raw.is_admin);
+  if (adminFlag) return true;
+
+  // 3. Any non-empty company/entity key
+  const companyKey =
+    raw.companyKey ??
+    raw.company_key ??
+    raw.entityKey ??
+    raw.entity_key ??
+    raw.orgKey ??
+    raw.org_key ??
+    raw.organizationKey ??
+    raw.organization_key;
+  if (typeof companyKey === 'string' && companyKey.trim().length > 0) return true;
+
+  return false;
 };
 
 export const isPlatformAdminUser = (user: AuthUser | null | undefined): boolean => {
@@ -103,13 +128,15 @@ export const getPostLoginRoute = (user: AuthUser | null | undefined): string => 
     return '/auth/legal-accept';
   }
 
+  // Corporate check MUST come before requiresSubscription — corporate admins
+  // are not subject to patient subscription gating.
+  if (hasCorporateAccess(user)) {
+    return '/corporate/dashboard';
+  }
+
   // If patient requires subscription, route to plans page
   if ((user as any)?.requiresSubscription) {
     return '/plans';
-  }
-
-  if (hasCorporateAccess(user)) {
-    return '/corporate/dashboard';
   }
 
   if (normalizeRole(user.role) === 'complianceofficer') {

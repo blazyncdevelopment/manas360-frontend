@@ -10,7 +10,7 @@ export default function MdcLoginPage() {
   const [step, setStep] = useState<'details' | 'otp'>('details');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [devOtp, setDevOtp] = useState<string | null>(null);
+
 
   const [formData, setFormData] = useState({
     clinicCode: '',
@@ -33,15 +33,13 @@ export default function MdcLoginPage() {
     setError(null);
 
     try {
-      const response = await axios.post(`${API_BASE}/v1/mdc/auth/request-otp`, {
+      await axios.post(`${API_BASE}/v1/mdc/auth/request-otp`, {
         clinicCode: formData.clinicCode,
         loginSuffix: formData.loginSuffix,
         phone: formData.phone,
       });
 
-      if (response.data.devOtp) {
-        setDevOtp(response.data.devOtp);
-      }
+
 
       setStep('otp');
     } catch (err: any) {
@@ -173,15 +171,10 @@ export default function MdcLoginPage() {
                 onChange={handleChange}
               />
               <p className="text-[10px] text-slate-500 mt-4 text-center">
-                OTP sent to {formData.phone}. <button type="button" onClick={() => { setStep('details'); setDevOtp(null); }} className="text-blue-500 font-bold hover:underline">Change Details</button>
+                OTP sent to {formData.phone}. <button type="button" onClick={() => { setStep('details'); }} className="text-blue-500 font-bold hover:underline">Change Details</button>
               </p>
 
-              {devOtp && (
-                <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-center">
-                  <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-1">Development OTP</p>
-                  <p className="text-2xl font-mono font-black text-white tracking-[0.5em]">{devOtp}</p>
-                </div>
-              )}
+
             </div>
 
             <button

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+
 import toast from 'react-hot-toast';
 import CorporateShellLayout from '../../components/corporate/CorporateShellLayout';
 import LeaderboardSection from './dashboard/LeaderboardSection';
@@ -538,12 +538,14 @@ export default function CorporateDashboard() {
         <div className="rounded-xl border border-ink-100 bg-white p-5">
           <h2 className="font-display text-lg font-semibold text-ink-900">Daily Check-In</h2>
           <p className="mt-2 text-sm text-ink-600">Encourage employees to submit today&apos;s mood and wellness status.</p>
-          <Link
-            to="/patient/check-in"
-            className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-ink-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-ink-800"
+          <button
+            type="button"
+            onClick={() => { void handleCheckIn(''); }}
+            disabled={checkingInChallengeIds.has('')}
+            className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-ink-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-ink-800 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Daily check-in
-          </Link>
+            {checkingInChallengeIds.has('') ? 'Checking in...' : 'Daily check-in'}
+          </button>
         </div>
       </div>
 

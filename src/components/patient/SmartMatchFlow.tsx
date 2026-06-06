@@ -26,6 +26,9 @@ type SmartMatchPreferences = {
   language: string;
   mode: string;
   context: 'Standard' | 'Corporate' | 'Night' | 'Buddy' | 'Crisis';
+  buddy?: boolean;
+  night?: boolean;
+  crisis?: boolean;
 };
 
 interface CalendarSelection {

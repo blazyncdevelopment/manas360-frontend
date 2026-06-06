@@ -28,6 +28,9 @@ interface PreBookingPaymentStepProps {
     language: string;
     mode: string;
     context: 'Standard' | 'Corporate' | 'Night' | 'Buddy' | 'Crisis';
+    buddy?: boolean;
+    night?: boolean;
+    crisis?: boolean;
   };
   onBack: () => void;
   onCancel: () => void;
@@ -75,7 +78,7 @@ export default function PreBookingPaymentStep({
 
       const availabilityPrefs = {
         daysOfWeek: [selectedDateTime.date.getDay()],
-        timeSlots: [{ startMinute: startMinuteOfDay, endMinute: startMinuteOfDay + 30 }],
+        timeSlots: [`${startMinuteOfDay}-${startMinuteOfDay + 30}`],
       };
 
       const appointmentPayload = {
@@ -102,6 +105,11 @@ export default function PreBookingPaymentStep({
           tier: provider.tier,
           breakdown: provider.breakdown,
         })),
+        specialNeeds: {
+          buddy: matchPreferences?.buddy || false,
+          night: matchPreferences?.night || false,
+          crisis: matchPreferences?.crisis || false,
+        },
       };
 
       const response: any = await patientApi.createAppointmentRequest(appointmentPayload as any);

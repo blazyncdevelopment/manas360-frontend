@@ -46,6 +46,9 @@ interface ProviderSelectionStepProps {
     language: string;
     mode: string;
     context: 'Standard' | 'Corporate' | 'Night' | 'Buddy' | 'Crisis';
+    buddy?: boolean;
+    night?: boolean;
+    crisis?: boolean;
   }) => void;
 }
 
@@ -153,6 +156,9 @@ export default function ProviderSelectionStep({
   const [preferredLanguage, setPreferredLanguage] = useState('');
   const [preferredMode, setPreferredMode] = useState('');
   const [matchContext, setMatchContext] = useState<'Standard' | 'Corporate' | 'Night' | 'Buddy' | 'Crisis'>('Standard');
+  const [needsBuddySupport, setNeedsBuddySupport] = useState(false);
+  const [needsNightSessions, setNeedsNightSessions] = useState(false);
+  const [needsCrisisCalls, setNeedsCrisisCalls] = useState(false);
 
   // Debounced values — only update after user stops typing
   const [debouncedConcerns, setDebouncedConcerns] = useState('');
@@ -201,8 +207,11 @@ export default function ProviderSelectionStep({
       language: debouncedLanguage,
       mode: debouncedMode,
       context: matchContext,
+      buddy: needsBuddySupport,
+      night: needsNightSessions,
+      crisis: needsCrisisCalls,
     });
-  }, [parsedConcerns, debouncedLanguage, debouncedMode, matchContext, onPreferencesChange]);
+  }, [parsedConcerns, debouncedLanguage, debouncedMode, matchContext, needsBuddySupport, needsNightSessions, needsCrisisCalls, onPreferencesChange]);
 
   useEffect(() => {
     const fetchProviders = async () => {
@@ -221,6 +230,9 @@ export default function ProviderSelectionStep({
             sourceFunnel,
             timezoneRegion,
             selectedDate: selectedDate?.toISOString(),
+            buddy: needsBuddySupport,
+            night: needsNightSessions,
+            crisis: needsCrisisCalls,
           },
         );
         const nextProviders = Array.isArray(result?.providers) ? result.providers : [];
@@ -235,7 +247,7 @@ export default function ProviderSelectionStep({
 
     fetchProviders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(availabilityPrefs), providerType, debouncedConcerns, debouncedLanguage, debouncedMode, matchContext, presetEntryType, sourceFunnel, timezoneRegion, selectedDate?.toISOString()]);
+  }, [JSON.stringify(availabilityPrefs), providerType, debouncedConcerns, debouncedLanguage, debouncedMode, matchContext, needsBuddySupport, needsNightSessions, needsCrisisCalls, presetEntryType, sourceFunnel, timezoneRegion, selectedDate?.toISOString()]);
 
   const toggleProvider = (providerId: string) => {
     setSelectedIds((prev) => {
@@ -304,27 +316,76 @@ export default function ProviderSelectionStep({
       )}
 
       {!loading && (
-        <div className="rounded-xl border border-calm-sage/20 bg-calm-sage/5 p-4 space-y-3">
+        <div className="rounded-xl border border-calm-sage/20 bg-calm-sage/5 p-4 space-y-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-charcoal/50">Personalize your match</p>
-          <div className="space-y-2">
-            <p className="text-xs text-charcoal/70">Context</p>
-            <div className="flex flex-wrap gap-2">
-              {CONTEXT_OPTIONS.map((context) => (
-                <button
-                  key={context}
-                  type="button"
-                  onClick={() => setMatchContext(context)}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${matchContext === context
-                    ? 'border-teal-500 bg-teal-500 text-white'
-                    : 'border-calm-sage/20 bg-white text-charcoal hover:border-teal-300 hover:text-teal-700'
-                    }`}
-                >
-                  {context}
-                </button>
-              ))}
+          
+          <div className="space-y-3 sm:space-y-0 sm:flex sm:gap-6">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-charcoal/70">Context</p>
+              <div className="flex flex-wrap gap-2">
+                {CONTEXT_OPTIONS.map((context) => (
+                  <button
+                    key={context}
+                    type="button"
+                    onClick={() => setMatchContext(context)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${matchContext === context
+                      ? 'border-teal-500 bg-teal-500 text-white'
+                      : 'border-calm-sage/20 bg-white text-charcoal hover:border-teal-300 hover:text-teal-700'
+                      }`}
+                  >
+                    {context}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+
+          {/* New V3 Hard Filters Toggles */}
+          <div className="space-y-2 border-t border-calm-sage/10 pt-3">
+            <p className="text-xs font-semibold text-charcoal/70">Special Needs (V3 Hard Filters)</p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <label className="flex items-center gap-2 rounded-xl border border-calm-sage/15 bg-white px-3 py-2 cursor-pointer select-none transition hover:border-teal-300">
+                <input
+                  type="checkbox"
+                  checked={needsBuddySupport}
+                  onChange={(e) => setNeedsBuddySupport(e.target.checked)}
+                  className="rounded text-teal-600 focus:ring-teal-500 h-4 w-4"
+                />
+                <div>
+                  <p className="text-[11px] font-bold text-charcoal">Buddy Support</p>
+                  <p className="text-[9px] text-charcoal/50">Requires Buddy assistance</p>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 rounded-xl border border-calm-sage/15 bg-white px-3 py-2 cursor-pointer select-none transition hover:border-teal-300">
+                <input
+                  type="checkbox"
+                  checked={needsNightSessions}
+                  onChange={(e) => setNeedsNightSessions(e.target.checked)}
+                  className="rounded text-teal-600 focus:ring-teal-500 h-4 w-4"
+                />
+                <div>
+                  <p className="text-[11px] font-bold text-charcoal">Night Sessions</p>
+                  <p className="text-[9px] text-charcoal/50">Sessions post 9 PM</p>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 rounded-xl border border-calm-sage/15 bg-white px-3 py-2 cursor-pointer select-none transition hover:border-teal-300">
+                <input
+                  type="checkbox"
+                  checked={needsCrisisCalls}
+                  onChange={(e) => setNeedsCrisisCalls(e.target.checked)}
+                  className="rounded text-teal-600 focus:ring-teal-500 h-4 w-4"
+                />
+                <div>
+                  <p className="text-[11px] font-bold text-charcoal">Crisis Support</p>
+                  <p className="text-[9px] text-charcoal/50">24/7 emergency calls</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 border-t border-calm-sage/10 pt-3">
             <label className="text-xs text-charcoal/70">
               Preferred Language
               <input
@@ -345,7 +406,7 @@ export default function ProviderSelectionStep({
                 className="mt-1 w-full rounded-lg border border-calm-sage/20 bg-white px-3 py-2 text-sm text-charcoal outline-none focus:border-teal-400"
               />
             </label>
-            <label className="text-xs text-charcoal/70">
+            <label className="text-xs text-charcoal/70 sm:col-span-2">
               Top Concerns (comma separated)
               <input
                 value={concernsInput}

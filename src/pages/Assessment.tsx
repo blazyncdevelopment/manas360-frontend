@@ -1,30 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { patientApi } from '../api/patient';
 import { theme } from '../theme/theme';
+import { getApiErrorMessage } from '../api/auth';
+import { publicHttp } from '../api/publicHttp';
 import {
-  CLINICAL_ASSESSMENT_OPTIONS,
-  CLINICAL_QUESTION_BANK,
-  severityFromClinicalScore,
-} from '../utils/clinicalAssessments';
-import {
-  readScreeningScoreFromResponse,
   writeCachedClinicalScreening,
   writeGuestScreeningResult,
 } from '../utils/guestScreeningCache';
-import { parseJourneyPayload } from '../utils/journey';
 
 interface AssessmentProps {
   onSubmit: (data: any) => void;
 }
 
-const PHQ9_QUESTIONS: string[] = CLINICAL_QUESTION_BANK['PHQ-9'];
-const PHQ9_OPTIONS = CLINICAL_ASSESSMENT_OPTIONS.map((option) => ({
-  label: option.label,
-  value: option.points,
-}));
-
-const SCREENING_TYPE = 'PHQ-9' as const;
 const ASSESSMENT_ANSWERS_STORAGE_KEY = 'manas360-phq9-screening-answers';
 
 type StoredAssessmentAnswer = {
@@ -90,6 +77,8 @@ export const Assessment: React.FC<AssessmentProps> = ({ onSubmit }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>('');
+  const [attemptId, setAttemptId] = useState<string>('');
+  const [attemptToken, setAttemptToken] = useState<string>('');
   const [questions, setQuestions] = useState<Array<{
     questionId: string;
     prompt: string;
@@ -103,24 +92,26 @@ export const Assessment: React.FC<AssessmentProps> = ({ onSubmit }) => {
       setLoading(true);
       setError('');
       try {
-        const loadedQuestions = PHQ9_QUESTIONS.map((prompt, idx) => ({
-          questionId: `${SCREENING_TYPE}-${idx + 1}`,
-          prompt,
-          sectionKey: SCREENING_TYPE,
-          options: PHQ9_OPTIONS.map((option) => ({
-            optionIndex: option.value,
-            label: option.label,
-          })),
-        }));
+        const res = await publicHttp.post('/v1/free-screening/start', {});
+        const data = res.data?.data ?? res.data;
+
+        if (data?.attemptId) {
+          setAttemptId(data.attemptId);
+        }
+        if (data?.attemptToken) {
+          setAttemptToken(data.attemptToken);
+        }
+
+        const loadedQuestions = data?.questions || [];
         setQuestions(loadedQuestions);
 
-        const validQuestionIds = new Set(loadedQuestions.map((q) => q.questionId));
+        const validQuestionIds = new Set(loadedQuestions.map((q: any) => q.questionId));
         const restored = readStoredAnswers().filter((item) => validQuestionIds.has(item.questionId));
         if (restored.length > 0) {
           setAnswers(answersRecordFromArray(restored));
         }
       } catch (err: any) {
-        setError(err?.response?.data?.message || 'Unable to load assessment. Please refresh and try again.');
+        setError(getApiErrorMessage(err, 'Unable to load assessment. Please refresh and try again.'));
       } finally {
         setLoading(false);
       }
@@ -157,51 +148,42 @@ export const Assessment: React.FC<AssessmentProps> = ({ onSubmit }) => {
 
     setSubmitting(true);
     setError('');
-    try {
-      const numericAnswers = answersPayload.map((item) => Number(item.optionIndex));
-      const apiResponse = await patientApi.submitClinicalScreening({
-        type: SCREENING_TYPE,
-        answers: numericAnswers,
-      });
-      const journey = parseJourneyPayload(apiResponse);
-      const screeningMeta = readScreeningScoreFromResponse(apiResponse);
-      const totalScore =
-        typeof screeningMeta?.score === 'number'
-          ? screeningMeta.score
-          : numericAnswers.reduce((sum, value) => sum + value, 0);
-      const severityLevel =
-        journey?.severity || severityFromClinicalScore(SCREENING_TYPE, totalScore);
-      const nextActions = journey?.actions || [];
-      const rationale = journey?.rationale || [];
-      const result = {
-        attemptId: screeningMeta?.id || `${SCREENING_TYPE}-${Date.now()}`,
-        templateKey: SCREENING_TYPE,
-        totalScore,
-        severityLevel,
-        interpretation: rationale[0] || 'Your screening is complete.',
-        recommendation: nextActions.join(' ') || rationale.join(' '),
-        pathway: journey?.pathway,
-        nextActions,
-        crisisDetected: journey?.crisisDetected,
-      };
 
-      writeCachedClinicalScreening({ type: SCREENING_TYPE, answers: numericAnswers });
+    try {
+      const res = await publicHttp.post(`/v1/free-screening/${encodeURIComponent(attemptId)}/submit`, {
+        attemptToken: attemptToken,
+        answers: answersPayload,
+      });
+
+      const results = res.data?.data ?? res.data;
+
+      const numericAnswers = answersPayload.map((item) => Number(item.optionIndex));
+
+      writeCachedClinicalScreening({ type: 'PHQ-9', answers: numericAnswers });
       writeGuestScreeningResult({
-        type: SCREENING_TYPE,
-        totalScore,
-        severityLevel,
-        interpretation: result.interpretation,
-        recommendation: result.recommendation,
-        nextActions,
-        crisisDetected: journey?.crisisDetected,
-        pathway: journey?.pathway,
-        raw: ((apiResponse as { data?: unknown })?.data ?? apiResponse) as typeof apiResponse,
+        type: 'PHQ-9',
+        totalScore: results.totalScore,
+        severityLevel: results.severityLevel,
+        interpretation: results.interpretation,
+        recommendation: results.actionLabel || results.recommendation || '',
+        nextActions: [results.actionLabel || results.recommendation || ''],
+        crisisDetected: String(results.severityLevel).toLowerCase() === 'severe',
       });
 
       clearStoredAnswers();
-      onSubmit(result);
+
+      onSubmit({
+        totalScore: results.totalScore,
+        severityLevel: results.severityLevel,
+        interpretation: results.interpretation,
+        recommendation: results.actionLabel || results.recommendation || '',
+        action: results.actionLabel || results.recommendation || '',
+        nextActions: [results.actionLabel || results.recommendation || ''],
+        templateKey: 'PHQ-9',
+        crisisDetected: String(results.severityLevel).toLowerCase() === 'severe',
+      });
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Unable to submit screening. Please try again.');
+      setError(getApiErrorMessage(err, 'Failed to submit screening. Please try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -275,13 +257,13 @@ export const Assessment: React.FC<AssessmentProps> = ({ onSubmit }) => {
                               className={`
                                   w-full px-7 py-3 rounded-2xl text-base font-medium transition-smooth border-2 text-left flex justify-between items-center
                                   ${isSelected
-                                    ? 'text-white shadow-soft-lg ring-2 ring-white/20 scale-[1.01]'
-                                    : 'bg-white text-wellness-text border-calm-sage/20 hover:border-calm-sage/40 hover:bg-calm-sage/5'
-                                  }
+                                  ? 'text-white shadow-soft-lg ring-2 ring-white/20 scale-[1.01]'
+                                  : 'bg-white text-wellness-text border-calm-sage/20 hover:border-calm-sage/40 hover:bg-calm-sage/5'
+                                }
                                 `}
-                                style={isSelected
-                                  ? { backgroundColor: theme.colors.brandTopbar, borderColor: theme.colors.brandTopbar }
-                                  : undefined}
+                              style={isSelected
+                                ? { backgroundColor: theme.colors.brandTopbar, borderColor: theme.colors.brandTopbar }
+                                : undefined}
                             >
                               {option.label}
                               {isSelected && <span className="text-xl">✓</span>}

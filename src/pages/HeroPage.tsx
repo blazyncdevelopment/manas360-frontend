@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 
 
 
-const HERO_VIDEO_S3_URL = '/HERO-BackgroundVideo.mp4';
-  //const HERO_VIDEO_S3_URL =  'https://manas360-temp-clinical-file.s3.ap-south-1.amazonaws.com/Website%20Assets/HERO-BackgroundVideo.mp4';
+const AWS_REGION = import.meta.env.VITE_AWS_REGION || 'ap-south-1';
+const AWS_BUCKET_NAME = import.meta.env.VITE_AWS_BUCKET_NAME || 'blazync-storage';
+const HERO_VIDEO_S3_URL = `https://${AWS_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/Website%20Assets/HERO-BackgroundVideo.mp4`;
 
 /** Optional presigned URL when the bucket object is not public-read */
 const HERO_VIDEO_SRC =
@@ -14,7 +15,7 @@ const HERO_VIDEO_SRC =
 
 
 export const Hero: React.FC = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const NAVIGATION_DELAY_MS = 180;
   const [videoAvailable, setVideoAvailable] = useState<boolean>(true);
 
@@ -71,7 +72,7 @@ export const Hero: React.FC = () => {
   };
 
   return (
-   <div className="hero-wrapper min-h-screen h-screen flex flex-col relative overflow-hidden">
+    <div className="hero-wrapper min-h-screen h-screen flex flex-col relative overflow-hidden">
       <style>{`
         :root { 
           --navy: #032467; 

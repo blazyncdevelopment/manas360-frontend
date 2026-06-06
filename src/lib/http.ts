@@ -55,6 +55,7 @@ const isTokenIssuingAuthRoute = (url: string): boolean => (
 	|| url.includes('/auth/verify/phone-otp')
 	|| url.includes('/provider-onboarding/verify-otp')
 	|| url.includes('/auth/refresh')
+	|| url.includes('/corporate/public/create-account')
 );
 
 const refreshAccessToken = async (): Promise<void> => {
@@ -163,7 +164,7 @@ if (http && http.interceptors && http.interceptors.response && typeof http.inter
 			const baseUrl = error?.config?.baseURL || '';
 			const relativeUrl = normalizeApiUrl(error?.config?.url || '');
 			const fullUrl = `${baseUrl}${relativeUrl}`;
-				const errorCode = String(error?.response?.data?.details?.code || '');
+			const errorCode = String(error?.response?.data?.details?.code || '');
 
 			(error as any).isExpectedAuthFailure = isExpectedAuthFailure(status, fullUrl);
 

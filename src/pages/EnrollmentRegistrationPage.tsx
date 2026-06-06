@@ -29,7 +29,7 @@ const EnrollmentRegistrationPage: React.FC = () => {
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [devOtp, setDevOtp] = useState<string | null>(null);
+
   const [paymentPlan, setPaymentPlan] = useState<'full' | 'installment'>('full');
 
   const validateMobile = (value: string): boolean => value.replace(/\D/g, '').length >= 10;
@@ -71,9 +71,9 @@ const EnrollmentRegistrationPage: React.FC = () => {
 
     setProcessing(true);
     try {
-      const response = await signupWithPhone(mobile, { name: fullName, role: 'learner' });
+      await signupWithPhone(mobile, { name: fullName, role: 'learner' });
       setOtpSent(true);
-      setDevOtp(response.devOtp || null);
+
       setProcessing(false);
     } catch (error: any) {
       setGeneralError(getApiErrorMessage(error, 'Failed to send OTP. Please try again.'));
@@ -266,9 +266,7 @@ const EnrollmentRegistrationPage: React.FC = () => {
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
                       className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-200 transition"
                     />
-                    {devOtp && (
-                      <p className="text-[11px] text-amber-700 mt-2">Dev OTP: {devOtp}</p>
-                    )}
+
                   </div>
                 )}
 

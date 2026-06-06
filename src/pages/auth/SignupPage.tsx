@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { getApiErrorMessage, me as meApi, signupWithPhone, verifyPhoneSignupOtp } from '../../api/auth';
 import {
-	extractDevOtp,
 	getProviderOnboardingErrorMessage,
 	isProviderAlreadyRegisteredError,
 	registerProvider,
@@ -344,9 +343,6 @@ export default function SignupPage() {
 					if (response.provider_id) {
 						setStoredProviderId(response.provider_id);
 					}
-					if (response.devOtp) {
-						setOtp(response.devOtp);
-					}
 					setOtpSent(true);
 				} catch (err) {
 					if (isProviderAlreadyRegisteredError(err)) {
@@ -354,10 +350,6 @@ export default function SignupPage() {
 						const conflictProviderId = extractProviderId(conflictPayload);
 						if (conflictProviderId) {
 							setStoredProviderId(conflictProviderId);
-						}
-						const extractedOtp = extractDevOtp(conflictPayload);
-						if (extractedOtp) {
-							setOtp(extractedOtp);
 						}
 						setOtpSent(true);
 						return;
@@ -367,17 +359,13 @@ export default function SignupPage() {
 				return;
 			}
 
-			const response = await signupWithPhone(
+			await signupWithPhone(
 				phone.trim(),
 				isCertificationContext
 					? { name: name.trim(), role: 'learner' }
 					: { name: name.trim(), role: isPatientLeadFlow ? 'patient' : role },
 			);
 			setOtpSent(true);
-			if (response.devOtp) {
-				setOtp(response.devOtp);
-				console.log('[DEV] OTP:', response.devOtp);
-			}
 		} catch (err) {
 			setError(
 				isProviderFlow

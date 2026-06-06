@@ -1,9 +1,5 @@
-import axios, { AxiosError } from 'axios';
-import { API_BASE } from '../../lib/runtimeEnv';
-import { getAuthHeaders } from '../../utils/authToken';
-
-const API_BASE_URL = `${API_BASE}/v1/mdc`;
-
+import { AxiosError } from 'axios';
+import { http } from '../../lib/http';
 export interface CalculatePricePayload {
   clinicTier: 'solo' | 'small' | 'large';
   billingCycle: 'monthly' | 'quarterly';
@@ -35,15 +31,10 @@ export const calculateSubscriptionPrice = async (
   payload: CalculatePricePayload
 ): Promise<PricingResponse> => {
   try {
-    const authHeaders = getAuthHeaders();
-    const response = await axios.post<PricingResponse>(
-      `${API_BASE_URL}/calculate-pricing`,
+    const response = await http.post<PricingResponse>(
+      `/mdc/calculate-pricing`,
       payload,
       {
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
         timeout: 10000,
       }
     );
@@ -81,14 +72,9 @@ export const registerClinic = async (
   payload: RegisterClinicInput
 ): Promise<any> => {
   try {
-    const response = await axios.post(
-      `${API_BASE_URL}/register`,
-      payload,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+    const response = await http.post(
+      `/mdc/register`,
+      payload
     );
     return response.data;
   } catch (error) {

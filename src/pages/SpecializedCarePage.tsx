@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './SpecializedCarePage.css';
 
 type FilterSegment = 'all' | 'adults' | 'teens' | 'children' | 'programs';
@@ -237,6 +238,7 @@ const filterLabels: Array<{ id: FilterSegment; label: string }> = [
 const programOrder: ProgramKey[] = ['anxiety', 'depression', 'ocd', 'child', 'adhd', 'addiction'];
 
 export default function SpecializedCarePage() {
+  const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<FilterSegment>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentCondition, setCurrentCondition] = useState<ProgramKey>('anxiety');
@@ -465,8 +467,8 @@ export default function SpecializedCarePage() {
         <div className="bcta">
           <h3>Not sure which one fits?</h3>
           <p>Take our free 60-second screening — it&apos;ll point you in the right direction.</p>
-          <button type="button" onClick={() => window.alert('PHQ-9/GAD-7 screening')}>Take Free Screening →</button>
-          <button type="button" className="ghost" onClick={() => window.alert('General booking')}>Just Talk to Someone</button>
+          <button type="button" onClick={() => navigate('/assessment')}>Take Free Screening →</button>
+          <button type="button" className="ghost" onClick={() => navigate('/patient/buddy/chat')}>Just Talk to Someone</button>
         </div>
       </div>
 

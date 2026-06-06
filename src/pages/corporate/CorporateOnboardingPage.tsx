@@ -15,14 +15,14 @@ const inputClassName =
 export default function CorporateOnboardingPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { checkAuth } = useAuth();
+  const { checkAuth, syncSessionAfterOtp } = useAuth();
 
   const [mode, setMode] = useState<Mode>('create');
   const [createStep, setCreateStep] = useState<CreateStep>('details');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [devOtp, setDevOtp] = useState<string | null>(null);
+
 
   const [companyName, setCompanyName] = useState('');
   const [workEmail, setWorkEmail] = useState('');
@@ -59,7 +59,6 @@ export default function CorporateOnboardingPage() {
       setCreateStep('details');
       setError(null);
       setSuccess(null);
-      setDevOtp(null);
       // Strip the ?mode param from the URL so tab switches work freely
       navigate('/corporate', { replace: true });
     }
@@ -69,10 +68,9 @@ export default function CorporateOnboardingPage() {
     event.preventDefault();
     setError(null);
     setLoading(true);
-    setDevOtp(null);
 
     try {
-      const result = await corporateApi.requestCorporateOtp({
+      await corporateApi.requestCorporateOtp({
         companyName,
         phone,
         companySize,
@@ -82,7 +80,6 @@ export default function CorporateOnboardingPage() {
         email: workEmail || undefined,
       });
       setCreateStep('otp');
-      setDevOtp(result.devOtp || null);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to send OTP'));
     } finally {
@@ -96,7 +93,7 @@ export default function CorporateOnboardingPage() {
     setLoading(true);
 
     try {
-      await corporateApi.createCorporateAccount({
+      const result = await corporateApi.createCorporateAccount({
         companyName,
         phone,
         otp,
@@ -107,7 +104,17 @@ export default function CorporateOnboardingPage() {
         email: workEmail || undefined,
       });
 
-      await checkAuth({ force: true });
+      // The backend returns the new user object in the response.
+      // Use it directly to set the session — avoids a second /auth/me call
+      // that would fail if the session cookie hasn't propagated yet.
+      const responseUser = (result as any)?.user;
+      if (responseUser?.id) {
+        await syncSessionAfterOtp(responseUser);
+      } else {
+        // Fallback: force a fresh session probe
+        await checkAuth({ force: true });
+      }
+
       navigate('/corporate/dashboard', { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err, 'OTP verification failed'));
@@ -242,18 +249,11 @@ export default function CorporateOnboardingPage() {
                     />
                   </Field>
 
-                  {devOtp ? (
-                    <p className="text-xs text-[#5A7873]">
-                      Development OTP: <span className="font-semibold">{devOtp}</span>
-                    </p>
-                  ) : null}
-
                   <button
                     type="button"
                     onClick={() => {
                       setCreateStep('details');
                       setOtp('');
-                      setDevOtp(null);
                     }}
                     className="text-xs text-[#4E8F86] underline hover:text-[#3B6B66]"
                   >

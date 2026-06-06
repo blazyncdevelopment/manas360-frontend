@@ -193,38 +193,45 @@ html[data-app-language]:not([data-app-language='English']) .landing-top-shortcut
 }
 
 @media (min-width: 981px) {
+
   /* Kannada specific tuning */
   html[data-app-language='Kannada'] .quick-nav {
     gap: 2.5px !important;
   }
+
   html[data-app-language='Kannada'] .quick-nav-chip {
     font-size: clamp(7.8px, 0.71vw, 9.2px) !important;
     padding: 3px 5px !important;
   }
+
   html[data-app-language='Kannada'] .quick-nav-chip-icon {
     font-size: clamp(7.8px, 0.71vw, 9.2px) !important;
   }
 
   /* Tamil specific tuning */
   html[data-app-language='Tamil'] .quick-nav {
-    gap: 2.2px !important;
+    gap: 1.8px !important;
   }
+
   html[data-app-language='Tamil'] .quick-nav-chip {
-    font-size: clamp(7.5px, 0.68vw, 8.8px) !important;
-    padding: 2px 4px !important;
+    font-size: clamp(6.8px, 0.6vw, 7.8px) !important;
+    padding: 2px 3px !important;
   }
+
   html[data-app-language='Tamil'] .quick-nav-chip-icon {
-    font-size: clamp(7.5px, 0.68vw, 8.8px) !important;
+    font-size: clamp(6.8px, 0.6vw, 7.8px) !important;
   }
 
   /* Telugu specific tuning */
   html[data-app-language='Telugu'] .quick-nav {
     gap: 3.5px !important;
   }
+
   html[data-app-language='Telugu'] .quick-nav-chip {
     font-size: clamp(8.1px, 0.74vw, 9.8px) !important;
     padding: 3px 5.5px !important;
   }
+
   html[data-app-language='Telugu'] .quick-nav-chip-icon {
     font-size: clamp(8.1px, 0.74vw, 9.8px) !important;
   }
