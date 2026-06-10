@@ -180,6 +180,7 @@ export default function SessionsPage() {
   const [marketplaceBookingPending, setMarketplaceBookingPendingState] = useState<MarketplaceBookingPending | null>(
     () => getMarketplaceBookingPending(),
   );
+  const [justBooked, setJustBooked] = useState(false);
   const [bookingContext, setBookingContext] = useState<{
     fromAssessment: boolean;
     carePath?: 'recommended' | 'direct' | 'urgent';
@@ -689,6 +690,7 @@ export default function SessionsPage() {
       };
       setMarketplaceBookingPending(pendingRecord);
       setMarketplaceBookingPendingState(pendingRecord);
+      setJustBooked(true);
       void fetchData();
     } else {
       const storedPending = getMarketplaceBookingPending();
@@ -1038,7 +1040,10 @@ export default function SessionsPage() {
     [pendingRequests],
   );
 
-  const hasMarketplacePending = unresolvedPendingRequests.length > 0 || Boolean(marketplaceBookingPending);
+  // Show the banner only when the API confirms pending requests OR the booking was just placed
+  // in this navigation. Avoid showing stale sessionStorage data to first-time patients.
+  const hasMarketplacePending =
+    unresolvedPendingRequests.length > 0 || (justBooked && Boolean(marketplaceBookingPending));
   const showPendingMatchBanner = hasMarketplacePending && !hasUrgentSession;
 
   const isSessionTomorrow = useMemo(() => {
@@ -1130,20 +1135,20 @@ export default function SessionsPage() {
                   {structuredAttempt.questions[currentStructuredQuestionIndex].position}. {structuredAttempt.questions[currentStructuredQuestionIndex].prompt}
                 </p>
                 <div className="mt-4 grid gap-2">
-                  {structuredAttempt.questions[currentStructuredQuestionIndex].options.map((option) => (
-                    <button
-                      key={`${structuredAttempt.questions[currentStructuredQuestionIndex].questionId}-${option.optionIndex}`}
-                      type="button"
-                      onClick={() => void onStructuredOptionSelect(structuredAttempt.questions[currentStructuredQuestionIndex], option.optionIndex)}
-                      disabled={clinicalFlowLoading}
-                      className={`rounded-xl border px-4 py-3 text-left text-sm transition ${structuredAnswers[structuredAttempt.questions[currentStructuredQuestionIndex].questionId] === option.optionIndex
-                        ? 'border-teal-400 bg-teal-50 text-charcoal'
-                        : 'border-calm-sage/20 bg-white text-charcoal/85 hover:bg-calm-sage/5'
-                        } disabled:opacity-60`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                  {structuredAttempt.questions[currentStructuredQuestionIndex].options.map((option) => {
+                    const isSelected = structuredAnswers[structuredAttempt.questions[currentStructuredQuestionIndex].questionId] === option.optionIndex;
+                    return (
+                      <button
+                        key={`${structuredAttempt.questions[currentStructuredQuestionIndex].questionId}-${option.optionIndex}`}
+                        type="button"
+                        onClick={() => void onStructuredOptionSelect(structuredAttempt.questions[currentStructuredQuestionIndex], option.optionIndex)}
+                        disabled={clinicalFlowLoading}
+                        className={`assessment-option${isSelected ? ' selected' : ''}`}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

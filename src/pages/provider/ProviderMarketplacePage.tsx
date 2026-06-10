@@ -278,9 +278,9 @@ interface LeadStats {
 }
 
 const typeColors: Record<string, { bg: string; text: string; label: string; emoji: string }> = {
-  hot: { bg: 'bg-red-50', text: 'text-red-700', label: 'Hot Lead', emoji: '🔥' },
-  warm: { bg: 'bg-amber-50', text: 'text-amber-700', label: 'Warm Lead', emoji: '🌟' },
-  cold: { bg: 'bg-blue-50', text: 'text-blue-700', label: 'Cold Lead', emoji: '❄️' },
+  hot: { bg: 'bg-red-50', text: 'text-red-700', label: 'Hot', emoji: '🔥' },
+  warm: { bg: 'bg-amber-50', text: 'text-amber-700', label: 'Warm', emoji: '🌟' },
+  cold: { bg: 'bg-blue-50', text: 'text-blue-700', label: 'Cold', emoji: '❄️' },
 };
 
 const getRemainingTime = (expiresAt: string): string => {

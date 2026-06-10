@@ -67,7 +67,7 @@ const modules: ModuleCard[] = [
     highlights: ['Phoenix Friend, Guardian Dragon, Wisdom Peacock', 'Tap a companion to launch', 'High-engagement premium flow'],
     goal: 'Transformation & Deep Engagement',
     cta: 'Enter VR Sanctuary →',
-    to: '/patient/vr-sanctuary',
+    to: '/patient/wellness-library',
     themeClass: 'from-[#0e5558]/85 via-[#146a6f]/80 to-[#1f7f86]/75',
     badge: 'PREMIUM LIBRARY',
   },

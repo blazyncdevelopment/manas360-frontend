@@ -102,6 +102,7 @@ export default function TherapyPlanPage() {
   }, {
     retry: false,
     enabled: selectedDay > 0,
+    refetchOnWindowFocus: true,
   });
 
   // Also fetch the current-day plan to compute current-day progress for locking logic
@@ -111,6 +112,15 @@ export default function TherapyPlanPage() {
   }, {
     retry: false,
     enabled: derivedCurrentDay > 0,
+    refetchOnWindowFocus: true,
+  });
+
+  const activeAssignmentsQuery = useQuery(['active-assignments-plan'], async () => {
+    const assignments = await patientApi.getActiveCbtAssignments();
+    return Array.isArray(assignments) ? assignments : [];
+  }, {
+    retry: false,
+    refetchOnWindowFocus: true,
   });
 
   const planData = therapyPlanQuery.data ?? null;
@@ -119,7 +129,7 @@ export default function TherapyPlanPage() {
   const queryMessage = String(queryError?.response?.data?.message || queryError?.message || '');
   const connectionRequired = queryStatus === 404 && queryMessage.toLowerCase().includes('connected with a provider');
   const error = actionError || (connectionRequired ? null : (queryMessage || null));
-  const loading = therapyPlanQuery.isLoading || (therapyPlanQuery.isFetching && !therapyPlanQuery.data);
+  const loading = therapyPlanQuery.isLoading || (therapyPlanQuery.isFetching && !therapyPlanQuery.data) || activeAssignmentsQuery.isLoading;
 
   const completeTask = async (taskId: string) => {
     setActionError(null);
@@ -127,26 +137,26 @@ export default function TherapyPlanPage() {
 
     try {
       await patientApi.completeTherapyPlanTask(taskId);
-      
+
       // Reward digital pet with oxytocin boost (increase vitality by 5-10 points)
       try {
         const petState = await patientApi.getPetState();
         const oxytocinReward = Math.floor(Math.random() * 6) + 5; // 5-10 points
         const newVitality = Math.min(100, petState.vitality + oxytocinReward);
-        
+
         await patientApi.upsertPetState({
           selectedPet: petState.selectedPet,
           vitality: newVitality,
           unlockedItems: petState.unlockedItems,
           isPremium: petState.isPremium,
         });
-        
+
         toast.success(`Great job staying consistent! 🔥 Your pet gained ${oxytocinReward} vitality points!`);
       } catch (petError) {
         // If pet update fails, still show success for task completion
         toast.success('Great job staying consistent! 🔥');
       }
-      
+
       await therapyPlanQuery.refetch();
     } catch {
       setActionError('Unable to mark activity as complete.');
@@ -165,12 +175,36 @@ export default function TherapyPlanPage() {
     () => (Array.isArray(planData?.goals) ? planData.goals.filter((goal) => Number(goal.weekNumber || activeDay) === activeDay) : []),
     [planData, activeDay],
   );
-  const exercises = useMemo(
-    () => (Array.isArray(planData?.cbtExercises)
+  const exercises = useMemo(() => {
+    const baseExercises = Array.isArray(planData?.cbtExercises)
       ? planData.cbtExercises.filter((exercise) => Number(exercise.weekNumber || activeDay) === activeDay)
-      : []),
-    [planData, activeDay],
-  );
+      : [];
+
+    if (activeDay === currentDay) {
+      const activeData = activeAssignmentsQuery.data || [];
+      const liveExercises = activeData.map((a: any) => ({
+        id: a.id,
+        sessionId: undefined,
+        type: a.templateType || 'CBT Assignment',
+        title: a.title,
+        status: a.status === 'COMPLETED' ? 'Completed' : a.status === 'IN_PROGRESS' ? 'In Progress' : 'New',
+        completed: a.status === 'COMPLETED',
+        assignedAt: a.createdAt,
+        completedAt: null,
+        weekNumber: activeDay,
+        therapistFeedback: undefined,
+      } as ExerciseItem));
+
+      const merged = [...baseExercises];
+      for (const live of liveExercises) {
+        if (!merged.find(e => e.id === live.id)) {
+          merged.push(live);
+        }
+      }
+      return merged;
+    }
+    return baseExercises;
+  }, [planData, activeDay, currentDay, activeAssignmentsQuery.data]);
   const recentFeedback = useMemo(() => (Array.isArray(planData?.recentFeedback) ? planData.recentFeedback : []), [planData]);
   const featuredFeedback = recentFeedback[0] ?? null;
   const hasPlan = goals.length > 0 || exercises.length > 0;
@@ -181,7 +215,18 @@ export default function TherapyPlanPage() {
   // Compute current-day progress percent from the separate query (used to determine whether future days unlock)
   const currentDayData = currentDayPlanQuery.data ?? null;
   const currentGoals = Array.isArray(currentDayData?.goals) ? currentDayData!.goals : [];
-  const currentExercises = Array.isArray(currentDayData?.cbtExercises) ? currentDayData!.cbtExercises : [];
+
+  const currentExercises = useMemo(() => {
+    const base = Array.isArray(currentDayData?.cbtExercises) ? [...currentDayData!.cbtExercises] : [];
+    const activeData = activeAssignmentsQuery.data || [];
+    for (const live of activeData) {
+      if (!base.find(e => e.id === live.id)) {
+        base.push({ id: live.id, completed: live.status === 'COMPLETED' } as any);
+      }
+    }
+    return base;
+  }, [currentDayData, activeAssignmentsQuery.data]);
+
   const currentTotalDailyTasks = currentGoals.length + currentExercises.length;
   const currentCompletedDailyTasks = currentGoals.filter((g) => g.todayCheckInDone).length + currentExercises.filter((e) => e.completed).length;
   const currentDayProgressPercent = currentTotalDailyTasks > 0 ? Math.round((currentCompletedDailyTasks / currentTotalDailyTasks) * 100) : 0;
@@ -339,7 +384,7 @@ export default function TherapyPlanPage() {
                 // Sequential tasking: only show current task and completed ones
                 const previousTasksCompleted = goals.slice(0, index).every(g => g.todayCheckInDone);
                 const isLocked = !previousTasksCompleted && !goal.todayCheckInDone;
-                
+
                 const isCompleting = completingTaskIds.includes(goal.id);
                 return (
                   <div key={goal.id} className={`min-w-[260px] rounded-[1.6rem] bg-white/92 p-5 shadow-wellness-sm ${isLocked ? 'opacity-60' : ''}`}>
@@ -425,7 +470,7 @@ export default function TherapyPlanPage() {
                 // Sequential tasking: only allow starting current exercise if previous are completed
                 const previousExercisesCompleted = exercises.slice(0, index).every(e => e.completed);
                 const isLocked = !previousExercisesCompleted && !exercise.completed;
-                
+
                 return (
                   <button
                     key={exercise.id}

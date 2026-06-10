@@ -221,7 +221,7 @@ export default function SleepTherapyPage() {
         }
       `}</style>
 
-      <div className="max-w-[420px] mx-auto px-4 pb-10 pt-8">
+      <div className="w-full max-w-full mx-auto px-4 pb-10 pt-8 lg:px-8">
         {/* HEADER */}
         <div className="text-center mb-6">
           <div className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-1">
@@ -230,7 +230,7 @@ export default function SleepTherapyPage() {
           <h1 className="text-4xl font-black text-slate-900 mb-2" style={{ fontFamily: "'Baloo 2', cursive" }}>
             🌙 Nidra — Sleep Well
           </h1>
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="text-sm text-slate-600 leading-relaxed max-w-2xl mx-auto">
             A guided sleep hygiene program that helps you wind down, disconnect, and fall into deep restorative sleep.
           </p>
         </div>
@@ -239,22 +239,20 @@ export default function SleepTherapyPage() {
         <div className="flex bg-slate-100 rounded-2xl p-1 mb-6">
           <button
             onClick={() => setMode('self')}
-            className={`flex-1 rounded-xl py-2 px-3 text-sm font-bold transition ${
-              mode === 'self'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
+            className={`flex-1 rounded-xl py-2 px-3 text-sm font-bold transition ${mode === 'self'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
+              }`}
           >
             <div className="text-base mb-1">🔍</div>
             Self Discovery
           </button>
           <button
             onClick={() => setMode('rx')}
-            className={`flex-1 rounded-xl py-2 px-3 text-sm font-bold transition ${
-              mode === 'rx'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
+            className={`flex-1 rounded-xl py-2 px-3 text-sm font-bold transition ${mode === 'rx'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
+              }`}
           >
             <div className="text-base mb-1">📋</div>
             Prescription Mode
@@ -291,10 +289,10 @@ export default function SleepTherapyPage() {
               {completedSteps.size === 0
                 ? 'Tap each step when done. Complete all 7 for best results.'
                 : completedSteps.size < 4
-                ? `${completedSteps.size}/7 complete. Keep going — each step counts.`
-                : completedSteps.size < 7
-                ? `${completedSteps.size}/7 done! Almost there. Your body is thanking you.`
-                : '🌟 All 7 steps complete! Perfect sleep hygiene tonight. Goodnight.'}
+                  ? `${completedSteps.size}/7 complete. Keep going — each step counts.`
+                  : completedSteps.size < 7
+                    ? `${completedSteps.size}/7 done! Almost there. Your body is thanking you.`
+                    : '🌟 All 7 steps complete! Perfect sleep hygiene tonight. Goodnight.'}
             </p>
           </div>
         </div>
@@ -311,23 +309,21 @@ export default function SleepTherapyPage() {
               <div
                 key={step.id}
                 onClick={() => toggleStep(step.id)}
-                className={`bg-white border-2 rounded-2xl p-4 pl-16 relative cursor-pointer transition ${
-                  isDone
-                    ? 'border-teal-400 bg-teal-50'
-                    : isExpanded
+                className={`bg-white border-2 rounded-2xl p-4 pl-16 relative cursor-pointer transition ${isDone
+                  ? 'border-teal-400 bg-teal-50'
+                  : isExpanded
                     ? 'border-indigo-400 bg-indigo-50'
                     : 'border-slate-200 hover:border-lavender'
-                }`}
+                  }`}
               >
                 {/* Step Number */}
                 <div
-                  className={`absolute left-3 top-4 w-8 h-8 rounded-full flex items-center justify-center font-black text-sm transition ${
-                    isDone
-                      ? 'bg-teal-500 text-white'
-                      : isExpanded
+                  className={`absolute left-3 top-4 w-8 h-8 rounded-full flex items-center justify-center font-black text-sm transition ${isDone
+                    ? 'bg-teal-500 text-white'
+                    : isExpanded
                       ? 'bg-indigo-600 text-white'
                       : 'bg-slate-100 text-slate-600'
-                  }`}
+                    }`}
                   style={{ fontFamily: "'Baloo 2', cursive" }}
                 >
                   {step.id}
@@ -350,9 +346,8 @@ export default function SleepTherapyPage() {
                       <strong className="text-slate-900">Why it works:</strong> {step.detailedExplanation}
                     </div>
                     <span
-                      className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg ${
-                        showRxTag ? 'bg-indigo-200 text-indigo-700' : 'bg-teal-200 text-teal-700'
-                      }`}
+                      className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg ${showRxTag ? 'bg-indigo-200 text-indigo-700' : 'bg-teal-200 text-teal-700'
+                        }`}
                     >
                       {showRxTag ? '📋 Prescribed' : '🔍 Self Discovery'}
                     </span>
@@ -386,11 +381,10 @@ export default function SleepTherapyPage() {
                 <button
                   key={sound}
                   onClick={() => setSelectedSound(sound.split(' ')[1].toLowerCase())}
-                  className={`px-3 py-1.5 rounded-full border text-xs font-bold transition ${
-                    selectedSound === sound.split(' ')[1].toLowerCase()
-                      ? 'bg-white/15 border-white'
-                      : 'border-white/20 hover:border-white/50'
-                  }`}
+                  className={`px-3 py-1.5 rounded-full border text-xs font-bold transition ${selectedSound === sound.split(' ')[1].toLowerCase()
+                    ? 'bg-white/15 border-white'
+                    : 'border-white/20 hover:border-white/50'
+                    }`}
                 >
                   {sound}
                 </button>
@@ -566,11 +560,11 @@ export default function SleepTherapyPage() {
         </div>
 
         {/* FOOTER */}
-        <div className="text-center py-6 text-xs text-stone-500 font-medium">
+        {/* <div className="text-center py-6 text-xs text-stone-500 font-medium">
           🌙 <strong className="text-slate-700">MANAS360</strong> · Nidra Sleep Therapy · Premium Wellness Hub
           <br />
           Prototype · April 2026
-        </div>
+        </div> */}
       </div>
     </div>
   );

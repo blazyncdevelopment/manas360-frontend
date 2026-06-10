@@ -401,10 +401,38 @@ function App() {
                     <Route path="/patience-turtle" element={<ChintuPage />} />
                     <Route path="/pet" element={<DigitalPetPage />} />
                     <Route path="/pet-strategy" element={<DigitalPetStrategyPage />} />
-                    <Route path="/chintu" element={<ChintuPage />} />
-                    <Route path="/dino" element={<DinoPage />} />
-                    <Route path="/elephant" element={<TemboPage />} />
-                    <Route path="/goldenPup" element={<GoldenPupPage />} />
+                    <Route
+                      path="/patient/chintu"
+                      element={
+                        <ProtectedRoute allowedRoles={['patient']}>
+                          <ChintuPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/patient/dino"
+                      element={
+                        <ProtectedRoute allowedRoles={['patient']}>
+                          <DinoPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/patient/elephant"
+                      element={
+                        <ProtectedRoute allowedRoles={['patient']}>
+                          <TemboPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/patient/goldenPup"
+                      element={
+                        <ProtectedRoute allowedRoles={['patient']}>
+                          <GoldenPupPage />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route path="/onboarding/name" element={<OnboardingName onNext={handleOnboardingName} />} />
                     <Route path="/onboarding/email" element={<OnboardingEmail userName={userName} />} />
 

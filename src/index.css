@@ -622,6 +622,11 @@
   animation: ekg-loop 4s linear infinite;
 }
 
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @keyframes iris-wipe {
   0% { clip-path: circle(0% at 50% 50%); }
   100% { clip-path: circle(150% at 50% 50%); }
@@ -817,3 +822,41 @@
   color: #ffffff !important;
   opacity: 1;
 }
+
+/* Assessment option buttons — override @tailwindcss/forms plugin reset */
+.assessment-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border-radius: 1rem;
+  border: 1.5px solid #ccede8;
+  background-color: #ffffff !important;
+  color: #2C3333;
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.4rem;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.assessment-option:hover:not(:disabled) {
+  background-color: #e6f7f4 !important;
+  border-color: #2dd4bf !important;
+  color: #134e4a !important;
+}
+
+.assessment-option.selected {
+  background-color: #e6f7f4 !important;
+  border-color: #0d9488 !important;
+  color: #134e4a !important;
+  font-weight: 500;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+}
+
+.assessment-option:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

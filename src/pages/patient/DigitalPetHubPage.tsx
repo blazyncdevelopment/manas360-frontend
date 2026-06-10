@@ -834,10 +834,10 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
             </div>
             <div className="grid grid-cols-4 gap-4">
               {[
-                { emoji: '🦕', name: 'Baby Dinosaur', env: '🌅 Cozy Nest', tags: ['Love', 'Nurture'], bg: 'from-yellow-50', hormone: 'Oxytocin', hormoneDesc: 'Oxytocin — nurture, bond, feel loved', route: '/dino' },
-                { emoji: '🐕', name: 'Golden Retriever', env: '☀️ Sunny Meadow', tags: ['Happy', 'Routine'], bg: 'from-yellow-50', hormone: 'Serotonin', hormoneDesc: 'Serotonin — daily routines, calm, stability', route: '/goldenPup' },
-                { emoji: '🐘', name: 'Healing Elephant', env: '🌴 Sacred Grove', tags: ['Reward', 'Memory'], bg: 'from-green-50', hormone: 'Dopamine', hormoneDesc: 'Dopamine — achievements, games, milestones', route: '/elephant' },
-                { emoji: '🦊', name: 'Chintu Fox', env: '🌾 Playfield', tags: ['Energy', 'Play'], bg: 'from-orange-50', hormone: 'Endorphins', hormoneDesc: 'Endorphins — breathwork, play, laughter', route: '/chintu' },
+                { emoji: '🦕', name: 'Baby Dinosaur', env: '🌅 Cozy Nest', tags: ['Love', 'Nurture'], bg: 'from-yellow-50', hormone: 'Oxytocin', hormoneDesc: 'Oxytocin — nurture, bond, feel loved', route: '/patient/dino' },
+                { emoji: '🐕', name: 'Golden Retriever', env: '☀️ Sunny Meadow', tags: ['Happy', 'Routine'], bg: 'from-yellow-50', hormone: 'Serotonin', hormoneDesc: 'Serotonin — daily routines, calm, stability', route: '/patient/goldenPup' },
+                { emoji: '🐘', name: 'Healing Elephant', env: '🌴 Sacred Grove', tags: ['Reward', 'Memory'], bg: 'from-green-50', hormone: 'Dopamine', hormoneDesc: 'Dopamine — achievements, games, milestones', route: '/patient/elephant' },
+                { emoji: '🦊', name: 'Chintu Fox', env: '🌾 Playfield', tags: ['Energy', 'Play'], bg: 'from-orange-50', hormone: 'Endorphins', hormoneDesc: 'Endorphins — breathwork, play, laughter', route: '/patient/chintu' },
               ].map((pet, i) => (
                 <Link
                   key={i}

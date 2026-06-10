@@ -372,15 +372,7 @@ export default function PaymentStatusPage() {
 								Transaction: {verifyId}
 							</p>
 						)}
-						<div className="mt-8 flex flex-col gap-3">
-							<button
-								type="button"
-								onClick={() => navigate(dashboardPath, { replace: true })}
-								className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
-							>
-								<Home className="h-4 w-4" /> Go to Dashboard
-							</button>
-						</div>
+
 					</>
 				)}
 

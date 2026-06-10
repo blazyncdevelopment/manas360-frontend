@@ -19,24 +19,9 @@ export const Hero: React.FC = () => {
   const NAVIGATION_DELAY_MS = 180;
   const [videoAvailable, setVideoAvailable] = useState<boolean>(true);
   const [videoPlaying, setVideoPlaying] = useState<boolean>(false);
-  const [pageMounted, setPageMounted] = useState<boolean>(false);
   const videoEnded = sessionStorage.getItem('heroVideoPlayed') === 'true';
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
-  useEffect(() => {
-    setPageMounted(true);
-    return () => {
-      sessionStorage.setItem('heroVideoPlayed', 'true');
-    };
-  }, []);
-
-  useEffect(() => {
-    if (pageMounted && !videoEnded && videoAvailable && videoRef.current) {
-      videoRef.current.play().catch((err) => {
-        console.warn("Autoplay failed or was prevented:", err);
-      });
-    }
-  }, [pageMounted, videoEnded, videoAvailable]);
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
@@ -52,6 +37,7 @@ export const Hero: React.FC = () => {
     return () => {
       document.body.style.overflow = prevOverflow;
       mq.removeEventListener('change', applyOverflow);
+      sessionStorage.setItem('heroVideoPlayed', 'true');
     };
   }, []);
 
@@ -134,6 +120,9 @@ export const Hero: React.FC = () => {
           opacity: 0;
           z-index: 1;
           transition: opacity 1.5s ease-out;
+          will-change: opacity;
+          transform: translateZ(0);
+          backface-visibility: hidden;
         }
 
         .hero-bg-video.playing {
@@ -212,11 +201,12 @@ export const Hero: React.FC = () => {
         .hero-content { 
           position: relative; z-index: 6; flex: 1; display: flex; flex-direction: column; 
           align-items: center; justify-content: flex-start; text-align: center; 
-          padding: 2px 24px 220px; width: min(100%, 1180px); max-width: 1180px; margin: 0 auto; 
+          padding: 0 24px 220px; width: min(100%, 1180px); max-width: 1180px; margin: 0 auto;
+          margin-top: -60px;
         }
 
         .tier-1 { margin-bottom: 14px;
-        margin-top: -22px;  
+        margin-top: -40px;  
         opacity: 0; animation: tierFadeIn .8s ease .3s forwards; }
         .tier-1-text { 
           font-family: 'Playfair Display', serif; font-size: clamp(14px, 2vw, 17px); 
@@ -318,9 +308,10 @@ export const Hero: React.FC = () => {
           .nav { padding: 14px 16px; } 
           .nav-logo-text { font-size: 24px; }
           .hero-content {
-            flex: none;
-            padding: 2px 16px 20px;
+            flex: 1;
+            padding: 0px 16px 80px;
             justify-content: flex-start;
+            margin-top: -20px;
           }
           .tier-1 { margin-bottom: 14px; margin-top: 16px !important; }
           .tier-2 { margin-bottom: 14px; margin-top: 0px !important; }
@@ -377,7 +368,7 @@ export const Hero: React.FC = () => {
 
       {/* Background layers */}
       <div className={`hero-bg${isStatic ? ' hero-bg--static' : ''}`}>
-        {pageMounted && !videoEnded && videoAvailable && (
+        {!videoEnded && videoAvailable && (
           <video
             ref={videoRef}
             className={`hero-bg-video ${videoPlaying ? 'playing' : ''}`}
@@ -387,8 +378,13 @@ export const Hero: React.FC = () => {
             playsInline
             preload="auto"
             aria-hidden="true"
+            disablePictureInPicture
+            onCanPlay={() => {
+              if (videoRef.current) {
+                videoRef.current.play().catch(() => {});
+              }
+            }}
             onPlaying={() => setVideoPlaying(true)}
-            onWaiting={() => setVideoPlaying(false)}
             onError={() => setVideoAvailable(false)}
           >
             <source src={HERO_VIDEO_SRC} type="video/mp4" />

@@ -16,7 +16,6 @@ import {
   MoonStar
 } from 'lucide-react';
 import { isOnboardingRequiredError, patientApi } from '../../api/patient';
-import type { ActiveCbtAssignment } from '../../api/patient';
 import { DashboardSkeletons } from '../../components/ui/Skeleton';
 import DashboardCard from '../../components/ui/DashboardCard';
 
@@ -53,77 +52,75 @@ const isSameLocalDay = (value: unknown, dayKey: string) => {
   return localDateKey(date) === dayKey;
 };
 
+import { useQuery } from '@tanstack/react-query';
+
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const [dashboard, setDashboard] = useState<any>(null);
   const [moodValue, setMoodValue] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeAssignments, setActiveAssignments] = useState<ActiveCbtAssignment[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
 
-  const fetchDashboardData = async () => {
-    const dashboardRes = await patientApi.getDashboardV2();
-    const dashboardData = dashboardRes?.data ?? dashboardRes;
+  const dashboardQuery = useQuery(
+    ['patient-dashboard-live'],
+    async () => {
+      const [dashboardRes, statsRes, assignments, prRes] = await Promise.all([
+        patientApi.getDashboardV2().catch((err) => {
+          if (isOnboardingRequiredError(err)) throw err;
+          throw err;
+        }),
+        patientApi.getMoodStats().catch(() => null),
+        patientApi.getActiveCbtAssignments().catch(() => []),
+        patientApi.getPendingAppointmentRequests().catch(() => []),
+        patientApi.getSubscription().catch(() => null)
+      ]);
 
-    // Use the dashboard data as-is. The API correctly calculates
-    // wellness and streak based on mood entries and therapy sessions.
-    const finalDashboard = dashboardData || null;
-    setDashboard(finalDashboard);
+      const dashboardData = dashboardRes?.data ?? dashboardRes ?? {};
+      const statsData = (statsRes as any)?.data ?? statsRes;
 
-    const todayStr = localDateKey();
-    const todaysMood = dashboardData?.moodTrend?.find((m: any) => isSameLocalDay(m.date, todayStr));
-    if (todaysMood) {
-      setMoodValue(todaysMood.score);
-    }
+      // Override streak with real-time dynamic stats
+      if (statsData?.currentStreak !== undefined) {
+        dashboardData.streak = Number(statsData.currentStreak);
+      }
 
-    try {
-      const assignments = await patientApi.getActiveCbtAssignments();
-      setActiveAssignments(Array.isArray(assignments) ? assignments : []);
-    } catch (err) {
-      console.warn('Failed to load CBT assignments:', err);
-      setActiveAssignments([]);
-    }
+      const pendingRequests = Array.isArray((prRes as any)?.requests)
+        ? (prRes as any).requests
+        : Array.isArray((prRes as any)?.data?.requests)
+          ? (prRes as any).data.requests
+          : Array.isArray((prRes as any)?.data)
+            ? (prRes as any).data
+            : Array.isArray(prRes)
+              ? prRes
+              : [];
 
-    try {
-      const prRes = await patientApi.getPendingAppointmentRequests();
-      setPendingRequests(
-        Array.isArray((prRes as any)?.requests)
-          ? (prRes as any).requests
-          : Array.isArray((prRes as any)?.data?.requests)
-            ? (prRes as any).data.requests
-            : Array.isArray((prRes as any)?.data)
-              ? (prRes as any).data
-              : Array.isArray(prRes)
-                ? prRes
-                : []
-      );
-    } catch (err) {
-      console.warn('Failed to load pending requests:', err);
-    }
-  };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setError(null);
-        await fetchDashboardData();
-
-        // Subscription status fetched but not currently used in UI
-        await Promise.all([
-          patientApi.getSubscription().catch(() => null),
-        ]);
-      } catch (err: any) {
+      return {
+        dashboard: dashboardData,
+        activeAssignments: Array.isArray(assignments) ? assignments : [],
+        pendingRequests,
+      };
+    },
+    {
+      refetchOnMount: true,
+      refetchOnWindowFocus: true,
+      staleTime: 1000 * 30, // 30 seconds
+      onError: (err: any) => {
         if (isOnboardingRequiredError(err)) {
           navigate('/patient/onboarding?next=/patient/preferences', { replace: true });
-          return;
         }
-        setError(err?.response?.data?.message || err?.message || 'Unable to load dashboard right now.');
-      } finally {
-        setLoading(false);
       }
-    })();
-  }, [navigate]);
+    }
+  );
+
+  const { dashboard, activeAssignments = [], pendingRequests = [] } = dashboardQuery.data || {};
+  const loading = dashboardQuery.isLoading;
+  const error = dashboardQuery.error ? (dashboardQuery.error as any)?.response?.data?.message || (dashboardQuery.error as any)?.message || 'Unable to load dashboard right now.' : null;
+
+  useEffect(() => {
+    if (dashboard?.moodTrend) {
+      const todayStr = localDateKey();
+      const todaysMood = dashboard.moodTrend.find((m: any) => isSameLocalDay(m.date, todayStr));
+      if (todaysMood) {
+        setMoodValue(todaysMood.score);
+      }
+    }
+  }, [dashboard]);
 
 
   const userName = dashboard?.user?.name?.split(' ')[0] || 'there';
