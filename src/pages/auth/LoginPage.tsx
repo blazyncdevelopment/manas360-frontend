@@ -8,6 +8,7 @@ import { corporateApi } from '../../api/corporate.api';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { getPostLoginRoute, hasCorporateAccess, useAuth } from '../../context/AuthContext';
+import { hasActivePaidPatientSubscription } from '../../lib/patientSubscriptionFlow';
 import type { AuthUser } from '../../api/auth';
 
 type SignupRole = 'patient' | 'therapist' | 'psychiatrist' | 'psychologist' | 'coach';
@@ -37,14 +38,6 @@ const isProviderAuthRole = (role: SignupRole | string | null): boolean => (
 	role === 'therapist' || role === 'psychiatrist' || role === 'psychologist' || role === 'coach'
 );
 
-const isSubscriptionActive = (subscription: any): boolean => {
-	if (!subscription) return false;
-	const status = String(subscription?.status || '').toLowerCase();
-	if (status === 'active' || status === 'trialing') return true;
-	if (subscription?.isActive === true || subscription?.active === true) return true;
-	return false;
-};
-
 export default function LoginPage() {
 	const { user, isAuthenticated, syncSessionAfterOtp, checkAuth } = useAuth();
 	const navigate = useNavigate();
@@ -71,6 +64,7 @@ export default function LoginPage() {
 	const [otpSent, setOtpSent] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [devOtp, setDevOtp] = useState<string | null>(null);
 
 	// Corporate login state
 	const [corpPhone, setCorpPhone] = useState('');
@@ -79,6 +73,10 @@ export default function LoginPage() {
 	const [corpOtpSent, setCorpOtpSent] = useState(false);
 	const [corpLoading, setCorpLoading] = useState(false);
 	const [corpError, setCorpError] = useState<string | null>(null);
+	const [devCorpOtp, setDevCorpOtp] = useState<string | null>(null);
+
+	// Development environment check
+	const isDevelopment = process.env.NODE_ENV === 'development';
 
 	const switchMode = (mode: LoginMode) => {
 		setLoginMode(mode);
@@ -88,6 +86,8 @@ export default function LoginPage() {
 		setCorpOtpSent(false);
 		setOtp('');
 		setCorpOtp('');
+		setDevOtp(null);
+		setDevCorpOtp(null);
 	};
 
 	const resolvePostLoginRouteWithSubscription = async (
@@ -97,18 +97,26 @@ export default function LoginPage() {
 	) => {
 		const effectiveUser = userOverride || user;
 		if (hasCorporateAccess(effectiveUser)) return '/corporate/dashboard';
-		if (!candidate || candidate.startsWith('/auth/')) return getPostLoginRoute(effectiveUser);
 		const normalizedRole = String(role || '').toLowerCase();
 		if (normalizedRole === 'learner') return '/provider/dashboard';
+
+		if (normalizedRole === 'patient') {
+			if (effectiveUser?.patientSubscriptionActive) {
+				return '/patient/sessions';
+			}
+			try {
+				const subscriptionPayload = await patientApi.getSubscription();
+				if (hasActivePaidPatientSubscription(effectiveUser, subscriptionPayload)) {
+					return '/patient/sessions';
+				}
+			} catch (err) {
+				console.error('[resolvePostLoginRouteWithSubscription] Failed to fetch subscription:', err);
+			}
+		}
+
+		if (!candidate || candidate.startsWith('/auth/')) return getPostLoginRoute(effectiveUser);
 		const isPricingTarget = candidate.startsWith('/plans');
 		if (normalizedRole !== 'patient' || !isPricingTarget) return candidate;
-		try {
-			const subscriptionResponse = await patientApi.getSubscription();
-			const subscriptionPayload = (subscriptionResponse as any)?.data ?? subscriptionResponse;
-			if (isSubscriptionActive(subscriptionPayload)) return '/patient/dashboard';
-		} catch {
-			// Keep original target when subscription lookup fails.
-		}
 		return candidate;
 	};
 
@@ -130,7 +138,10 @@ export default function LoginPage() {
 			return;
 		}
 
-		const candidate = from || afterLogin || next || null;
+		const rawCandidate = from || afterLogin || next || null;
+		const candidate = rawCandidate && (rawCandidate.startsWith('/patient/dashboard') || rawCandidate === '/patient' || rawCandidate === '/patient/')
+			? '/patient/sessions'
+			: rawCandidate;
 		void (async () => {
 			const postLoginRoute = await resolvePostLoginRouteWithSubscription(candidate, user.role, user);
 			navigate(postLoginRoute, { replace: true });
@@ -145,6 +156,13 @@ export default function LoginPage() {
 		try {
 			await signupWithPhone(phone.trim());
 			setOtpSent(true);
+
+			// Development: Mock OTP for testing
+			if (isDevelopment) {
+				const mockOtp = Math.floor(1000 + Math.random() * 9000).toString();
+				setDevOtp(mockOtp);
+				console.log('[DEV] Mock OTP:', mockOtp);
+			}
 		} catch (err) {
 			setError(getApiErrorMessage(err, 'Failed to send OTP'));
 		} finally {
@@ -162,12 +180,6 @@ export default function LoginPage() {
 			const cachedScreening = readCachedClinicalScreening();
 			const result = await verifyPhoneSignupOtp(phone.trim(), otp.trim(), {
 				acceptedTerms: true,
-				...(cachedScreening ? {
-					clinicalScreening: {
-						type: cachedScreening.type,
-						answers: cachedScreening.answers,
-					},
-				} : {}),
 			}, guestGameToken);
 			if (guestGameToken) localStorage.removeItem('guest_game_token');
 			if (cachedScreening) clearGuestClinicalScreening();
@@ -195,26 +207,50 @@ export default function LoginPage() {
 			}
 
 			if ((resolvedUser as AuthUser)?.requiresSubscription) {
-				let hasActiveSubscription = false;
-				try {
-					const subscriptionResponse = await patientApi.getSubscription();
-					const subscriptionPayload = (subscriptionResponse as any)?.data ?? subscriptionResponse;
-					hasActiveSubscription = isSubscriptionActive(subscriptionPayload);
-				} catch {
-					hasActiveSubscription = false;
+				let hasBookedSession = false;
+				let hasActiveSubscription = Boolean(resolvedUser?.patientSubscriptionActive);
+
+				if (!hasActiveSubscription) {
+					try {
+						const [subscriptionResponse, upcomingRes, historyRes] = await Promise.all([
+							patientApi.getSubscription().catch(() => null),
+							patientApi.getUpcomingSessions().catch(() => ({ data: [] })),
+							patientApi.getSessionHistory().catch(() => ({ data: [] }))
+						]);
+
+						hasActiveSubscription = hasActivePaidPatientSubscription(
+							resolvedUser,
+							subscriptionResponse,
+						);
+
+						const upcoming = Array.isArray((upcomingRes as any)?.data) ? (upcomingRes as any).data : Array.isArray(upcomingRes) ? upcomingRes : [];
+						const history = Array.isArray((historyRes as any)?.data) ? (historyRes as any).data : Array.isArray(historyRes) ? historyRes : [];
+
+						if (upcoming.length > 0 || history.length > 0) {
+							hasBookedSession = true;
+						}
+					} catch {
+						hasActiveSubscription = Boolean(resolvedUser?.patientSubscriptionActive);
+						hasBookedSession = false;
+					}
 				}
-				if (hasActiveSubscription) {
-					const candidate = from || afterLogin || next || null;
-					const postLoginRoute = await resolvePostLoginRouteWithSubscription(candidate, resolvedUser?.role, resolvedUser);
-					navigate(postLoginRoute, { replace: true });
+
+				if (hasActiveSubscription || hasBookedSession) {
+					navigate('/patient/sessions', { replace: true });
 					return;
 				}
-				const candidate = from || afterLogin || next || null;
-				navigate(`/plans?returnTo=${encodeURIComponent(candidate || '/')}`, { replace: true });
+				const rawCandidate = from || afterLogin || next || null;
+				const candidate = rawCandidate && (rawCandidate.startsWith('/patient/dashboard') || rawCandidate === '/patient' || rawCandidate === '/patient/')
+					? '/patient/sessions'
+					: rawCandidate;
+				navigate(`/patient/preferences?returnTo=${encodeURIComponent(candidate || '/')}`, { replace: true });
 				return;
 			}
 
-			const candidate = from || afterLogin || next || null;
+			const rawCandidate = from || afterLogin || next || null;
+			const candidate = rawCandidate && (rawCandidate.startsWith('/patient/dashboard') || rawCandidate === '/patient' || rawCandidate === '/patient/')
+				? '/patient/sessions'
+				: rawCandidate;
 			const postLoginRoute = await resolvePostLoginRouteWithSubscription(candidate, resolvedUser?.role, resolvedUser);
 			navigate(postLoginRoute, { replace: true });
 		} catch (err: any) {
@@ -252,6 +288,13 @@ export default function LoginPage() {
 				phone: corpPhone.trim(),
 			});
 			setCorpOtpSent(true);
+
+			// Development: Mock OTP for testing
+			if (isDevelopment) {
+				const mockOtp = Math.floor(1000 + Math.random() * 9000).toString();
+				setDevCorpOtp(mockOtp);
+				console.log('[DEV] Mock Corporate OTP:', mockOtp);
+			}
 		} catch (err) {
 			setCorpError(getApiErrorMessage(err, 'Failed to send OTP'));
 		} finally {
@@ -346,19 +389,45 @@ export default function LoginPage() {
 									)}
 
 									{otpSent && (
-										<Input
-											id="login-otp"
-											label="One-Time Code"
-											inputMode="numeric"
-											pattern="\d{4}"
-											maxLength={4}
-											autoComplete="one-time-code"
-											placeholder="4-digit OTP"
-											helperText="Enter the code sent to your WhatsApp / SMS"
-											value={otp}
-											onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
-											required
-										/>
+										<>
+											<Input
+												id="login-otp"
+												label="One-Time Code"
+												inputMode="numeric"
+												pattern="\d{4}"
+												maxLength={4}
+												autoComplete="one-time-code"
+												placeholder="4-digit OTP"
+												helperText="Enter the code sent to your WhatsApp / SMS"
+												value={otp}
+												onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
+												required
+											/>
+
+											{/* ── Development OTP Display ── */}
+											{isDevelopment && devOtp && (
+												<div className="rounded-lg border-l-4 border-yellow-400 bg-yellow-50 p-3 shadow-sm">
+													<p className="text-xs font-semibold text-yellow-800">
+														🔧 Development Mode - Test OTP
+													</p>
+													<div className="mt-2 flex items-center justify-between gap-2">
+														<code className="flex-1 rounded bg-yellow-100 px-2 py-1.5 font-mono text-sm font-bold text-yellow-900">
+															{devOtp}
+														</code>
+														<button
+															type="button"
+															onClick={() => {
+																setOtp(devOtp);
+																navigator.clipboard.writeText(devOtp).catch(() => { });
+															}}
+															className="rounded bg-yellow-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-yellow-700"
+														>
+															Copy & Fill
+														</button>
+													</div>
+												</div>
+											)}
+										</>
 									)}
 
 									{!otpSent ? (
@@ -366,7 +435,7 @@ export default function LoginPage() {
 											type="button"
 											fullWidth
 											loading={loading}
-											className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
+											className="btn btn-primary btn-lg w-full !rounded-lg hover:!bg-[var(--brand-navy-hover)]"
 											onClick={requestOtp}
 										>
 											{loading ? 'Sending OTP...' : 'Send OTP'}
@@ -376,7 +445,7 @@ export default function LoginPage() {
 											type="button"
 											fullWidth
 											loading={loading}
-											className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
+											className="btn btn-primary btn-lg w-full !rounded-lg hover:!bg-[var(--brand-navy-hover)]"
 											onClick={verifyOtp}
 										>
 											{loading ? 'Verifying...' : (isProviderLogin ? 'Verify & Continue' : 'Continue to wellness')}
@@ -458,9 +527,34 @@ export default function LoginPage() {
 												onChange={(e) => setCorpOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
 												required
 											/>
+
+											{/* ── Development OTP Display ── */}
+											{isDevelopment && devCorpOtp && (
+												<div className="rounded-lg border-l-4 border-yellow-400 bg-yellow-50 p-3 shadow-sm">
+													<p className="text-xs font-semibold text-yellow-800">
+														🔧 Development Mode - Test OTP
+													</p>
+													<div className="mt-2 flex items-center justify-between gap-2">
+														<code className="flex-1 rounded bg-yellow-100 px-2 py-1.5 font-mono text-sm font-bold text-yellow-900">
+															{devCorpOtp}
+														</code>
+														<button
+															type="button"
+															onClick={() => {
+																setCorpOtp(devCorpOtp);
+																navigator.clipboard.writeText(devCorpOtp).catch(() => { });
+															}}
+															className="rounded bg-yellow-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-yellow-700"
+														>
+															Copy & Fill
+														</button>
+													</div>
+												</div>
+											)}
+
 											<button
 												type="button"
-												onClick={() => { setCorpOtpSent(false); setCorpOtp(''); }}
+												onClick={() => { setCorpOtpSent(false); setCorpOtp(''); setDevCorpOtp(null); }}
 												className="text-xs text-sky underline hover:text-[var(--brand-sky-hover)]"
 											>
 												Change phone number

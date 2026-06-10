@@ -70,7 +70,7 @@ const getProviderTypeLabel = (type: string): string => {
   return labels[type] || type;
 };
 
-const formatPrice = (minor: number): string => {
+/* const formatPrice = (minor: number): string => {
   return `₹${(minor / 100).toFixed(0)}`;
 };
 
@@ -79,25 +79,14 @@ const getNriFixedFeeMinor = (entryType?: string): number | null => {
   if (entryType === 'nri_psychiatrist') return 3499 * 100;
   if (entryType === 'nri_therapist') return 3599 * 100;
   return null;
-};
+}; */
 
 const barWidth = (value: number, max: number): string => {
   const pct = Math.max(0, Math.min(100, Math.round((Number(value || 0) / Math.max(1, max)) * 100)));
   return `${pct}%`;
 };
 
-const tierChipClass = (tier?: 'HOT' | 'WARM' | 'COLD'): string => {
-  if (tier === 'HOT') return 'bg-orange-100 text-orange-700';
-  if (tier === 'WARM') return 'bg-amber-100 text-amber-700';
-  return 'bg-slate-100 text-slate-700';
-};
 
-const getTierLabel = (provider: ProviderMatch): string => {
-  if (provider.matchBand === 'PLATINUM') return 'PLATINUM HOT';
-  if (provider.tier === 'HOT') return 'HOT';
-  if (provider.tier === 'WARM') return 'WARM';
-  return 'COLD';
-};
 
 const getProviderBanner = (provider: ProviderMatch): { type: 'grace' | 'locked'; text: string } | null => {
   const rawStatus = String(
@@ -146,46 +135,46 @@ export default function ProviderSelectionStep({
   onBrowseDirectory,
   onPreferencesChange,
 }: ProviderSelectionStepProps) {
-  const nriFixedFeeMinor = getNriFixedFeeMinor(presetEntryType);
+  // const nriFixedFeeMinor = getNriFixedFeeMinor(presetEntryType);
   const [providers, setProviders] = useState<ProviderMatch[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [concernsInput, setConcernsInput] = useState('');
-  const [preferredLanguage, setPreferredLanguage] = useState('');
-  const [preferredMode, setPreferredMode] = useState('');
+  // const [concernsInput, setConcernsInput] = useState('');
+  // const [preferredLanguage, setPreferredLanguage] = useState('');
+  // const [preferredMode, setPreferredMode] = useState('');
   const [matchContext, setMatchContext] = useState<'Standard' | 'Corporate' | 'Night' | 'Buddy' | 'Crisis'>('Standard');
   const [needsBuddySupport, setNeedsBuddySupport] = useState(false);
   const [needsNightSessions, setNeedsNightSessions] = useState(false);
   const [needsCrisisCalls, setNeedsCrisisCalls] = useState(false);
 
   // Debounced values — only update after user stops typing
-  const [debouncedConcerns, setDebouncedConcerns] = useState('');
-  const [debouncedLanguage, setDebouncedLanguage] = useState('');
-  const [debouncedMode, setDebouncedMode] = useState('');
+  const [debouncedConcerns] = useState('');
+  const [debouncedLanguage] = useState('');
+  const [debouncedMode] = useState('');
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const languageDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleConcernsChange = (value: string) => {
-    setConcernsInput(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setDebouncedConcerns(value), 600);
-  };
+  // const handleConcernsChange = (value: string) => {
+  //   setConcernsInput(value);
+  //   if (debounceRef.current) clearTimeout(debounceRef.current);
+  //   debounceRef.current = setTimeout(() => setDebouncedConcerns(value), 600);
+  // };
 
-  const handleLanguageChange = (value: string) => {
-    setPreferredLanguage(value);
-    if (languageDebounceRef.current) clearTimeout(languageDebounceRef.current);
-    languageDebounceRef.current = setTimeout(() => setDebouncedLanguage(value), 1000);
-  };
+  // const handleLanguageChange = (value: string) => {
+  //   setPreferredLanguage(value);
+  //   if (languageDebounceRef.current) clearTimeout(languageDebounceRef.current);
+  //   languageDebounceRef.current = setTimeout(() => setDebouncedLanguage(value), 1000);
+  // };
 
-  const handleModeChange = (value: string) => {
-    setPreferredMode(value);
-    if (modeDebounceRef.current) clearTimeout(modeDebounceRef.current);
-    modeDebounceRef.current = setTimeout(() => setDebouncedMode(value), 1000);
-  };
+  // const handleModeChange = (value: string) => {
+  //   setPreferredMode(value);
+  //   if (modeDebounceRef.current) clearTimeout(modeDebounceRef.current);
+  //   modeDebounceRef.current = setTimeout(() => setDebouncedMode(value), 1000);
+  // };
 
   useEffect(() => {
     return () => {
@@ -237,7 +226,12 @@ export default function ProviderSelectionStep({
         );
         const nextProviders = Array.isArray(result?.providers) ? result.providers : [];
         setProviders(nextProviders);
-        setSelectedIds((prev) => prev.filter((id) => nextProviders.some((provider) => provider.id === id)));
+
+        if (nextProviders.length > 0) {
+          const autoSelected = nextProviders.slice(0, 3);
+          setSelectedIds(autoSelected.map(p => p.id));
+          onSuccess(autoSelected);
+        }
       } catch (err: any) {
         setError(err?.message || 'Failed to load available providers');
       } finally {
@@ -318,7 +312,7 @@ export default function ProviderSelectionStep({
       {!loading && (
         <div className="rounded-xl border border-calm-sage/20 bg-calm-sage/5 p-4 space-y-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-charcoal/50">Personalize your match</p>
-          
+
           <div className="space-y-3 sm:space-y-0 sm:flex sm:gap-6">
             <div className="space-y-2">
               <p className="text-xs font-semibold text-charcoal/70">Context</p>
@@ -385,7 +379,7 @@ export default function ProviderSelectionStep({
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 border-t border-calm-sage/10 pt-3">
+          {/* <div className="grid gap-3 sm:grid-cols-2 border-t border-calm-sage/10 pt-3">
             <label className="text-xs text-charcoal/70">
               Preferred Language
               <input
@@ -415,7 +409,7 @@ export default function ProviderSelectionStep({
                 className="mt-1 w-full rounded-lg border border-calm-sage/20 bg-white px-3 py-2 text-sm text-charcoal outline-none focus:border-teal-400"
               />
             </label>
-          </div>
+          </div> */}
         </div>
       )}
 
@@ -444,25 +438,7 @@ export default function ProviderSelectionStep({
                     <div className="flex items-center justify-between gap-2">
                       <h4 className="font-semibold text-charcoal">{provider.name}</h4>
                       <div className="flex items-center gap-2">
-                        {provider.tier && (
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${tierChipClass(provider.tier)}`}>
-                            {provider.matchBand === 'PLATINUM'
-                              ? '🔥 PLATINUM HOT'
-                              : provider.tier === 'HOT'
-                                ? '🔥 HOT'
-                                : provider.tier === 'WARM'
-                                  ? '🌟 WARM'
-                                  : '❄️ COLD'}
-                          </span>
-                        )}
-                        {provider.score != null && (
-                          <div className="text-xs font-semibold text-teal-700">{getTierLabel(provider)} {provider.score}</div>
-                        )}
-                        {provider.averageRating && (
-                          <div className="text-xs font-medium text-amber-600">
-                            ⭐ {provider.averageRating.toFixed(1)}
-                          </div>
-                        )}
+
                       </div>
                     </div>
                     <p className="text-xs text-charcoal/60 mt-0.5">
@@ -503,12 +479,12 @@ export default function ProviderSelectionStep({
                         </div>
                       </div>
                     )}
-                    {(nriFixedFeeMinor || provider.consultationFee) && (
+                    {/* {(nriFixedFeeMinor || provider.consultationFee) && (
                       <p className="text-sm font-semibold text-teal-600 mt-2">
                         {formatPrice(nriFixedFeeMinor || Number(provider.consultationFee || 0))}
                         {nriFixedFeeMinor ? ' • NRI fixed session rate' : ''}
                       </p>
-                    )}
+                    )} */}
                   </div>
                 </div>
               </button>
@@ -534,7 +510,7 @@ export default function ProviderSelectionStep({
             {onBrowseDirectory && (
               <button
                 onClick={onBrowseDirectory}
-                className="rounded-lg bg-teal-500 px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-teal-600 active:scale-95"
+                className="rounded-lg bg-gradient-calm px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-none hover:bg-[var(--brand-navy-hover)] active:scale-95"
               >
                 📅 Browse Directory
               </button>
@@ -583,7 +559,7 @@ export default function ProviderSelectionStep({
           onClick={handleSubmit}
           disabled={!isValid || submitting}
           className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-all ${isValid && !submitting
-            ? 'bg-teal-500 text-white hover:bg-teal-600 shadow-sm'
+            ? 'bg-gradient-calm text-white hover:bg-none hover:bg-[var(--brand-navy-hover)] shadow-sm'
             : 'bg-calm-sage/10 text-charcoal/40 cursor-not-allowed'
             }`}
         >

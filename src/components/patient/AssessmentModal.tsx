@@ -109,7 +109,7 @@ export default function AssessmentModal({ isOpen, onClose, onComplete }: Assessm
               </div>
               <button
                 onClick={handleStart}
-                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 py-4 text-base font-medium text-white shadow-sm transition-all hover:bg-teal-700 active:scale-[0.98]"
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-calm px-6 py-4 text-base font-medium text-white shadow-sm transition-all hover:bg-none hover:bg-[var(--brand-navy-hover)] active:scale-[0.98]"
               >
                 Begin Check-in (Takes ~2 mins)
                 <ArrowRight className="h-5 w-5" />

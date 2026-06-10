@@ -40,7 +40,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   // Variant styles - calming colors
   const variantStyles = {
-    primary: 'bg-gradient-calm text-white hover:shadow-soft-lg hover:-translate-y-0.5 active:translate-y-0',
+    primary: 'bg-gradient-calm text-white hover:bg-none hover:bg-[var(--brand-navy-hover)] hover:shadow-soft-lg hover:-translate-y-0.5 active:translate-y-0',
     secondary: 'bg-white text-wellness-text border-2 border-calm-sage/30 hover:border-calm-sage hover:shadow-soft-sm hover:-translate-y-0.5',
     ghost: 'bg-transparent text-wellness-text hover:bg-calm-sage/10 hover:text-calm-sage',
     soft: 'bg-calm-sage/10 text-wellness-text hover:bg-calm-sage/20 hover:shadow-soft-xs',

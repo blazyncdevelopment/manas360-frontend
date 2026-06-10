@@ -1,12 +1,19 @@
-import { useState, useEffect } from 'react';
-import { ShoppingCart, Filter, Lock, Info, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ShoppingCart, Filter, Lock, Info, CheckCircle2, Loader2 } from 'lucide-react';
 import { fetchProviderMarketplace, fetchProviderLeadStats, fetchProviderLeads, purchaseProviderLead } from '../../api/provider';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  finalizeProviderLeadPurchase,
+  isLeadPurchaseTransaction,
+  savePendingLeadPurchase,
+} from '../../lib/providerLeadPurchaseFlow';
+import { severityFromClinicalScore } from '../../utils/clinicalAssessments';
 
 interface MarketplaceLead {
   id: string;
+  status?: string;
   leadType: string;
   matchScore: number | null;
   matchBand?: string | null;
@@ -19,7 +26,233 @@ interface MarketplaceLead {
   discount: number;
   finalPrice: number;
   createdAt: string;
+  expiresAt?: string;
+  scheduledAt?: string | null;
+  appointmentType?: string | null;
+  patientName?: string | null;
+  city?: string | null;
+  phq9Score?: number | null;
+  phq9Severity?: string | null;
+  gad7Score?: number | null;
+  gad7Severity?: string | null;
+  primaryLanguage?: string | null;
+  languages?: string[];
 }
+
+const LANGUAGE_CODE_MAP: Record<string, string> = {
+  english: 'EN',
+  en: 'EN',
+  hindi: 'HI',
+  hi: 'HI',
+  kannada: 'KN',
+  kn: 'KN',
+  tamil: 'TA',
+  ta: 'TA',
+  telugu: 'TE',
+  te: 'TE',
+  marathi: 'MR',
+  mr: 'MR',
+  bengali: 'BN',
+  bn: 'BN',
+  gujarati: 'GU',
+  gu: 'GU',
+};
+
+const formatPhq9Severity = (severity: string): string =>
+  severity
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+
+const normalizeLanguageCodes = (values: unknown): string[] => {
+  if (!values) return [];
+  const list = Array.isArray(values) ? values : [values];
+  return list
+    .map((value) => {
+      const raw = String(value || '').trim();
+      if (!raw) return '';
+      const mapped = LANGUAGE_CODE_MAP[raw.toLowerCase()];
+      if (mapped) return mapped;
+      if (/^[a-z]{2}$/i.test(raw)) return raw.toUpperCase();
+      return raw;
+    })
+    .filter(Boolean);
+};
+
+const toScore = (value: unknown): number | null => {
+  if (value == null || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const normalizeMarketplaceLead = (lead: any): MarketplaceLead => {
+  const preview = lead.previewData ?? lead.preview ?? lead.patientPreview ?? lead.patientSnapshot ?? {};
+  const patient = lead.patient ?? preview.patient ?? {};
+
+  const patientName =
+    preview.patientName
+    ?? lead.patientName
+    ?? patient.name
+    ?? patient.firstName
+    ?? null;
+
+  const city =
+    preview.city
+    ?? lead.city
+    ?? lead.patientCity
+    ?? lead.location
+    ?? patient.city
+    ?? patient.location
+    ?? null;
+
+  const phq9Score = toScore(
+    preview.phq9Score
+    ?? preview.phq9?.score
+    ?? preview.phqScore
+    ?? lead.phq9Score
+    ?? lead.phqScore
+    ?? lead.phq9?.score
+    ?? lead.assessments?.phq9?.score
+    ?? lead.assessment?.phq9Score,
+  );
+
+  const gad7Score = toScore(
+    preview.gad7Score
+    ?? preview.gad7?.score
+    ?? preview.gadScore
+    ?? lead.gad7Score
+    ?? lead.gadScore
+    ?? lead.gad7?.score
+    ?? lead.assessments?.gad7?.score
+    ?? lead.assessment?.gad7Score,
+  );
+
+  const phq9SeverityRaw =
+    preview.phq9Severity
+    ?? preview.phq9?.severity
+    ?? lead.phq9Severity
+    ?? lead.phq9?.severity
+    ?? lead.assessments?.phq9?.severity
+    ?? null;
+  const phq9Severity = phq9SeverityRaw
+    ? formatPhq9Severity(String(phq9SeverityRaw))
+    : phq9Score != null
+      ? formatPhq9Severity(severityFromClinicalScore('PHQ-9', phq9Score))
+      : null;
+
+  const gad7SeverityRaw =
+    preview.gad7Severity
+    ?? preview.gad7?.severity
+    ?? lead.gad7Severity
+    ?? lead.gad7?.severity
+    ?? lead.assessments?.gad7?.severity
+    ?? null;
+  const gad7Severity = gad7SeverityRaw
+    ? formatPhq9Severity(String(gad7SeverityRaw))
+    : gad7Score != null
+      ? formatPhq9Severity(severityFromClinicalScore('GAD-7', gad7Score))
+      : null;
+
+  const languages = normalizeLanguageCodes(
+    preview.language
+      ? [preview.language]
+      : preview.languages
+      ?? lead.languages
+      ?? lead.preferredLanguages
+      ?? (lead.preferredLanguage ? [lead.preferredLanguage] : null)
+      ?? patient.languages
+      ?? patient.preferredLanguages
+      ?? (patient.preferredLanguage ? [patient.preferredLanguage] : null),
+  );
+
+  const amountMinor = toScore(lead.amountMinor ?? lead.priceMinor);
+  const legacyPrice = toScore(lead.price ?? lead.finalPrice);
+  const finalPrice = amountMinor != null
+    ? Math.round(amountMinor / 100)
+    : legacyPrice != null
+      ? Math.round(legacyPrice)
+      : 0;
+
+  const concerns = Array.isArray(preview.concerns)
+    ? preview.concerns.map((c: unknown) => String(c).trim()).filter(Boolean)
+    : Array.isArray(lead.concerns)
+      ? lead.concerns.map((c: unknown) => String(c).trim()).filter(Boolean)
+      : Array.isArray(lead.issue)
+        ? lead.issue
+        : [];
+
+  return {
+    ...lead,
+    id: lead.id,
+    status: lead.status,
+    leadType: (['hot', 'warm', 'cold'].includes(String(lead.tier || lead.leadType || '').toLowerCase())
+      ? String(lead.tier || lead.leadType).toLowerCase()
+      : 'cold'),
+    matchScore: lead.score ?? lead.matchScore ?? null,
+    issue: concerns,
+    finalPrice,
+    basePrice: lead.basePrice != null ? Math.round(Number(lead.basePrice) / (lead.basePrice > 999 ? 100 : 1)) : finalPrice,
+    discount: lead.discount ?? 0,
+    createdAt: lead.createdAt,
+    expiresAt: lead.expiresAt,
+    scheduledAt: preview.scheduledAt ?? lead.scheduledAt ?? null,
+    appointmentType: preview.appointmentType ?? lead.appointmentType ?? null,
+    patientName,
+    city,
+    phq9Score,
+    phq9Severity,
+    gad7Score,
+    gad7Severity,
+    primaryLanguage: languages[0] ?? null,
+    languages,
+  };
+};
+
+const LeadPatientPreview = ({ lead }: { lead: MarketplaceLead }) => (
+  <div className="mb-4 rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-3">
+    <p className="text-xs font-semibold text-slate-900 truncate">
+      {lead.patientName || 'Patient'}
+      {lead.city ? <span className="font-normal text-slate-500"> · {lead.city}</span> : null}
+    </p>
+
+    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] leading-relaxed text-slate-500">
+      <span>
+        PHQ-9{' '}
+        <span className="font-semibold text-slate-800">
+          {lead.phq9Score != null ? lead.phq9Score : '—'}
+        </span>
+      </span>
+      <span>
+        GAD-7{' '}
+        <span className="font-semibold text-slate-800">
+          {lead.gad7Score != null ? lead.gad7Score : '—'}
+        </span>
+      </span>
+      <span>
+        Lang{' '}
+        <span className="font-semibold text-slate-800">
+          {lead.primaryLanguage || (lead.languages && lead.languages.length > 0 ? lead.languages.join(', ') : '—')}
+        </span>
+      </span>
+    </div>
+
+    {lead.issue && lead.issue.length > 0 ? (
+      <div className="mt-2.5 flex flex-wrap gap-1">
+        {lead.issue.map((concern) => (
+          <span
+            key={concern}
+            className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-medium capitalize text-teal-700"
+          >
+            {concern.replace(/_/g, ' ')}
+          </span>
+        ))}
+      </div>
+    ) : (
+      <p className="mt-2 text-[10px] text-slate-400">No concerns listed</p>
+    )}
+  </div>
+);
 
 const ScoreBar = ({ label, value, max, color }: { label: string; value: number | null | undefined; max: number; color: string }) => {
   const pct = value != null ? Math.round((value / max) * 100) : 0;
@@ -50,8 +283,19 @@ const typeColors: Record<string, { bg: string; text: string; label: string; emoj
   cold: { bg: 'bg-blue-50', text: 'text-blue-700', label: 'Cold Lead', emoji: '❄️' },
 };
 
+const getRemainingTime = (expiresAt: string): string => {
+  const diffMs = new Date(expiresAt).getTime() - Date.now();
+  if (diffMs <= 0) return 'Expired';
+  const diffMins = Math.round(diffMs / 1000 / 60);
+  if (diffMins < 60) return `${diffMins}m left`;
+  const diffHours = Math.floor(diffMins / 60);
+  const remainingMins = diffMins % 60;
+  return `${diffHours}h ${remainingMins}m left`;
+};
+
 export default function ProviderMarketplacePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [tab, setTab] = useState<'marketplace' | 'purchased'>('marketplace');
   const [leads, setLeads] = useState<MarketplaceLead[]>([]);
@@ -60,6 +304,8 @@ export default function ProviderMarketplacePage() {
   const [filter, setFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const paymentReturnHandledRef = useRef(false);
 
   const isPlatformActive = user?.platformAccessActive;
   const leadsRemaining = stats?.leadsRemaining ?? 0;
@@ -74,9 +320,34 @@ export default function ProviderMarketplacePage() {
       fetchProviderLeads().catch(() => []),
     ])
       .then(([marketplaceData, statsData, myLeads]) => {
-        setLeads(marketplaceData || []);
+        const rawLeads = (marketplaceData as any)?.items
+          ?? (marketplaceData as any)?.leads
+          ?? (Array.isArray(marketplaceData) ? marketplaceData : []);
+        const normalizedLeads = rawLeads.map((lead: any) => normalizeMarketplaceLead(lead));
+
+        // Sort available leads so that the latest lead is at the top, filtering out expired ones
+        const sortedLeads = normalizedLeads
+          .filter((lead: any) => !lead.expiresAt || new Date(lead.expiresAt).getTime() > Date.now())
+          .sort((a: MarketplaceLead, b: MarketplaceLead) => {
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
+
+        setLeads(sortedLeads);
         setStats(statsData);
-        setPurchasedLeads(Array.isArray(myLeads) ? myLeads : []);
+
+        const normalizedMyLeads = (Array.isArray(myLeads) ? myLeads : []).map((lead: any) => {
+          const normalized = normalizeMarketplaceLead(lead);
+          return {
+            ...normalized,
+            tier: lead.tier || lead.leadType || 'Standard',
+            patientName: normalized.patientName || lead.patientName || lead.patient?.name || 'Patient',
+            purchasedAt: lead.purchasedAt || lead.createdAt,
+          };
+        }).sort((a: any, b: any) => {
+          return new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime();
+        });
+
+        setPurchasedLeads(normalizedMyLeads);
       })
       .catch((err: any) => {
         if (err?.response?.status === 403) toast.error('Access restricted');
@@ -86,28 +357,95 @@ export default function ProviderMarketplacePage() {
 
   useEffect(() => { loadData(); }, []);
 
+  useEffect(() => {
+    if (paymentReturnHandledRef.current) return;
+
+    const merchantTransactionId = (
+      searchParams.get('merchantTransactionId')
+      || searchParams.get('transactionId')
+      || searchParams.get('txn')
+      || searchParams.get('id')
+      || ''
+    ).trim();
+
+    if (!merchantTransactionId || !isLeadPurchaseTransaction(merchantTransactionId)) return;
+
+    paymentReturnHandledRef.current = true;
+    setVerifyingPayment(true);
+
+    void finalizeProviderLeadPurchase(merchantTransactionId)
+      .then(() => {
+        toast.success('Lead purchased successfully! The patient session has been assigned to you.');
+        setTab('purchased');
+        loadData();
+        navigate('/provider/leads', { replace: true });
+      })
+      .catch((err: any) => {
+        const serverMessage = err?.response?.data?.message;
+        toast.error(serverMessage || err?.message || 'Payment verification failed. Please try again.');
+      })
+      .finally(() => {
+        setVerifyingPayment(false);
+      });
+  }, [searchParams, navigate]);
+
   const filteredLeads = filter === 'all' ? leads : leads.filter((l) => l.leadType === filter);
 
   const onPurchase = async (leadId: string) => {
     if (!canPurchase) return;
     setPurchasing(leadId);
     try {
-      const result: any = await purchaseProviderLead(leadId);
-      // Backend returns PhonePe redirect URL — send provider to payment
-      const redirectUrl = result?.redirectUrl;
-      if (redirectUrl) {
+      const result = await purchaseProviderLead(leadId);
+      const redirectUrl = String(result.payment?.redirectUrl || '').trim();
+      const merchantTransactionId = String(result.payment?.merchantTransactionId || '').trim();
+
+      if (redirectUrl && merchantTransactionId) {
+        savePendingLeadPurchase(leadId, merchantTransactionId, result.paymentId || result.payment?.paymentId);
         window.location.href = redirectUrl;
         return;
       }
-      // If no redirect (e.g. free lead), refresh data
-      toast.success('Lead purchased successfully!');
-      loadData();
+
+      if (result.purchase || result.updatedLead) {
+        toast.success('Lead purchased successfully! The patient session will be assigned to you.');
+        setTab('purchased');
+        loadData();
+        return;
+      }
+
+      toast.error('Unable to start lead purchase. Please try again.');
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Purchase failed');
+      const status = err?.response?.status;
+      const serverMessage = err?.response?.data?.message;
+      let displayMessage = serverMessage || 'Purchase failed';
+
+      if (status === 404) {
+        displayMessage = serverMessage || 'Lead not found (The lead might have expired or been deleted).';
+      } else if (status === 409) {
+        displayMessage = serverMessage || 'Lead already taken (Another provider bought it fractions of a second earlier).';
+      } else if (status === 403) {
+        if (serverMessage?.toLowerCase().includes('limit') || serverMessage?.toLowerCase().includes('quota') || serverMessage?.toLowerCase().includes('exceeded')) {
+          displayMessage = serverMessage || 'Weekly limit of leads exceeded for your current plan.';
+        } else {
+          displayMessage = serverMessage || 'Your current plan does not support purchasing leads. Please upgrade your subscription.';
+        }
+      }
+      toast.error(displayMessage);
     } finally {
       setPurchasing(null);
     }
   };
+
+  if (verifyingPayment) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#F8FAFC] px-4">
+        <Loader2 className="h-12 w-12 animate-spin text-[#1f6f5f]" />
+        <p className="mt-4 max-w-md text-center text-sm font-semibold text-slate-700">
+          Verifying your PhonePe payment and assigning the lead…
+        </p>
+        <p className="mt-2 text-xs text-slate-400">Please do not close this window.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-24">
@@ -187,16 +525,7 @@ export default function ProviderMarketplacePage() {
                       <span className="text-xs font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Purchased</span>
                       {lead.tier && <span className="text-xs text-slate-500 font-semibold">{lead.tier}</span>}
                     </div>
-                    <p className="font-bold text-charcoal">{lead.patientName || 'Patient'}</p>
-                    {lead.issue && lead.issue.length > 0 && (
-                      <div className="flex gap-1 flex-wrap">
-                        {lead.issue.map((tag: string) => (
-                          <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 font-semibold capitalize">
-                            {tag.replace(/_/g, ' ')}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    <LeadPatientPreview lead={lead} />
                     <p className="text-xs text-slate-400">Match Score: {lead.matchScore ?? '—'}</p>
                     <p className="text-xs text-slate-400">Purchased: {new Date(lead.purchasedAt || lead.createdAt).toLocaleDateString('en-IN')}</p>
                   </div>
@@ -291,6 +620,7 @@ export default function ProviderMarketplacePage() {
                   {filteredLeads.map((lead) => {
                     const tc = typeColors[lead.leadType] || typeColors.cold;
                     const hasDiscount = lead.discount > 0;
+                    const timeRemaining = lead.expiresAt ? getRemainingTime(lead.expiresAt) : null;
                     return (
                       <article key={lead.id} className={`group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all border-b-4 border-b-slate-100 hover:border-b-[#1f6f5f] ${!canPurchase ? 'opacity-60 grayscale' : ''}`}>
                         {/* Type Badge */}
@@ -298,12 +628,20 @@ export default function ProviderMarketplacePage() {
                           <span className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-tight ${tc.bg} ${tc.text}`}>
                             {tc.emoji} {tc.label}
                           </span>
-                          {lead.matchScore != null && (
-                            <div className="text-right">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Match %</p>
-                              <p className="text-sm font-black text-slate-900">{lead.matchScore}%</p>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-3">
+                            {lead.matchScore != null && (
+                              <div className="text-right">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Match %</p>
+                                <p className="text-sm font-black text-slate-900">{lead.matchScore}%</p>
+                              </div>
+                            )}
+                            {timeRemaining && (
+                              <div className="text-right border-l border-slate-200 pl-3">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Expires In</p>
+                                <p className={`text-xs font-bold ${timeRemaining.includes('Expired') ? 'text-rose-600' : 'text-slate-500'}`}>{timeRemaining}</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* V3 Match Scores */}
@@ -315,13 +653,26 @@ export default function ProviderMarketplacePage() {
                             <ScoreBar label="Quality" value={lead.scoreQuality} max={25} color="bg-amber-500" />
                           </div>
                         )}
-                        {lead.issue && lead.issue.length > 0 && (
-                          <div className="mb-4 flex flex-wrap gap-1">
-                            {lead.issue.map((tag: string) => (
-                              <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 font-semibold capitalize">
-                                {tag.replace(/_/g, ' ')}
+                        <LeadPatientPreview lead={lead} />
+
+                        {(lead.scheduledAt || lead.appointmentType) && (
+                          <div className="mb-4 flex flex-wrap gap-2 text-[10px] text-slate-500">
+                            {lead.scheduledAt ? (
+                              <span className="rounded-lg bg-slate-50 px-2 py-1 font-medium">
+                                {new Date(lead.scheduledAt).toLocaleString('en-IN', {
+                                  weekday: 'short',
+                                  day: 'numeric',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
                               </span>
-                            ))}
+                            ) : null}
+                            {lead.appointmentType ? (
+                              <span className="rounded-lg bg-slate-50 px-2 py-1 font-medium capitalize">
+                                {lead.appointmentType}
+                              </span>
+                            ) : null}
                           </div>
                         )}
 

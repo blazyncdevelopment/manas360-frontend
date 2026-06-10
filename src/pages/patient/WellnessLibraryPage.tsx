@@ -28,8 +28,8 @@ const modules: ModuleCard[] = [
     highlights: ['Raga Therapy sub-section', 'Deep focus sessions', 'Anxiety relief playlists'],
     goal: 'Anxiety Relief & Focus',
     cta: 'Explore Sounds →',
-    to: '/sound-therapy',
-    themeClass: 'from-[#1f2f6d]/85 via-[#273c82]/80 to-[#2f4ea3]/75',
+    to: '/patient/sound-therapy',
+    themeClass: 'from-[#0e5558]/85 via-[#146a6f]/80 to-[#1f7f86]/75',
     badge: 'FREE CONTENT',
   },
   {
@@ -42,7 +42,7 @@ const modules: ModuleCard[] = [
     goal: 'Insomnia & Sleep Disorders',
     cta: 'Start Sleep Program →',
     to: '/patient/sleep-therapy',
-    themeClass: 'from-[#0d2142]/90 via-[#16305b]/85 to-[#24437b]/80',
+    themeClass: 'from-[#0e5558]/85 via-[#146a6f]/80 to-[#1f7f86]/75',
     badge: 'FREE CONTENT',
   },
   {
@@ -68,7 +68,7 @@ const modules: ModuleCard[] = [
     goal: 'Transformation & Deep Engagement',
     cta: 'Enter VR Sanctuary →',
     to: '/patient/vr-sanctuary',
-    themeClass: 'from-[#29304f]/90 via-[#3a4670]/85 to-[#5166a1]/80',
+    themeClass: 'from-[#0e5558]/85 via-[#146a6f]/80 to-[#1f7f86]/75',
     badge: 'PREMIUM LIBRARY',
   },
 ];

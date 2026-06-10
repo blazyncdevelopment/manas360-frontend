@@ -12,10 +12,13 @@ import {
 } from '../../api/providerOnboarding';
 import { extractProviderId, setStoredProviderId } from '../../utils/providerOnboardingStorage';
 import { clearGuestClinicalScreening, readCachedClinicalScreening } from '../../utils/guestScreeningCache';
+import { patientApi } from '../../api/patient';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useAuth, getPostLoginRoute } from '../../context/AuthContext';
-import NriPatch, { type NriConsentState } from '../legal/Nri';
+import { hasActivePaidPatientSubscription } from '../../lib/patientSubscriptionFlow';
+import NriPatch, { type NriConsentState } from '../legal/nri';
+
 
 type SignupRole = 'patient' | 'therapist' | 'psychiatrist' | 'psychologist' | 'coach';
 type ProviderAgreementKey = 'THERAPIST_IC_AGREEMENT' | 'THERAPIST_NDA' | 'THERAPIST_DATA_PROCESSING_AGREEMENT';
@@ -380,12 +383,27 @@ export default function SignupPage() {
 	useEffect(() => {
 		const query = new URLSearchParams(location.search);
 		const prefillPhone = query.get('phone');
+		const prefillName = query.get('name');
+		const prefillQualification = query.get('qualification');
+		const prefillRciNumber = query.get('rciNumber');
 		const reason = query.get('reason');
 		const userType = String(query.get('userType') || '').toLowerCase();
 		const queryRole = query.get('role');
 
 		if (prefillPhone && !phone) {
 			setPhone(prefillPhone);
+		}
+
+		if (prefillName && !name) {
+			setName(prefillName);
+		}
+
+		if (prefillQualification && !qualification) {
+			setQualification(prefillQualification);
+		}
+
+		if (prefillRciNumber && !rciNumber) {
+			setRciNumber(prefillRciNumber);
 		}
 
 		if ((locationState?.role || queryRole) && role === 'patient') {
@@ -404,12 +422,12 @@ export default function SignupPage() {
 				setRole(userType as SignupRole);
 			}
 		}
-	}, [location.search, phone, otpSent, error, isPatientLeadFlow, isCertificationContext]);
+	}, [location.search, phone, name, qualification, rciNumber, otpSent, error, isPatientLeadFlow, isCertificationContext]);
 
 
 	const resolveReturnTo = (): string => {
 		const qp = new URLSearchParams(location.search);
-		const candidate = qp.get('returnTo') || qp.get('next') || '';
+		let candidate = qp.get('returnTo') || qp.get('next') || '';
 		if (!candidate) {
 			return '';
 		}
@@ -420,6 +438,10 @@ export default function SignupPage() {
 
 		if (candidate.startsWith('/auth/')) {
 			return '';
+		}
+
+		if (candidate.startsWith('/patient/dashboard') || candidate === '/patient' || candidate === '/patient/') {
+			candidate = '/patient/sessions';
 		}
 
 		return candidate;
@@ -486,14 +508,6 @@ export default function SignupPage() {
 				nri_declared: nriConsent.nri_declared,
 				nri_tos_accepted: nriConsent.nri_tos_accepted,
 				nri_tos_accepted_at: nriConsent.nri_tos_accepted_at || undefined,
-				...(cachedScreening
-					? {
-						clinicalScreening: {
-							type: cachedScreening.type,
-							answers: cachedScreening.answers,
-						},
-					}
-					: {}),
 			}, guestGameToken);
 
 			if (guestGameToken) {
@@ -510,9 +524,40 @@ export default function SignupPage() {
 				navigate(returnTo || '/certifications', { replace: true });
 				return;
 			}
-			// If backend indicates patient requires a subscription, send to plans page
 			if ((resolvedUser as any)?.requiresSubscription) {
-				navigate(`/plans?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
+				let hasBookedSession = false;
+				let hasActiveSubscription = Boolean((resolvedUser as any)?.patientSubscriptionActive);
+
+				if (!hasActiveSubscription) {
+					try {
+						const [subscriptionResponse, upcomingRes, historyRes] = await Promise.all([
+							patientApi.getSubscription().catch(() => null),
+							patientApi.getUpcomingSessions().catch(() => ({ data: [] })),
+							patientApi.getSessionHistory().catch(() => ({ data: [] }))
+						]);
+
+						hasActiveSubscription = hasActivePaidPatientSubscription(
+							resolvedUser,
+							subscriptionResponse,
+						);
+
+						const upcoming = Array.isArray((upcomingRes as any)?.data) ? (upcomingRes as any).data : Array.isArray(upcomingRes) ? upcomingRes : [];
+						const history = Array.isArray((historyRes as any)?.data) ? (historyRes as any).data : Array.isArray(historyRes) ? historyRes : [];
+						if (upcoming.length > 0 || history.length > 0) {
+							hasBookedSession = true;
+						}
+					} catch {
+						hasBookedSession = false;
+						hasActiveSubscription = Boolean((resolvedUser as any)?.patientSubscriptionActive);
+					}
+				}
+
+				if (hasActiveSubscription || hasBookedSession) {
+					navigate('/patient/sessions', { replace: true });
+					return;
+				}
+
+				navigate(`/patient/preferences?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
 				return;
 			}
 			const postLoginRoute = getPostLoginRoute(resolvedUser);
@@ -684,7 +729,7 @@ export default function SignupPage() {
 								type="button"
 								fullWidth
 								loading={loading}
-								className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
+								className="btn btn-primary btn-lg w-full !rounded-lg hover:!bg-[var(--brand-navy-hover)]"
 								onClick={requestOtp}
 							>
 								{loading ? 'Sending OTP...' : 'Send OTP'}
@@ -694,7 +739,7 @@ export default function SignupPage() {
 								type="button"
 								fullWidth
 								loading={loading}
-								className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
+								className="btn btn-primary btn-lg w-full !rounded-lg hover:!bg-[var(--brand-navy-hover)]"
 								onClick={verifyOtp}
 							>
 								{loading ? 'Verifying OTP...' : (isCertificationContext ? 'Verify OTP and Continue' : 'Verify OTP and Register')}

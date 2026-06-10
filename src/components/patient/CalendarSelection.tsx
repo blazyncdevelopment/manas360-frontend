@@ -3,8 +3,13 @@ import { ChevronLeft, ChevronRight, Clock, Loader2 } from 'lucide-react';
 import { patientApi } from '../../api/patient';
 import { FRONTEND_URL } from '../../lib/runtimeEnv';
 
+export type MarketplaceBookingOptions = {
+  concerns: string[];
+  appointmentType: 'video' | 'audio';
+};
+
 interface CalendarSelectionProps {
-  onDateTimeSelect: (date: Date, time: string) => void;
+  onDateTimeSelect: (date: Date, time: string, options: MarketplaceBookingOptions) => void;
   onCancel: () => void;
 }
 
@@ -39,6 +44,8 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
   );
   const [timeSlotsLoading, setTimeSlotsLoading] = useState(false);
   const [timeSlotsError, setTimeSlotsError] = useState<string | null>(null);
+  const [concernsInput, setConcernsInput] = useState('');
+  const [appointmentType, setAppointmentType] = useState<'video' | 'audio'>('video');
 
   useEffect(() => {
     if (!selectedDate || step !== 'time-slots') return;
@@ -114,6 +121,8 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
       setSelectedDate(date);
       setStep('time-slots');
       setSelectedTime(null);
+      setConcernsInput('');
+      setAppointmentType('video');
       setTimeSlotsError(null);
     }
   };
@@ -238,7 +247,6 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
                   onClick={() => {
                     if (timeSlotsLoading) return;
                     setSelectedTime(slot.startTime);
-                    onDateTimeSelect(selectedDate, slot.startTime);
                   }}
                   disabled={timeSlotsLoading}
                   className={`w-full rounded-lg border px-4 py-3 text-left transition-all ${
@@ -274,6 +282,63 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
               )}
             </div>
           </div>
+
+          {selectedTime && (
+            <div className="space-y-4 rounded-lg border border-calm-sage/20 bg-calm-sage/5 p-4">
+              <div>
+                <label htmlFor="booking-concerns" className="block text-xs font-semibold uppercase tracking-wider text-charcoal/60">
+                  Concerns
+                </label>
+                <input
+                  id="booking-concerns"
+                  type="text"
+                  value={concernsInput}
+                  onChange={(e) => setConcernsInput(e.target.value)}
+                  placeholder="e.g. anxiety, depression"
+                  className="mt-1.5 w-full rounded-lg border border-calm-sage/25 bg-white px-3 py-2.5 text-sm text-charcoal placeholder:text-charcoal/40 focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-100"
+                />
+                <p className="mt-1 text-xs text-charcoal/50">Separate multiple concerns with commas</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-charcoal/60">Appointment Type</p>
+                <div className="mt-2 flex flex-wrap gap-4">
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-charcoal">
+                    <input
+                      type="checkbox"
+                      checked={appointmentType === 'video'}
+                      onChange={() => setAppointmentType('video')}
+                      className="h-4 w-4 rounded border-calm-sage/30 text-teal-600 focus:ring-teal-500"
+                    />
+                    Video
+                  </label>
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-charcoal">
+                    <input
+                      type="checkbox"
+                      checked={appointmentType === 'audio'}
+                      onChange={() => setAppointmentType('audio')}
+                      className="h-4 w-4 rounded border-calm-sage/30 text-teal-600 focus:ring-teal-500"
+                    />
+                    Audio
+                  </label>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const concerns = concernsInput
+                    .split(',')
+                    .map((c) => c.trim())
+                    .filter(Boolean);
+                  onDateTimeSelect(selectedDate, selectedTime, { concerns, appointmentType });
+                }}
+                className="w-full rounded-lg bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-700"
+              >
+                Continue to Payment
+              </button>
+            </div>
+          )}
 
           {/* Back Button */}
           <button

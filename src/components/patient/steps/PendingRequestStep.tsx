@@ -45,9 +45,21 @@ export default function PendingRequestStep({
 
     const pollInterval = setInterval(async () => {
       try {
-        const result = await patientApi.getPaymentPendingRequest();
-        if (result.hasPaymentPending) {
-          // Provider accepted!
+        // Method 1: Check if payment pending request is active (legacy flow)
+        const paymentPendingResult = await patientApi.getPaymentPendingRequest().catch(() => null);
+        if (paymentPendingResult?.hasPaymentPending) {
+          setIsPolling(false);
+          onAccepted();
+          return;
+        }
+
+        // Method 2: Check if current request is still pending (smart-match marketplace flow)
+        const result = await patientApi.getPendingAppointmentRequests();
+        const requests = Array.isArray(result?.requests) ? result.requests : Array.isArray(result) ? result : [];
+        const request = requests.find((r: any) => r.id === appointmentRequestId);
+
+        // If the request is not found or is no longer PENDING (e.g. status is CONFIRMED, ACCEPTED, or PURCHASED)
+        if (!request || (request.status && request.status !== 'PENDING')) {
           setIsPolling(false);
           onAccepted();
         }
@@ -57,7 +69,7 @@ export default function PendingRequestStep({
     }, 3000);
 
     return () => clearInterval(pollInterval);
-  }, [isPolling, onAccepted]);
+  }, [appointmentRequestId, isPolling, onAccepted]);
 
   // Timer countdown
   useEffect(() => {

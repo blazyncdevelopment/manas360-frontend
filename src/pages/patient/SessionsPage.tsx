@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   patientApi,
   type StructuredAssessmentQuestion,
@@ -21,7 +22,6 @@ import {
   Video,
   Download,
   Activity,
-  UserPlus,
   Users,
   AlertTriangle,
   ClipboardList,
@@ -29,6 +29,12 @@ import {
   Calendar,
   ArrowLeft,
 } from 'lucide-react';
+import {
+  clearMarketplaceBookingPending,
+  getMarketplaceBookingPending,
+  setMarketplaceBookingPending,
+  type MarketplaceBookingPending,
+} from '../../lib/marketplaceBookingPending';
 
 type AssessmentHistoryEntry = {
   id?: string;
@@ -59,6 +65,26 @@ const toLocalDateKey = (value: Date = new Date()): string => {
   const m = String(value.getMonth() + 1).padStart(2, '0');
   const d = String(value.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
+};
+
+const isSessionCompleted = (session: { status?: string }): boolean =>
+  String(session?.status || '').toLowerCase() === 'completed';
+
+const PENDING_MARKETPLACE_STATUSES = new Set([
+  'PENDING',
+  'MATCHING',
+  'AWAITING_PROVIDER',
+  'AWAITING_MATCH',
+  'OPEN',
+  'SEARCHING',
+  'PAID',
+  'PAYMENT_COMPLETED',
+  'PAYMENT_PENDING',
+]);
+
+const isPendingAppointmentRequest = (request: { status?: string }): boolean => {
+  const status = String(request?.status || 'PENDING').toUpperCase();
+  return PENDING_MARKETPLACE_STATUSES.has(status);
 };
 
 const asArray = (value: unknown): any[] => {
@@ -118,6 +144,7 @@ export default function SessionsPage() {
   const [upcoming, setUpcoming] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [myProviders, setMyProviders] = useState<any[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -150,6 +177,9 @@ export default function SessionsPage() {
   const [bookingFallbackLoading, setBookingFallbackLoading] = useState(false);
   const [bookingFallbackError, setBookingFallbackError] = useState<string | null>(null);
   const [smartMatchSummary, setSmartMatchSummary] = useState<SmartMatchSummary | null>(null);
+  const [marketplaceBookingPending, setMarketplaceBookingPendingState] = useState<MarketplaceBookingPending | null>(
+    () => getMarketplaceBookingPending(),
+  );
   const [bookingContext, setBookingContext] = useState<{
     fromAssessment: boolean;
     carePath?: 'recommended' | 'direct' | 'urgent';
@@ -208,18 +238,43 @@ export default function SessionsPage() {
     return allowed.has(raw) ? raw : undefined;
   }, [location.search]);
 
-  const fetchData = async () => {
+  const fetchData = async (showLoading = false) => {
     try {
       setError(null);
-      setLoading(true);
-      const [uRes, hRes, pRes] = await Promise.all([
+      if (showLoading) {
+        setLoading(true);
+      }
+      const [uRes, hRes, pRes, prRes] = await Promise.all([
         patientApi.getUpcomingSessions().catch(() => ({ data: [] })),
         patientApi.getSessionHistory().catch(() => ({ data: [] })),
         patientApi.getMyProviders().catch(() => ({ data: [] })),
+        patientApi.getPendingAppointmentRequests().catch(() => ({ data: [] })),
       ]);
-      setUpcoming(Array.isArray((uRes as any)?.data) ? (uRes as any).data : Array.isArray(uRes) ? uRes : []);
+      const parsedUpcoming = Array.isArray((uRes as any)?.data) ? (uRes as any).data : Array.isArray(uRes) ? uRes : [];
+      setUpcoming(parsedUpcoming);
+      if (parsedUpcoming.length > 0) {
+        clearMarketplaceBookingPending();
+        setMarketplaceBookingPendingState(null);
+      }
       setHistory(Array.isArray((hRes as any)?.data) ? (hRes as any).data : Array.isArray(hRes) ? hRes : []);
       setMyProviders(Array.isArray((pRes as any)?.data) ? (pRes as any).data : Array.isArray(pRes) ? pRes : []);
+      const parsedPending = Array.isArray((prRes as any)?.requests)
+        ? (prRes as any).requests
+        : Array.isArray((prRes as any)?.data?.requests)
+          ? (prRes as any).data.requests
+          : Array.isArray((prRes as any)?.data)
+            ? (prRes as any).data
+            : Array.isArray(prRes)
+              ? prRes
+              : [];
+      setPendingRequests(parsedPending);
+
+      if (parsedPending.length > 0) {
+        sessionStorage.removeItem(ASSESSMENT_DRAFT_STORAGE_KEY);
+        localStorage.removeItem(ASSESSMENT_DRAFT_STORAGE_KEY);
+        setAssessmentDraft(null);
+        setIsClinicalAssessmentOpen(false);
+      }
 
       const therapyPlanResponse = await patientApi.getTherapyPlan().catch(() => null);
       const therapyPlanPayload = (therapyPlanResponse as any)?.data ?? therapyPlanResponse ?? {};
@@ -240,8 +295,10 @@ export default function SessionsPage() {
     }
   };
 
-  const loadAssessmentHistory = async () => {
-    setAssessmentHistoryLoading(true);
+  const loadAssessmentHistory = async (showLoading = false) => {
+    if (showLoading) {
+      setAssessmentHistoryLoading(true);
+    }
     try {
       const response = await patientApi.getPatientAssessmentHistory({ page: 1, limit: 50 }).catch(() => null);
       const items = asArray((response as any)?.data?.items ?? (response as any)?.items ?? response);
@@ -375,7 +432,7 @@ export default function SessionsPage() {
       setClinicalResults(draft.clinicalResults || []);
       setSuggestedProviders(Array.isArray(draft.suggestedProviders) ? draft.suggestedProviders : []);
       setActiveCarePathLabel(draft.activeCarePathLabel || '');
-      if (draft.clinicalFlowPhase === 'provider-list') {
+      if (draft.clinicalFlowPhase === 'provider-list' || draft.clinicalFlowPhase === 'next-phase') {
         setBookingContext({ fromAssessment: true });
       }
     } else {
@@ -552,10 +609,12 @@ export default function SessionsPage() {
       lockProviderType: path !== 'direct',
     });
 
+    clearAssessmentDraft();
     setIsClinicalAssessmentOpen(false);
     setClinicalFlowPhase('intro');
     setIsSmartMatchOpen(true);
   };
+
 
   const startAdPresetPath = () => {
     if (!adPresetProviderType) return;
@@ -570,6 +629,7 @@ export default function SessionsPage() {
       initialProviderType: adPresetProviderType,
       lockProviderType: true,
     });
+    clearAssessmentDraft();
     setIsClinicalAssessmentOpen(false);
     setClinicalFlowPhase('intro');
     setIsSmartMatchOpen(true);
@@ -592,14 +652,51 @@ export default function SessionsPage() {
   ]);
 
   useEffect(() => {
-    void fetchData();
-    void loadAssessmentHistory();
-    setAssessmentDraft(loadAssessmentDraft());
+    void fetchData(true);
+    void loadAssessmentHistory(true);
+    const draft = loadAssessmentDraft();
+    if (draft) {
+      setAssessmentDraft(draft);
+      setClinicalFlowPhase(draft.clinicalFlowPhase);
+      setClinicalStartWith(draft.clinicalStartWith);
+      setAssessmentOrder(draft.assessmentOrder);
+      setActiveAssessmentIndex(draft.activeAssessmentIndex);
+      setStructuredAttempt(draft.structuredAttempt);
+      setStructuredAnswers(draft.structuredAnswers || {});
+      setCurrentStructuredQuestionIndex(draft.currentStructuredQuestionIndex || 0);
+      setClinicalJourney(draft.clinicalJourney || null);
+      setClinicalResults(draft.clinicalResults || []);
+      setSuggestedProviders(Array.isArray(draft.suggestedProviders) ? draft.suggestedProviders : []);
+      setActiveCarePathLabel(draft.activeCarePathLabel || '');
+      setIsClinicalAssessmentOpen(true);
+      if (draft.clinicalFlowPhase === 'provider-list' || draft.clinicalFlowPhase === 'next-phase') {
+        setBookingContext({ fromAssessment: true });
+      }
+    }
   }, []);
 
   useEffect(() => {
-    const routeState = location.state as { smartMatchSummary?: SmartMatchSummary } | null;
+    const routeState = location.state as {
+      smartMatchSummary?: SmartMatchSummary;
+      paymentConfirmed?: boolean;
+    } | null;
     const fromRoute = routeState?.smartMatchSummary || null;
+
+    if (routeState?.paymentConfirmed) {
+      const pendingRecord: MarketplaceBookingPending = {
+        savedAt: new Date().toISOString(),
+        smartMatchSummary: fromRoute || undefined,
+      };
+      setMarketplaceBookingPending(pendingRecord);
+      setMarketplaceBookingPendingState(pendingRecord);
+      void fetchData();
+    } else {
+      const storedPending = getMarketplaceBookingPending();
+      if (storedPending) {
+        setMarketplaceBookingPendingState(storedPending);
+      }
+    }
+
     if (fromRoute) {
       setSmartMatchSummary(fromRoute);
       return;
@@ -699,11 +796,49 @@ export default function SessionsPage() {
     openClinicalAssessmentFlow();
   };
 
-  const handleDownloadInvoice = async (sessionId: string) => {
+  const handleDownloadInvoice = async (session: { id: string; status?: string }) => {
+    if (!isSessionCompleted(session)) {
+      toast.error('Invoice is available after your session is completed.');
+      return;
+    }
+
     try {
-      await patientApi.downloadInvoicePdf(sessionId);
-    } catch {
-      // Handle download fetch error silently
+      const blob = await patientApi.downloadInvoicePdf(session.id);
+      if (blob instanceof Blob && blob.type.includes('application/json')) {
+        const payload = JSON.parse(await blob.text()) as { message?: string };
+        toast.error(payload.message || 'Invoice is not available yet.');
+        return;
+      }
+
+      const url = window.URL.createObjectURL(blob instanceof Blob ? blob : new Blob([blob as BlobPart]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Invoice-${session.id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Invoice download started');
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const responseData = error?.response?.data;
+
+      if (status === 409) {
+        toast.error('Invoice is not available until the session is completed.');
+        return;
+      }
+
+      if (responseData instanceof Blob) {
+        try {
+          const payload = JSON.parse(await responseData.text()) as { message?: string };
+          toast.error(payload.message || 'Failed to download invoice.');
+          return;
+        } catch {
+          // Fall through to generic error.
+        }
+      }
+
+      toast.error(error?.response?.data?.message || 'Failed to download invoice.');
     }
   };
 
@@ -846,6 +981,10 @@ export default function SessionsPage() {
   const handlePrimaryBookSession = () => {
     setBookingFallbackError(null);
 
+    if (hasMarketplacePending) {
+      return;
+    }
+
     if (adPresetProviderType) {
       startAdPresetPath();
       return;
@@ -884,26 +1023,6 @@ export default function SessionsPage() {
     setIsSmartMatchOpen(true);
   };
 
-  const handleBrowseSpecialists = () => {
-    setBookingFallbackError(null);
-
-    if (adPresetProviderType) {
-      startAdPresetPath();
-      return;
-    }
-
-    setSmartMatchPreferences(adPresetProviderType
-      ? {
-        initialProviderType: adPresetProviderType,
-        lockProviderType: true,
-      }
-      : {
-        initialProviderType: 'ALL',
-        lockProviderType: false,
-      });
-    setIsSmartMatchOpen(true);
-  };
-
   const isWithin10Minutes = useMemo(() => {
     if (!nextSession) return false;
     const now = new Date().getTime();
@@ -913,6 +1032,15 @@ export default function SessionsPage() {
   }, [nextSession]);
 
   const hasUrgentSession = nextSession != null;
+
+  const unresolvedPendingRequests = useMemo(
+    () => pendingRequests.filter(isPendingAppointmentRequest),
+    [pendingRequests],
+  );
+
+  const hasMarketplacePending = unresolvedPendingRequests.length > 0 || Boolean(marketplaceBookingPending);
+  const showPendingMatchBanner = hasMarketplacePending && !hasUrgentSession;
+
   const isSessionTomorrow = useMemo(() => {
     if (!nextSession) return false;
     const now = new Date().getTime();
@@ -1260,11 +1388,50 @@ export default function SessionsPage() {
       )}
 
       {loading ? (
-        <div className="flex h-[300px] items-center justify-center rounded-2xl border border-calm-sage/15 bg-white/50">
-          <p className="animate-pulse text-sm text-charcoal/50">Loading your care hub...</p>
+        <div className="animate-pulse space-y-8" aria-busy="true" aria-label="Loading your care hub">
+          <div className="h-44 rounded-3xl border border-calm-sage/15 bg-white/50" />
+          <div className="space-y-4">
+            <div className="h-6 w-48 rounded-lg bg-calm-sage/10" />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-36 rounded-2xl border border-calm-sage/15 bg-white/50" />
+              ))}
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div className="h-6 w-44 rounded-lg bg-calm-sage/10" />
+            <div className="h-28 rounded-2xl border border-calm-sage/15 bg-white/50" />
+          </div>
         </div>
       ) : (
-        <>
+        <div className="animate-in fade-in duration-300 space-y-8">
+          {showPendingMatchBanner && (
+            <section className="overflow-hidden rounded-2xl border border-teal-200 bg-teal-50 shadow-sm p-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-teal-900">Your request is submitted — hang tight!</h3>
+                  <p className="mt-1 max-w-2xl text-sm text-teal-800">
+                    We've received your request and it's now live in the marketplace. As soon as a provider accepts, you'll be matched and your session date &amp; details will appear right here.
+                    <span className="mt-1 block font-medium text-teal-700">⏳ Most requests are matched within a few hours.</span>
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/crisis')}
+                    className="inline-flex rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
+                  >
+                    🚨 Urgent Care
+                  </button>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    Pending Match
+                  </span>
+                </div>
+              </div>
+            </section>
+          )}
+
           {hasUrgentSession ? (
             <section className="overflow-hidden rounded-2xl bg-[#1a2e2a] shadow-lg">
               <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:gap-6 md:p-6">
@@ -1346,7 +1513,7 @@ export default function SessionsPage() {
             </section>
           )}
 
-          {!hasUrgentSession && (
+          {!hasUrgentSession && !hasMarketplacePending && (
             <section className="rounded-3xl border border-calm-sage/15 bg-white p-8 text-center shadow-soft-sm">
               <div className="mx-auto max-w-md space-y-4">
                 <div className="flex justify-center">
@@ -1444,12 +1611,14 @@ export default function SessionsPage() {
                       <p className="text-xs font-semibold uppercase tracking-wider text-teal-600/70">{provider.role || 'Therapist'}</p>
 
                       <div className="mt-4 flex flex-wrap gap-2">
-                        <button
-                          onClick={() => handleOpenBookingDrawer(provider)}
-                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-charcoal px-3 py-2 text-xs font-semibold text-white transition hover:bg-charcoal/90"
-                        >
-                          Book Session
-                        </button>
+                        {!hasUrgentSession && !hasMarketplacePending && (
+                          <button
+                            onClick={() => handleOpenBookingDrawer(provider)}
+                            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-charcoal px-3 py-2 text-xs font-semibold text-white transition hover:bg-charcoal/90"
+                          >
+                            Book Session
+                          </button>
+                        )}
                         <Link
                           to={getProviderMessageLink(provider)}
                           className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-calm-sage/20 bg-white px-3 py-2 text-xs font-semibold text-charcoal/80 transition hover:bg-calm-sage/5 hover:text-charcoal"
@@ -1461,20 +1630,6 @@ export default function SessionsPage() {
                   </div>
                 </div>
               ))}
-
-              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-calm-sage/30 bg-white/50 p-6 text-center transition-colors hover:bg-white/80">
-                <Users className="mb-3 h-8 w-8 text-calm-sage/40" />
-                <p className="text-sm font-semibold text-charcoal">Need a different specialist?</p>
-                <p className="mt-1 max-w-[240px] text-xs text-charcoal/60">Use the directory to add a psychiatrist, coach, or another provider to your care team.</p>
-                <button
-                  type="button"
-                  onClick={handleBrowseSpecialists}
-                  className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
-                >
-                  <UserPlus className="h-3.5 w-3.5" />
-                  Browse Directory
-                </button>
-              </div>
 
               {todaysAssessmentResults.length > 0 && (
                 <div className="rounded-2xl border border-teal-200/60 bg-teal-50/80 p-6">
@@ -1514,8 +1669,13 @@ export default function SessionsPage() {
             </div>
 
             {assessmentHistoryLoading ? (
-              <div className="rounded-2xl border border-calm-sage/15 bg-white/50 p-6 text-center text-sm text-charcoal/50 animate-pulse">
-                Loading assessment history...
+              <div className="min-h-[120px] animate-pulse rounded-2xl border border-calm-sage/15 bg-white/50 p-6" aria-busy="true">
+                <div className="h-4 w-32 rounded bg-calm-sage/10" />
+                <div className="mt-4 space-y-3">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="h-12 rounded-lg bg-calm-sage/5" />
+                  ))}
+                </div>
               </div>
             ) : assessmentHistory.length > 0 ? (
               <div className="overflow-hidden rounded-2xl border border-calm-sage/15 bg-white shadow-soft-sm">
@@ -1567,7 +1727,7 @@ export default function SessionsPage() {
                 <div className="divide-y divide-calm-sage/10">
                   {history.map((session) => {
                     const scheduledDate = new Date(session.scheduled_at || session.scheduledAt);
-                    const isCompleted = session.status === 'completed';
+                    const isCompleted = isSessionCompleted(session);
 
                     return (
                       <div key={session.id} className="flex flex-col gap-4 p-4 transition-colors hover:bg-calm-sage/5 sm:flex-row sm:items-center sm:justify-between">
@@ -1589,9 +1749,9 @@ export default function SessionsPage() {
                         </div>
 
                         <div className="flex gap-2 pl-12 sm:pl-0">
-                          {isCompleted || session.paymentStatus === 'PAID' ? (
+                          {isCompleted ? (
                             <button
-                              onClick={() => void handleDownloadInvoice(session.id)}
+                              onClick={() => void handleDownloadInvoice(session)}
                               className="inline-flex items-center gap-1.5 rounded-lg border border-calm-sage/20 px-3 py-1.5 text-xs font-medium text-charcoal/70 transition hover:bg-calm-sage/10 hover:text-charcoal"
                             >
                               <Download className="h-3.5 w-3.5" />
@@ -1606,12 +1766,17 @@ export default function SessionsPage() {
               </div>
             ) : null}
           </section>
-        </>
+        </div>
       )}
 
       <SlideOverBookingDrawer
         isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          if (bookingContext?.fromAssessment) {
+            openClinicalAssessmentFlow();
+          }
+        }}
         provider={selectedProvider}
         sourceFunnel={sourceFunnel}
         onBookingSuccess={() => {
@@ -1641,6 +1806,9 @@ export default function SessionsPage() {
             initialProviderType: 'ALL',
             lockProviderType: false,
           });
+          if (bookingContext?.fromAssessment) {
+            openClinicalAssessmentFlow();
+          }
         }}
         onSuccess={() => {
           setIsSmartMatchOpen(false);

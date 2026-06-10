@@ -43,7 +43,7 @@ const SessionsPage = lazy(() => import('./pages/patient/SessionsPage'));
 const PatientSessionDetailPage = lazy(() => import('./pages/patient/SessionDetailPage'));
 const AIChatPage = lazy(() => import('./pages/patient/AIChatPage'));
 const ProfilePage = lazy(() => import('./pages/patient/ProfilePage'));
-const ProfilePreferencePage = lazy(() => import('./pages/patient/ProfilePreferencePage'));
+// const ProfilePreferencePage = lazy(() => import('./pages/patient/ProfilePreferencePage'));
 const SettingsPage = lazy(() => import('./pages/patient/SettingsPage'));
 const LiveSessionPage = lazy(() => import('./pages/patient/LiveSessionPage'));
 const DocumentsPage = lazy(() => import('./pages/patient/DocumentsPage'));
@@ -62,7 +62,8 @@ const WellnessLibraryPage = lazy(() => import('./pages/patient/WellnessLibraryPa
 const BuddyChatPage = lazy(() => import('./pages/patient/BuddyChatPage'));
 const ProviderMessagesPage = lazy(() => import('./pages/patient/ProviderMessagesPage'));
 const PatientOnboardingPage = lazy(() => import('./pages/patient/PatientOnboardingPage'));
-const PatientProfilePreferences = lazy(() => import('./pages/patient/PatientProfilePreferences'));
+// const PatientProfilePreferences = lazy(() => import('./pages/patient/PatientProfilePreferences'));
+const CommunicationPreferencesPage = lazy(() => import('./pages/patient/CommunicationPreferencesPage'));
 const DailyCheckInPage = lazy(() => import('./pages/patient/DailyCheckInPage'));
 const HitASixerGamePage = lazy(() => import('./pages/patient/HitASixerGamePage'));
 const WalletPage = lazy(() => import('./pages/patient/WalletPage'));
@@ -152,6 +153,8 @@ const RegistrationSuccessPage = lazy(() => import('./pages/clinic/RegistrationSu
 const MdcLoginPage = lazy(() => import('./pages/clinic/MdcLoginPage'));
 const MyDigitalClinicDashboard = lazy(() => import('./pages/clinic/ClinicDashboard'));
 const HowItWorksPage = lazy(() => import('./pages/how-it-works/HowItWorksPage'));
+const AboutUsPage = lazy(() => import('./pages/AboutUs'));
+const ContactUsPage = lazy(() => import('./pages/ContactUs'));
 const SpecializedCarePage = lazy(() => import('./pages/SpecializedCarePage'));
 const ProviderCalendarPage = lazy(() => import('./pages/provider/Calendar'));
 const ProviderInboxPage = lazy(() => import('./pages/provider/Messages'));
@@ -264,7 +267,7 @@ function App() {
     '/checkout',
     '/confirmation',
     '/crisis',
-    '/results',
+
   ];
 
   // const showHeaderFooter =
@@ -384,6 +387,8 @@ function App() {
                     <Route path="/results" element={<ResultsPage data={assessmentData} />} />
                     <Route path="/crisis" element={<CrisisPage />} />
                     <Route path="/how-it-works" element={<HowItWorksPage />} />
+                    <Route path="/about" element={<AboutUsPage />} />
+                    <Route path="/contact" element={<ContactUsPage />} />
                     <Route path="/specialized-care" element={<SpecializedCarePage />} />
                     <Route path="/my-digital-clinic" element={<MyDigitalClinicPricingPage />} />
                     <Route path="/my-digital-clinic/register" element={<RegisterClinicPage />} />
@@ -747,10 +752,10 @@ function App() {
                         </ProtectedRoute>
                       }
                     >
-                      <Route index element={<Navigate to="dashboard" replace />} />
+                      <Route index element={<Navigate to="preferences" replace />} />
                       <Route path="dashboard" element={<DashboardPage />} />
                       <Route path="onboarding" element={<PatientOnboardingPage />} />
-                      <Route path="preferences" element={<PatientProfilePreferences />} />
+                      <Route path="preferences" element={<CommunicationPreferencesPage />} />
                       <Route path="therapy-plan" element={<TherapyPlanPage />} />
                       <Route path="care-team" element={<Navigate to="/patient/sessions" replace />} />
                       <Route path="providers" element={<Navigate to="/patient/sessions" replace />} />
@@ -772,7 +777,7 @@ function App() {
                       <Route path="provider-messages/:providerId" element={<ProviderMessagesPage />} />
                       <Route path="messages" element={<AIChatPage />} />
                       <Route path="profile" element={<ProfilePage />} />
-                      <Route path="preferences" element={<ProfilePreferencePage />} />
+                      <Route path="preferences" element={<CommunicationPreferencesPage />} />
                       <Route path="settings" element={<SettingsPage />} />
                       <Route path="assessments" element={<Navigate to="/patient/care-team" replace />} />
                       <Route path="assessment-reports" element={<Navigate to="/patient/progress?tab=clinical" replace />} />

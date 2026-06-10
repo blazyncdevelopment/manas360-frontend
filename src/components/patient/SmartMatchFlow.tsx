@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import ProviderSelectionStep from './steps/ProviderSelectionStep';
-import PendingRequestStep from './steps/PendingRequestStep';
 import PreBookingPaymentStep from './steps/PreBookingPaymentStep';
-import CalendarSelection from './CalendarSelection';
+import CalendarSelection, { type MarketplaceBookingOptions } from './CalendarSelection';
 import { patientApi } from '../../api/patient';
 
 interface SmartMatchFlowProps {
@@ -19,7 +18,7 @@ interface SmartMatchFlowProps {
   timezoneRegion?: string;
 }
 
-type FlowStep = 'calendar' | 'provider-selection' | 'pre-payment' | 'pending';
+type FlowStep = 'calendar' | 'provider-selection' | 'pre-payment' | 'success';
 
 type SmartMatchPreferences = {
   concerns: string[];
@@ -76,7 +75,6 @@ export default function SmartMatchFlow({
     'ALL' | 'THERAPIST' | 'PSYCHOLOGIST' | 'PSYCHIATRIST' | 'COACH'
   >(initialProviderType);
   const [selectedProviders, setSelectedProviders] = useState<SelectedProvider[]>([]);
-  const [appointmentRequestId, setAppointmentRequestId] = useState<string | null>(null);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
   const [isFreeBlocked, setIsFreeBlocked] = useState(false);
   const [inGrace, setInGrace] = useState(false);
@@ -88,8 +86,9 @@ export default function SmartMatchFlow({
     mode: '',
     context: 'Standard',
   });
+  const [bookingOptions, setBookingOptions] = useState<MarketplaceBookingOptions | null>(null);
 
-  const flowSteps: FlowStep[] = ['calendar', 'provider-selection', 'pre-payment', 'pending'];
+  const flowSteps: FlowStep[] = ['calendar', 'provider-selection', 'pre-payment', 'success'];
 
   const getAvailabilityPrefs = () => {
     if (!calendarSelection) {
@@ -141,9 +140,9 @@ export default function SmartMatchFlow({
   const handleClose = () => {
     setStep('calendar');
     setCalendarSelection(null);
+    setBookingOptions(null);
     setSelectedProviderType(initialProviderType);
     setSelectedProviders([]);
-    setAppointmentRequestId(null);
     onClose();
   };
 
@@ -160,7 +159,7 @@ export default function SmartMatchFlow({
       'calendar': 'Book a Session',
       'provider-selection': 'Choose Providers',
       'pre-payment': 'Confirm & Pay',
-      'pending': 'Request Pending',
+      'success': 'Booking Created',
     };
     return titles[step];
   };
@@ -254,10 +253,16 @@ export default function SmartMatchFlow({
 
             {!isCheckingSubscription && !isFreeBlocked && step === 'calendar' && (
               <CalendarSelection
-                onDateTimeSelect={(date, time) => {
+                onDateTimeSelect={(date, time, options) => {
                   setCalendarSelection({ date, time });
+                  setBookingOptions(options);
+                  setMatchPreferences((prev) => ({
+                    ...prev,
+                    concerns: options.concerns,
+                    mode: options.appointmentType,
+                  }));
                   setSelectedProviderType(initialProviderType);
-                  setStep('provider-selection');
+                  setStep('pre-payment');
                 }}
                 onCancel={handleClose}
               />
@@ -294,7 +299,7 @@ export default function SmartMatchFlow({
               />
             )}
 
-            {!isCheckingSubscription && !isFreeBlocked && step === 'pre-payment' && calendarSelection && selectedProviders.length > 0 && (
+            {!isCheckingSubscription && !isFreeBlocked && step === 'pre-payment' && calendarSelection && bookingOptions && (
               <PreBookingPaymentStep
                 selectedProviders={selectedProviders}
                 selectedDateTime={calendarSelection}
@@ -302,17 +307,55 @@ export default function SmartMatchFlow({
                 sourceFunnel={sourceFunnel}
                 timezoneRegion={timezoneRegion}
                 matchPreferences={matchPreferences}
-                onBack={() => setStep('provider-selection')}
+                bookingOptions={bookingOptions}
+                onSuccess={() => {
+                  // Save summary to session storage so SessionsPage shows it
+                  const summary = {
+                    selectedDate: calendarSelection.date.toISOString(),
+                    selectedTime: calendarSelection.time,
+                    preferences: matchPreferences,
+                  };
+                  window.sessionStorage.setItem('manas360.smartmatch.lastSummary', JSON.stringify(summary));
+                  setStep('success');
+                }}
+                onBack={() => setStep('calendar')}
                 onCancel={handleClose}
               />
             )}
 
-            {!isCheckingSubscription && !isFreeBlocked && step === 'pending' && appointmentRequestId && (
-              <PendingRequestStep
-                appointmentRequestId={appointmentRequestId}
-                onAccepted={handleSuccess}
-                onCancel={handleClose}
-              />
+            {!isCheckingSubscription && !isFreeBlocked && step === 'success' && (
+              <div className="flex h-full flex-col items-center justify-center space-y-6 text-center animate-in zoom-in-95 duration-500 py-6">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-teal-100 text-teal-600">
+                  <Check className="h-10 w-10" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black text-charcoal">Booking Request Created!</h3>
+                  <p className="text-sm text-charcoal/60 max-w-md mx-auto">
+                    Your payment was successfully verified. Your request has been generated in the marketplace, and eligible providers have been notified.
+                  </p>
+                </div>
+
+                {calendarSelection && (
+                  <div className="rounded-xl border border-calm-sage/15 bg-calm-sage/5 p-4 text-left text-xs text-charcoal/70 w-full max-w-sm space-y-1">
+                    <p className="font-semibold text-charcoal">Details:</p>
+                    <p>• Date: {calendarSelection.date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}</p>
+                    <p>• Time: {calendarSelection.time}</p>
+                    {matchPreferences?.concerns && matchPreferences.concerns.length > 0 && (
+                      <p>• Concerns: {matchPreferences.concerns.join(', ')}</p>
+                    )}
+                    {matchPreferences?.mode && (
+                      <p>• Type: {matchPreferences.mode}</p>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleSuccess}
+                  className="rounded-xl bg-gradient-calm px-6 py-3 text-sm font-semibold text-white transition hover:bg-none hover:bg-[var(--brand-navy-hover)] w-full max-w-xs"
+                >
+                  Go to My Care Hub
+                </button>
+              </div>
             )}
           </div>
         </div>

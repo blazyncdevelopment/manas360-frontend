@@ -548,7 +548,7 @@
   }
 
   .btn-primary {
-    @apply btn-base bg-gradient-calm text-white hover:shadow-soft-lg hover:-translate-y-0.5 hover:scale-[1.02];
+    @apply btn-base bg-gradient-calm text-white hover:bg-none hover:bg-[var(--brand-navy-hover)] hover:shadow-soft-lg hover:-translate-y-0.5 hover:scale-[1.02];
   }
 
   .btn-secondary {

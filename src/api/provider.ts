@@ -423,8 +423,8 @@ export const fetchProviderPatients = async (): Promise<PatientListItem[]> => {
 };
 
 export const fetchProviderEarnings = async (): Promise<ProviderEarningsResponse> => {
-	const response = await http.get<Envelope<ProviderEarningsResponse>>('/v1/provider/earnings');
-	return unwrap<ProviderEarningsResponse>(response.data);
+  const response = await http.get<Envelope<ProviderEarningsResponse>>('/v1/provider/earnings');
+  return unwrap<ProviderEarningsResponse>(response.data);
 };
 
 export const fetchProviderCalendarSessions = async (): Promise<ProviderCalendarSession[]> => {
@@ -828,14 +828,66 @@ export const fetchProviderLeadStats = async () => {
   return unwrap<any>(response.data);
 };
 
-export const fetchProviderMarketplace = async () => {
-  const response = await http.get<Envelope<any[]>>('/v1/provider/marketplace');
-  return unwrap<any[]>(response.data);
+export const fetchProviderMarketplace = async (params?: { page?: number; limit?: number }) => {
+  const response = await http.get<Envelope<{ items: any[] }>>('/v1/leads/marketplace', { params });
+  return unwrap<{ items: any[] }>(response.data);
 };
 
-export const purchaseProviderLead = async (leadId: string) => {
-  const response = await http.post<Envelope<any>>('/v1/provider/marketplace/purchase', { leadId });
-  return unwrap<any>(response.data);
+export interface ProviderLeadPurchasePayment {
+  paymentId?: string;
+  merchantTransactionId: string;
+  redirectUrl: string;
+  amountMinor: number;
+  currency: string;
+}
+
+export interface MarketplaceLeadPurchaseData {
+  paymentId: string;
+  transactionId: string;
+  redirectUrl: string;
+  amountMinor: number;
+  currency: string;
+}
+
+export interface ProviderLeadPurchaseResult {
+  paymentRequired?: boolean;
+  payment?: ProviderLeadPurchasePayment;
+  paymentId?: string;
+  purchase?: {
+    id: string;
+    leadId: string;
+    amount: number;
+    status: string;
+  };
+  updatedLead?: {
+    id: string;
+    status: string;
+    providerId: string;
+  };
+}
+
+export const purchaseProviderLead = async (leadId: string): Promise<ProviderLeadPurchaseResult> => {
+  const response = await http.post<Envelope<MarketplaceLeadPurchaseData>>(
+    `/v1/leads/marketplace/${encodeURIComponent(leadId)}/purchase`,
+    {},
+  );
+  const data = unwrap<MarketplaceLeadPurchaseData>(response.data);
+  const transactionId = String(data?.transactionId || '').trim();
+  const redirectUrl = String(data?.redirectUrl || '').trim();
+
+  return {
+    paymentRequired: Boolean(redirectUrl && transactionId),
+    paymentId: data?.paymentId,
+    payment: redirectUrl && transactionId
+      ? {
+        paymentId: data.paymentId,
+        merchantTransactionId: transactionId,
+        redirectUrl,
+        amountMinor: Number(data.amountMinor || 0),
+        currency: String(data.currency || 'INR'),
+      }
+      : undefined,
+  };
 };
 
 export interface ProviderCheckoutPayload {

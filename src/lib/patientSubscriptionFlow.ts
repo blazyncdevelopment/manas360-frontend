@@ -23,68 +23,68 @@ export const PATIENT_PLANS: Array<{
   amountMinor: number;
   features: string[];
 }> = [
-  {
-    id: 'free',
-    name: 'Free',
-    displayPrice: 'INR 0',
-    gatewayPlanKey: 'free',
-    trialDays: 0,
-    cta: 'Start Free',
-    amountMinor: 0,
-    features: [
-      '3 sound tracks per day',
-      'Basic AI chatbot',
-      'Basic self-help content',
-      'No therapist matching',
-    ],
-  },
-  {
-    id: 'monthly',
-    name: 'Monthly',
-    displayPrice: 'INR 99 / month',
-    gatewayPlanKey: 'monthly',
-    trialDays: 21,
-    cta: 'Start 21-Day Trial',
-    amountMinor: 9900,
-    features: [
-      'Full platform access',
-      'PHQ-9 and GAD-7 assessments',
-      'Therapist matching',
-      'Mood tracking + analytics',
-    ],
-  },
-  {
-    id: 'quarterly',
-    name: 'Quarterly',
-    displayPrice: 'INR 279 / quarter',
-    gatewayPlanKey: 'quarterly',
-    trialDays: 21,
-    cta: 'Start 21-Day Trial',
-    badge: 'Most Chosen',
-    amountMinor: 27900,
-    features: [
-      'Everything in Monthly',
-      'Priority therapist matching',
-      'All assessments in multiple languages',
-      'Unlimited AI insights',
-    ],
-  },
-  {
-    id: 'premium_monthly',
-    name: 'Premium Library',
-    displayPrice: 'INR 299 / month',
-    gatewayPlanKey: 'premium_monthly',
-    trialDays: 21,
-    cta: 'Start 21-Day Trial',
-    amountMinor: 29900,
-    features: [
-      'Everything in Quarterly',
-      'Premium library access packs',
-      'Screen-time based library usage',
-      'Advanced mood analytics',
-    ],
-  },
-];
+    {
+      id: 'free',
+      name: 'Free',
+      displayPrice: 'INR 0',
+      gatewayPlanKey: 'free',
+      trialDays: 0,
+      cta: 'Start Free',
+      amountMinor: 0,
+      features: [
+        '3 sound tracks per day',
+        'Basic AI chatbot',
+        'Basic self-help content',
+        'No therapist matching',
+      ],
+    },
+    {
+      id: 'monthly',
+      name: 'Monthly',
+      displayPrice: 'INR 99 / month',
+      gatewayPlanKey: 'monthly',
+      trialDays: 21,
+      cta: 'Start 21-Day Trial',
+      amountMinor: 9900,
+      features: [
+        'Full platform access',
+        'PHQ-9 and GAD-7 assessments',
+        'Therapist matching',
+        'Mood tracking + analytics',
+      ],
+    },
+    {
+      id: 'quarterly',
+      name: 'Quarterly',
+      displayPrice: 'INR 279 / quarter',
+      gatewayPlanKey: 'quarterly',
+      trialDays: 21,
+      cta: 'Start 21-Day Trial',
+      badge: 'Most Chosen',
+      amountMinor: 27900,
+      features: [
+        'Everything in Monthly',
+        'Priority therapist matching',
+        'All assessments in multiple languages',
+        'Unlimited AI insights',
+      ],
+    },
+    {
+      id: 'premium_monthly',
+      name: 'Premium Library',
+      displayPrice: 'INR 299 / month',
+      gatewayPlanKey: 'premium_monthly',
+      trialDays: 21,
+      cta: 'Start 21-Day Trial',
+      amountMinor: 29900,
+      features: [
+        'Everything in Quarterly',
+        'Premium library access packs',
+        'Screen-time based library usage',
+        'Advanced mood analytics',
+      ],
+    },
+  ];
 
 export const DEFAULT_ADDONS: PatientAddonSelection = {
   premiumLibraryPack: 'none',
@@ -152,7 +152,7 @@ export const clearCart = (): void => {
   localStorage.removeItem(PATIENT_CART_KEY);
 };
 
-export const PATIENT_DASHBOARD_PATH = '/patient/dashboard';
+export const PATIENT_DASHBOARD_PATH = '/patient/sessions';
 
 export const PATIENT_SUBSCRIPTION_SUCCESS_REDIRECT = PATIENT_DASHBOARD_PATH;
 
@@ -191,10 +191,22 @@ export const isFreeLikeSubscription = (subscription: PatientSubscriptionRecord |
 
 export const isSubscriptionStatusActive = (subscription: PatientSubscriptionRecord | null | undefined): boolean => {
   if (!subscription) return false;
+  const raw = subscription as PatientSubscriptionRecord & { isActive?: boolean; active?: boolean; is_active?: boolean };
+  if (raw.isActive === true || raw.active === true || raw.is_active === true) return true;
   const status = String(subscription.status || '').toLowerCase();
   const renewal = subscription.renewalDate ? new Date(subscription.renewalDate) : null;
   const stillValid = renewal ? renewal.getTime() > Date.now() : true;
   return ['active', 'trial', 'trialing', 'grace'].includes(status) && stillValid;
+};
+
+/** True when the patient has a paid, currently active subscription (auth flag or subscription API). */
+export const hasActivePaidPatientSubscription = (
+  user: { patientSubscriptionActive?: boolean } | null | undefined,
+  subscription: PatientSubscriptionRecord | null | undefined,
+): boolean => {
+  if (user?.patientSubscriptionActive) return true;
+  if (!subscription || !isSubscriptionStatusActive(subscription)) return false;
+  return !isFreeLikeSubscription(subscription);
 };
 
 export const resolveActivePatientPlanId = (
@@ -252,7 +264,10 @@ export const resolvePostPaymentRedirectPath = (
       continue;
     }
 
-    if (pathname.startsWith('/patient/dashboard') || pathname.startsWith('/provider/dashboard')) {
+    if (pathname.startsWith('/patient/dashboard')) {
+      return pathWithQuery.replace('/patient/dashboard', '/patient/sessions');
+    }
+    if (pathname.startsWith('/provider/dashboard')) {
       return pathWithQuery;
     }
 

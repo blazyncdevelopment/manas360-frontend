@@ -64,7 +64,7 @@ export const getDefaultRouteForRole = (role: unknown): string => {
   }
   if (normalizedRole === 'psychiatrist') return '/provider/dashboard';
   if (normalizedRole === 'therapist' || normalizedRole === 'coach') return '/provider/dashboard';
-  return '/patient/dashboard';
+  return '/patient/sessions';
 };
 
 const isProviderRole = (role: unknown): boolean => {
@@ -122,7 +122,7 @@ export const isPlatformAdminUser = (user: AuthUser | null | undefined): boolean 
 };
 
 export const getPostLoginRoute = (user: AuthUser | null | undefined): string => {
-  if (!user) return '/patient/dashboard';
+  if (!user) return '/patient/sessions';
 
   if ((user as any)?.legalAcceptanceRequired) {
     return '/auth/legal-accept';
@@ -136,6 +136,9 @@ export const getPostLoginRoute = (user: AuthUser | null | undefined): string => 
 
   // If patient requires subscription, route to plans page
   if ((user as any)?.requiresSubscription) {
+    if ((user as any)?.patientSubscriptionActive) {
+      return '/patient/sessions';
+    }
     return '/plans';
   }
 
@@ -336,6 +339,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // keep frontend state consistent even if backend session already expired
     } finally {
+      if (typeof window !== 'undefined') {
+        try {
+          const themePref = window.localStorage.getItem('manas360_theme_preference');
+          const cookieConsent = window.localStorage.getItem('manas360_cookie_consent');
+          const cookieConsentTs = window.localStorage.getItem('manas360_cookie_consent_ts');
+          window.localStorage.clear();
+          if (themePref) {
+            window.localStorage.setItem('manas360_theme_preference', themePref);
+          }
+          if (cookieConsent) {
+            window.localStorage.setItem('manas360_cookie_consent', cookieConsent);
+          }
+          if (cookieConsentTs) {
+            window.localStorage.setItem('manas360_cookie_consent_ts', cookieConsentTs);
+          }
+        } catch (err) {
+          console.warn('Failed to clear local storage:', err);
+        }
+      }
       setUser(null);
       clearSessionHint();
       clearAuthTokens();

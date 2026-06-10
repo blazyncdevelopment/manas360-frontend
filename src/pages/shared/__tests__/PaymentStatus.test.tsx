@@ -21,7 +21,7 @@ vi.mock('../../../lib/paymentVerification', async () => {
 
 vi.mock('../../../context/AuthContext', () => ({
   useAuth: () => ({ checkAuth }),
-  getPostLoginRoute: () => '/patient/dashboard',
+  getPostLoginRoute: () => '/patient/sessions',
 }));
 
 vi.mock('../../../api/auth', () => ({
@@ -103,7 +103,7 @@ describe('PaymentStatusPage', () => {
     await vi.advanceTimersByTimeAsync(2000);
 
     await waitFor(() => {
-      expect(navigate).toHaveBeenCalledWith('/patient/dashboard', { replace: true });
+      expect(navigate).toHaveBeenCalledWith('/patient/sessions', { replace: true });
     });
   });
 

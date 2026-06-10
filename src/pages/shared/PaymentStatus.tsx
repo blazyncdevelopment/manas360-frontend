@@ -17,6 +17,11 @@ import {
 	resolveGatewayPlanIdFromCart,
 	resolvePostPaymentRedirectPath,
 } from '../../lib/patientSubscriptionFlow';
+import {
+	finalizeProviderLeadPurchase,
+	isLeadPurchaseTransaction,
+} from '../../lib/providerLeadPurchaseFlow';
+import { setMarketplaceBookingPending } from '../../lib/marketplaceBookingPending';
 
 type PaymentState = 'loading' | 'pending' | 'success' | 'failed';
 
@@ -60,7 +65,8 @@ export default function PaymentStatusPage() {
 		|| searchParams.get('verify') === 'universal'
 		|| (Boolean(transactionId) && hasUniversalCheckoutParams)
 		|| isPatientSubscriptionTransaction(transactionId);
-	const isProviderTransaction = transactionId.startsWith('PROV_') || paymentType === 'provider';
+	const isLeadPurchasePayment = isLeadPurchaseTransaction(transactionId);
+	const isProviderTransaction = transactionId.startsWith('PROV_') || paymentType === 'provider' || isLeadPurchasePayment;
 	const redirectAfterSuccess = searchParams.get('redirect') || searchParams.get('successRedirect') || '';
 	const isSubscriptionPayment = useMemo(
 		() => isPatientSubscriptionTransaction(transactionId),
@@ -117,6 +123,30 @@ export default function PaymentStatusPage() {
 		const verifyPayment = async () => {
 			setState('pending');
 			setStatusMessage('Verifying your payment, please do not close this window...');
+
+			if (isLeadPurchasePayment && transactionId) {
+				try {
+					await finalizeProviderLeadPurchase(transactionId, {
+						onProgress: (attempt, maxAttempts, paymentState) => {
+							if (!active) return;
+							setPollAttempt(attempt);
+							setStatusMessage(
+								paymentState === 'PENDING' || paymentState === 'PENDING_PAYMENT'
+									? `Confirming lead purchase... Checking payment (${attempt}/${maxAttempts})`
+									: `Verifying lead purchase payment... (${attempt}/${maxAttempts})`,
+							);
+						},
+					});
+					setState('success');
+					setStatusMessage('Lead purchased successfully! The patient session is being assigned to you.');
+					return;
+				} catch (err: any) {
+					const serverMessage = err?.response?.data?.message;
+					setState('failed');
+					setStatusMessage(serverMessage || err?.message || 'Unable to verify lead purchase payment.');
+					return;
+				}
+			}
 
 			const outcome = await pollPaymentUntilSettled({
 				mode: useUniversalVerify ? 'universal' : 'standard',
@@ -204,6 +234,7 @@ export default function PaymentStatusPage() {
 		resolvedPlanId,
 		isProviderTransaction,
 		isSubscriptionPayment,
+		isLeadPurchasePayment,
 	]);
 
 	useEffect(() => {
@@ -212,18 +243,22 @@ export default function PaymentStatusPage() {
 		const timer = window.setTimeout(() => {
 			void (async () => {
 				if (!isProviderTransaction) {
-					if (transactionId && transactionId.startsWith('SMREQ_')) {
+					if (transactionId) {
 						const pendingKey = `manas360.smartmatch.pending.${transactionId}`;
 						const pendingRaw = localStorage.getItem(pendingKey);
 						if (pendingRaw) {
 							try {
 								const pendingPayload = JSON.parse(pendingRaw);
-								await http.post('/v1/patient/appointments/smart-match', pendingPayload);
 								localStorage.removeItem(pendingKey);
 								const smartMatchSummary = pendingPayload?.smartMatchSummary || null;
 								if (smartMatchSummary) {
 									window.sessionStorage.setItem('manas360.smartmatch.lastSummary', JSON.stringify(smartMatchSummary));
 								}
+								setMarketplaceBookingPending({
+									savedAt: new Date().toISOString(),
+									transactionId,
+									smartMatchSummary: smartMatchSummary || undefined,
+								});
 								navigate('/patient/sessions', {
 									replace: true,
 									state: {
@@ -234,8 +269,20 @@ export default function PaymentStatusPage() {
 								});
 								return;
 							} catch (err) {
-								console.warn('Failed to finalize smart-match appointment request after payment', err);
+								console.warn('Failed to restore marketplace session summary after payment', err);
 							}
+						}
+
+						if (transactionId.startsWith('MKT_SESS_')) {
+							setMarketplaceBookingPending({
+								savedAt: new Date().toISOString(),
+								transactionId,
+							});
+							navigate('/patient/sessions', {
+								replace: true,
+								state: { paymentConfirmed: true },
+							});
+							return;
 						}
 					}
 
@@ -260,6 +307,11 @@ export default function PaymentStatusPage() {
 					return;
 				}
 
+				if (isLeadPurchasePayment) {
+					navigate('/provider/leads', { replace: true });
+					return;
+				}
+
 				navigate(`/provider/confirmation?transactionId=${encodeURIComponent(transactionId)}`, { replace: true });
 			})();
 		}, 2000);
@@ -272,12 +324,15 @@ export default function PaymentStatusPage() {
 		transactionId,
 		paymentDetails,
 		resolveRedirectTarget,
+		isLeadPurchasePayment,
 	]);
 
 	const dashboardPath = isProviderTransaction ? '/provider/dashboard' : PATIENT_DASHBOARD_PATH;
-	const successSubtitle = isSubscriptionPayment
-		? 'Payment verified. Your plan is active — opening your dashboard...'
-		: 'Payment received successfully. We are now confirming your booking.';
+	const successSubtitle = isLeadPurchasePayment
+		? 'Payment verified. Your lead has been assigned — opening marketplace...'
+		: isSubscriptionPayment
+			? 'Payment verified. Your plan is active — opening your dashboard...'
+			: 'Payment received successfully. We are now confirming your booking.';
 
 	if (state === 'loading' || state === 'pending') {
 		return (

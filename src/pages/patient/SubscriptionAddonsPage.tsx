@@ -50,10 +50,6 @@ export default function SubscriptionAddonsPage() {
   return (
     <div className="min-h-screen bg-[#fffdf7] px-4 py-8">
       <div className="mx-auto max-w-4xl space-y-6">
-        <div className="mb-2 flex flex-wrap gap-2">
-          <button type="button" onClick={() => navigate(-1)} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">Go Back</button>
-          <button type="button" onClick={() => navigate('/patient/dashboard', { replace: true })} className="rounded-lg border border-[#4a6741] bg-[#4a6741] px-3 py-1.5 text-xs font-semibold text-white">Dashboard</button>
-        </div>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#4a6741]">Selected Plan</p>
