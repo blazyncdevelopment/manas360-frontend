@@ -3,7 +3,6 @@ import { ChevronLeft, ChevronRight, Clock, Loader2 } from 'lucide-react';
 import { patientApi } from '../../api/patient';
 import { FRONTEND_URL } from '../../lib/runtimeEnv';
 
-<<<<<<< HEAD
 export type MarketplaceBookingOptions = {
   concerns: string[];
   appointmentType: 'video' | 'audio';
@@ -11,10 +10,6 @@ export type MarketplaceBookingOptions = {
 
 interface CalendarSelectionProps {
   onDateTimeSelect: (date: Date, time: string, options: MarketplaceBookingOptions) => void;
-=======
-interface CalendarSelectionProps {
-  onDateTimeSelect: (date: Date, time: string) => void;
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   onCancel: () => void;
 }
 
@@ -49,11 +44,8 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
   );
   const [timeSlotsLoading, setTimeSlotsLoading] = useState(false);
   const [timeSlotsError, setTimeSlotsError] = useState<string | null>(null);
-<<<<<<< HEAD
   const [concernsInput, setConcernsInput] = useState('');
   const [appointmentType, setAppointmentType] = useState<'video' | 'audio'>('video');
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
   useEffect(() => {
     if (!selectedDate || step !== 'time-slots') return;
@@ -129,11 +121,8 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
       setSelectedDate(date);
       setStep('time-slots');
       setSelectedTime(null);
-<<<<<<< HEAD
       setConcernsInput('');
       setAppointmentType('video');
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
       setTimeSlotsError(null);
     }
   };
@@ -258,10 +247,6 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
                   onClick={() => {
                     if (timeSlotsLoading) return;
                     setSelectedTime(slot.startTime);
-<<<<<<< HEAD
-=======
-                    onDateTimeSelect(selectedDate, slot.startTime);
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                   }}
                   disabled={timeSlotsLoading}
                   className={`w-full rounded-lg border px-4 py-3 text-left transition-all ${
@@ -298,7 +283,6 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
             </div>
           </div>
 
-<<<<<<< HEAD
           {selectedTime && (
             <div className="space-y-4 rounded-lg border border-calm-sage/20 bg-calm-sage/5 p-4">
               <div>
@@ -356,8 +340,6 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
             </div>
           )}
 
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
           {/* Back Button */}
           <button
             onClick={() => setStep('calendar')}

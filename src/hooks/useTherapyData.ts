@@ -11,15 +11,9 @@ export function useTherapyData() {
 
   const refreshStreak = async () => {
     try {
-<<<<<<< HEAD
       const statsRes = await patientApi.getMoodStats();
       const statsPayload = (statsRes as Record<string, unknown>)?.data ?? statsRes;
       const updatedStreak = Number((statsPayload as Record<string, any>)?.currentStreak || 0);
-=======
-      const dashboardRes = await patientApi.getDashboardV2();
-      const dashboardPayload = (dashboardRes as Record<string, unknown>)?.data ?? dashboardRes;
-      const updatedStreak = Number((dashboardPayload as Record<string, any>)?.streak || 0);
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
       setStreak(updatedStreak);
     } catch (error) {
       console.warn('Failed to refresh streak:', error);

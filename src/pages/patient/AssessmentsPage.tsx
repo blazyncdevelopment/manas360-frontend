@@ -610,19 +610,11 @@ export default function AssessmentsPage() {
         level: String(entry.level || 'mild').toLowerCase(),
         dateLabel: parsedDate
           ? parsedDate.toLocaleDateString('en-US', {
-<<<<<<< HEAD
             weekday: 'short',
             month: 'short',
             day: 'numeric',
             year: 'numeric',
           })
-=======
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
           : entry.date || 'Unknown date',
         sortTs: parsedDate ? parsedDate.getTime() : 0,
       };
@@ -717,11 +709,7 @@ export default function AssessmentsPage() {
                 </div>
               </div>
 
-<<<<<<< HEAD
               <div className="mt-4 flex items-center justify-between">
-=======
-                <div className="mt-4 flex items-center justify-between">
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 <button
                   type="button"
                   onClick={() => setCurrentDailyIndex((prev) => Math.max(prev - 1, 0))}
@@ -768,18 +756,10 @@ export default function AssessmentsPage() {
                     setSelectedClinical(item.key);
                     setScore(Math.min(score, item.max));
                   }}
-<<<<<<< HEAD
                   className={`rounded-[1.5rem] p-5 text-left transition ${selectedClinical === item.key
                     ? 'bg-wellness-aqua shadow-wellness-sm'
                     : 'bg-white/88 shadow-wellness-sm hover:bg-white'
                     }`}
-=======
-                  className={`rounded-[1.5rem] p-5 text-left transition ${
-                    selectedClinical === item.key
-                      ? 'bg-wellness-aqua shadow-wellness-sm'
-                      : 'bg-white/88 shadow-wellness-sm hover:bg-white'
-                  }`}
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 >
                   <p className="text-lg font-semibold text-charcoal">{item.key}</p>
                   <p className="mt-2 text-sm text-charcoal/70">{item.description}</p>
@@ -825,11 +805,7 @@ export default function AssessmentsPage() {
                                 type="button"
                                 disabled={loading || structuredLoading || selectedClinicalLocked}
                                 onClick={() => void onStructuredOptionSelect(structuredAttempt.questions[currentStructuredQuestionIndex], option.optionIndex)}
-<<<<<<< HEAD
                                 className={`rounded-full px-5 py-4 text-left text-base transition ${structuredAnswers[structuredAttempt.questions[currentStructuredQuestionIndex].questionId] === option.optionIndex ? 'bg-[#1E90FF] text-white shadow-wellness-sm' : 'bg-white text-charcoal/82 shadow-wellness-sm hover:bg-[#1A9B8E] hover:text-white'} disabled:opacity-60`}
-=======
-                                className={`rounded-full px-5 py-4 text-left text-base transition ${structuredAnswers[structuredAttempt.questions[currentStructuredQuestionIndex].questionId] === option.optionIndex ? 'bg-[#1E90FF] text-white shadow-wellness-sm' : 'bg-white text-charcoal/82 shadow-wellness-sm hover:bg-wellness-aqua'} disabled:opacity-60`}
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                               >
                                 <span className={`block font-medium ${structuredAnswers[structuredAttempt.questions[currentStructuredQuestionIndex].questionId] === option.optionIndex ? 'text-white' : 'text-charcoal'}`}>{option.label}</span>
                               </button>
@@ -970,11 +946,7 @@ export default function AssessmentsPage() {
           <span className="text-sm text-charcoal/60">{historySummary.total} assessments</span>
         </div>
 
-<<<<<<< HEAD
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-=======
-          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
           <div className="rounded-[1.25rem] bg-white/88 p-3 shadow-wellness-sm">
             <p className="text-xs uppercase tracking-wide text-charcoal/60">Average Score</p>
             <p className="mt-1 text-lg font-semibold text-charcoal">{historySummary.averageScore}</p>
@@ -1004,18 +976,10 @@ export default function AssessmentsPage() {
                     <p className="text-sm font-semibold text-charcoal">
                       {entry.score}/{entry.maxScore}
                     </p>
-<<<<<<< HEAD
                     <p className={`text-xs font-medium uppercase tracking-wide ${entry.level === 'severe' ? 'text-red-600' :
                       entry.level === 'moderate' ? 'text-amber-600' :
                         'text-green-600'
                       }`}>
-=======
-                    <p className={`text-xs font-medium uppercase tracking-wide ${
-                      entry.level === 'severe' ? 'text-red-600' :
-                      entry.level === 'moderate' ? 'text-amber-600' :
-                      'text-green-600'
-                    }`}>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                       {entry.level}
                     </p>
                   </div>

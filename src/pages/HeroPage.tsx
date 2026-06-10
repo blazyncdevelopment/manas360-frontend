@@ -18,13 +18,10 @@ export const Hero: React.FC = () => {
   const navigate = useNavigate();
   const NAVIGATION_DELAY_MS = 180;
   const [videoAvailable, setVideoAvailable] = useState<boolean>(true);
-<<<<<<< HEAD
   const [videoPlaying, setVideoPlaying] = useState<boolean>(false);
   const videoEnded = sessionStorage.getItem('heroVideoPlayed') === 'true';
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
@@ -40,10 +37,7 @@ export const Hero: React.FC = () => {
     return () => {
       document.body.style.overflow = prevOverflow;
       mq.removeEventListener('change', applyOverflow);
-<<<<<<< HEAD
       sessionStorage.setItem('heroVideoPlayed', 'true');
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     };
   }, []);
 
@@ -82,11 +76,8 @@ export const Hero: React.FC = () => {
     }, NAVIGATION_DELAY_MS);
   };
 
-<<<<<<< HEAD
   const isStatic = videoEnded || !videoAvailable || !videoPlaying;
 
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   return (
     <div className="hero-wrapper min-h-screen h-screen flex flex-col relative overflow-hidden">
       <style>{`
@@ -126,7 +117,6 @@ export const Hero: React.FC = () => {
           object-fit: cover;
           border: none;
           pointer-events: none;
-<<<<<<< HEAD
           opacity: 0;
           z-index: 1;
           transition: opacity 1.5s ease-out;
@@ -141,10 +131,6 @@ export const Hero: React.FC = () => {
 
         .hero-bg-video.fade-out {
           opacity: 0 !important;
-=======
-          opacity: 0.6;
-          z-index: 1;
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         }
 
         .hero-bg-gradient {
@@ -155,10 +141,7 @@ export const Hero: React.FC = () => {
           background-size: 400% 400%;
           animation: gradientShift 20s ease infinite;
           opacity: 0.3;
-<<<<<<< HEAD
           transition: opacity 1s ease-in, background 1s ease-in;
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         }
 
         .hero-bg--static .hero-bg-gradient {
@@ -170,7 +153,6 @@ export const Hero: React.FC = () => {
           inset: 0;
           z-index: 3;
           background-image: 
-<<<<<<< HEAD
             linear-gradient(30deg, rgba(255,255,255,0.03) 12%, transparent 12.5%, transparent 87%, rgba(255,255,255,0.03) 87.5%), 
             linear-gradient(150deg, rgba(255,255,255,0.03) 12%, transparent 12.5%, transparent 87%, rgba(255,255,255,0.03) 87.5%), 
             linear-gradient(30deg, rgba(255,255,255,0.03) 12%, transparent 12.5%, transparent 87%, rgba(255,255,255,0.03) 87.5%), 
@@ -184,19 +166,6 @@ export const Hero: React.FC = () => {
         .hero-bg--static .hero-bg-pattern {
           opacity: 0;
           pointer-events: none;
-=======
-            linear-gradient(30deg, var(--olive-mist) 12%, transparent 12.5%, transparent 87%, var(--olive-mist) 87.5%), 
-            linear-gradient(150deg, var(--olive-mist) 12%, transparent 12.5%, transparent 87%, var(--olive-mist) 87.5%), 
-            linear-gradient(30deg, var(--olive-mist) 12%, transparent 12.5%, transparent 87%, var(--olive-mist) 87.5%), 
-            linear-gradient(150deg, var(--olive-mist) 12%, transparent 12.5%, transparent 87%, var(--olive-mist) 87.5%); 
-          background-size: 80px 140px;
-          background-position: 0 0, 0 0, 40px 70px, 40px 70px;
-          opacity: 0.1;
-        }
-
-        .hero-bg--static .hero-bg-pattern {
-          opacity: 0.3;
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         }
 
         .hero-glow { 
@@ -204,17 +173,13 @@ export const Hero: React.FC = () => {
           background: 
             radial-gradient(ellipse at 55% 40%, rgba(190,224,233,0.1) 0%, transparent 50%), 
             radial-gradient(ellipse at 20% 70%, rgba(126,129,0,0.06) 0%, transparent 40%); 
-<<<<<<< HEAD
           transition: opacity 1s ease-in-out;
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         }
 
         @keyframes gradientShift { 
           0% { background-position: 0% 50% } 50% { background-position: 100% 50% } 100% { background-position: 0% 50% } 
         }
 
-<<<<<<< HEAD
         .particles { position: absolute; inset: 0; z-index: 5; overflow: hidden; transition: opacity 1s ease-in-out; }
         
         .hero-bg--static ~ .hero-glow,
@@ -223,41 +188,25 @@ export const Hero: React.FC = () => {
           pointer-events: none; 
         }
 
-=======
-        .particles { position: absolute; inset: 0; z-index: 5; overflow: hidden; }
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         @keyframes particleFloat { 
           0% { transform: translateY(100vh) rotate(0deg); opacity: 0 } 10% { opacity: 1 } 90% { opacity: 1 } 
           100% { transform: translateY(-10vh) rotate(360deg); opacity: 0 } 
         }
 
         .nav { position: relative; z-index: 10; padding: 20px 48px; display: flex; align-items: center; justify-content: space-between; }
-<<<<<<< HEAD
         .nav-logo { display: flex; align-items: center; gap: 18px; text-decoration: none; }
         .nav-logo-text { font-size: 36px; font-weight: 800; color: white; letter-spacing: -.5px; }
-=======
-        .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-        .nav-logo-text { font-size: 22px; font-weight: 800; color: white; letter-spacing: -.5px; }
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         .nav-logo-text em { font-style: normal; color: var(--teal-light); }
 
         .hero-content { 
           position: relative; z-index: 6; flex: 1; display: flex; flex-direction: column; 
           align-items: center; justify-content: flex-start; text-align: center; 
-<<<<<<< HEAD
           padding: 0 24px 220px; width: min(100%, 1180px); max-width: 1180px; margin: 0 auto;
           margin-top: -60px;
         }
 
         .tier-1 { margin-bottom: 14px;
         margin-top: -40px;  
-=======
-          padding: 2px 24px 220px; width: min(100%, 1180px); max-width: 1180px; margin: 0 auto; 
-        }
-
-        .tier-1 { margin-bottom: 14px;
-        margin-top: -22px;  
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         opacity: 0; animation: tierFadeIn .8s ease .3s forwards; }
         .tier-1-text { 
           font-family: 'Playfair Display', serif; font-size: clamp(14px, 2vw, 17px); 
@@ -283,14 +232,7 @@ export const Hero: React.FC = () => {
           font-size: 0.82em;
           line-height: 1.02;
           letter-spacing: -0.01em;
-<<<<<<< HEAD
           color: var(--olive-light);
-=======
-          background: linear-gradient(135deg, var(--teal-light), var(--olive-light), var(--sprout-light));
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         }
 
         .tier-3 { margin-bottom: 20px; opacity: 0; animation: tierFadeIn .8s ease .9s forwards; }
@@ -364,7 +306,6 @@ export const Hero: React.FC = () => {
             overflow-y: auto;
           }
           .nav { padding: 14px 16px; } 
-<<<<<<< HEAD
           .nav-logo-text { font-size: 24px; }
           .hero-content {
             flex: 1;
@@ -374,16 +315,6 @@ export const Hero: React.FC = () => {
           }
           .tier-1 { margin-bottom: 14px; margin-top: 16px !important; }
           .tier-2 { margin-bottom: 14px; margin-top: 0px !important; }
-=======
-          .nav-logo-text { font-size: 18px; }
-          .hero-content {
-            flex: none;
-            padding: 2px 16px 20px;
-            justify-content: flex-start;
-          }
-          .tier-1 { margin-bottom: 14px; }
-          .tier-2 { margin-bottom: 14px; margin-top: -16px; }
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
           .tier-3 { margin-bottom: 18px; }
           .tier-3-text { max-width: 100%; font-size: clamp(14px, 3.8vw, 17px); }
           .tier-1-text { font-size: clamp(13px, 3.4vw, 16px); line-height: 1.6; }
@@ -400,12 +331,8 @@ export const Hero: React.FC = () => {
         }
         @media(max-width: 600px) { 
           .nav { padding: 12px 14px; }
-<<<<<<< HEAD
           .nav-logo img { height: 38px !important; width: 38px !important; border-radius: 10px !important; }
           .nav-logo-text { font-size: 18px !important; }
-=======
-          .nav-logo img { height: 34px !important; width: 34px !important; }
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
           .hero-content { padding: 0 14px 16px; }
           .floating-stats { flex-direction: column; align-items: stretch; } 
           .float-stat {
@@ -440,26 +367,17 @@ export const Hero: React.FC = () => {
       `}</style>
 
       {/* Background layers */}
-<<<<<<< HEAD
       <div className={`hero-bg${isStatic ? ' hero-bg--static' : ''}`}>
         {!videoEnded && videoAvailable && (
           <video
             ref={videoRef}
             className={`hero-bg-video ${videoPlaying ? 'playing' : ''}`}
-=======
-      <div className={`hero-bg${videoAvailable ? '' : ' hero-bg--static'}`}>
-        {videoAvailable && (
-          <video
-            className="hero-bg-video"
-            src={HERO_VIDEO_SRC}
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
             autoPlay
             loop
             muted
             playsInline
             preload="auto"
             aria-hidden="true"
-<<<<<<< HEAD
             disablePictureInPicture
             onCanPlay={() => {
               if (videoRef.current) {
@@ -471,10 +389,6 @@ export const Hero: React.FC = () => {
           >
             <source src={HERO_VIDEO_SRC} type="video/mp4" />
           </video>
-=======
-            onError={() => setVideoAvailable(false)}
-          />
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         )}
         <div className="hero-bg-gradient" />
         <div className="hero-bg-pattern" />
@@ -489,15 +403,9 @@ export const Hero: React.FC = () => {
             src="/AppIcon.jpeg"
             alt="MANAS360 logo"
             style={{
-<<<<<<< HEAD
               height: '84px',
               width: '84px',
               borderRadius: '20px',
-=======
-              height: '52px',
-              width: '52px',
-              borderRadius: '14px',
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
               objectFit: 'cover',
               marginTop: '4px',
             }}

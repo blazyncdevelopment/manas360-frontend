@@ -25,22 +25,14 @@ const tabConfig: Record<ProviderKind, TabItem[]> = {
     { label: 'Session Notes', path: 'notes' },
     { label: 'Assessments', path: 'assessments' },
     { label: 'Care Team', path: 'care-team' },
-<<<<<<< HEAD
     { label: 'Prescriptions', path: 'prescriptions' },
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   ],
   PSYCHOLOGIST: [
     { label: 'Overview', path: 'overview' },
     { label: 'Session Notes', path: 'notes' },
     { label: 'Assessments', path: 'assessments' },
-<<<<<<< HEAD
     { label: 'Care Team', path: 'care-team' },
     { label: 'Prescriptions', path: 'prescriptions' },
-=======
-    { label: 'Prescriptions', path: 'prescriptions' },
-    { label: 'Care Team', path: 'care-team' },
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   ],
   COACH: [
     { label: 'Overview', path: 'overview' },
@@ -51,15 +43,9 @@ const tabConfig: Record<ProviderKind, TabItem[]> = {
   ],
   PSYCHIATRIST: [
     { label: 'Overview', path: 'overview' },
-<<<<<<< HEAD
     { label: 'Lab Orders', path: 'labs' },
     { label: 'Care Team', path: 'care-team' },
     { label: 'Prescriptions', path: 'prescriptions' },
-=======
-    { label: 'Prescriptions', path: 'prescriptions' },
-    { label: 'Lab Orders', path: 'labs' },
-    { label: 'Care Team', path: 'care-team' },
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     { label: 'Clinical Notes', path: 'clinical-notes' },
   ],
 };

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -439,10 +438,4 @@ export default function SoundTherapyPage() {
       </div>
     </>
   );
-=======
-import SoundTherapyWorkspace from '../../components/shared/SoundTherapyWorkspace';
-
-export default function SoundTherapyPage() {
-  return <SoundTherapyWorkspace mode="dashboard" />;
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 }

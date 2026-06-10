@@ -219,11 +219,8 @@ export const patientApi = {
   getDashboardV2: async () => (await http.get('/v1/patient/dashboard')).data,
   getPreferences: async () => (await http.get('/v1/patient/preferences')).data,
   savePreferences: async (prefs: Record<string, unknown>) => (await http.patch('/v1/patient/preferences', prefs)).data,
-<<<<<<< HEAD
   updateCommunicationPreferences: async (prefs: { communicationPreference: string; preferredLanguage: string; email?: string }) =>
     (await http.patch('/v1/users/me/preferences', prefs)).data,
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   changePassword: async (payload: { currentPassword: string; newPassword: string; confirmPassword: string }) =>
     (await http.patch('/v1/users/me/password', payload)).data,
   getActiveSessions: async () => (await http.get('/v1/users/me/sessions')).data,
@@ -771,11 +768,7 @@ export const patientApi = {
   createAppointmentRequest: async (payload: {
     availabilityPrefs: {
       daysOfWeek: number[];
-<<<<<<< HEAD
       timeSlots: Array<string | { startMinute: number; endMinute: number }>;
-=======
-      timeSlots: string[];
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     };
     providerIds: string[];
     preferredSpecialization?: string;
@@ -807,7 +800,6 @@ export const patientApi = {
 
   getPaymentPendingRequest: async () =>
     (await http.get('/v1/patient/appointments/payment-pending')).data,
-<<<<<<< HEAD
 
   bookMarketplaceSession: async (payload: {
     concerns: string[];
@@ -818,6 +810,4 @@ export const patientApi = {
     scheduledAt: string;
     appointmentType: 'video' | 'audio';
   }) => (await http.post('/v1/patient/book-session', payload)).data,
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 };

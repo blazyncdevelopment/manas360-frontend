@@ -12,7 +12,6 @@ import {
 } from '../../api/providerOnboarding';
 import { extractProviderId, setStoredProviderId } from '../../utils/providerOnboardingStorage';
 import { clearGuestClinicalScreening, readCachedClinicalScreening } from '../../utils/guestScreeningCache';
-<<<<<<< HEAD
 import { patientApi } from '../../api/patient';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -21,13 +20,6 @@ import { hasActivePaidPatientSubscription } from '../../lib/patientSubscriptionF
 import NriPatch, { type NriConsentState } from '../legal/nri';
 
 
-=======
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
-import { useAuth, getPostLoginRoute } from '../../context/AuthContext';
-import NriPatch, { type NriConsentState } from '../legal/nri';
-
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 type SignupRole = 'patient' | 'therapist' | 'psychiatrist' | 'psychologist' | 'coach';
 type ProviderAgreementKey = 'THERAPIST_IC_AGREEMENT' | 'THERAPIST_NDA' | 'THERAPIST_DATA_PROCESSING_AGREEMENT';
 
@@ -391,12 +383,9 @@ export default function SignupPage() {
 	useEffect(() => {
 		const query = new URLSearchParams(location.search);
 		const prefillPhone = query.get('phone');
-<<<<<<< HEAD
 		const prefillName = query.get('name');
 		const prefillQualification = query.get('qualification');
 		const prefillRciNumber = query.get('rciNumber');
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 		const reason = query.get('reason');
 		const userType = String(query.get('userType') || '').toLowerCase();
 		const queryRole = query.get('role');
@@ -405,7 +394,6 @@ export default function SignupPage() {
 			setPhone(prefillPhone);
 		}
 
-<<<<<<< HEAD
 		if (prefillName && !name) {
 			setName(prefillName);
 		}
@@ -418,8 +406,6 @@ export default function SignupPage() {
 			setRciNumber(prefillRciNumber);
 		}
 
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 		if ((locationState?.role || queryRole) && role === 'patient') {
 			const candidateRole = locationState?.role || queryRole;
 			if (candidateRole === 'therapist' || candidateRole === 'psychiatrist' || candidateRole === 'psychologist' || candidateRole === 'coach') {
@@ -436,20 +422,12 @@ export default function SignupPage() {
 				setRole(userType as SignupRole);
 			}
 		}
-<<<<<<< HEAD
 	}, [location.search, phone, name, qualification, rciNumber, otpSent, error, isPatientLeadFlow, isCertificationContext]);
-=======
-	}, [location.search, phone, otpSent, error, isPatientLeadFlow, isCertificationContext]);
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
 
 	const resolveReturnTo = (): string => {
 		const qp = new URLSearchParams(location.search);
-<<<<<<< HEAD
 		let candidate = qp.get('returnTo') || qp.get('next') || '';
-=======
-		const candidate = qp.get('returnTo') || qp.get('next') || '';
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 		if (!candidate) {
 			return '';
 		}
@@ -462,13 +440,10 @@ export default function SignupPage() {
 			return '';
 		}
 
-<<<<<<< HEAD
 		if (candidate.startsWith('/patient/dashboard') || candidate === '/patient' || candidate === '/patient/') {
 			candidate = '/patient/sessions';
 		}
 
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 		return candidate;
 	};
 
@@ -533,17 +508,6 @@ export default function SignupPage() {
 				nri_declared: nriConsent.nri_declared,
 				nri_tos_accepted: nriConsent.nri_tos_accepted,
 				nri_tos_accepted_at: nriConsent.nri_tos_accepted_at || undefined,
-<<<<<<< HEAD
-=======
-				...(cachedScreening
-					? {
-						clinicalScreening: {
-							type: cachedScreening.type,
-							answers: cachedScreening.answers,
-						},
-					}
-					: {}),
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 			}, guestGameToken);
 
 			if (guestGameToken) {
@@ -560,7 +524,6 @@ export default function SignupPage() {
 				navigate(returnTo || '/certifications', { replace: true });
 				return;
 			}
-<<<<<<< HEAD
 			if ((resolvedUser as any)?.requiresSubscription) {
 				let hasBookedSession = false;
 				let hasActiveSubscription = Boolean((resolvedUser as any)?.patientSubscriptionActive);
@@ -595,11 +558,6 @@ export default function SignupPage() {
 				}
 
 				navigate(`/patient/preferences?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
-=======
-			// If backend indicates patient requires a subscription, send to plans page
-			if ((resolvedUser as any)?.requiresSubscription) {
-				navigate(`/plans?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 				return;
 			}
 			const postLoginRoute = getPostLoginRoute(resolvedUser);
@@ -771,11 +729,7 @@ export default function SignupPage() {
 								type="button"
 								fullWidth
 								loading={loading}
-<<<<<<< HEAD
 								className="btn btn-primary btn-lg w-full !rounded-lg hover:!bg-[var(--brand-navy-hover)]"
-=======
-								className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 								onClick={requestOtp}
 							>
 								{loading ? 'Sending OTP...' : 'Send OTP'}
@@ -785,11 +739,7 @@ export default function SignupPage() {
 								type="button"
 								fullWidth
 								loading={loading}
-<<<<<<< HEAD
 								className="btn btn-primary btn-lg w-full !rounded-lg hover:!bg-[var(--brand-navy-hover)]"
-=======
-								className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 								onClick={verifyOtp}
 							>
 								{loading ? 'Verifying OTP...' : (isCertificationContext ? 'Verify OTP and Continue' : 'Verify OTP and Register')}

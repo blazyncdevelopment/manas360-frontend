@@ -1,20 +1,10 @@
 import { useEffect, useState } from 'react';
-<<<<<<< HEAD
 import { X, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import ProviderSelectionStep from './steps/ProviderSelectionStep';
 import PreBookingPaymentStep from './steps/PreBookingPaymentStep';
 import CalendarSelection, { type MarketplaceBookingOptions } from './CalendarSelection';
-=======
-import { X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { createPortal } from 'react-dom';
-import ProviderSelectionStep from './steps/ProviderSelectionStep';
-import PendingRequestStep from './steps/PendingRequestStep';
-import PreBookingPaymentStep from './steps/PreBookingPaymentStep';
-import CalendarSelection from './CalendarSelection';
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 import { patientApi } from '../../api/patient';
 
 interface SmartMatchFlowProps {
@@ -28,11 +18,7 @@ interface SmartMatchFlowProps {
   timezoneRegion?: string;
 }
 
-<<<<<<< HEAD
 type FlowStep = 'calendar' | 'provider-selection' | 'pre-payment' | 'success';
-=======
-type FlowStep = 'calendar' | 'provider-selection' | 'pre-payment' | 'pending';
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
 type SmartMatchPreferences = {
   concerns: string[];
@@ -89,10 +75,6 @@ export default function SmartMatchFlow({
     'ALL' | 'THERAPIST' | 'PSYCHOLOGIST' | 'PSYCHIATRIST' | 'COACH'
   >(initialProviderType);
   const [selectedProviders, setSelectedProviders] = useState<SelectedProvider[]>([]);
-<<<<<<< HEAD
-=======
-  const [appointmentRequestId, setAppointmentRequestId] = useState<string | null>(null);
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
   const [isFreeBlocked, setIsFreeBlocked] = useState(false);
   const [inGrace, setInGrace] = useState(false);
@@ -104,14 +86,9 @@ export default function SmartMatchFlow({
     mode: '',
     context: 'Standard',
   });
-<<<<<<< HEAD
   const [bookingOptions, setBookingOptions] = useState<MarketplaceBookingOptions | null>(null);
 
   const flowSteps: FlowStep[] = ['calendar', 'provider-selection', 'pre-payment', 'success'];
-=======
-
-  const flowSteps: FlowStep[] = ['calendar', 'provider-selection', 'pre-payment', 'pending'];
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
   const getAvailabilityPrefs = () => {
     if (!calendarSelection) {
@@ -163,15 +140,9 @@ export default function SmartMatchFlow({
   const handleClose = () => {
     setStep('calendar');
     setCalendarSelection(null);
-<<<<<<< HEAD
     setBookingOptions(null);
     setSelectedProviderType(initialProviderType);
     setSelectedProviders([]);
-=======
-    setSelectedProviderType(initialProviderType);
-    setSelectedProviders([]);
-    setAppointmentRequestId(null);
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     onClose();
   };
 
@@ -188,11 +159,7 @@ export default function SmartMatchFlow({
       'calendar': 'Book a Session',
       'provider-selection': 'Choose Providers',
       'pre-payment': 'Confirm & Pay',
-<<<<<<< HEAD
       'success': 'Booking Created',
-=======
-      'pending': 'Request Pending',
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     };
     return titles[step];
   };
@@ -286,7 +253,6 @@ export default function SmartMatchFlow({
 
             {!isCheckingSubscription && !isFreeBlocked && step === 'calendar' && (
               <CalendarSelection
-<<<<<<< HEAD
                 onDateTimeSelect={(date, time, options) => {
                   setCalendarSelection({ date, time });
                   setBookingOptions(options);
@@ -297,12 +263,6 @@ export default function SmartMatchFlow({
                   }));
                   setSelectedProviderType(initialProviderType);
                   setStep('pre-payment');
-=======
-                onDateTimeSelect={(date, time) => {
-                  setCalendarSelection({ date, time });
-                  setSelectedProviderType(initialProviderType);
-                  setStep('provider-selection');
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 }}
                 onCancel={handleClose}
               />
@@ -339,11 +299,7 @@ export default function SmartMatchFlow({
               />
             )}
 
-<<<<<<< HEAD
             {!isCheckingSubscription && !isFreeBlocked && step === 'pre-payment' && calendarSelection && bookingOptions && (
-=======
-            {!isCheckingSubscription && !isFreeBlocked && step === 'pre-payment' && calendarSelection && selectedProviders.length > 0 && (
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
               <PreBookingPaymentStep
                 selectedProviders={selectedProviders}
                 selectedDateTime={calendarSelection}
@@ -351,7 +307,6 @@ export default function SmartMatchFlow({
                 sourceFunnel={sourceFunnel}
                 timezoneRegion={timezoneRegion}
                 matchPreferences={matchPreferences}
-<<<<<<< HEAD
                 bookingOptions={bookingOptions}
                 onSuccess={() => {
                   // Save summary to session storage so SessionsPage shows it
@@ -364,14 +319,10 @@ export default function SmartMatchFlow({
                   setStep('success');
                 }}
                 onBack={() => setStep('calendar')}
-=======
-                onBack={() => setStep('provider-selection')}
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 onCancel={handleClose}
               />
             )}
 
-<<<<<<< HEAD
             {!isCheckingSubscription && !isFreeBlocked && step === 'success' && (
               <div className="flex h-full flex-col items-center justify-center space-y-6 text-center animate-in zoom-in-95 duration-500 py-6">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-teal-100 text-teal-600">
@@ -405,14 +356,6 @@ export default function SmartMatchFlow({
                   Go to My Care Hub
                 </button>
               </div>
-=======
-            {!isCheckingSubscription && !isFreeBlocked && step === 'pending' && appointmentRequestId && (
-              <PendingRequestStep
-                appointmentRequestId={appointmentRequestId}
-                onAccepted={handleSuccess}
-                onCancel={handleClose}
-              />
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
             )}
           </div>
         </div>

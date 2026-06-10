@@ -2,11 +2,6 @@ import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ProviderLandingPage.css';
 
-<<<<<<< HEAD
-=======
-type ProviderLeadPlan = 'starter' | 'growth' | 'professional' | 'elite';
-
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 type SocialProofNotification = {
 	name: string;
 	action: string;
@@ -25,17 +20,9 @@ type ProviderProfileFormErrors = Partial<Record<keyof ProviderProfileFormData, s
 
 const ProviderLandingPage: React.FC = () => {
     const navigate = useNavigate();
-<<<<<<< HEAD
     const [hours, setHours] = useState('23');
     const [minutes, setMinutes] = useState('47');
     const [seconds, setSeconds] = useState('32');
-=======
-    const [step, setStep] = useState(1);
-    const [hours, setHours] = useState('23');
-    const [minutes, setMinutes] = useState('47');
-    const [seconds, setSeconds] = useState('32');
-    const [selectedPlan, setSelectedPlan] = useState<ProviderLeadPlan>('professional');
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     const [notification, setNotification] = useState<SocialProofNotification>({ name: 'Dr. Rajesh K.', action: 'Just completed NLP Certification', time: '2 minutes ago', city: 'Mumbai' });
     const [showNotification, setShowNotification] = useState(true);
 
@@ -96,11 +83,7 @@ const ProviderLandingPage: React.FC = () => {
 		return digits.length === 10 || (digits.length === 12 && digits.startsWith('91'));
 	};
 
-<<<<<<< HEAD
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-=======
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         const { name, value } = e.target;
 		const nextValue = name === 'phone' ? normalizePhone(value) : value;
         setFormData(prev => ({ ...prev, [name]: nextValue }));
@@ -112,7 +95,6 @@ const ProviderLandingPage: React.FC = () => {
 		if (!formData.name.trim()) errors.name = 'Please enter your full name.';
 		if (!formData.phone.trim()) errors.phone = 'Please enter your mobile number.';
 		if (formData.phone.trim() && !isValidIndianMobile(formData.phone)) errors.phone = 'Please enter a valid mobile number.';
-<<<<<<< HEAD
 		if (!formData.qualification.trim()) errors.qualification = 'Please enter your qualification.';
 		return errors;
 	};
@@ -133,24 +115,13 @@ const ProviderLandingPage: React.FC = () => {
 	};
 
 	const handleSubmit = async () => {
-=======
-		if (!formData.qualification.trim()) errors.qualification = 'Please select your qualification.';
-		return errors;
-	};
-
-	const handleContinueFromStep1 = async () => {
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 		if (isRegistering) return;
 		const errors = validateStep1();
 		setFormErrors(errors);
 		if (Object.keys(errors).length > 0) {
 			const firstField = (Object.keys(errors)[0] as keyof ProviderProfileFormData) || null;
 			if (firstField) {
-<<<<<<< HEAD
 				const el = document.querySelector<HTMLInputElement>(`[name="${firstField}"]`);
-=======
-				const el = document.querySelector<HTMLInputElement | HTMLSelectElement>(`[name="${firstField}"]`);
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 				el?.focus();
 			}
 			return;
@@ -158,43 +129,12 @@ const ProviderLandingPage: React.FC = () => {
 
 		setIsRegistering(true);
 		try {
-<<<<<<< HEAD
 			redirectToProviderSignup();
-=======
-			// Step 1 is a lightweight "profile capture" on the landing page.
-			// We keep it client-side and pass phone to signup (which already supports `phone=` prefill).
-			goToStep(2);
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 		} finally {
 			setIsRegistering(false);
 		}
 	};
 
-<<<<<<< HEAD
-=======
-    const goToStep = (s: number) => {
-        setStep(s);
-    };
-
-	useEffect(() => {
-		// Scroll only after the step is visible.
-		// Hidden steps use `display: none`, making offsetTop unreliable (can become 0 and jump to page top).
-		const id = `step${step}`;
-		const t = window.setTimeout(() => {
-			document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-		}, 0);
-		return () => window.clearTimeout(t);
-	}, [step]);
-
-    const completeSignup = () => {
-		const phoneDigits = formData.phone.replace(/\D/g, '');
-		const qp = new URLSearchParams();
-		qp.set('userType', 'therapist');
-		if (phoneDigits) qp.set('phone', phoneDigits.startsWith('91') ? `+${phoneDigits}` : `+91${phoneDigits}`);
-		navigate(`/auth/signup?${qp.toString()}`);
-    };
-
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     return (
         <div className="provider-landing">
             {/* Top Navigation Bar */}
@@ -209,13 +149,8 @@ const ProviderLandingPage: React.FC = () => {
             {/* FOMO Timer Banner */}
             <div className="fomo-banner">
                 <div className="fomo-title">⚡ Limited Time: Early Bird Discount</div>
-<<<<<<< HEAD
                 <p style={{ fontSize: '13px', margin: '8px 0' }}>Join in the next 24 hours & get:</p>
                 <ul style={{ fontSize: '12px', marginLeft: '18px', lineHeight: '1.4' }}>
-=======
-                <p style={{ fontSize: '14px', margin: '10px 0' }}>Join in the next 24 hours & get:</p>
-                <ul style={{ fontSize: '13px', marginLeft: '20px' }}>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                     <li>₹5,000 lead credits FREE</li>
                     <li>First certification 50% off</li>
                     <li>Priority profile verification</li>
@@ -250,7 +185,6 @@ const ProviderLandingPage: React.FC = () => {
 
             {/* Hero Section */}
             <div className="hero">
-<<<<<<< HEAD
                 <div className="hero-left">
                     <h1>Your Journey to ₹2.5 Lakh/Month Starts Here</h1>
                     <p className="subtitle">Join 1,247 therapists already transforming their careers on MANAS360</p>
@@ -302,23 +236,6 @@ const ProviderLandingPage: React.FC = () => {
                             </button>
                             <div className="s-footer-note">✅ No payment at this step. Your data is encrypted.</div>
                         </div>
-=======
-                <h1>Your Journey to ₹2.5 Lakh/Month Starts Here</h1>
-                <p className="subtitle">Join 1,247 therapists already transforming their careers on MANAS360</p>
-
-                <div className="stats-bar">
-                    <div className="stat">
-                        <span className="stat-number">₹2.5L</span>
-                        <span className="stat-label">Avg Income (Master Mentors)</span>
-                    </div>
-                    <div className="stat">
-                        <span className="stat-number">573%</span>
-                        <span className="stat-label">Average ROI</span>
-                    </div>
-                    <div className="stat">
-                        <span className="stat-number">18 months</span>
-                        <span className="stat-label">To Master Mentor</span>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                     </div>
                 </div>
             </div>
@@ -407,11 +324,7 @@ const ProviderLandingPage: React.FC = () => {
                             <div className="milestone-income">
                                 <div className="income-label">New Monthly Income</div>
                                 <span className="income-amount">₹33,000</span>
-<<<<<<< HEAD
                                 <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.9 }}>
-=======
-                                <div style={{ fontSize: '14px', marginTop: '5px' }}>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                                     ⬆️ +₹8,000 from previous month
                                 </div>
                             </div>
@@ -462,11 +375,7 @@ const ProviderLandingPage: React.FC = () => {
                             <div className="milestone-income">
                                 <div className="income-label">Session Rate</div>
                                 <span className="income-amount">₹6,500</span>
-<<<<<<< HEAD
                                 <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.9 }}>
-=======
-                                <div style={{ fontSize: '14px', marginTop: '5px' }}>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                                     💎 Premium clients only
                                 </div>
                             </div>
@@ -514,11 +423,7 @@ const ProviderLandingPage: React.FC = () => {
                             <div className="milestone-income">
                                 <div className="income-label">With 2 Groups/Week</div>
                                 <span className="income-amount">₹1,92,000</span>
-<<<<<<< HEAD
                                 <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.9 }}>
-=======
-                                <div style={{ fontSize: '14px', marginTop: '5px' }}>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                                     + Individual sessions
                                 </div>
                             </div>
@@ -541,19 +446,11 @@ const ProviderLandingPage: React.FC = () => {
                             <div className="milestone-income gold">
                                 <div className="income-label">Total Monthly Income</div>
                                 <span className="income-amount">₹2,53,000</span>
-<<<<<<< HEAD
                                 <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.9 }}>
                                     💰 Therapy + Coaching + Supervision + Groups
                                 </div>
                             </div>
                             <div style={{ marginTop: '12px', padding: '12px', background: '#fef3c7', borderRadius: '10px', fontSize: '12px' }}>
-=======
-                                <div style={{ fontSize: '14px', marginTop: '5px' }}>
-                                    💰 Therapy + Coaching + Supervision + Groups
-                                </div>
-                            </div>
-                            <div style={{ marginTop: '15px', padding: '15px', background: '#fef3c7', borderRadius: '10px' }}>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                                 <strong style={{ color: '#92400e' }}>🎉 Dr. Meera S. hit ₹3.2L/month in Month 24</strong>
                             </div>
                         </div>
@@ -626,11 +523,7 @@ const ProviderLandingPage: React.FC = () => {
                             <li><span className="icon">❌</span> No corporate leads</li>
                             <li><span className="icon">❌</span> No analytics</li>
                         </ul>
-<<<<<<< HEAD
                         <button className="lead-plan-cta outline" onClick={scrollToForm}>Get Started Free</button>
-=======
-                        <button className="lead-plan-cta outline" onClick={() => goToStep(1)}>Get Started Free</button>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                     </div>
 
                     {/* Plan 2: Growth */}
@@ -646,11 +539,7 @@ const ProviderLandingPage: React.FC = () => {
                             <li><span className="icon">❌</span> No corporate leads</li>
                             <li><span className="icon">✅</span> 50% refund if no response</li>
                         </ul>
-<<<<<<< HEAD
                         <button className="lead-plan-cta primary" onClick={scrollToForm}>Start Growing →</button>
-=======
-                        <button className="lead-plan-cta primary" onClick={() => goToStep(1)}>Start Growing →</button>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                     </div>
 
                     {/* Plan 3: Professional (Featured) */}
@@ -667,11 +556,7 @@ const ProviderLandingPage: React.FC = () => {
                             <li><span className="icon">✅</span> Corporate B2B leads</li>
                             <li><span className="icon">✅</span> 50% refund if no response</li>
                         </ul>
-<<<<<<< HEAD
                         <button className="lead-plan-cta gold" onClick={scrollToForm}>Go Professional →</button>
-=======
-                        <button className="lead-plan-cta gold" onClick={() => goToStep(1)}>Go Professional →</button>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                     </div>
 
                     {/* Plan 4: Elite */}
@@ -687,11 +572,7 @@ const ProviderLandingPage: React.FC = () => {
                             <li><span className="icon">✅</span> NRI client access</li>
                             <li><span className="icon">✅</span> Profile boosting</li>
                         </ul>
-<<<<<<< HEAD
                         <button className="lead-plan-cta primary" onClick={scrollToForm}>Go Elite →</button>
-=======
-                        <button className="lead-plan-cta primary" onClick={() => goToStep(1)}>Go Elite →</button>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                     </div>
                 </div>
 
@@ -758,7 +639,6 @@ const ProviderLandingPage: React.FC = () => {
                 <h2 className="cta-title">Start Your Provider Journey Now</h2>
                 <p className="cta-subtitle">No phone calls. No waiting. Self-service from register to earning.</p>
 
-<<<<<<< HEAD
                 <button className="s-btn s-btn-gold" style={{ maxWidth: '280px', margin: '0 auto 30px', display: 'block' }} onClick={scrollToForm}>
                     Register Your Profile Now →
                 </button>
@@ -766,221 +646,13 @@ const ProviderLandingPage: React.FC = () => {
                 <div className="cost-of-waiting">
                     <h3 style={{ color: '#92400e', fontSize: '18px', marginBottom: '12px' }}>⚠️ The Cost of Waiting</h3>
                     <p style={{ color: '#78350f', fontSize: '13px', lineHeight: '1.6' }}>
-=======
-                {/* STEP 1: Register Profile */}
-                <div className={`signup-flow ${step !== 1 ? 'hidden' : ''}`} id="step1">
-                    <div className="signup-card">
-                        <div className="signup-step-indicator">
-                            <div className="step-dot active"></div>
-                            <div className="step-dot"></div>
-                            <div className="step-dot"></div>
-                            <div className="step-dot"></div>
-                        </div>
-                        <div className="signup-title">Step 1: Register Your Profile</div>
-                        <div className="signup-sub">Takes 60 seconds. This creates your provider identity on MANAS360.</div>
-
-                        <div className="s-input-group">
-                            <label>Full Name</label>
-                            <input className="s-input" id="sName" name="name" type="text" placeholder="Dr. Priya Sharma" value={formData.name} onChange={handleInputChange} aria-invalid={Boolean(formErrors.name)} />
-							{formErrors.name ? <div className="s-error">{formErrors.name}</div> : null}
-                        </div>
-                        <div className="s-input-group">
-                            <label>Mobile Number</label>
-                            <input className="s-input" id="sPhone" name="phone" type="tel" placeholder="+91 98765 43210" value={formData.phone} onChange={handleInputChange} aria-invalid={Boolean(formErrors.phone)} />
-							{formErrors.phone ? <div className="s-error">{formErrors.phone}</div> : null}
-                        </div>
-                        <div className="s-input-group">
-                            <label>Qualification</label>
-                            <select className="s-input" id="sQual" name="qualification" value={formData.qualification} onChange={handleInputChange} aria-invalid={Boolean(formErrors.qualification)}>
-                                <option value="">Select your qualification</option>
-                                <option value="M.Phil Clinical Psychology">M.Phil Clinical Psychology</option>
-                                <option value="MA Clinical Psychology">MA Clinical Psychology</option>
-                                <option value="PhD Psychology">PhD Psychology</option>
-                                <option value="MD Psychiatry">MD Psychiatry</option>
-                                <option value="MSW / Counseling">MSW / Counseling</option>
-                                <option value="NLP Practitioner / Coach">NLP Practitioner / Coach</option>
-                                <option value="Executive / Life Coach">Executive / Life Coach</option>
-                                <option value="Other">Other</option>
-                            </select>
-							{formErrors.qualification ? <div className="s-error">{formErrors.qualification}</div> : null}
-                        </div>
-                        <div className="s-input-group">
-                            <label>RCI / NMC Registration (optional — verified later)</label>
-                            <input className="s-input" id="sReg" name="registration" type="text" placeholder="Will be verified during onboarding" value={formData.registration} onChange={handleInputChange} />
-                        </div>
-
-                        <button className="s-btn s-btn-primary" onClick={handleContinueFromStep1} disabled={isRegistering}>
-							{isRegistering ? 'Continuing…' : 'Register & Continue →'}
-						</button>
-                        <div className="s-footer-note">✅ No payment at this step. Your data is encrypted.</div>
-                    </div>
-                </div>
-
-                {/* STEP 2: Pay ₹99 Platform Commitment */}
-                <div className={`signup-flow ${step !== 2 ? 'hidden' : ''}`} id="step2">
-                    <div className="signup-card">
-                        <div className="signup-step-indicator">
-                            <div className="step-dot done"></div>
-                            <div className="step-dot active"></div>
-                            <div className="step-dot"></div>
-                            <div className="step-dot"></div>
-                        </div>
-                        <div className="signup-title">Step 2: Activate Your Platform Access</div>
-                        <div className="signup-sub">₹99/month keeps your profile live, dashboard open, and leads flowing to you.</div>
-
-                        <div className="commitment-box">
-                            <div className="cb-title">₹99/month — Your Commitment to Growth</div>
-                            <div className="cb-desc">
-                                This isn't a fee — it's your stake in the game.<br />
-                                Therapists who pay ₹99 earn <strong>3x more</strong> than free-tier fence-sitters.<br />
-                                Why? Because committed providers show up, respond faster, and convert more leads.
-                            </div>
-                        </div>
-
-                        <div style={{ textAlign: 'center', margin: '16px 0' }}>
-                            <div style={{ fontSize: '42px', fontWeight: 800, color: 'white' }}>₹99<span style={{ fontSize: '16px', fontWeight: 500, color: 'rgba(255,255,255,.4)' }}>/month</span></div>
-                            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,.4)', marginTop: '4px' }}>Cancel anytime. No lock-in. Charged via PhonePe.</div>
-                        </div>
-
-                        <div style={{ padding: '12px', background: 'rgba(255,255,255,.04)', borderRadius: '10px', marginBottom: '16px' }}>
-                            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,.6)', lineHeight: 1.6 }}>
-                                <strong style={{ color: 'rgba(255,255,255,.8)' }}>What ₹99 unlocks immediately:</strong><br />
-                                ✅ Live provider profile on MANAS360 marketplace<br />
-                                ✅ Provider dashboard with lead management<br />
-                                ✅ Access to browse & discover lead plans<br />
-                                ✅ Free 5 Whys certification (start earning faster)<br />
-                                ✅ Session scheduling & Jitsi audio rooms<br />
-                                ✅ 1 free lead in your first month
-                            </div>
-                        </div>
-
-                        <button className="s-btn s-btn-gold" onClick={() => goToStep(3)}>Pay ₹99 & Activate →</button>
-                        <button className="s-btn s-btn-outline" onClick={() => goToStep(1)}>← Back</button>
-                    </div>
-                </div>
-
-                {/* STEP 3: Discover Plans & Select */}
-                <div className={`signup-flow ${step !== 3 ? 'hidden' : ''}`} id="step3">
-                    <div className="signup-card">
-                        <div className="signup-step-indicator">
-                            <div className="step-dot done"></div>
-                            <div className="step-dot done"></div>
-                            <div className="step-dot active"></div>
-                            <div className="step-dot"></div>
-                        </div>
-                        <div className="signup-title">Step 3: Choose Your Lead Plan</div>
-                        <div className="signup-sub">You're activated! Now pick how you want to receive patient leads. Start with any plan — upgrade anytime as you grow.</div>
-
-                        <div className="plan-select-grid">
-                            <div className={`plan-option ${selectedPlan === 'starter' ? 'selected' : ''}`} onClick={() => setSelectedPlan('starter')}>
-                                <div className="po-name">Starter</div>
-                                <div className="po-price">₹0</div>
-                                <div className="po-note">1 free lead/month<br />Cold leads (50-69 match)</div>
-                            </div>
-                            <div className={`plan-option ${selectedPlan === 'growth' ? 'selected' : ''}`} onClick={() => setSelectedPlan('growth')}>
-                                <div className="po-name">Growth</div>
-                                <div className="po-price">₹199<span style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(255,255,255,.4)' }}>/lead</span></div>
-                                <div className="po-note">5 warm leads/month<br />Patient preview + 50% refund</div>
-                            </div>
-                            <div className={`plan-option featured-opt ${selectedPlan === 'professional' ? 'selected' : ''}`} onClick={() => setSelectedPlan('professional')}>
-                                <div className="po-tag">⭐ POPULAR</div>
-                                <div className="po-name">Professional</div>
-                                <div className="po-price">₹299<span style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(255,255,255,.4)' }}>/lead</span></div>
-                                <div className="po-note">10 hot leads + Corporate B2B<br />Priority matching + full analytics</div>
-                            </div>
-                            <div className={`plan-option ${selectedPlan === 'elite' ? 'selected' : ''}`} onClick={() => setSelectedPlan('elite')}>
-                                <div className="po-name">Elite</div>
-                                <div className="po-price">₹399<span style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(255,255,255,.4)' }}>/lead</span></div>
-                                <div className="po-note">Unlimited + NRI + Executive<br />AI matching + profile boosting</div>
-                            </div>
-                        </div>
-
-                        <div style={{ padding: '10px', background: 'rgba(255,255,255,.03)', borderRadius: '8px', margin: '12px 0', textAlign: 'center' }}>
-                            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,.4)', lineHeight: 1.4 }}>
-                                <strong style={{ color: 'rgba(255,255,255,.6)' }}>Marketplace leads:</strong> Unclaimed leads drop daily — ₹299 → ₹199 → ₹99<br />
-                                You keep <strong style={{ color: '#34d399' }}>60%</strong> of every session. Always. On every plan.
-                            </div>
-                        </div>
-
-                        <button className="s-btn s-btn-primary" onClick={() => goToStep(4)}>Select Plan & Continue →</button>
-                        <button className="s-btn s-btn-outline" onClick={() => goToStep(2)}>← Back</button>
-                    </div>
-                </div>
-
-                {/* STEP 4: Your Growth Roadmap */}
-                <div className={`signup-flow ${step !== 4 ? 'hidden' : ''}`} id="step4">
-                    <div className="signup-card">
-                        <div className="signup-step-indicator">
-                            <div className="step-dot done"></div>
-                            <div className="step-dot done"></div>
-                            <div className="step-dot done"></div>
-                            <div className="step-dot active"></div>
-                        </div>
-                        <div className="signup-title">Your Growth Roadmap</div>
-                        <div className="signup-sub">Here's your journey from activation to ₹2.5L/month. Each step unlocks the next.</div>
-
-                        <ul className="onboard-checklist">
-                            <li><span className="done-icon">✅</span> <strong>Profile registered</strong></li>
-                            <li><span className="done-icon">✅</span> <strong>₹99 platform access activated</strong></li>
-                            <li><span className="done-icon">✅</span> <strong><span style={{ textTransform: 'capitalize' }}>{selectedPlan}</span> lead plan selected</strong></li>
-                            <li style={{ borderLeft: '2px solid rgba(251,191,36,.3)', paddingLeft: '12px', marginLeft: '8px' }}>
-                                <span className="pending-icon">🔓</span> <strong>NOW:</strong> Start 5 Whys certification (free, 2 hrs) — unlocks lead access
-                            </li>
-                            <li style={{ borderLeft: '2px solid rgba(251,191,36,.3)', paddingLeft: '12px', marginLeft: '8px' }}>
-                                <span className="pending-icon">⏳</span> Credential verification runs in background (24-48 hrs)
-                            </li>
-                            <li style={{ borderLeft: '2px solid rgba(52,211,153,.3)', paddingLeft: '12px', marginLeft: '8px' }}>
-                                <span className="pending-icon">📥</span> <strong>Week 1:</strong> Accept first leads → Schedule sessions
-                            </li>
-                            <li style={{ borderLeft: '2px solid rgba(52,211,153,.3)', paddingLeft: '12px', marginLeft: '8px' }}>
-                                <span className="pending-icon">💰</span> <strong>Week 2+:</strong> First sessions → You earn 60% per session
-                            </li>
-                            <li style={{ borderLeft: '2px solid rgba(102,126,234,.3)', paddingLeft: '12px', marginLeft: '8px' }}>
-                                <span className="pending-icon">🔄</span> <strong>Monthly:</strong> Repeat cycle — buy leads, schedule, earn, grow
-                            </li>
-                            <li style={{ borderLeft: '2px solid rgba(124,58,237,.3)', paddingLeft: '12px', marginLeft: '8px' }}>
-                                <span className="pending-icon">🎓</span> <strong>Month 3+:</strong> Discover NLP, Certified Aatman Coach, NRI-Global Indian Coach certifications → higher session rates
-                            </li>
-                            <li style={{ borderLeft: '2px solid rgba(124,58,237,.3)', paddingLeft: '12px', marginLeft: '8px' }}>
-                                <span className="pending-icon">⬆️</span> <strong>Month 6+:</strong> Unlock Corp-Executive, Group-Retreat, NRI-Global leads
-                            </li>
-                            <li style={{ borderLeft: '2px solid rgba(251,191,36,.3)', paddingLeft: '12px', marginLeft: '8px' }}>
-                                <span className="pending-icon">👑</span> <strong>Month 18+:</strong> Master Mentor — train others, earn passive income
-                            </li>
-                        </ul>
-
-                        <div className="commitment-box" style={{ borderColor: 'rgba(102,126,234,.3)', background: 'rgba(102,126,234,.06)' }}>
-                            <div className="cb-title" style={{ color: '#a5b4fc' }}>The Flywheel</div>
-                            <div className="cb-desc" style={{ fontSize: '12px' }}>
-                                ₹99/month commitment → leads flow → sessions happen → you earn 60% → invest in certifications → unlock higher-value leads → earn more → upgrade plan → repeat. <strong>The more you put in, the more you get out.</strong>
-                            </div>
-                        </div>
-
-                        <button className="s-btn s-btn-green" onClick={completeSignup}>🚀 Open My Dashboard & Start Certification</button>
-                        <button className="s-btn s-btn-outline" onClick={() => goToStep(3)}>← Change Plan</button>
-
-                        <div className="s-footer-note">
-                            Your dashboard opens with the 5 Whys certification ready to start.<br />
-                            Need help? Call <strong>+91 8867736009</strong> (Mon-Sat 10AM-6PM)
-                        </div>
-                    </div>
-                </div>
-
-                <div className="cost-of-waiting">
-                    <h3 style={{ color: '#92400e', fontSize: '24px', marginBottom: '20px' }}>⚠️ The Cost of Waiting</h3>
-                    <p style={{ color: '#78350f', fontSize: '16px', lineHeight: '1.8' }}>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                         Every month you delay is <strong>₹25,000-₹2,53,000</strong> you're not earning.
                         That's <strong>₹3L-₹30L per year</strong> left on the table.
                         <br /><br />
                         <strong>Dr. Priya waited 6 months before joining.</strong><br />
                         "I thought I wasn't ready. Biggest mistake. I lost ₹1.5L in potential income."
                         <br /><br />
-<<<<<<< HEAD
                         <strong style={{ fontSize: '15px' }}>Don't make the same mistake.</strong>
-=======
-                        <strong style={{ fontSize: '20px' }}>Don't make the same mistake.</strong>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                     </p>
                 </div>
             </div>

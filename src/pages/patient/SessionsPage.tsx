@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-<<<<<<< HEAD
 import toast from 'react-hot-toast';
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 import {
   patientApi,
   type StructuredAssessmentQuestion,
@@ -25,10 +22,6 @@ import {
   Video,
   Download,
   Activity,
-<<<<<<< HEAD
-=======
-  UserPlus,
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   Users,
   AlertTriangle,
   ClipboardList,
@@ -36,15 +29,12 @@ import {
   Calendar,
   ArrowLeft,
 } from 'lucide-react';
-<<<<<<< HEAD
 import {
   clearMarketplaceBookingPending,
   getMarketplaceBookingPending,
   setMarketplaceBookingPending,
   type MarketplaceBookingPending,
 } from '../../lib/marketplaceBookingPending';
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
 type AssessmentHistoryEntry = {
   id?: string;
@@ -77,7 +67,6 @@ const toLocalDateKey = (value: Date = new Date()): string => {
   return `${y}-${m}-${d}`;
 };
 
-<<<<<<< HEAD
 const isSessionCompleted = (session: { status?: string }): boolean =>
   String(session?.status || '').toLowerCase() === 'completed';
 
@@ -98,8 +87,6 @@ const isPendingAppointmentRequest = (request: { status?: string }): boolean => {
   return PENDING_MARKETPLACE_STATUSES.has(status);
 };
 
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 const asArray = (value: unknown): any[] => {
   if (Array.isArray(value)) return value;
   if (value && typeof value === 'object') {
@@ -157,10 +144,7 @@ export default function SessionsPage() {
   const [upcoming, setUpcoming] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [myProviders, setMyProviders] = useState<any[]>([]);
-<<<<<<< HEAD
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -193,13 +177,10 @@ export default function SessionsPage() {
   const [bookingFallbackLoading, setBookingFallbackLoading] = useState(false);
   const [bookingFallbackError, setBookingFallbackError] = useState<string | null>(null);
   const [smartMatchSummary, setSmartMatchSummary] = useState<SmartMatchSummary | null>(null);
-<<<<<<< HEAD
   const [marketplaceBookingPending, setMarketplaceBookingPendingState] = useState<MarketplaceBookingPending | null>(
     () => getMarketplaceBookingPending(),
   );
   const [justBooked, setJustBooked] = useState(false);
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const [bookingContext, setBookingContext] = useState<{
     fromAssessment: boolean;
     carePath?: 'recommended' | 'direct' | 'urgent';
@@ -258,7 +239,6 @@ export default function SessionsPage() {
     return allowed.has(raw) ? raw : undefined;
   }, [location.search]);
 
-<<<<<<< HEAD
   const fetchData = async (showLoading = false) => {
     try {
       setError(null);
@@ -296,20 +276,6 @@ export default function SessionsPage() {
         setAssessmentDraft(null);
         setIsClinicalAssessmentOpen(false);
       }
-=======
-  const fetchData = async () => {
-    try {
-      setError(null);
-      setLoading(true);
-      const [uRes, hRes, pRes] = await Promise.all([
-        patientApi.getUpcomingSessions().catch(() => ({ data: [] })),
-        patientApi.getSessionHistory().catch(() => ({ data: [] })),
-        patientApi.getMyProviders().catch(() => ({ data: [] })),
-      ]);
-      setUpcoming(Array.isArray((uRes as any)?.data) ? (uRes as any).data : Array.isArray(uRes) ? uRes : []);
-      setHistory(Array.isArray((hRes as any)?.data) ? (hRes as any).data : Array.isArray(hRes) ? hRes : []);
-      setMyProviders(Array.isArray((pRes as any)?.data) ? (pRes as any).data : Array.isArray(pRes) ? pRes : []);
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
       const therapyPlanResponse = await patientApi.getTherapyPlan().catch(() => null);
       const therapyPlanPayload = (therapyPlanResponse as any)?.data ?? therapyPlanResponse ?? {};
@@ -330,15 +296,10 @@ export default function SessionsPage() {
     }
   };
 
-<<<<<<< HEAD
   const loadAssessmentHistory = async (showLoading = false) => {
     if (showLoading) {
       setAssessmentHistoryLoading(true);
     }
-=======
-  const loadAssessmentHistory = async () => {
-    setAssessmentHistoryLoading(true);
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     try {
       const response = await patientApi.getPatientAssessmentHistory({ page: 1, limit: 50 }).catch(() => null);
       const items = asArray((response as any)?.data?.items ?? (response as any)?.items ?? response);
@@ -472,11 +433,7 @@ export default function SessionsPage() {
       setClinicalResults(draft.clinicalResults || []);
       setSuggestedProviders(Array.isArray(draft.suggestedProviders) ? draft.suggestedProviders : []);
       setActiveCarePathLabel(draft.activeCarePathLabel || '');
-<<<<<<< HEAD
       if (draft.clinicalFlowPhase === 'provider-list' || draft.clinicalFlowPhase === 'next-phase') {
-=======
-      if (draft.clinicalFlowPhase === 'provider-list') {
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         setBookingContext({ fromAssessment: true });
       }
     } else {
@@ -653,19 +610,13 @@ export default function SessionsPage() {
       lockProviderType: path !== 'direct',
     });
 
-<<<<<<< HEAD
     clearAssessmentDraft();
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     setIsClinicalAssessmentOpen(false);
     setClinicalFlowPhase('intro');
     setIsSmartMatchOpen(true);
   };
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const startAdPresetPath = () => {
     if (!adPresetProviderType) return;
 
@@ -679,10 +630,7 @@ export default function SessionsPage() {
       initialProviderType: adPresetProviderType,
       lockProviderType: true,
     });
-<<<<<<< HEAD
     clearAssessmentDraft();
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     setIsClinicalAssessmentOpen(false);
     setClinicalFlowPhase('intro');
     setIsSmartMatchOpen(true);
@@ -705,7 +653,6 @@ export default function SessionsPage() {
   ]);
 
   useEffect(() => {
-<<<<<<< HEAD
     void fetchData(true);
     void loadAssessmentHistory(true);
     const draft = loadAssessmentDraft();
@@ -752,16 +699,6 @@ export default function SessionsPage() {
       }
     }
 
-=======
-    void fetchData();
-    void loadAssessmentHistory();
-    setAssessmentDraft(loadAssessmentDraft());
-  }, []);
-
-  useEffect(() => {
-    const routeState = location.state as { smartMatchSummary?: SmartMatchSummary } | null;
-    const fromRoute = routeState?.smartMatchSummary || null;
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     if (fromRoute) {
       setSmartMatchSummary(fromRoute);
       return;
@@ -861,7 +798,6 @@ export default function SessionsPage() {
     openClinicalAssessmentFlow();
   };
 
-<<<<<<< HEAD
   const handleDownloadInvoice = async (session: { id: string; status?: string }) => {
     if (!isSessionCompleted(session)) {
       toast.error('Invoice is available after your session is completed.');
@@ -905,13 +841,6 @@ export default function SessionsPage() {
       }
 
       toast.error(error?.response?.data?.message || 'Failed to download invoice.');
-=======
-  const handleDownloadInvoice = async (sessionId: string) => {
-    try {
-      await patientApi.downloadInvoicePdf(sessionId);
-    } catch {
-      // Handle download fetch error silently
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     }
   };
 
@@ -1054,13 +983,10 @@ export default function SessionsPage() {
   const handlePrimaryBookSession = () => {
     setBookingFallbackError(null);
 
-<<<<<<< HEAD
     if (hasMarketplacePending) {
       return;
     }
 
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     if (adPresetProviderType) {
       startAdPresetPath();
       return;
@@ -1099,29 +1025,6 @@ export default function SessionsPage() {
     setIsSmartMatchOpen(true);
   };
 
-<<<<<<< HEAD
-=======
-  const handleBrowseSpecialists = () => {
-    setBookingFallbackError(null);
-
-    if (adPresetProviderType) {
-      startAdPresetPath();
-      return;
-    }
-
-    setSmartMatchPreferences(adPresetProviderType
-      ? {
-        initialProviderType: adPresetProviderType,
-        lockProviderType: true,
-      }
-      : {
-        initialProviderType: 'ALL',
-        lockProviderType: false,
-      });
-    setIsSmartMatchOpen(true);
-  };
-
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const isWithin10Minutes = useMemo(() => {
     if (!nextSession) return false;
     const now = new Date().getTime();
@@ -1131,7 +1034,6 @@ export default function SessionsPage() {
   }, [nextSession]);
 
   const hasUrgentSession = nextSession != null;
-<<<<<<< HEAD
 
   const unresolvedPendingRequests = useMemo(
     () => pendingRequests.filter(isPendingAppointmentRequest),
@@ -1144,8 +1046,6 @@ export default function SessionsPage() {
     unresolvedPendingRequests.length > 0 || (justBooked && Boolean(marketplaceBookingPending));
   const showPendingMatchBanner = hasMarketplacePending && !hasUrgentSession;
 
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const isSessionTomorrow = useMemo(() => {
     if (!nextSession) return false;
     const now = new Date().getTime();
@@ -1235,7 +1135,6 @@ export default function SessionsPage() {
                   {structuredAttempt.questions[currentStructuredQuestionIndex].position}. {structuredAttempt.questions[currentStructuredQuestionIndex].prompt}
                 </p>
                 <div className="mt-4 grid gap-2">
-<<<<<<< HEAD
                   {structuredAttempt.questions[currentStructuredQuestionIndex].options.map((option) => {
                     const isSelected = structuredAnswers[structuredAttempt.questions[currentStructuredQuestionIndex].questionId] === option.optionIndex;
                     return (
@@ -1250,22 +1149,6 @@ export default function SessionsPage() {
                       </button>
                     );
                   })}
-=======
-                  {structuredAttempt.questions[currentStructuredQuestionIndex].options.map((option) => (
-                    <button
-                      key={`${structuredAttempt.questions[currentStructuredQuestionIndex].questionId}-${option.optionIndex}`}
-                      type="button"
-                      onClick={() => void onStructuredOptionSelect(structuredAttempt.questions[currentStructuredQuestionIndex], option.optionIndex)}
-                      disabled={clinicalFlowLoading}
-                      className={`rounded-xl border px-4 py-3 text-left text-sm transition ${structuredAnswers[structuredAttempt.questions[currentStructuredQuestionIndex].questionId] === option.optionIndex
-                        ? 'border-teal-400 bg-teal-50 text-charcoal'
-                        : 'border-calm-sage/20 bg-white text-charcoal/85 hover:bg-calm-sage/5'
-                        } disabled:opacity-60`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 </div>
               </div>
             </div>
@@ -1510,7 +1393,6 @@ export default function SessionsPage() {
       )}
 
       {loading ? (
-<<<<<<< HEAD
         <div className="animate-pulse space-y-8" aria-busy="true" aria-label="Loading your care hub">
           <div className="h-44 rounded-3xl border border-calm-sage/15 bg-white/50" />
           <div className="space-y-4">
@@ -1555,13 +1437,6 @@ export default function SessionsPage() {
             </section>
           )}
 
-=======
-        <div className="flex h-[300px] items-center justify-center rounded-2xl border border-calm-sage/15 bg-white/50">
-          <p className="animate-pulse text-sm text-charcoal/50">Loading your care hub...</p>
-        </div>
-      ) : (
-        <>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
           {hasUrgentSession ? (
             <section className="overflow-hidden rounded-2xl bg-[#1a2e2a] shadow-lg">
               <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:gap-6 md:p-6">
@@ -1643,11 +1518,7 @@ export default function SessionsPage() {
             </section>
           )}
 
-<<<<<<< HEAD
           {!hasUrgentSession && !hasMarketplacePending && (
-=======
-          {!hasUrgentSession && (
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
             <section className="rounded-3xl border border-calm-sage/15 bg-white p-8 text-center shadow-soft-sm">
               <div className="mx-auto max-w-md space-y-4">
                 <div className="flex justify-center">
@@ -1745,7 +1616,6 @@ export default function SessionsPage() {
                       <p className="text-xs font-semibold uppercase tracking-wider text-teal-600/70">{provider.role || 'Therapist'}</p>
 
                       <div className="mt-4 flex flex-wrap gap-2">
-<<<<<<< HEAD
                         {!hasUrgentSession && !hasMarketplacePending && (
                           <button
                             onClick={() => handleOpenBookingDrawer(provider)}
@@ -1754,14 +1624,6 @@ export default function SessionsPage() {
                             Book Session
                           </button>
                         )}
-=======
-                        <button
-                          onClick={() => handleOpenBookingDrawer(provider)}
-                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-charcoal px-3 py-2 text-xs font-semibold text-white transition hover:bg-charcoal/90"
-                        >
-                          Book Session
-                        </button>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                         <Link
                           to={getProviderMessageLink(provider)}
                           className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-calm-sage/20 bg-white px-3 py-2 text-xs font-semibold text-charcoal/80 transition hover:bg-calm-sage/5 hover:text-charcoal"
@@ -1774,23 +1636,6 @@ export default function SessionsPage() {
                 </div>
               ))}
 
-<<<<<<< HEAD
-=======
-              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-calm-sage/30 bg-white/50 p-6 text-center transition-colors hover:bg-white/80">
-                <Users className="mb-3 h-8 w-8 text-calm-sage/40" />
-                <p className="text-sm font-semibold text-charcoal">Need a different specialist?</p>
-                <p className="mt-1 max-w-[240px] text-xs text-charcoal/60">Use the directory to add a psychiatrist, coach, or another provider to your care team.</p>
-                <button
-                  type="button"
-                  onClick={handleBrowseSpecialists}
-                  className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
-                >
-                  <UserPlus className="h-3.5 w-3.5" />
-                  Browse Directory
-                </button>
-              </div>
-
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
               {todaysAssessmentResults.length > 0 && (
                 <div className="rounded-2xl border border-teal-200/60 bg-teal-50/80 p-6">
                   <div className="flex items-center gap-3 mb-4">
@@ -1829,7 +1674,6 @@ export default function SessionsPage() {
             </div>
 
             {assessmentHistoryLoading ? (
-<<<<<<< HEAD
               <div className="min-h-[120px] animate-pulse rounded-2xl border border-calm-sage/15 bg-white/50 p-6" aria-busy="true">
                 <div className="h-4 w-32 rounded bg-calm-sage/10" />
                 <div className="mt-4 space-y-3">
@@ -1837,10 +1681,6 @@ export default function SessionsPage() {
                     <div key={i} className="h-12 rounded-lg bg-calm-sage/5" />
                   ))}
                 </div>
-=======
-              <div className="rounded-2xl border border-calm-sage/15 bg-white/50 p-6 text-center text-sm text-charcoal/50 animate-pulse">
-                Loading assessment history...
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
               </div>
             ) : assessmentHistory.length > 0 ? (
               <div className="overflow-hidden rounded-2xl border border-calm-sage/15 bg-white shadow-soft-sm">
@@ -1892,11 +1732,7 @@ export default function SessionsPage() {
                 <div className="divide-y divide-calm-sage/10">
                   {history.map((session) => {
                     const scheduledDate = new Date(session.scheduled_at || session.scheduledAt);
-<<<<<<< HEAD
                     const isCompleted = isSessionCompleted(session);
-=======
-                    const isCompleted = session.status === 'completed';
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
                     return (
                       <div key={session.id} className="flex flex-col gap-4 p-4 transition-colors hover:bg-calm-sage/5 sm:flex-row sm:items-center sm:justify-between">
@@ -1918,15 +1754,9 @@ export default function SessionsPage() {
                         </div>
 
                         <div className="flex gap-2 pl-12 sm:pl-0">
-<<<<<<< HEAD
                           {isCompleted ? (
                             <button
                               onClick={() => void handleDownloadInvoice(session)}
-=======
-                          {isCompleted || session.paymentStatus === 'PAID' ? (
-                            <button
-                              onClick={() => void handleDownloadInvoice(session.id)}
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                               className="inline-flex items-center gap-1.5 rounded-lg border border-calm-sage/20 px-3 py-1.5 text-xs font-medium text-charcoal/70 transition hover:bg-calm-sage/10 hover:text-charcoal"
                             >
                               <Download className="h-3.5 w-3.5" />
@@ -1941,25 +1771,17 @@ export default function SessionsPage() {
               </div>
             ) : null}
           </section>
-<<<<<<< HEAD
         </div>
-=======
-        </>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
       )}
 
       <SlideOverBookingDrawer
         isOpen={isDrawerOpen}
-<<<<<<< HEAD
         onClose={() => {
           setIsDrawerOpen(false);
           if (bookingContext?.fromAssessment) {
             openClinicalAssessmentFlow();
           }
         }}
-=======
-        onClose={() => setIsDrawerOpen(false)}
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         provider={selectedProvider}
         sourceFunnel={sourceFunnel}
         onBookingSuccess={() => {
@@ -1989,12 +1811,9 @@ export default function SessionsPage() {
             initialProviderType: 'ALL',
             lockProviderType: false,
           });
-<<<<<<< HEAD
           if (bookingContext?.fromAssessment) {
             openClinicalAssessmentFlow();
           }
-=======
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         }}
         onSuccess={() => {
           setIsSmartMatchOpen(false);

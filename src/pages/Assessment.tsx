@@ -289,17 +289,10 @@ export const Assessment: React.FC<AssessmentProps> = ({ onSubmit }) => {
               onClick={handleFinish}
               disabled={loading || submitting || questions.length === 0 || answeredCount !== questions.length}
               className={`
-<<<<<<< HEAD
                 responsive-action-btn w-full !rounded-lg text-lg font-semibold tracking-wide transition-smooth shadow-soft-md
                 ${(loading || submitting || questions.length === 0 || answeredCount !== questions.length)
                   ? 'bg-wellness-surface text-wellness-muted cursor-not-allowed'
                   : 'bg-gradient-calm text-white hover:bg-none hover:bg-[var(--brand-navy-hover)] hover:shadow-soft-lg'
-=======
-                responsive-action-btn w-full rounded-full text-lg font-semibold tracking-wide transition-smooth shadow-soft-md
-                ${(loading || submitting || questions.length === 0 || answeredCount !== questions.length)
-                  ? 'bg-wellness-surface text-wellness-muted cursor-not-allowed'
-                  : 'bg-gradient-calm text-white hover:shadow-soft-lg hover:-translate-y-1'
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 }
               `}
             >

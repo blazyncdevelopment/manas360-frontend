@@ -57,11 +57,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 						? '/provider/dashboard'
 						: userRole === 'therapist' || userRole === 'coach'
 							? '/provider/dashboard'
-<<<<<<< HEAD
 							: '/patient/sessions';
-=======
-							: '/patient/dashboard';
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
 		return <Navigate to={fallback} replace />;
 	}

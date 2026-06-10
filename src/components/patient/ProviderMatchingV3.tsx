@@ -237,13 +237,8 @@ const ProviderMatchingV3: React.FC<ProviderMatchingV3Props> = ({
                     type="button"
                     onClick={() => handleConcernToggle(concern)}
                     className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${selectedConcerns.includes(concern)
-<<<<<<< HEAD
                       ? 'border-teal-500 bg-teal-50 text-teal-700'
                       : 'border-calm-sage/20 bg-white text-charcoal/60 hover:border-teal-300'
-=======
-                        ? 'border-teal-500 bg-teal-50 text-teal-700'
-                        : 'border-calm-sage/20 bg-white text-charcoal/60 hover:border-teal-300'
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                       }`}
                   >
                     {concern}
@@ -264,13 +259,8 @@ const ProviderMatchingV3: React.FC<ProviderMatchingV3Props> = ({
                     type="button"
                     onClick={() => handleLanguageToggle(lang)}
                     className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${selectedLanguages.includes(lang)
-<<<<<<< HEAD
                       ? 'border-ocean bg-ocean-light text-ocean-deep'
                       : 'border-calm-sage/20 bg-white text-charcoal/60 hover:border-ocean'
-=======
-                        ? 'border-ocean bg-ocean-light text-ocean-deep'
-                        : 'border-calm-sage/20 bg-white text-charcoal/60 hover:border-ocean'
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                       }`}
                   >
                     {lang}
@@ -291,13 +281,8 @@ const ProviderMatchingV3: React.FC<ProviderMatchingV3Props> = ({
                     type="button"
                     onClick={() => handleTimeToggle(time)}
                     className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${selectedTimes.includes(time)
-<<<<<<< HEAD
                       ? 'border-ember bg-ember-light text-ember'
                       : 'border-calm-sage/20 bg-white text-charcoal/60 hover:border-ember'
-=======
-                        ? 'border-ember bg-ember-light text-ember'
-                        : 'border-calm-sage/20 bg-white text-charcoal/60 hover:border-ember'
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                       }`}
                   >
                     {time}
@@ -318,13 +303,8 @@ const ProviderMatchingV3: React.FC<ProviderMatchingV3Props> = ({
                     type="button"
                     onClick={() => handleModeToggle(mode)}
                     className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${selectedModes.includes(mode)
-<<<<<<< HEAD
                       ? 'border-purple bg-purple-light text-purple'
                       : 'border-calm-sage/20 bg-white text-charcoal/60 hover:border-purple'
-=======
-                        ? 'border-purple bg-purple-light text-purple'
-                        : 'border-calm-sage/20 bg-white text-charcoal/60 hover:border-purple'
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                       }`}
                   >
                     {mode}
@@ -345,13 +325,8 @@ const ProviderMatchingV3: React.FC<ProviderMatchingV3Props> = ({
                     type="button"
                     onClick={() => setContext(ctx)}
                     className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${context === ctx
-<<<<<<< HEAD
                       ? 'border-gold bg-gold-light text-gold'
                       : 'border-calm-sage/20 bg-white text-charcoal/60 hover:border-gold'
-=======
-                        ? 'border-gold bg-gold-light text-gold'
-                        : 'border-calm-sage/20 bg-white text-charcoal/60 hover:border-gold'
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                       }`}
                   >
                     {ctx}
@@ -449,26 +424,16 @@ const ProviderMatchingV3: React.FC<ProviderMatchingV3Props> = ({
                   key={provider.id}
                   onClick={() => handleProviderToggle(provider.id)}
                   className={`relative p-5 rounded-xl border-2 cursor-pointer transition-all ${isSelected
-<<<<<<< HEAD
                     ? 'border-ocean bg-ocean-light/30 shadow-md'
                     : 'border-calm-sage/20 bg-white hover:border-ocean/40 hover:shadow-sm'
-=======
-                      ? 'border-ocean bg-ocean-light/30 shadow-md'
-                      : 'border-calm-sage/20 bg-white hover:border-ocean/40 hover:shadow-sm'
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                     }`}
                 >
                   {/* Checkbox */}
                   {allowMultiSelect && (
                     <div className="absolute top-4 right-4">
                       <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isSelected
-<<<<<<< HEAD
                         ? 'border-ocean bg-ocean'
                         : 'border-calm-sage/30 bg-white'
-=======
-                          ? 'border-ocean bg-ocean'
-                          : 'border-calm-sage/30 bg-white'
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                         }`}>
                         {isSelected && <Check className="h-3 w-3 text-white" />}
                       </div>

@@ -198,7 +198,6 @@ export default function UniversalCheckout() {
       const idempotencyKey = `${mode}_${resolvedPlanId}_${Date.now()}`;
       const payload = mode === 'provider'
         ? {
-<<<<<<< HEAD
           type: 'provider',
           planId: resolvedPlanId,
           baseAmountMinor: isProviderTrialAuthFlow ? trialAuthMinor : (summary?.subtotalMinor || totalMinor),
@@ -233,42 +232,6 @@ export default function UniversalCheckout() {
           successReturnUrl: buildUniversalPatientPaymentSuccessUrl(FRONTEND_URL, resolvedPlanId),
           postPaymentPath: PATIENT_SUBSCRIPTION_SUCCESS_REDIRECT,
         };
-=======
-            type: 'provider',
-            planId: resolvedPlanId,
-            baseAmountMinor: isProviderTrialAuthFlow ? trialAuthMinor : (summary?.subtotalMinor || totalMinor),
-            gstMinor: isProviderTrialAuthFlow ? 0 : (summary?.gstMinor || 0),
-            totalAmountMinor: isProviderTrialAuthFlow ? trialAuthMinor : (summary?.totalMinor || totalMinor),
-            walletUsedMinor: applicableWalletMinor,
-            finalAmountMinor,
-            acceptedTerms: true,
-            promoCode: promoCode || undefined,
-            idempotencyKey,
-            platformCycle: providerCart?.platformCycle || postTrialCycle,
-            addons: providerCart?.addons || { hot: 0, warm: 0, cold: 0 },
-            trialAuth: isProviderTrialAuthFlow,
-            trialDays,
-            postTrialCycle,
-            trialAuthAmountMinor: isProviderTrialAuthFlow ? trialAuthMinor : undefined,
-          }
-        : {
-            type: 'patient',
-            planId: resolvedPlanId,
-            baseAmountMinor: summary?.subtotalMinor || totalMinor,
-            gstMinor: summary?.gstMinor || 0,
-            totalAmountMinor: summary?.totalMinor || totalMinor,
-            walletUsedMinor: applicableWalletMinor,
-            finalAmountMinor,
-            acceptedTerms: true,
-            promoCode: promoCode || undefined,
-            idempotencyKey,
-            addons: patientCart?.addons,
-            redirectUrl: buildPatientSubscriptionSuccessRedirect(FRONTEND_URL),
-            successRedirectUrl: buildUniversalPatientPaymentSuccessUrl(FRONTEND_URL, resolvedPlanId),
-            successReturnUrl: buildUniversalPatientPaymentSuccessUrl(FRONTEND_URL, resolvedPlanId),
-            postPaymentPath: PATIENT_SUBSCRIPTION_SUCCESS_REDIRECT,
-          };
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
       const response = await http.post('/v1/payments/universal/initiate', payload);
       const data = response.data?.data || response.data;
@@ -327,22 +290,7 @@ export default function UniversalCheckout() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#fffdf7] via-[#f7fbf8] to-[#eef6f1] py-8 px-4">
       <div className="mx-auto max-w-3xl">
-<<<<<<< HEAD
 
-=======
-        <div className="mb-4 flex flex-wrap gap-2">
-          <button type="button" onClick={() => navigate(-1)} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
-            Go Back
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate(mode === 'provider' ? '/provider/dashboard' : '/patient/dashboard', { replace: true })}
-            className="rounded-lg border border-emerald-700 bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white"
-          >
-            Dashboard
-          </button>
-        </div>
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between gap-4">

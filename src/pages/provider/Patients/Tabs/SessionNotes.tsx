@@ -56,7 +56,6 @@ export default function SessionNotes() {
     return notes.find((note) => note.id === selectedNoteId) || null;
   }, [notes, selectedNoteId]);
 
-<<<<<<< HEAD
   const [loadedPatientId, setLoadedPatientId] = useState<string>('');
 
   useEffect(() => {
@@ -81,17 +80,6 @@ export default function SessionNotes() {
       }
     }
   }, [notes, selectedNoteId, isLoading]);
-=======
-  useEffect(() => {
-    if (!notes.length) {
-      setSelectedNoteId('');
-      return;
-    }
-    if (!selectedNoteId) {
-      setSelectedNoteId(notes[0].id);
-    }
-  }, [notes, selectedNoteId]);
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
   useEffect(() => {
     if (!selectedNote) {
@@ -196,18 +184,10 @@ export default function SessionNotes() {
                   key={note.id}
                   type="button"
                   onClick={() => setSelectedNoteId(note.id)}
-<<<<<<< HEAD
                   className={`w-full rounded-xl border px-4 py-4 text-left transition-all ${isActive
                     ? 'border-[#E5E5E5] border-l-4 border-l-[#4A6741] bg-[#E8EFE6]'
                     : 'border-[#E5E5E5] bg-white hover:bg-[#FAFAF8]'
                     }`}
-=======
-                  className={`w-full rounded-xl border px-4 py-4 text-left transition-all ${
-                    isActive
-                      ? 'border-[#E5E5E5] border-l-4 border-l-[#4A6741] bg-[#E8EFE6]'
-                      : 'border-[#E5E5E5] bg-white hover:bg-[#FAFAF8]'
-                  }`}
->>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
