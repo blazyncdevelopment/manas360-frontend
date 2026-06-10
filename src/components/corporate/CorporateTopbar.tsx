@@ -27,8 +27,8 @@ export default function CorporateTopbar({ title, companyName, locationLabel = 'B
           <Menu className="h-5 w-5 text-ink-700" />
         </button>
         <div>
-          <p className="font-display text-sm font-bold text-ink-800">MANAS360 Enterprise</p>
-          <p className="text-xs text-ink-500">{title} · {companyName}</p>
+          <p className="font-display text-sm font-bold text-ink-800">{companyName}</p>
+          <p className="text-xs text-ink-500">{title}</p>
         </div>
 
         <div className="ml-auto flex items-center gap-3">

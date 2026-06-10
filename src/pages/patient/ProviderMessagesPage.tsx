@@ -37,7 +37,7 @@ const normalizeConversation = (raw: any): ConversationSummary => {
 type DirectMessage = {
   id: string;
   senderId: string;
-  senderRole: 'patient' | 'provider';
+  role: 'patient' | 'provider' | 'system';
   content: string;
   messageType: 'TEXT' | 'SYSTEM_PHQ9' | 'SYSTEM_SESSION_END' | 'SYSTEM_INFO';
   metadata?: Record<string, unknown>;
@@ -120,29 +120,33 @@ export default function ProviderMessagesPage() {
       socket.emit('join_inbox');
     });
 
-    socket.on('new_message', (msg: DirectMessage & { conversationId: string }) => {
+    socket.on('new_message', (msg: any) => {
+      const formattedMsg = {
+        ...msg,
+        role: msg.role || msg.senderRole,
+      };
       // Update chat if it's the open conversation
-      if (msg.conversationId === activeConvIdRef.current) {
+      if (formattedMsg.conversationId === activeConvIdRef.current) {
         setMessages((prev) => {
-          const optimisticIdx = prev.findIndex((m) => m.id.startsWith('temp-') && m.content === msg.content);
+          const optimisticIdx = prev.findIndex((m) => m.id.startsWith('temp-') && m.content === formattedMsg.content);
           if (optimisticIdx !== -1) {
             const next = [...prev];
-            next[optimisticIdx] = msg;
+            next[optimisticIdx] = formattedMsg;
             return next;
           }
-          return [...prev, msg];
+          return [...prev, formattedMsg];
         });
-        socket.emit('dm_mark_read', { conversationId: msg.conversationId });
+        socket.emit('dm_mark_read', { conversationId: formattedMsg.conversationId });
       }
       // Update sidebar preview
       setConversations((prev) =>
         prev.map((c) =>
-          c.id === msg.conversationId
+          c.id === formattedMsg.conversationId
             ? {
                 ...c,
-                lastMessage: msg.content,
-                lastMessageAt: msg.createdAt,
-                unreadCount: msg.conversationId === activeConvIdRef.current ? 0 : c.unreadCount + 1,
+                lastMessage: formattedMsg.content,
+                lastMessageAt: formattedMsg.createdAt,
+                unreadCount: formattedMsg.conversationId === activeConvIdRef.current ? 0 : c.unreadCount + 1,
               }
             : c,
         ),
@@ -221,7 +225,11 @@ export default function ProviderMessagesPage() {
     try {
       const res = await patientApi.getMessages(conv.id);
       const raw = (res as any)?.data ?? res;
-      setMessages(Array.isArray(raw) ? raw : []);
+      const formatted = Array.isArray(raw) ? raw.map((m: any) => ({
+        ...m,
+        role: m.role || m.senderRole,
+      })) : [];
+      setMessages(formatted);
       socketRef.current?.emit('dm_mark_read', { conversationId: conv.id });
       setConversations((prev) => prev.map((c) => (c.id === conv.id ? { ...c, unreadCount: 0 } : c)));
     } catch {
@@ -325,7 +333,7 @@ export default function ProviderMessagesPage() {
     const optimistic: DirectMessage = {
       id: `temp-${Date.now()}`,
       senderId: 'me',
-      senderRole: 'patient',
+      role: 'patient',
       content: text,
       messageType: 'TEXT',
       readAt: null,
@@ -339,7 +347,11 @@ export default function ProviderMessagesPage() {
       } else {
         const res = await patientApi.sendMessage({ conversationId: activeConv.id, content: text });
         const msg = (res as any)?.data ?? res;
-        setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? (msg as DirectMessage) : m)));
+        const formattedMsg = {
+          ...msg,
+          role: msg.role || msg.senderRole,
+        };
+        setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? (formattedMsg as DirectMessage) : m)));
       }
       setConversations((prev) =>
         prev.map((c) =>
@@ -623,12 +635,12 @@ export default function ProviderMessagesPage() {
                   {!msgLoading && (
                     <div className="space-y-2">
                       {messages.map((msg, idx) => {
-                        const isPatient = msg.senderRole === 'patient';
+                        const isPatient = String(msg.role || msg.senderRole || '').toLowerCase() === 'patient';
                         const isSystem = msg.messageType !== 'TEXT';
                         // Last sent message by patient (for read receipt tick)
                         const isLastPatient =
                           isPatient &&
-                          idx === messages.reduce((last, m, i) => (m.senderRole === 'patient' ? i : last), -1);
+                          idx === messages.reduce((last, m, i) => (String(m.role || m.senderRole || '').toLowerCase() === 'patient' ? i : last), -1);
 
                         if (isSystem) {
                           return (

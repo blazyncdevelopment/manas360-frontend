@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import toast from 'react-hot-toast';
+import { Download } from 'lucide-react';
 import CorporateShellLayout from '../../components/corporate/CorporateShellLayout';
 import LeaderboardSection from './dashboard/LeaderboardSection';
 import RoiStatsSection from './dashboard/RoiStatsSection';
@@ -74,6 +75,8 @@ type EapQrAnalytics = {
     screenings?: number;
     bookings?: number;
     revenue?: number;
+    trackingUrl?: string;
+    qrImageBase64?: string | null;
   }>;
 };
 
@@ -336,8 +339,22 @@ export default function CorporateDashboard() {
     const location = window.prompt('Enter EAP standee location', 'blr-campus-1')?.trim() || 'blr-campus-1';
     setEapGenerating(true);
     try {
-      await corporateApi.createEapQr({ location }, 'techcorp-india');
+      const response = await corporateApi.createEapQr({ location }, 'techcorp-india');
       toast.success('EAP QR generated');
+      
+      const payload = (response && typeof response === 'object' && 'data' in response ? (response as any).data : response) as any;
+      const base64Data = payload?.qrImageBase64;
+      if (base64Data) {
+        const link = document.createElement('a');
+        link.href = base64Data;
+        link.download = `eap-qr-${location}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        toast.error('Could not download EAP QR code image automatically');
+      }
+
       await fetchEapAnalytics();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to create EAP QR.';
@@ -497,7 +514,7 @@ export default function CorporateDashboard() {
               disabled={eapGenerating}
               className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {eapGenerating ? 'Generating...' : 'Generate standee QR'}
+              {eapGenerating ? 'Generating...' : 'Generate QR'}
             </button>
             <button
               type="button"
@@ -527,6 +544,67 @@ export default function CorporateDashboard() {
           )}
         </div>
       </div>
+
+      {eapAnalytics?.breakdown && eapAnalytics.breakdown.length > 0 && (
+        <div className="mb-4 rounded-xl border border-ink-100 bg-white p-5">
+          <h3 className="font-display text-lg font-semibold text-ink-900 mb-3">Active Standee Locations</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-ink-100 text-ink-500 font-semibold">
+                  <th className="py-2 px-3">Location / Standee</th>
+                  <th className="py-2 px-3 text-center">Scans</th>
+                  <th className="py-2 px-3 text-center">Screenings</th>
+                  <th className="py-2 px-3 text-center">Bookings</th>
+                  <th className="py-2 px-3 text-center">Conversion</th>
+                  <th className="py-2 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ink-50">
+                {eapAnalytics.breakdown.map((item) => {
+                  const conversionRate = item.scans && item.scans > 0 
+                    ? Math.round(((item.screenings || 0) / item.scans) * 100) 
+                    : 0;
+
+                  const handleDownload = () => {
+                    if (item.qrImageBase64) {
+                      const link = document.createElement('a');
+                      link.href = item.qrImageBase64;
+                      link.download = `eap-qr-${item.location || 'standee'}.png`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    } else {
+                      toast.error('QR code image not available');
+                    }
+                  };
+
+                  return (
+                    <tr key={item.code} className="hover:bg-ink-50/50 transition-colors">
+                      <td className="py-3 px-3 font-medium text-ink-900 capitalize">{item.location}</td>
+                      <td className="py-3 px-3 text-center text-ink-700">{item.scans ?? 0}</td>
+                      <td className="py-3 px-3 text-center text-ink-700">{item.screenings ?? 0}</td>
+                      <td className="py-3 px-3 text-center text-ink-700">{item.bookings ?? 0}</td>
+                      <td className="py-3 px-3 text-center text-ink-600 font-semibold">{conversionRate}%</td>
+                      <td className="py-3 px-3 text-right">
+                        <button
+                          type="button"
+                          onClick={handleDownload}
+                          disabled={!item.qrImageBase64}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 hover:border-ink-900 px-3 py-1.5 text-xs font-semibold text-ink-800 transition hover:bg-ink-900 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Download size={14} />
+                          Download QR
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-ink-100 bg-white p-5 lg:col-span-2">

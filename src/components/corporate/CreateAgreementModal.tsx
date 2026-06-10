@@ -444,6 +444,7 @@ export default function CreateAgreementModal({ isOpen, onClose, onSuccess }: Cre
               totalValue,
               finalValue,
               partner_name: form.partnerName.trim(),
+              company_legal_name: form.partnerName.trim(),
               email: form.email.trim(),
               annual_value: finalValue,
               pricing_model: form.pricingModel,

@@ -383,6 +383,12 @@ export const corporateApi = {
     const response = await http.get('/v1/corporate/reports', { params: companyKey ? { companyKey } : undefined });
     return unwrap(response.data);
   },
+
+  updateEmployee: async (id: string, payload: Partial<CorporateEmployeeRow>, companyKey: string) => {
+    const response = await http.patch(`/v1/corporate/employees/${id}?companyKey=${companyKey}`, payload);
+    return unwrap(response.data);
+  },
+
   getEmployees: async (companyKey?: string, params?: { department?: string; query?: string; limit?: number; offset?: number }) => {
     const response = await http.get('/v1/corporate/employees', {
       params: {

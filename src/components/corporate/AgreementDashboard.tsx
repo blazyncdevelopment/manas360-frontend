@@ -109,7 +109,7 @@ const getPendingSignatureCount = (agreements: AgreementItem[]): number => {
 const getApiOrigin = (): string => {
   const envBase = String(import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '').trim();
   if (envBase.startsWith('http://') || envBase.startsWith('https://')) {
-    return envBase.replace(/\/api\/?$/i, '');
+    return envBase.replace(/\/api\/v1\/?$/i, '').replace(/\/api\/?$/i, '');
   }
 
   if (typeof window !== 'undefined') {

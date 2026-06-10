@@ -1,7 +1,8 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MessageSquare, Search, Send } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { io, Socket } from 'socket.io-client';
 import {
 	fetchProviderConversations,
 	fetchProviderMessages,
@@ -35,11 +36,29 @@ const initialsFor = (conversation: ProviderConversationSummary): string => {
 	return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
 };
 
+function getSocketOrigin(): string {
+	const envUrl = (import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_URL ?? '').trim();
+	if (envUrl) return envUrl.replace(/\/api\/?$/, '');
+	const productionHost = window.location.hostname === 'manas360.com' ? 'www.manas360.com' : window.location.hostname;
+	return `${window.location.protocol}//${productionHost}:3000`;
+}
+
 export default function Messages() {
 	const queryClient = useQueryClient();
 	const [activeConversationId, setActiveConversationId] = useState<string>('');
 	const [draft, setDraft] = useState('');
 	const [search, setSearch] = useState('');
+	const [messages, setMessages] = useState<ProviderDirectMessage[]>([]);
+	const [typing, setTyping] = useState(false);
+	const [sending, setSending] = useState(false);
+
+	const socketRef = useRef<Socket | null>(null);
+	const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const activeConvIdRef = useRef<string | null>(null);
+
+	useEffect(() => {
+		activeConvIdRef.current = activeConversationId;
+	}, [activeConversationId]);
 
 	const conversationsQuery = useQuery({
 		queryKey: ['providerConversations'],
@@ -81,6 +100,79 @@ export default function Messages() {
 		refetchInterval: activeConversationId ? 7_500 : false,
 	});
 
+	useEffect(() => {
+		if (messagesQuery.data) {
+			setMessages(messagesQuery.data);
+		}
+	}, [messagesQuery.data]);
+
+	useEffect(() => {
+		const token = localStorage.getItem('accessToken');
+		if (!token) return;
+		const socket = io(getSocketOrigin(), {
+			auth: { token },
+			transports: ['websocket'],
+			path: '/socket.io',
+		});
+		socketRef.current = socket;
+
+		socket.on('connect', () => {
+			socket.emit('join_inbox');
+			if (activeConvIdRef.current) {
+				socket.emit('join_conversation', { conversationId: activeConvIdRef.current });
+			}
+		});
+
+		socket.on('new_message', (msg: any) => {
+			const formattedMsg: ProviderDirectMessage = {
+				id: msg.id,
+				role: msg.role || msg.senderRole,
+				content: msg.content,
+				messageType: msg.messageType || 'TEXT',
+				metadata: msg.metadata,
+				createdAt: msg.createdAt,
+				readAt: msg.readAt,
+			};
+
+			if (msg.conversationId === activeConvIdRef.current) {
+				setMessages((prev) => {
+					const exists = prev.some((m) => m.id === formattedMsg.id || (m.id.startsWith('temp-') && m.content === formattedMsg.content));
+					if (exists) {
+						return prev.map((m) =>
+							m.id === formattedMsg.id || (m.id.startsWith('temp-') && m.content === formattedMsg.content)
+								? formattedMsg
+								: m
+						);
+					}
+					return [...prev, formattedMsg];
+				});
+				void queryClient.invalidateQueries({ queryKey: ['providerConversations'] });
+			} else {
+				void queryClient.invalidateQueries({ queryKey: ['providerConversations'] });
+			}
+		});
+
+		socket.on('dm_typing', ({ conversationId }: { conversationId: string }) => {
+			if (conversationId === activeConvIdRef.current) {
+				setTyping(true);
+				if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+				typingTimerRef.current = setTimeout(() => setTyping(false), 3000);
+			}
+		});
+
+		return () => {
+			socket.disconnect();
+			socketRef.current = null;
+		};
+	}, [queryClient]);
+
+	useEffect(() => {
+		if (activeConversationId) {
+			socketRef.current?.emit('join_conversation', { conversationId: activeConversationId });
+		}
+		setTyping(false);
+	}, [activeConversationId]);
+
 	const sendMutation = useMutation({
 		mutationFn: async (payload: { conversationId: string; patientId: string; content: string }) =>
 			sendProviderMessage(payload),
@@ -96,19 +188,65 @@ export default function Messages() {
 		},
 	});
 
-	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		if (!activeConversation || !draft.trim() || sendMutation.isPending) return;
-		sendMutation.mutate({
-			conversationId: activeConversation.id,
-			patientId: activeConversation.patientId,
-			content: draft.trim(),
-		});
+		if (!activeConversation || !draft.trim() || sending || sendMutation.isPending) return;
+		const text = draft.trim();
+		setDraft('');
+
+		const optimistic: ProviderDirectMessage = {
+			id: `temp-${Date.now()}`,
+			role: 'provider',
+			content: text,
+			messageType: 'TEXT',
+			createdAt: new Date().toISOString(),
+		};
+		setMessages((prev) => [...prev, optimistic]);
+
+		try {
+			if (socketRef.current?.connected) {
+				socketRef.current.emit('dm_send', { conversationId: activeConversation.id, content: text });
+			} else {
+				setSending(true);
+				const res = await sendProviderMessage({
+					conversationId: activeConversation.id,
+					patientId: activeConversation.patientId,
+					content: text,
+				});
+				const msg = (res as any)?.data ?? res;
+				const formattedMsg: ProviderDirectMessage = {
+					id: msg.id,
+					role: msg.role || msg.senderRole,
+					content: msg.content,
+					messageType: msg.messageType || 'TEXT',
+					metadata: msg.metadata,
+					createdAt: msg.createdAt,
+					readAt: msg.readAt,
+				};
+				setMessages((prev) =>
+					prev.map((m) => (m.id === optimistic.id ? formattedMsg : m))
+				);
+				void queryClient.invalidateQueries({ queryKey: ['providerConversations'] });
+			}
+		} catch (error: any) {
+			setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+			toast.error(String(error?.response?.data?.message || error?.message || 'Unable to send message'));
+			setDraft(text);
+		} finally {
+			setSending(false);
+		}
+	};
+
+	const handleDraftChange = (val: string) => {
+		setDraft(val);
+		if (activeConversationId) {
+			socketRef.current?.emit('dm_typing', { conversationId: activeConversationId, isTyping: true });
+		}
 	};
 
 	const renderBubble = (message: ProviderDirectMessage) => {
-		const isProvider = message.role === 'provider';
-		const isSystem = message.role === 'system';
+		const isProvider = String(message.role || message.senderRole || '').toLowerCase() === 'provider';
+		const isSystem = String(message.role || message.senderRole || '').toLowerCase() === 'system';
 
 		return (
 			<div
@@ -238,7 +376,7 @@ export default function Messages() {
 									</div>
 								)}
 
-								{!messagesQuery.isLoading && (messagesQuery.data?.length ?? 0) === 0 && (
+								{!messagesQuery.isLoading && messages.length === 0 && (
 									<div className="flex h-full flex-col items-center justify-center text-center">
 										<div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#E8EFE6] text-[#4A6741]">
 											<MessageSquare className="h-7 w-7" />
@@ -251,7 +389,27 @@ export default function Messages() {
 								)}
 
 								<div className="space-y-4">
-									{(messagesQuery.data ?? []).map((message) => renderBubble(message))}
+									{messages.map((message) => renderBubble(message))}
+
+									{/* Typing indicator */}
+									{typing && (
+										<div className="flex justify-start">
+											<div className="flex items-center gap-1.5 rounded-[20px] rounded-bl-sm bg-[#F3F5F2] px-4 py-3 shadow-sm">
+												<span
+													className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400"
+													style={{ animationDelay: '0ms' }}
+												/>
+												<span
+													className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400"
+													style={{ animationDelay: '150ms' }}
+												/>
+												<span
+													className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400"
+													style={{ animationDelay: '300ms' }}
+												/>
+											</div>
+										</div>
+									)}
 								</div>
 							</div>
 
@@ -260,7 +418,7 @@ export default function Messages() {
 									<textarea
 										rows={1}
 										value={draft}
-										onChange={(event) => setDraft(event.target.value)}
+										onChange={(event) => handleDraftChange(event.target.value)}
 										placeholder={`Message ${activeConversation.patientName}...`}
 										className="max-h-40 min-h-[28px] flex-1 resize-none border-0 bg-transparent text-sm text-[#23313A] outline-none placeholder:text-[#90A08D]"
 									/>

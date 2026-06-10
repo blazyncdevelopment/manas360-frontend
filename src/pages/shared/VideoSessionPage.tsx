@@ -96,8 +96,8 @@ export default function VideoSessionPage() {
   const isProvider = providerRoles.has(normalizedRole);
   const displayName = useMemo(() => {
     const full = `${String(user?.firstName || '').trim()} ${String(user?.lastName || '').trim()}`.trim();
-    return full || String(user?.email || 'Provider');
-  }, [user?.email, user?.firstName, user?.lastName]);
+    return full || String(user?.email || (isProvider ? 'Provider' : 'Patient'));
+  }, [user?.email, user?.firstName, user?.lastName, isProvider]);
   const isSpeechSupported = false; // Disabled in favor of AI Engine transcriptions
 
   useEffect(() => {
@@ -148,17 +148,17 @@ export default function VideoSessionPage() {
       }
     };
 
-    if (sessionId && isProvider) {
+    if (sessionId && (isProvider || normalizedRole === 'patient')) {
       void fetchMeetingData();
     } else {
       setLoading(false);
-      setError('Session id is missing or role is not supported for provider video workspace');
+      setError('Session id is missing or role is not supported for video workspace');
     }
 
     return () => {
       active = false;
     };
-  }, [hasAuthError, isProvider, sessionId, startSession]);
+  }, [hasAuthError, isProvider, normalizedRole, sessionId, startSession]);
 
   useEffect(() => {
     let active = true;
@@ -655,6 +655,82 @@ export default function VideoSessionPage() {
         >
           Back
         </button>
+      </div>
+    );
+  }
+
+  if (!isProvider) {
+    return (
+      <div className="flex h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-slate-800 px-4 py-3 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold">Live Session</p>
+              <p className="text-[11px] text-slate-300">Room: {meetingData.meetingRoomName}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  endSession();
+                  navigate('/patient/sessions');
+                }}
+                className="inline-flex items-center gap-1 rounded-md bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white"
+              >
+                <X className="h-3.5 w-3.5" />
+                End Call
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="min-h-0 flex-1 animate-fade-in">
+          <VideoRoom
+            sessionId={sessionId}
+            roomName={meetingData.meetingRoomName}
+            displayName={displayName}
+            jitsiJwt={meetingData.jitsiJwt}
+            className="h-full w-full"
+            onEndCall={() => {
+              endSession();
+              navigate('/patient/sessions');
+            }}
+            isTherapist={false}
+            aiEngineUrl={AI_ENGINE_WS_URL}
+            onGPSUpdate={handleGPSUpdate}
+            onTranscriptUpdate={handleTranscriptUpdate}
+          />
+        </div>
+
+        {connectionStatus === 'poor' && !crisisModalDismissed ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="mx-4 w-full max-w-md rounded-3xl border-4 border-rose-400 bg-white p-6 shadow-2xl">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-100">
+                  <span className="text-2xl">⚠️</span>
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-slate-900">ALERT</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-rose-600">High Distress / Crisis Detected</p>
+                </div>
+              </div>
+
+              <div className="mb-6 rounded-2xl bg-slate-900 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-white mb-3">Immediate Advice</p>
+                <p className="text-sm italic text-white leading-relaxed">
+                  "Please reach out for help immediately. Contact a suicide prevention hotline like Vandrevala Foundation (9999664555) or AASRA (9820466726) in India, or call your local emergency services. Do not stay alone; reach out to a trusted friend, family member, or healthcare professional right now."
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCrisisModalDismissed(true)}
+                className="w-full rounded-full bg-blue-600 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-blue-700"
+              >
+                Understood
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   }

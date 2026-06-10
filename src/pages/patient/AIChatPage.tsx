@@ -5,6 +5,7 @@ import useSpeechAssistant from '../../hooks/useSpeechAssistant';
 import { patientApi } from '../../api/patient';
 import { useAuth } from '../../context/AuthContext';
 import { readAIAssistantPreferences } from '../../lib/aiAssistantPreferences';
+import { useLanguage, type AppLanguage } from '../../context/LanguageContext';
 import {
   HeartPulse, Wind, Lock, AlertCircle,
   Send, Mic, Settings, Pause, Play, Square, Volume2, Clock,
@@ -25,6 +26,22 @@ const LANGUAGES: { code: SupportedLanguage; label: string; name: string }[] = [
   { code: 'te-IN', label: 'తెలుగు',   name: 'Telugu'   },
   { code: 'kn-IN', label: 'ಕನ್ನಡ',    name: 'Kannada'  },
 ];
+
+const codeToAppLanguage: Record<SupportedLanguage, AppLanguage> = {
+  'en-IN': 'English',
+  'hi-IN': 'Hindi',
+  'ta-IN': 'Tamil',
+  'te-IN': 'Telugu',
+  'kn-IN': 'Kannada',
+};
+
+const appLanguageToCode: Record<AppLanguage, SupportedLanguage> = {
+  'English': 'en-IN',
+  'Hindi': 'hi-IN',
+  'Tamil': 'ta-IN',
+  'Telugu': 'te-IN',
+  'Kannada': 'kn-IN',
+};
 
 // Translated UI strings for system messages shown in the chat thread
 const LANG_STRINGS: Record<SupportedLanguage, {
@@ -270,6 +287,7 @@ const VoiceSessionPanel = ({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AIChatPage() {
   const { user } = useAuth();
+  const { selectedLanguage: globalLanguage, setSelectedLanguage: setGlobalLanguage } = useLanguage();
 
   // ── chat state ──
   const [message,           setMessage]           = useState('');
@@ -346,6 +364,13 @@ export default function AIChatPage() {
     setSpeechLang(selectedLang);
     speechLangRef.current = selectedLang;
   }, [selectedLang]);
+
+  // Sync global LanguageContext with local selectedLang state
+  useEffect(() => {
+    if (globalLanguage && appLanguageToCode[globalLanguage]) {
+      setSelectedLang(appLanguageToCode[globalLanguage]);
+    }
+  }, [globalLanguage]);
 
   // ── cooldown ticker ──
   useEffect(() => {
@@ -738,7 +763,12 @@ export default function AIChatPage() {
                 <button
                   key={code}
                   type="button"
-                  onClick={() => setSelectedLang(code)}
+                  onClick={() => {
+                    setSelectedLang(code);
+                    if (codeToAppLanguage[code]) {
+                      setGlobalLanguage(codeToAppLanguage[code]);
+                    }
+                  }}
                   className={`rounded-full border px-3 py-1 text-[13px] font-medium transition-all ${
                     selectedLang === code
                       ? 'bg-[#2a3142] border-[#2a3142] text-white shadow-sm'
