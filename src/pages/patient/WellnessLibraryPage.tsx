@@ -28,8 +28,13 @@ const modules: ModuleCard[] = [
     highlights: ['Raga Therapy sub-section', 'Deep focus sessions', 'Anxiety relief playlists'],
     goal: 'Anxiety Relief & Focus',
     cta: 'Explore Sounds →',
+<<<<<<< HEAD
     to: '/patient/sound-therapy',
     themeClass: 'from-[#0e5558]/85 via-[#146a6f]/80 to-[#1f7f86]/75',
+=======
+    to: '/sound-therapy',
+    themeClass: 'from-[#1f2f6d]/85 via-[#273c82]/80 to-[#2f4ea3]/75',
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     badge: 'FREE CONTENT',
   },
   {
@@ -42,7 +47,11 @@ const modules: ModuleCard[] = [
     goal: 'Insomnia & Sleep Disorders',
     cta: 'Start Sleep Program →',
     to: '/patient/sleep-therapy',
+<<<<<<< HEAD
     themeClass: 'from-[#0e5558]/85 via-[#146a6f]/80 to-[#1f7f86]/75',
+=======
+    themeClass: 'from-[#0d2142]/90 via-[#16305b]/85 to-[#24437b]/80',
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     badge: 'FREE CONTENT',
   },
   {
@@ -67,8 +76,13 @@ const modules: ModuleCard[] = [
     highlights: ['Phoenix Friend, Guardian Dragon, Wisdom Peacock', 'Tap a companion to launch', 'High-engagement premium flow'],
     goal: 'Transformation & Deep Engagement',
     cta: 'Enter VR Sanctuary →',
+<<<<<<< HEAD
     to: '/patient/wellness-library',
     themeClass: 'from-[#0e5558]/85 via-[#146a6f]/80 to-[#1f7f86]/75',
+=======
+    to: '/patient/vr-sanctuary',
+    themeClass: 'from-[#29304f]/90 via-[#3a4670]/85 to-[#5166a1]/80',
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     badge: 'PREMIUM LIBRARY',
   },
 ];

@@ -270,7 +270,11 @@ export default function PricingPage() {
       if (status === 409) {
         toast.error(
           err?.response?.data?.message
+<<<<<<< HEAD
           || 'A subscription update is already in progress. Please retry shortly.',
+=======
+            || 'A subscription update is already in progress. Please retry shortly.',
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         );
       } else {
         toast.error(err?.response?.data?.message || 'Could not initiate subscription.');
@@ -339,7 +343,22 @@ export default function PricingPage() {
       </div>
 
       <div className="content">
+<<<<<<< HEAD
 
+=======
+        <nav className="page-nav" aria-label="Page navigation">
+          <button type="button" className="page-nav-btn page-nav-btn-back" onClick={() => navigate(-1)}>
+            Go Back
+          </button>
+          <button
+            type="button"
+            className="page-nav-btn page-nav-btn-dashboard"
+            onClick={() => navigate('/patient/dashboard', { replace: true })}
+          >
+            Dashboard
+          </button>
+        </nav>
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
         {/* PATIENT */}
         <div

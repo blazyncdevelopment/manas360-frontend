@@ -423,8 +423,13 @@ export const fetchProviderPatients = async (): Promise<PatientListItem[]> => {
 };
 
 export const fetchProviderEarnings = async (): Promise<ProviderEarningsResponse> => {
+<<<<<<< HEAD
   const response = await http.get<Envelope<ProviderEarningsResponse>>('/v1/provider/earnings');
   return unwrap<ProviderEarningsResponse>(response.data);
+=======
+	const response = await http.get<Envelope<ProviderEarningsResponse>>('/v1/provider/earnings');
+	return unwrap<ProviderEarningsResponse>(response.data);
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 };
 
 export const fetchProviderCalendarSessions = async (): Promise<ProviderCalendarSession[]> => {
@@ -828,6 +833,7 @@ export const fetchProviderLeadStats = async () => {
   return unwrap<any>(response.data);
 };
 
+<<<<<<< HEAD
 export const fetchProviderMarketplace = async (params?: { page?: number; limit?: number }) => {
   const response = await http.get<Envelope<{ items: any[] }>>('/v1/leads/marketplace', { params });
   return unwrap<{ items: any[] }>(response.data);
@@ -888,6 +894,16 @@ export const purchaseProviderLead = async (leadId: string): Promise<ProviderLead
       }
       : undefined,
   };
+=======
+export const fetchProviderMarketplace = async () => {
+  const response = await http.get<Envelope<any[]>>('/v1/provider/marketplace');
+  return unwrap<any[]>(response.data);
+};
+
+export const purchaseProviderLead = async (leadId: string) => {
+  const response = await http.post<Envelope<any>>('/v1/provider/marketplace/purchase', { leadId });
+  return unwrap<any>(response.data);
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 };
 
 export interface ProviderCheckoutPayload {

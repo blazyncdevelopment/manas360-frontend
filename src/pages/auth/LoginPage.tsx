@@ -8,7 +8,10 @@ import { corporateApi } from '../../api/corporate.api';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { getPostLoginRoute, hasCorporateAccess, useAuth } from '../../context/AuthContext';
+<<<<<<< HEAD
 import { hasActivePaidPatientSubscription } from '../../lib/patientSubscriptionFlow';
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 import type { AuthUser } from '../../api/auth';
 
 type SignupRole = 'patient' | 'therapist' | 'psychiatrist' | 'psychologist' | 'coach';
@@ -38,6 +41,17 @@ const isProviderAuthRole = (role: SignupRole | string | null): boolean => (
 	role === 'therapist' || role === 'psychiatrist' || role === 'psychologist' || role === 'coach'
 );
 
+<<<<<<< HEAD
+=======
+const isSubscriptionActive = (subscription: any): boolean => {
+	if (!subscription) return false;
+	const status = String(subscription?.status || '').toLowerCase();
+	if (status === 'active' || status === 'trialing') return true;
+	if (subscription?.isActive === true || subscription?.active === true) return true;
+	return false;
+};
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 export default function LoginPage() {
 	const { user, isAuthenticated, syncSessionAfterOtp, checkAuth } = useAuth();
 	const navigate = useNavigate();
@@ -64,6 +78,10 @@ export default function LoginPage() {
 	const [otpSent, setOtpSent] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 	// Corporate login state
 	const [corpPhone, setCorpPhone] = useState('');
 	const [corpCompanyName, setCorpCompanyName] = useState('');
@@ -89,6 +107,7 @@ export default function LoginPage() {
 	) => {
 		const effectiveUser = userOverride || user;
 		if (hasCorporateAccess(effectiveUser)) return '/corporate/dashboard';
+<<<<<<< HEAD
 		const normalizedRole = String(role || '').toLowerCase();
 		if (normalizedRole === 'learner') return '/provider/dashboard';
 
@@ -109,6 +128,20 @@ export default function LoginPage() {
 		if (!candidate || candidate.startsWith('/auth/')) return getPostLoginRoute(effectiveUser);
 		const isPricingTarget = candidate.startsWith('/plans');
 		if (normalizedRole !== 'patient' || !isPricingTarget) return candidate;
+=======
+		if (!candidate || candidate.startsWith('/auth/')) return getPostLoginRoute(effectiveUser);
+		const normalizedRole = String(role || '').toLowerCase();
+		if (normalizedRole === 'learner') return '/provider/dashboard';
+		const isPricingTarget = candidate.startsWith('/plans');
+		if (normalizedRole !== 'patient' || !isPricingTarget) return candidate;
+		try {
+			const subscriptionResponse = await patientApi.getSubscription();
+			const subscriptionPayload = (subscriptionResponse as any)?.data ?? subscriptionResponse;
+			if (isSubscriptionActive(subscriptionPayload)) return '/patient/dashboard';
+		} catch {
+			// Keep original target when subscription lookup fails.
+		}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 		return candidate;
 	};
 
@@ -130,10 +163,14 @@ export default function LoginPage() {
 			return;
 		}
 
+<<<<<<< HEAD
 		const rawCandidate = from || afterLogin || next || null;
 		const candidate = rawCandidate && (rawCandidate.startsWith('/patient/dashboard') || rawCandidate === '/patient' || rawCandidate === '/patient/')
 			? '/patient/sessions'
 			: rawCandidate;
+=======
+		const candidate = from || afterLogin || next || null;
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 		void (async () => {
 			const postLoginRoute = await resolvePostLoginRouteWithSubscription(candidate, user.role, user);
 			navigate(postLoginRoute, { replace: true });
@@ -165,6 +202,15 @@ export default function LoginPage() {
 			const cachedScreening = readCachedClinicalScreening();
 			const result = await verifyPhoneSignupOtp(phone.trim(), otp.trim(), {
 				acceptedTerms: true,
+<<<<<<< HEAD
+=======
+				...(cachedScreening ? {
+					clinicalScreening: {
+						type: cachedScreening.type,
+						answers: cachedScreening.answers,
+					},
+				} : {}),
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 			}, guestGameToken);
 			if (guestGameToken) localStorage.removeItem('guest_game_token');
 			if (cachedScreening) clearGuestClinicalScreening();
@@ -192,6 +238,7 @@ export default function LoginPage() {
 			}
 
 			if ((resolvedUser as AuthUser)?.requiresSubscription) {
+<<<<<<< HEAD
 				let hasBookedSession = false;
 				let hasActiveSubscription = Boolean(resolvedUser?.patientSubscriptionActive);
 
@@ -236,6 +283,28 @@ export default function LoginPage() {
 			const candidate = rawCandidate && (rawCandidate.startsWith('/patient/dashboard') || rawCandidate === '/patient' || rawCandidate === '/patient/')
 				? '/patient/sessions'
 				: rawCandidate;
+=======
+				let hasActiveSubscription = false;
+				try {
+					const subscriptionResponse = await patientApi.getSubscription();
+					const subscriptionPayload = (subscriptionResponse as any)?.data ?? subscriptionResponse;
+					hasActiveSubscription = isSubscriptionActive(subscriptionPayload);
+				} catch {
+					hasActiveSubscription = false;
+				}
+				if (hasActiveSubscription) {
+					const candidate = from || afterLogin || next || null;
+					const postLoginRoute = await resolvePostLoginRouteWithSubscription(candidate, resolvedUser?.role, resolvedUser);
+					navigate(postLoginRoute, { replace: true });
+					return;
+				}
+				const candidate = from || afterLogin || next || null;
+				navigate(`/plans?returnTo=${encodeURIComponent(candidate || '/')}`, { replace: true });
+				return;
+			}
+
+			const candidate = from || afterLogin || next || null;
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 			const postLoginRoute = await resolvePostLoginRouteWithSubscription(candidate, resolvedUser?.role, resolvedUser);
 			navigate(postLoginRoute, { replace: true });
 		} catch (err: any) {
@@ -367,6 +436,7 @@ export default function LoginPage() {
 									)}
 
 									{otpSent && (
+<<<<<<< HEAD
 										<>
 											<Input
 												id="login-otp"
@@ -384,6 +454,21 @@ export default function LoginPage() {
 
 
 										</>
+=======
+										<Input
+											id="login-otp"
+											label="One-Time Code"
+											inputMode="numeric"
+											pattern="\d{4}"
+											maxLength={4}
+											autoComplete="one-time-code"
+											placeholder="4-digit OTP"
+											helperText="Enter the code sent to your WhatsApp / SMS"
+											value={otp}
+											onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
+											required
+										/>
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 									)}
 
 									{!otpSent ? (
@@ -391,7 +476,11 @@ export default function LoginPage() {
 											type="button"
 											fullWidth
 											loading={loading}
+<<<<<<< HEAD
 											className="btn btn-primary btn-lg w-full !rounded-lg hover:!bg-[var(--brand-navy-hover)]"
+=======
+											className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 											onClick={requestOtp}
 										>
 											{loading ? 'Sending OTP...' : 'Send OTP'}
@@ -401,7 +490,11 @@ export default function LoginPage() {
 											type="button"
 											fullWidth
 											loading={loading}
+<<<<<<< HEAD
 											className="btn btn-primary btn-lg w-full !rounded-lg hover:!bg-[var(--brand-navy-hover)]"
+=======
+											className="btn btn-primary btn-lg w-full !rounded-lg !bg-[var(--brand-navy)] hover:!bg-[var(--brand-navy-hover)]"
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 											onClick={verifyOtp}
 										>
 											{loading ? 'Verifying...' : (isProviderLogin ? 'Verify & Continue' : 'Continue to wellness')}
@@ -483,12 +576,18 @@ export default function LoginPage() {
 												onChange={(e) => setCorpOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
 												required
 											/>
+<<<<<<< HEAD
 
 
 
 											<button
 												type="button"
 												onClick={() => { setCorpOtpSent(false); setCorpOtp(''); setDevCorpOtp(null); }}
+=======
+											<button
+												type="button"
+												onClick={() => { setCorpOtpSent(false); setCorpOtp(''); }}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 												className="text-xs text-sky underline hover:text-[var(--brand-sky-hover)]"
 											>
 												Change phone number
@@ -545,4 +644,8 @@ export default function LoginPage() {
 			</div>
 		</div>
 	);
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6

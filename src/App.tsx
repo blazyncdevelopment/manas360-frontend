@@ -43,7 +43,11 @@ const SessionsPage = lazy(() => import('./pages/patient/SessionsPage'));
 const PatientSessionDetailPage = lazy(() => import('./pages/patient/SessionDetailPage'));
 const AIChatPage = lazy(() => import('./pages/patient/AIChatPage'));
 const ProfilePage = lazy(() => import('./pages/patient/ProfilePage'));
+<<<<<<< HEAD
 // const ProfilePreferencePage = lazy(() => import('./pages/patient/ProfilePreferencePage'));
+=======
+const ProfilePreferencePage = lazy(() => import('./pages/patient/ProfilePreferencePage'));
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 const SettingsPage = lazy(() => import('./pages/patient/SettingsPage'));
 const LiveSessionPage = lazy(() => import('./pages/patient/LiveSessionPage'));
 const DocumentsPage = lazy(() => import('./pages/patient/DocumentsPage'));
@@ -62,8 +66,12 @@ const WellnessLibraryPage = lazy(() => import('./pages/patient/WellnessLibraryPa
 const BuddyChatPage = lazy(() => import('./pages/patient/BuddyChatPage'));
 const ProviderMessagesPage = lazy(() => import('./pages/patient/ProviderMessagesPage'));
 const PatientOnboardingPage = lazy(() => import('./pages/patient/PatientOnboardingPage'));
+<<<<<<< HEAD
 // const PatientProfilePreferences = lazy(() => import('./pages/patient/PatientProfilePreferences'));
 const CommunicationPreferencesPage = lazy(() => import('./pages/patient/CommunicationPreferencesPage'));
+=======
+const PatientProfilePreferences = lazy(() => import('./pages/patient/PatientProfilePreferences'));
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 const DailyCheckInPage = lazy(() => import('./pages/patient/DailyCheckInPage'));
 const HitASixerGamePage = lazy(() => import('./pages/patient/HitASixerGamePage'));
 const WalletPage = lazy(() => import('./pages/patient/WalletPage'));
@@ -153,8 +161,11 @@ const RegistrationSuccessPage = lazy(() => import('./pages/clinic/RegistrationSu
 const MdcLoginPage = lazy(() => import('./pages/clinic/MdcLoginPage'));
 const MyDigitalClinicDashboard = lazy(() => import('./pages/clinic/ClinicDashboard'));
 const HowItWorksPage = lazy(() => import('./pages/how-it-works/HowItWorksPage'));
+<<<<<<< HEAD
 const AboutUsPage = lazy(() => import('./pages/AboutUs'));
 const ContactUsPage = lazy(() => import('./pages/ContactUs'));
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 const SpecializedCarePage = lazy(() => import('./pages/SpecializedCarePage'));
 const ProviderCalendarPage = lazy(() => import('./pages/provider/Calendar'));
 const ProviderInboxPage = lazy(() => import('./pages/provider/Messages'));
@@ -267,7 +278,11 @@ function App() {
     '/checkout',
     '/confirmation',
     '/crisis',
+<<<<<<< HEAD
 
+=======
+    '/results',
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   ];
 
   // const showHeaderFooter =
@@ -387,8 +402,11 @@ function App() {
                     <Route path="/results" element={<ResultsPage data={assessmentData} />} />
                     <Route path="/crisis" element={<CrisisPage />} />
                     <Route path="/how-it-works" element={<HowItWorksPage />} />
+<<<<<<< HEAD
                     <Route path="/about" element={<AboutUsPage />} />
                     <Route path="/contact" element={<ContactUsPage />} />
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                     <Route path="/specialized-care" element={<SpecializedCarePage />} />
                     <Route path="/my-digital-clinic" element={<MyDigitalClinicPricingPage />} />
                     <Route path="/my-digital-clinic/register" element={<RegisterClinicPage />} />
@@ -401,6 +419,7 @@ function App() {
                     <Route path="/patience-turtle" element={<ChintuPage />} />
                     <Route path="/pet" element={<DigitalPetPage />} />
                     <Route path="/pet-strategy" element={<DigitalPetStrategyPage />} />
+<<<<<<< HEAD
                     <Route
                       path="/patient/chintu"
                       element={
@@ -433,6 +452,12 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
+=======
+                    <Route path="/chintu" element={<ChintuPage />} />
+                    <Route path="/dino" element={<DinoPage />} />
+                    <Route path="/elephant" element={<TemboPage />} />
+                    <Route path="/goldenPup" element={<GoldenPupPage />} />
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                     <Route path="/onboarding/name" element={<OnboardingName onNext={handleOnboardingName} />} />
                     <Route path="/onboarding/email" element={<OnboardingEmail userName={userName} />} />
 
@@ -780,10 +805,17 @@ function App() {
                         </ProtectedRoute>
                       }
                     >
+<<<<<<< HEAD
                       <Route index element={<Navigate to="preferences" replace />} />
                       <Route path="dashboard" element={<DashboardPage />} />
                       <Route path="onboarding" element={<PatientOnboardingPage />} />
                       <Route path="preferences" element={<CommunicationPreferencesPage />} />
+=======
+                      <Route index element={<Navigate to="dashboard" replace />} />
+                      <Route path="dashboard" element={<DashboardPage />} />
+                      <Route path="onboarding" element={<PatientOnboardingPage />} />
+                      <Route path="preferences" element={<PatientProfilePreferences />} />
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                       <Route path="therapy-plan" element={<TherapyPlanPage />} />
                       <Route path="care-team" element={<Navigate to="/patient/sessions" replace />} />
                       <Route path="providers" element={<Navigate to="/patient/sessions" replace />} />
@@ -805,7 +837,11 @@ function App() {
                       <Route path="provider-messages/:providerId" element={<ProviderMessagesPage />} />
                       <Route path="messages" element={<AIChatPage />} />
                       <Route path="profile" element={<ProfilePage />} />
+<<<<<<< HEAD
                       <Route path="preferences" element={<CommunicationPreferencesPage />} />
+=======
+                      <Route path="preferences" element={<ProfilePreferencePage />} />
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                       <Route path="settings" element={<SettingsPage />} />
                       <Route path="assessments" element={<Navigate to="/patient/care-team" replace />} />
                       <Route path="assessment-reports" element={<Navigate to="/patient/progress?tab=clinical" replace />} />

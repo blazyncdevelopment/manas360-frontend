@@ -548,7 +548,11 @@
   }
 
   .btn-primary {
+<<<<<<< HEAD
     @apply btn-base bg-gradient-calm text-white hover:bg-none hover:bg-[var(--brand-navy-hover)] hover:shadow-soft-lg hover:-translate-y-0.5 hover:scale-[1.02];
+=======
+    @apply btn-base bg-gradient-calm text-white hover:shadow-soft-lg hover:-translate-y-0.5 hover:scale-[1.02];
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   }
 
   .btn-secondary {
@@ -622,11 +626,14 @@
   animation: ekg-loop 4s linear infinite;
 }
 
+<<<<<<< HEAD
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
 
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 @keyframes iris-wipe {
   0% { clip-path: circle(0% at 50% 50%); }
   100% { clip-path: circle(150% at 50% 50%); }
@@ -822,6 +829,7 @@
   color: #ffffff !important;
   opacity: 1;
 }
+<<<<<<< HEAD
 
 /* Assessment option buttons — override @tailwindcss/forms plugin reset */
 .assessment-option {
@@ -860,3 +868,5 @@
   cursor: not-allowed;
 }
 
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6

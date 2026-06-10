@@ -45,6 +45,7 @@ export default function PendingRequestStep({
 
     const pollInterval = setInterval(async () => {
       try {
+<<<<<<< HEAD
         // Method 1: Check if payment pending request is active (legacy flow)
         const paymentPendingResult = await patientApi.getPaymentPendingRequest().catch(() => null);
         if (paymentPendingResult?.hasPaymentPending) {
@@ -60,6 +61,11 @@ export default function PendingRequestStep({
 
         // If the request is not found or is no longer PENDING (e.g. status is CONFIRMED, ACCEPTED, or PURCHASED)
         if (!request || (request.status && request.status !== 'PENDING')) {
+=======
+        const result = await patientApi.getPaymentPendingRequest();
+        if (result.hasPaymentPending) {
+          // Provider accepted!
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
           setIsPolling(false);
           onAccepted();
         }
@@ -69,7 +75,11 @@ export default function PendingRequestStep({
     }, 3000);
 
     return () => clearInterval(pollInterval);
+<<<<<<< HEAD
   }, [appointmentRequestId, isPolling, onAccepted]);
+=======
+  }, [isPolling, onAccepted]);
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
   // Timer countdown
   useEffect(() => {

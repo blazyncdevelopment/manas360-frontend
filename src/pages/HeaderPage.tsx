@@ -636,10 +636,17 @@ export const HeaderPage: React.FC = () => {
     "AnytimeBuddy Chat": "/ai-power-hub",
     "Vent Buddy": "/ai-power-hub",
     "AI Session Notes": "/ai-power-hub",
+<<<<<<< HEAD
     "Baby Dinosaur": "/patient/dino",
     "Golden Retriever": "/patient/goldenPup",
     "Healing Elephant": "/patient/elephant",
     "Chintu Fox": "/patient/chintu",
+=======
+    "Baby Dinosaur": "/dino",
+    "Golden Retriever": "/goldenPup",
+    "Healing Elephant": "/elephant",
+    "Chintu Fox": "/chintu",
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     "Name Your Pet \u2014 Adopt": "/pet",
     "Mood Tracker": "/self-help",
     "Breathing Exercises": "/self-help",

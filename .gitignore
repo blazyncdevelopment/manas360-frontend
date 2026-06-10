@@ -1,5 +1,6 @@
 node_modules/
 dist/
+<<<<<<< HEAD
 
 # OS/editor artifacts
 .DS_Store
@@ -17,3 +18,14 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+=======
+build/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+coverage/
+.vscode/
+.idea/
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6

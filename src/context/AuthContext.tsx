@@ -64,7 +64,11 @@ export const getDefaultRouteForRole = (role: unknown): string => {
   }
   if (normalizedRole === 'psychiatrist') return '/provider/dashboard';
   if (normalizedRole === 'therapist' || normalizedRole === 'coach') return '/provider/dashboard';
+<<<<<<< HEAD
   return '/patient/sessions';
+=======
+  return '/patient/dashboard';
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 };
 
 const isProviderRole = (role: unknown): boolean => {
@@ -122,7 +126,11 @@ export const isPlatformAdminUser = (user: AuthUser | null | undefined): boolean 
 };
 
 export const getPostLoginRoute = (user: AuthUser | null | undefined): string => {
+<<<<<<< HEAD
   if (!user) return '/patient/sessions';
+=======
+  if (!user) return '/patient/dashboard';
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
   if ((user as any)?.legalAcceptanceRequired) {
     return '/auth/legal-accept';
@@ -136,9 +144,12 @@ export const getPostLoginRoute = (user: AuthUser | null | undefined): string => 
 
   // If patient requires subscription, route to plans page
   if ((user as any)?.requiresSubscription) {
+<<<<<<< HEAD
     if ((user as any)?.patientSubscriptionActive) {
       return '/patient/sessions';
     }
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     return '/plans';
   }
 
@@ -339,6 +350,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // keep frontend state consistent even if backend session already expired
     } finally {
+<<<<<<< HEAD
       if (typeof window !== 'undefined') {
         try {
           const themePref = window.localStorage.getItem('manas360_theme_preference');
@@ -358,6 +370,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.warn('Failed to clear local storage:', err);
         }
       }
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
       setUser(null);
       clearSessionHint();
       clearAuthTokens();

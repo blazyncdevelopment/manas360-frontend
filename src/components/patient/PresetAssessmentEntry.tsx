@@ -328,7 +328,11 @@ export const PresetAssessmentEntry = () => {
           <p className="text-charcoal/70 mb-6">The assessment type you requested is not available.</p>
           <button
             onClick={() => navigate('/assessment')}
+<<<<<<< HEAD
             className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-calm text-white rounded-lg hover:bg-none hover:bg-[var(--brand-navy-hover)] transition-colors"
+=======
+            className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
           >
             Take Regular Assessment
           </button>
@@ -424,7 +428,11 @@ export const PresetAssessmentEntry = () => {
 
               <button
                 onClick={handleStart}
+<<<<<<< HEAD
                 className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-calm px-6 py-4 text-base font-medium text-white shadow-sm transition-all hover:bg-none hover:bg-[var(--brand-navy-hover)] active:scale-[0.98]"
+=======
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 py-4 text-base font-medium text-white shadow-sm transition-all hover:bg-teal-700 active:scale-[0.98]"
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
               >
                 {presetConfig.ctaText} (Takes ~2 mins)
                 <ArrowRight className="h-5 w-5" />
@@ -492,7 +500,11 @@ export const PresetAssessmentEntry = () => {
               </div>
               <button
                 onClick={handleReturn}
+<<<<<<< HEAD
                 className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-calm px-6 py-4 text-base font-medium text-white shadow-sm transition-all hover:bg-none hover:bg-[var(--brand-navy-hover)] active:scale-[0.98]"
+=======
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 py-4 text-base font-medium text-white shadow-sm transition-all hover:bg-teal-700 active:scale-[0.98]"
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
               >
                 Go to Sessions
                 <ArrowRight className="h-5 w-5" />

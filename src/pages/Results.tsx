@@ -148,10 +148,17 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ data }) => {
                 onClick={() => navigate('/register')}
                 className="
               group flex-1 min-h-[3rem] px-6
+<<<<<<< HEAD
               bg-gradient-calm text-white
               rounded-lg font-sans font-semibold text-base md:text-lg
               transition-smooth
               hover:bg-none hover:bg-[var(--brand-navy-hover)] hover:shadow-soft-md
+=======
+              bg-white border-2 border-calm-sage text-calm-sage
+              rounded-full font-sans font-semibold text-base md:text-lg
+              transition-smooth
+              hover:bg-calm-sage hover:text-white hover:shadow-soft-md hover:-translate-y-0.5
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
               active:translate-y-0
               flex items-center justify-center gap-2
             ">
@@ -162,10 +169,17 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ data }) => {
                 onClick={() => navigate(signupHref)}
                 className={`
                 group flex-1 min-h-[3rem] px-6
+<<<<<<< HEAD
                 bg-gradient-calm text-white
                 rounded-lg font-sans font-semibold text-base md:text-lg
                 transition-smooth
                 hover:bg-none hover:bg-[var(--brand-navy-hover)] hover:shadow-soft-md
+=======
+                bg-white border-2 border-gentle-blue text-gentle-blue
+                rounded-full font-sans font-semibold text-base md:text-lg
+                transition-smooth
+                hover:bg-gentle-blue hover:text-white hover:shadow-soft-md hover:-translate-y-0.5
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 active:translate-y-0
                 flex items-center justify-center gap-2
               `}

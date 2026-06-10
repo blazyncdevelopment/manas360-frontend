@@ -349,7 +349,11 @@ export default function NriPatch({ onChange, blockSubmitButtons = true }: NriPat
           </div>
         </div>
       </div>
+<<<<<<< HEAD
 
+=======
+       
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     </>
   );
 }

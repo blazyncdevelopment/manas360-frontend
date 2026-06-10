@@ -17,11 +17,14 @@ import {
 	resolveGatewayPlanIdFromCart,
 	resolvePostPaymentRedirectPath,
 } from '../../lib/patientSubscriptionFlow';
+<<<<<<< HEAD
 import {
 	finalizeProviderLeadPurchase,
 	isLeadPurchaseTransaction,
 } from '../../lib/providerLeadPurchaseFlow';
 import { setMarketplaceBookingPending } from '../../lib/marketplaceBookingPending';
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
 type PaymentState = 'loading' | 'pending' | 'success' | 'failed';
 
@@ -65,8 +68,12 @@ export default function PaymentStatusPage() {
 		|| searchParams.get('verify') === 'universal'
 		|| (Boolean(transactionId) && hasUniversalCheckoutParams)
 		|| isPatientSubscriptionTransaction(transactionId);
+<<<<<<< HEAD
 	const isLeadPurchasePayment = isLeadPurchaseTransaction(transactionId);
 	const isProviderTransaction = transactionId.startsWith('PROV_') || paymentType === 'provider' || isLeadPurchasePayment;
+=======
+	const isProviderTransaction = transactionId.startsWith('PROV_') || paymentType === 'provider';
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 	const redirectAfterSuccess = searchParams.get('redirect') || searchParams.get('successRedirect') || '';
 	const isSubscriptionPayment = useMemo(
 		() => isPatientSubscriptionTransaction(transactionId),
@@ -124,6 +131,7 @@ export default function PaymentStatusPage() {
 			setState('pending');
 			setStatusMessage('Verifying your payment, please do not close this window...');
 
+<<<<<<< HEAD
 			if (isLeadPurchasePayment && transactionId) {
 				try {
 					await finalizeProviderLeadPurchase(transactionId, {
@@ -148,6 +156,8 @@ export default function PaymentStatusPage() {
 				}
 			}
 
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 			const outcome = await pollPaymentUntilSettled({
 				mode: useUniversalVerify ? 'universal' : 'standard',
 				transactionId: verifyId,
@@ -234,7 +244,10 @@ export default function PaymentStatusPage() {
 		resolvedPlanId,
 		isProviderTransaction,
 		isSubscriptionPayment,
+<<<<<<< HEAD
 		isLeadPurchasePayment,
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 	]);
 
 	useEffect(() => {
@@ -243,22 +256,33 @@ export default function PaymentStatusPage() {
 		const timer = window.setTimeout(() => {
 			void (async () => {
 				if (!isProviderTransaction) {
+<<<<<<< HEAD
 					if (transactionId) {
+=======
+					if (transactionId && transactionId.startsWith('SMREQ_')) {
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 						const pendingKey = `manas360.smartmatch.pending.${transactionId}`;
 						const pendingRaw = localStorage.getItem(pendingKey);
 						if (pendingRaw) {
 							try {
 								const pendingPayload = JSON.parse(pendingRaw);
+<<<<<<< HEAD
+=======
+								await http.post('/v1/patient/appointments/smart-match', pendingPayload);
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 								localStorage.removeItem(pendingKey);
 								const smartMatchSummary = pendingPayload?.smartMatchSummary || null;
 								if (smartMatchSummary) {
 									window.sessionStorage.setItem('manas360.smartmatch.lastSummary', JSON.stringify(smartMatchSummary));
 								}
+<<<<<<< HEAD
 								setMarketplaceBookingPending({
 									savedAt: new Date().toISOString(),
 									transactionId,
 									smartMatchSummary: smartMatchSummary || undefined,
 								});
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 								navigate('/patient/sessions', {
 									replace: true,
 									state: {
@@ -269,6 +293,7 @@ export default function PaymentStatusPage() {
 								});
 								return;
 							} catch (err) {
+<<<<<<< HEAD
 								console.warn('Failed to restore marketplace session summary after payment', err);
 							}
 						}
@@ -284,6 +309,11 @@ export default function PaymentStatusPage() {
 							});
 							return;
 						}
+=======
+								console.warn('Failed to finalize smart-match appointment request after payment', err);
+							}
+						}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 					}
 
 					const metadataRedirect =
@@ -307,11 +337,14 @@ export default function PaymentStatusPage() {
 					return;
 				}
 
+<<<<<<< HEAD
 				if (isLeadPurchasePayment) {
 					navigate('/provider/leads', { replace: true });
 					return;
 				}
 
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 				navigate(`/provider/confirmation?transactionId=${encodeURIComponent(transactionId)}`, { replace: true });
 			})();
 		}, 2000);
@@ -324,6 +357,7 @@ export default function PaymentStatusPage() {
 		transactionId,
 		paymentDetails,
 		resolveRedirectTarget,
+<<<<<<< HEAD
 		isLeadPurchasePayment,
 	]);
 
@@ -333,6 +367,14 @@ export default function PaymentStatusPage() {
 		: isSubscriptionPayment
 			? 'Payment verified. Your plan is active — opening your dashboard...'
 			: 'Payment received successfully. We are now confirming your booking.';
+=======
+	]);
+
+	const dashboardPath = isProviderTransaction ? '/provider/dashboard' : PATIENT_DASHBOARD_PATH;
+	const successSubtitle = isSubscriptionPayment
+		? 'Payment verified. Your plan is active — opening your dashboard...'
+		: 'Payment received successfully. We are now confirming your booking.';
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
 	if (state === 'loading' || state === 'pending') {
 		return (
@@ -372,7 +414,19 @@ export default function PaymentStatusPage() {
 								Transaction: {verifyId}
 							</p>
 						)}
+<<<<<<< HEAD
 
+=======
+						<div className="mt-8 flex flex-col gap-3">
+							<button
+								type="button"
+								onClick={() => navigate(dashboardPath, { replace: true })}
+								className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
+							>
+								<Home className="h-4 w-4" /> Go to Dashboard
+							</button>
+						</div>
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 					</>
 				)}
 

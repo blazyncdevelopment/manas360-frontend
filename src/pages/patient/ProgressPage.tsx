@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { useMemo, useEffect, useState } from 'react';
+=======
+import { useMemo, useEffect } from 'react';
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -16,6 +20,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+<<<<<<< HEAD
 import {
   TrendingUp,
   Flame,
@@ -36,6 +41,8 @@ import {
   ChevronRight,
   Star,
 } from 'lucide-react';
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 import { patientApi } from '../../api/patient';
 import { getClinicalAssessmentSummary, inferClinicalAssessmentType } from '../../utils/clinicalAssessments';
 
@@ -53,6 +60,7 @@ const moodLabelMap: Record<number, string> = {
   5: 'Great',
 };
 
+<<<<<<< HEAD
 const moodEmojiMap: Record<number, string> = {
   1: '😢',
   2: '😔',
@@ -65,6 +73,12 @@ const tabs: Array<{ key: ProgressTab; label: string; icon: React.ReactNode }> = 
   { key: 'mood', label: 'Mood & Wellness', icon: <Heart className="h-4 w-4" /> },
   { key: 'clinical', label: 'Clinical Scores', icon: <Brain className="h-4 w-4" /> },
   { key: 'habits', label: 'Habits & Effort', icon: <Target className="h-4 w-4" /> },
+=======
+const tabs: Array<{ key: ProgressTab; label: string }> = [
+  { key: 'mood', label: 'Mood & Wellness' },
+  { key: 'clinical', label: 'Clinical Scores' },
+  { key: 'habits', label: 'Habits & Effort' },
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 ];
 
 const parseDate = (value: unknown): Date | null => {
@@ -135,6 +149,7 @@ const stressToScore = (value?: number): number => {
 };
 
 const wellnessBand = (score: number) => {
+<<<<<<< HEAD
   if (score >= 80) return { label: 'Strong momentum', color: '#10b981', bg: 'bg-emerald-50', text: 'text-emerald-700' };
   if (score >= 65) return { label: 'Doing fairly well', color: '#22c55e', bg: 'bg-green-50', text: 'text-green-700' };
   if (score >= 50) return { label: 'Needs gentle support', color: '#f59e0b', bg: 'bg-amber-50', text: 'text-amber-700' };
@@ -202,10 +217,25 @@ function MetricCard({
         </div>
         <p className="mt-1 text-xs text-charcoal/55">{helper}</p>
       </div>
+=======
+  if (score >= 80) return 'Strong momentum';
+  if (score >= 65) return 'Doing fairly well';
+  if (score >= 50) return 'Needs gentle support';
+  return 'High support recommended';
+};
+
+function MetricCard({ label, value, helper }: { label: string; value: string | number; helper: string }) {
+  return (
+    <article className="rounded-2xl border border-ink-100 bg-white p-4 shadow-soft-sm">
+      <p className="text-xs uppercase tracking-[0.14em] text-charcoal/45">{label}</p>
+      <p className="mt-2 text-3xl font-semibold text-charcoal">{value}</p>
+      <p className="mt-1 text-xs text-charcoal/58">{helper}</p>
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     </article>
   );
 }
 
+<<<<<<< HEAD
 // ── Custom tooltip ───────────────────────────────────────────────
 function MoodTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -219,10 +249,21 @@ function MoodTooltip({ active, payload, label }: any) {
       {point.tagsLabel && point.tagsLabel !== 'None' && (
         <p className="text-charcoal/65">Context: {point.tagsLabel}</p>
       )}
+=======
+function MoodTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  const point = payload[0]?.payload || {};
+  return (
+    <div className="rounded-xl border border-ink-100 bg-white px-3 py-2 text-xs shadow-soft-md">
+      <p className="font-semibold text-charcoal">{label}</p>
+      <p className="mt-1 text-charcoal/75">Mood: {point.mood}/5</p>
+      <p className="text-charcoal/75">Triggers: {point.tagsLabel || 'None logged'}</p>
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     </div>
   );
 }
 
+<<<<<<< HEAD
 function ClinicalTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
@@ -287,11 +328,14 @@ function SeverityBadge({ severity }: { severity: string }) {
 }
 
 // ── Main component ───────────────────────────────────────────────
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 export default function ProgressPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = getActiveTab(searchParams.get('tab'));
   const clinicalFilter = (searchParams.get('clinicalType') || 'all') as ClinicalFilter;
   const timeRange = (searchParams.get('timeRange') || '3m') as TimeRangeFilter;
+<<<<<<< HEAD
   const [animateIn, setAnimateIn] = useState(false);
 
   useEffect(() => {
@@ -317,6 +361,25 @@ export default function ProgressPage() {
   );
 
   // ── Clinical query ───────────────────────────────────────────
+=======
+
+  const moodQuery = useQuery(['my-progress', 'mood'], async () => {
+    const [historyRes, statsRes] = await Promise.all([
+      patientApi.getMoodHistory().catch(() => []),
+      patientApi.getMoodStats().catch(() => null),
+    ]);
+    try {
+      console.log('[ProgressPage] fetched mood data', { historyRes, statsRes });
+    } catch (e) {
+      /* ignore logging errors */
+    }
+    return {
+      history: asPayload<any[]>(historyRes) || [],
+      stats: asPayload<any>(statsRes) || {},
+    };
+  });
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const clinicalQuery = useQuery(
     ['my-progress', 'clinical'],
     async () => {
@@ -325,12 +388,25 @@ export default function ProgressPage() {
         patientApi.getInsights().catch(() => null),
         patientApi.getProgress().catch(() => null),
       ]);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
       const structuredPayload = asPayload<any>(historyRes) || {};
       const structuredItems = Array.isArray(structuredPayload)
         ? structuredPayload
         : Array.isArray(structuredPayload?.items)
           ? structuredPayload.items
           : [];
+<<<<<<< HEAD
+=======
+
+      try {
+        console.log('[ProgressPage] fetched clinical data', { historyRes, insightsRes, progressRes });
+      } catch (e) {
+        /* ignore logging errors */
+      }
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
       return {
         structured: structuredItems,
         insights: asPayload<any>(insightsRes) || {},
@@ -344,7 +420,10 @@ export default function ProgressPage() {
     },
   );
 
+<<<<<<< HEAD
   // ── Habits query ─────────────────────────────────────────────
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const habitsQuery = useQuery(
     ['my-progress', 'habits'],
     async () => {
@@ -354,6 +433,14 @@ export default function ProgressPage() {
         patientApi.getExercises().catch(() => []),
         patientApi.getMoodHistory().catch(() => []),
       ]);
+<<<<<<< HEAD
+=======
+      try {
+        console.log('[ProgressPage] fetched habits data', { progressRes, sessionsRes, exercisesRes, moodHistoryRes });
+      } catch (e) {
+        /* ignore logging errors */
+      }
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
       return {
         progress: asPayload<any>(progressRes) || {},
         sessions: asPayload<any[]>(sessionsRes) || [],
@@ -364,7 +451,18 @@ export default function ProgressPage() {
     { enabled: activeTab === 'habits' },
   );
 
+<<<<<<< HEAD
   // ── Mood derived data ────────────────────────────────────────
+=======
+  useEffect(() => {
+    try {
+      console.log('[ProgressPage] mount/render', { activeTab });
+    } catch (e) {
+      /* ignore */
+    }
+  }, [activeTab]);
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const moodHistory = useMemo(() => {
     const rows = Array.isArray(moodQuery.data?.history) ? moodQuery.data?.history : [];
     return rows
@@ -381,6 +479,7 @@ export default function ProgressPage() {
         const sleepHours = parseSleepHours(metadata?.sleepHours ?? metadata?.sleep ?? entry?.sleepHours ?? entry?.sleep);
         const stressCandidate = metadata?.stressLevel ?? metadata?.stress ?? entry?.stressLevel;
         const stressLevel = Number.isFinite(Number(stressCandidate)) ? Number(stressCandidate) : undefined;
+<<<<<<< HEAD
         return { date, mood, tags, energy: metadata?.energy, sleepHours, stressLevel };
       })
       .filter(Boolean) as Array<{
@@ -391,6 +490,18 @@ export default function ProgressPage() {
         sleepHours?: number | null;
         stressLevel?: number;
       }>;
+=======
+        return {
+          date,
+          mood,
+          tags,
+          energy: metadata?.energy,
+          sleepHours,
+          stressLevel,
+        };
+      })
+      .filter(Boolean) as Array<{ date: Date; mood: number; tags: string[]; energy?: string; sleepHours?: number | null; stressLevel?: number }>;
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   }, [moodQuery.data?.history]);
 
   const moodChartData = useMemo(() => {
@@ -399,7 +510,11 @@ export default function ProgressPage() {
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .slice(-14)
       .map((item) => ({
+<<<<<<< HEAD
         dateLabel: item.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }),
+=======
+        dateLabel: item.date.toLocaleDateString(undefined, { weekday: 'short' }),
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         mood: item.mood,
         tagsLabel: item.tags.length ? item.tags.join(', ') : 'None',
       }));
@@ -409,7 +524,11 @@ export default function ProgressPage() {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7);
     const rows = moodHistory.filter((item) => item.date >= cutoff);
+<<<<<<< HEAD
     if (!rows.length) return null;
+=======
+    if (!rows.length) return 0;
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     return Number((rows.reduce((sum, item) => sum + item.mood, 0) / rows.length).toFixed(1));
   }, [moodHistory]);
 
@@ -420,7 +539,11 @@ export default function ProgressPage() {
       frequency[moodName] = (frequency[moodName] || 0) + 1;
     }
     const winner = Object.entries(frequency).sort((a, b) => b[1] - a[1])[0];
+<<<<<<< HEAD
     return winner?.[0] || null;
+=======
+    return winner?.[0] || '—';
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   }, [moodHistory]);
 
   const topTrigger = useMemo(() => {
@@ -433,40 +556,79 @@ export default function ProgressPage() {
       }
     }
     const winner = Object.entries(frequency).sort((a, b) => b[1] - a[1])[0];
+<<<<<<< HEAD
     return winner?.[0] || null;
+=======
+    return winner?.[0] || '—';
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   }, [moodHistory]);
 
   const aiMoodInsight = useMemo(() => {
     const statsInsights = Array.isArray(moodQuery.data?.stats?.insights) ? moodQuery.data?.stats?.insights : [];
     if (statsInsights.length) return statsInsights[0];
+<<<<<<< HEAD
     if (moodChartData.length < 3)
       return 'Keep checking in daily. Your recovery story becomes clearer as we gather more trend points.';
     const minPoint = moodChartData.reduce((acc, row) => (row.mood < acc.mood ? row : acc), moodChartData[0]);
     const maxPoint = moodChartData.reduce((acc, row) => (row.mood > acc.mood ? row : acc), moodChartData[0]);
     return `Your recent low appeared on ${minPoint.dateLabel}, while your strongest day was ${maxPoint.dateLabel}. Keep using Daily Check-in to stabilize the week.`;
+=======
+    if (moodChartData.length < 3) return 'Keep checking in daily. Your recovery story becomes clearer as we gather more trend points.';
+    const minPoint = moodChartData.reduce((acc, row) => (row.mood < acc.mood ? row : acc), moodChartData[0]);
+    const maxPoint = moodChartData.reduce((acc, row) => (row.mood > acc.mood ? row : acc), moodChartData[0]);
+    return `Your recent low point appeared on ${minPoint.dateLabel}, while your strongest day was ${maxPoint.dateLabel}. Keep using Daily Check-in context to stabilize the week.`;
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   }, [moodChartData, moodQuery.data?.stats?.insights]);
 
   const weeklyMoodSummary = useMemo(() => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7);
     const rows = moodHistory.filter((item) => item.date >= cutoff);
+<<<<<<< HEAD
     const good = rows.filter((item) => item.mood >= 4).length;
     const neutral = rows.filter((item) => item.mood === 3).length;
     const difficult = rows.filter((item) => item.mood > 0 && item.mood <= 2).length;
+=======
+    const summary = {
+      good: rows.filter((item) => item.mood >= 4).length,
+      neutral: rows.filter((item) => item.mood === 3).length,
+      difficult: rows.filter((item) => item.mood > 0 && item.mood <= 2).length,
+    };
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
     const byDay: Record<string, { label: string; total: number; count: number }> = {};
     for (const row of rows) {
       const key = row.date.toISOString().slice(0, 10);
       if (!byDay[key]) {
+<<<<<<< HEAD
         byDay[key] = { label: row.date.toLocaleDateString(undefined, { weekday: 'short' }), total: 0, count: 0 };
+=======
+        byDay[key] = {
+          label: row.date.toLocaleDateString(undefined, { weekday: 'short' }),
+          total: 0,
+          count: 0,
+        };
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
       }
       byDay[key].total += row.mood;
       byDay[key].count += 1;
     }
+<<<<<<< HEAD
     const graph = Object.values(byDay)
       .map((entry) => ({ day: entry.label, mood: entry.count ? Number((entry.total / entry.count).toFixed(1)) : 0 }))
       .slice(-7);
     return { good, neutral, difficult, graph };
+=======
+
+    const graph = Object.values(byDay)
+      .map((entry) => ({
+        day: entry.label,
+        mood: entry.count ? Number((entry.total / entry.count).toFixed(1)) : 0,
+      }))
+      .slice(-7);
+
+    return { ...summary, graph };
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   }, [moodHistory]);
 
   const moodPatternInsight = useMemo(() => {
@@ -477,20 +639,36 @@ export default function ProgressPage() {
         recommendation: 'Try morning and evening check-ins for 7 days.',
       };
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     const withSleep = moodHistory.filter((item) => Number(item.sleepHours) > 0);
     if (withSleep.length >= 3) {
       const goodSleep = withSleep.filter((item) => Number(item.sleepHours) >= 6).map((item) => item.mood);
       const lowSleep = withSleep.filter((item) => Number(item.sleepHours) < 6).map((item) => item.mood);
+<<<<<<< HEAD
       const avgGoodSleep = goodSleep.length ? goodSleep.reduce((s, v) => s + v, 0) / goodSleep.length : 0;
       const avgLowSleep = lowSleep.length ? lowSleep.reduce((s, v) => s + v, 0) / lowSleep.length : 0;
       if (goodSleep.length && lowSleep.length && avgGoodSleep - avgLowSleep >= 0.5) {
         return {
           title: 'Sleep & Mood Pattern',
+=======
+      const avgGoodSleep = goodSleep.length ? goodSleep.reduce((sum, value) => sum + value, 0) / goodSleep.length : 0;
+      const avgLowSleep = lowSleep.length ? lowSleep.reduce((sum, value) => sum + value, 0) / lowSleep.length : 0;
+      if (goodSleep.length && lowSleep.length && avgGoodSleep - avgLowSleep >= 0.5) {
+        return {
+          title: 'Weekly Insight',
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
           body: 'Your mood is higher on days when sleep is at least 6 hours.',
           recommendation: 'Try maintaining a consistent sleep window this week.',
         };
       }
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     const weekdayStats: Record<string, { total: number; count: number }> = {};
     for (const row of moodHistory) {
       const weekday = row.date.toLocaleDateString(undefined, { weekday: 'long' });
@@ -504,11 +682,19 @@ export default function ProgressPage() {
     if (weekdayAverages.length >= 2) {
       const lowest = weekdayAverages[0];
       return {
+<<<<<<< HEAD
         title: 'Weekly Pattern',
+=======
+        title: 'Weekly Insight',
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         body: `Your mood tends to dip on ${lowest.day}s compared to other days.`,
         recommendation: `Plan a lighter schedule and one calming routine on ${lowest.day}s.`,
       };
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     return {
       title: 'Weekly Insight',
       body: 'Your trends are stabilizing with regular check-ins.',
@@ -527,12 +713,25 @@ export default function ProgressPage() {
         moodTotals[tag] = (moodTotals[tag] || 0) + item.mood;
       }
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     const maxFrequency = Math.max(1, ...Object.values(frequency));
     return Object.entries(frequency)
       .map(([context, count]) => {
         const averageMood = moodTotals[context] / count;
         const impact = averageMood < 3 ? 'Negative' : averageMood < 3.7 ? 'Mixed' : 'Positive';
+<<<<<<< HEAD
         return { context, count, impact, bar: Math.round((count / maxFrequency) * 100) };
+=======
+        return {
+          context,
+          count,
+          impact,
+          bar: Math.round((count / maxFrequency) * 100),
+        };
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
       })
       .sort((a, b) => b.count - a.count)
       .slice(0, 6);
@@ -544,7 +743,14 @@ export default function ProgressPage() {
         const moodScore = Math.round((Math.max(1, Math.min(5, item.mood)) / 5) * 40);
         const total = Math.max(
           0,
+<<<<<<< HEAD
           Math.min(100, moodScore + energyToScore(item.energy) + sleepToScore(item.sleepHours ?? null) + stressToScore(item.stressLevel)),
+=======
+          Math.min(
+            100,
+            moodScore + energyToScore(item.energy) + sleepToScore(item.sleepHours ?? null) + stressToScore(item.stressLevel),
+          ),
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         );
         return { ...item, score: total };
       })
@@ -555,10 +761,20 @@ export default function ProgressPage() {
     const byWeek: Record<string, { start: Date; total: number; count: number }> = {};
     for (const row of rows) {
       const key = weekKey(row.date);
+<<<<<<< HEAD
       if (!byWeek[key]) byWeek[key] = { start: startOfWeek(row.date), total: 0, count: 0 };
       byWeek[key].total += row.score;
       byWeek[key].count += 1;
     }
+=======
+      if (!byWeek[key]) {
+        byWeek[key] = { start: startOfWeek(row.date), total: 0, count: 0 };
+      }
+      byWeek[key].total += row.score;
+      byWeek[key].count += 1;
+    }
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     const weeklyAverages = Object.values(byWeek)
       .sort((a, b) => a.start.getTime() - b.start.getTime())
       .slice(-3)
@@ -568,12 +784,26 @@ export default function ProgressPage() {
         isCurrent: index === all.length - 1,
       }));
 
+<<<<<<< HEAD
     return { today, band: wellnessBand(today), weeklyAverages };
+=======
+    return {
+      today,
+      band: wellnessBand(today),
+      weeklyAverages,
+    };
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   }, [moodHistory]);
 
   const therapistAlert = useMemo(() => {
     const sorted = moodHistory.slice().sort((a, b) => b.date.getTime() - a.date.getTime());
+<<<<<<< HEAD
     if (!sorted.length) return { needsAttention: false, message: 'No alerts. Keep daily check-ins active.' };
+=======
+    if (!sorted.length) {
+      return { needsAttention: false, message: 'No alerts. Keep daily check-ins active.' };
+    }
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
     const moodByDay: Record<string, { total: number; count: number }> = {};
     for (const row of sorted) {
@@ -582,6 +812,10 @@ export default function ProgressPage() {
       moodByDay[key].total += row.mood;
       moodByDay[key].count += 1;
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     const recentDays = Object.entries(moodByDay)
       .map(([day, info]) => ({ day, avgMood: info.total / info.count }))
       .sort((a, b) => (a.day < b.day ? 1 : -1));
@@ -591,6 +825,7 @@ export default function ProgressPage() {
       if (day.avgMood < 3) lowMoodStreak += 1;
       else break;
     }
+<<<<<<< HEAD
     const stressSpikes = sorted.filter((row) => Number(row.stressLevel) >= 8).slice(0, 7).length;
     const lowSleepCount = sorted.filter((row) => Number(row.sleepHours) > 0 && Number(row.sleepHours) < 4).slice(0, 10).length;
 
@@ -601,6 +836,34 @@ export default function ProgressPage() {
   }, [moodHistory]);
 
   // ── Clinical derived data ───────────────────────────────────
+=======
+
+    const stressSpikes = sorted.filter((row) => Number(row.stressLevel) >= 8).slice(0, 7).length;
+    const lowSleepCount = sorted.filter((row) => Number(row.sleepHours) > 0 && Number(row.sleepHours) < 4).slice(0, 10).length;
+
+    if (lowMoodStreak >= 3) {
+      return {
+        needsAttention: true,
+        message: `Mood decline detected for ${lowMoodStreak} consecutive days. Suggest therapist follow-up.`,
+      };
+    }
+    if (stressSpikes >= 3) {
+      return {
+        needsAttention: true,
+        message: 'High stress pattern detected in recent check-ins. Consider support outreach.',
+      };
+    }
+    if (lowSleepCount >= 3) {
+      return {
+        needsAttention: true,
+        message: 'Repeated low-sleep pattern detected. Sleep recovery coaching recommended.',
+      };
+    }
+
+    return { needsAttention: false, message: 'No high-risk trend detected this week.' };
+  }, [moodHistory]);
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const clinicalRows = useMemo(() => {
     type ClinicalRow = {
       attemptId?: string;
@@ -613,6 +876,7 @@ export default function ProgressPage() {
     };
 
     const structured = Array.isArray(clinicalQuery.data?.structured) ? clinicalQuery.data?.structured : [];
+<<<<<<< HEAD
     const insightsTrend = Array.isArray(clinicalQuery.data?.insights?.assessmentTrend) ? clinicalQuery.data?.insights?.assessmentTrend : [];
     const progressTrend = Array.isArray(clinicalQuery.data?.progress?.assessmentTrend) ? clinicalQuery.data?.progress?.assessmentTrend : [];
     const mergedTrend = [...insightsTrend, ...progressTrend];
@@ -643,6 +907,64 @@ export default function ProgressPage() {
       if (gad) rows.push({ attemptId: undefined, date, dateLabel: formatDay(date), type: 'GAD-7', score: gad, severity: 'Recorded', interpretation: '' });
       return rows;
     });
+=======
+    const insightsTrend = Array.isArray(clinicalQuery.data?.insights?.assessmentTrend)
+      ? clinicalQuery.data?.insights?.assessmentTrend
+      : [];
+    const progressTrend = Array.isArray(clinicalQuery.data?.progress?.assessmentTrend)
+      ? clinicalQuery.data?.progress?.assessmentTrend
+      : [];
+    const mergedTrend = [...insightsTrend, ...progressTrend];
+
+    const structuredRows = structured
+      .map((item: any) => {
+        const type = item?.type || inferClinicalAssessmentType(String(item?.templateKey || item?.template?.key || item?.templateTitle || 'PHQ-9'));
+        const date = parseDate(item?.submittedAt || item?.createdAt);
+        if (!date) return null;
+        return {
+          attemptId: item?.attemptId,
+          date,
+          dateLabel: formatDay(item?.submittedAt || item?.createdAt),
+          type,
+          score: Number(item?.totalScore || 0),
+          severity: String(item?.severityLevel || 'Unknown'),
+          interpretation: String(item?.interpretation || ''),
+        };
+      })
+
+    const trendRows = mergedTrend
+      .flatMap((item: any) => {
+          const date = parseDate(item?.date || item?.createdAt);
+          if (!date) return [] as ClinicalRow[];
+          const phq = Number(item?.phq9Score || 0);
+          const gad = Number(item?.gad7Score || 0);
+          if (!phq && !gad) return [] as ClinicalRow[];
+          const rows: ClinicalRow[] = [];
+          if (phq) {
+            rows.push({
+              attemptId: undefined,
+              date,
+              dateLabel: formatDay(date),
+              type: 'PHQ-9',
+              score: phq,
+              severity: 'Recorded',
+              interpretation: '',
+            });
+          }
+          if (gad) {
+            rows.push({
+              attemptId: undefined,
+              date,
+              dateLabel: formatDay(date),
+              type: 'GAD-7',
+              score: gad,
+              severity: 'Recorded',
+              interpretation: '',
+            });
+          }
+          return rows;
+        });
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
     const combinedRows = [...structuredRows, ...trendRows].filter(Boolean) as ClinicalRow[];
     const dedupedRows: ClinicalRow[] = [];
@@ -654,8 +976,14 @@ export default function ProgressPage() {
       seenRows.add(rowKey);
       dedupedRows.push(row);
     }
+<<<<<<< HEAD
     return dedupedRows;
   }, [clinicalQuery.data]);
+=======
+
+    return dedupedRows;
+  }, [clinicalQuery.data?.structured, clinicalQuery.data?.insights?.assessmentTrend, clinicalQuery.data?.progress?.assessmentTrend]);
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
   const filteredClinicalRows = useMemo(() => {
     const now = new Date();
@@ -677,8 +1005,14 @@ export default function ProgressPage() {
   }, [clinicalRows, clinicalFilter, timeRange]);
 
   const clinicalSummary = useMemo(() => {
+<<<<<<< HEAD
     return getClinicalAssessmentSummary(
       clinicalRows.map((item: any) => ({
+=======
+    const history = Array.isArray(clinicalRows) ? clinicalRows : [];
+    return getClinicalAssessmentSummary(
+      history.map((item: any) => ({
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         type: item?.type,
         score: Number(item?.score || item?.totalScore || 0),
         level: String(item?.severity || item?.severityLevel || item?.level || 'mild'),
@@ -691,13 +1025,20 @@ export default function ProgressPage() {
     const byDate: Record<string, { label: string; phq9?: number; gad7?: number }> = {};
     for (const row of filteredClinicalRows) {
       const key = row.date.toISOString().slice(0, 10);
+<<<<<<< HEAD
       if (!byDate[key]) byDate[key] = { label: row.dateLabel };
+=======
+      if (!byDate[key]) {
+        byDate[key] = { label: row.dateLabel };
+      }
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
       if (row.type === 'PHQ-9') byDate[key].phq9 = row.score;
       if (row.type === 'GAD-7') byDate[key].gad7 = row.score;
     }
     return Object.values(byDate);
   }, [filteredClinicalRows]);
 
+<<<<<<< HEAD
   const recentClinicalRows = useMemo(
     () => filteredClinicalRows.slice().sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 8),
     [filteredClinicalRows],
@@ -707,13 +1048,29 @@ export default function ProgressPage() {
   const habitsStats = useMemo(() => {
     const sessions = Array.isArray(habitsQuery.data?.sessions) ? habitsQuery.data?.sessions : [];
     const exercises = Array.isArray(habitsQuery.data?.exercises) ? habitsQuery.data?.exercises : [];
+=======
+  const recentClinicalRows = useMemo(() => {
+    return filteredClinicalRows.slice().sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 8);
+  }, [filteredClinicalRows]);
+
+  const habitsStats = useMemo(() => {
+    const sessions = Array.isArray(habitsQuery.data?.sessions) ? habitsQuery.data?.sessions : [];
+    const exercises = Array.isArray(habitsQuery.data?.exercises) ? habitsQuery.data?.exercises : [];
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     const exercisesCompleted = exercises.filter((item: any) => String(item?.status || '').toLowerCase() === 'completed').length;
     const audioMinutesListened = exercises
       .filter((item: any) => String(item?.assignedBy || '').startsWith('WELLNESS_LIBRARY:AUDIO'))
       .reduce((sum: number, item: any) => sum + Number(item?.duration || 0), 0);
     const sessionsAttended = sessions.filter((item: any) => String(item?.status || '').toLowerCase() === 'completed').length;
+<<<<<<< HEAD
     return { exercisesCompleted, audioMinutesListened, sessionsAttended, totalExercises: exercises.length, totalSessions: sessions.length };
   }, [habitsQuery.data]);
+=======
+
+    return { exercisesCompleted, audioMinutesListened, sessionsAttended };
+  }, [habitsQuery.data?.sessions, habitsQuery.data?.exercises]);
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
   const correlationData = useMemo(() => {
     const exercises = Array.isArray(habitsQuery.data?.exercises) ? habitsQuery.data?.exercises : [];
@@ -724,8 +1081,15 @@ export default function ProgressPage() {
       if (String(row?.status || '').toLowerCase() !== 'completed') continue;
       const date = parseDate(row?.createdAt);
       if (!date) continue;
+<<<<<<< HEAD
       weeklyExerciseCount[weekKey(date)] = (weeklyExerciseCount[weekKey(date)] || 0) + 1;
     }
+=======
+      const key = weekKey(date);
+      weeklyExerciseCount[key] = (weeklyExerciseCount[key] || 0) + 1;
+    }
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     const weeklyMood: Record<string, { total: number; count: number }> = {};
     for (const row of moodRows) {
       const mood = Number(row?.mood || 0);
@@ -738,13 +1102,24 @@ export default function ProgressPage() {
       weeklyMood[key].count += 1;
     }
 
+<<<<<<< HEAD
     const allKeys = Array.from(new Set([...Object.keys(weeklyExerciseCount), ...Object.keys(weeklyMood)]));
     let highMoodTotal = 0, highMoodCount = 0, lowMoodTotal = 0, lowMoodCount = 0;
     for (const key of allKeys) {
+=======
+    const weekKeys = Array.from(new Set([...Object.keys(weeklyExerciseCount), ...Object.keys(weeklyMood)]));
+    let highMoodTotal = 0;
+    let highMoodCount = 0;
+    let lowMoodTotal = 0;
+    let lowMoodCount = 0;
+
+    for (const key of weekKeys) {
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
       const exerciseCount = weeklyExerciseCount[key] || 0;
       const mood = weeklyMood[key];
       if (!mood?.count) continue;
       const avgMood = mood.total / mood.count;
+<<<<<<< HEAD
       if (exerciseCount >= 2) { highMoodTotal += avgMood; highMoodCount += 1; }
       else { lowMoodTotal += avgMood; lowMoodCount += 1; }
     }
@@ -755,22 +1130,54 @@ export default function ProgressPage() {
   }, [habitsQuery.data]);
 
   // ── URL helpers ──────────────────────────────────────────────
+=======
+      if (exerciseCount >= 2) {
+        highMoodTotal += avgMood;
+        highMoodCount += 1;
+      } else {
+        lowMoodTotal += avgMood;
+        lowMoodCount += 1;
+      }
+    }
+
+    return [
+      {
+        name: 'High Completion Weeks',
+        mood: highMoodCount ? Number((highMoodTotal / highMoodCount).toFixed(2)) : 0,
+      },
+      {
+        name: 'Low Completion Weeks',
+        mood: lowMoodCount ? Number((lowMoodTotal / lowMoodCount).toFixed(2)) : 0,
+      },
+    ];
+  }, [habitsQuery.data?.exercises, habitsQuery.data?.moodHistory]);
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const setTab = (tab: ProgressTab) => {
     const next = new URLSearchParams(searchParams);
     next.set('tab', tab);
     setSearchParams(next, { replace: true });
   };
+<<<<<<< HEAD
+=======
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const setClinicalFilter = (type: ClinicalFilter) => {
     const next = new URLSearchParams(searchParams);
     next.set('clinicalType', type);
     setSearchParams(next, { replace: true });
   };
+<<<<<<< HEAD
+=======
+
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const setTimeRange = (range: TimeRangeFilter) => {
     const next = new URLSearchParams(searchParams);
     next.set('timeRange', range);
     setSearchParams(next, { replace: true });
   };
 
+<<<<<<< HEAD
   const currentStreak = moodQuery.data?.stats?.currentStreak ?? 0;
 
   return (
@@ -1111,11 +1518,168 @@ export default function ProgressPage() {
                   </section>
                 </>
               )}
+=======
+  return (
+    <div className="mx-auto w-full max-w-[1500px] space-y-6 pb-20 lg:pb-8">
+      <section className="rounded-3xl border border-ink-100 bg-white/90 p-6 shadow-soft-sm">
+        <h1 className="text-3xl font-semibold text-charcoal md:text-4xl">My Progress</h1>
+        <p className="mt-2 text-sm text-charcoal/68">Track your emotional wellbeing, clinical growth, and daily habits.</p>
+
+        <div className="mt-5 flex gap-2 overflow-x-auto border-b border-ink-100 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setTab(tab.key)}
+              className={`shrink-0 rounded-t-xl px-4 py-3 text-sm font-semibold transition ${
+                activeTab === tab.key
+                  ? 'border-b-2 border-calm-sage text-calm-sage'
+                  : 'text-charcoal/60 hover:text-charcoal'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {activeTab === 'mood' && (
+        <div className="space-y-6">
+          {moodQuery.isLoading && <div className="rounded-2xl border border-ink-100 bg-white p-5">Loading mood and wellness data...</div>}
+          {!!moodQuery.error && <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Unable to load mood insights right now.</div>}
+
+          {!moodQuery.isLoading && !moodQuery.error && (
+            <>
+              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <MetricCard label="Average Mood (This Week)" value={weeklyAverageMood || '—'} helper="Daily Check-in average" />
+                <MetricCard label="Current Streak" value={moodQuery.data?.stats?.currentStreak ?? 0} helper="Consecutive check-in days" />
+                <MetricCard label="Top Emotion" value={topEmotion} helper="Most frequent mood label" />
+                <MetricCard label="Top Trigger" value={topTrigger} helper="Most tagged context" />
+              </section>
+
+              <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <article className="rounded-2xl border border-calm-sage/25 bg-gradient-to-r from-[#edf4f1] to-[#f8f5ee] p-5 shadow-soft-sm lg:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-calm-sage">{moodPatternInsight.title}</p>
+                  <p className="mt-3 text-sm leading-6 text-charcoal/82">{moodPatternInsight.body}</p>
+                  <p className="mt-2 text-sm font-medium text-charcoal">Recommendation: {moodPatternInsight.recommendation}</p>
+                </article>
+
+                <article className="rounded-2xl border border-ink-100 bg-white p-5 shadow-soft-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-charcoal/45">Check-in Streak Motivation</p>
+                  <p className="mt-2 text-2xl font-semibold text-charcoal">🔥 {moodQuery.data?.stats?.currentStreak ?? 0} Day Streak</p>
+                  <p className="mt-2 text-xs text-charcoal/64">
+                    {(moodQuery.data?.stats?.currentStreak ?? 0) >= 30
+                      ? 'Resilience badge unlocked.'
+                      : (moodQuery.data?.stats?.currentStreak ?? 0) >= 7
+                        ? 'Consistency badge unlocked. Keep momentum going.'
+                        : 'Build toward your 7-day consistency badge.'}
+                  </p>
+                </article>
+              </section>
+
+              <section className="rounded-2xl border border-ink-100 bg-white p-5 shadow-soft-sm">
+                <h2 className="text-lg font-semibold text-charcoal">Mood Trend</h2>
+                <p className="mt-1 text-sm text-charcoal/62">Daily Check-in scores with trigger context.</p>
+                <div className="mt-5 h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={moodChartData} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="myProgressMoodGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#7ea695" stopOpacity={0.35} />
+                          <stop offset="95%" stopColor="#7ea695" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="rgba(38,51,51,0.08)" vertical={false} />
+                      <XAxis dataKey="dateLabel" tick={{ fontSize: 12, fill: '#5f6b6b' }} axisLine={false} tickLine={false} />
+                      <YAxis domain={[0, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11, fill: '#7c8686' }} axisLine={false} tickLine={false} />
+                      <Tooltip content={<MoodTooltip />} />
+                      <Area type="monotone" dataKey="mood" stroke="#7ea695" strokeWidth={3} fill="url(#myProgressMoodGradient)" fillOpacity={1} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+
+              <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+                <article className="rounded-2xl border border-ink-100 bg-white p-5 shadow-soft-sm xl:col-span-2">
+                  <h3 className="text-base font-semibold text-charcoal">Mood Context Heatmap</h3>
+                  <p className="mt-1 text-sm text-charcoal/62">What factors appear most often and how they affect your mood.</p>
+                  <div className="mt-4 space-y-3">
+                    {moodContextHeatmap.map((item) => (
+                      <div key={item.context} className="rounded-xl border border-ink-100 px-3 py-3">
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-charcoal">{item.context}</p>
+                          <p className="text-xs text-charcoal/62">{item.count} times • {item.impact}</p>
+                        </div>
+                        <div className="h-2 rounded-full bg-[#edf2ef]">
+                          <div
+                            className={`h-2 rounded-full ${
+                              item.impact === 'Negative' ? 'bg-rose-400' : item.impact === 'Mixed' ? 'bg-amber-400' : 'bg-calm-sage'
+                            }`}
+                            style={{ width: `${item.bar}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    {!moodContextHeatmap.length && <p className="text-sm text-charcoal/60">No context tag heatmap yet. Add mood context tags in daily check-ins.</p>}
+                  </div>
+                </article>
+
+                <article className="rounded-2xl border border-ink-100 bg-white p-5 shadow-soft-sm">
+                  <h3 className="text-base font-semibold text-charcoal">This Week Snapshot</h3>
+                  <div className="mt-3 space-y-2 text-sm text-charcoal/76">
+                    <p>🙂 Good days: {weeklyMoodSummary.good}</p>
+                    <p>😐 Neutral: {weeklyMoodSummary.neutral}</p>
+                    <p>🙁 Difficult: {weeklyMoodSummary.difficult}</p>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {weeklyMoodSummary.graph.map((point, index) => (
+                      <div key={`${point.day}-${index}`} className="flex items-center justify-between rounded-lg bg-[#f6f9f7] px-3 py-2 text-xs">
+                        <span className="font-medium text-charcoal/75">{point.day}</span>
+                        <span className="font-semibold text-charcoal">{point.mood}/5</span>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              </section>
+
+              <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <article className="rounded-2xl border border-ink-100 bg-white p-5 shadow-soft-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-charcoal/45">Today's Wellness Score</p>
+                  <p className="mt-2 text-3xl font-semibold text-charcoal">{wellnessTrend.today} / 100</p>
+                  <p className="mt-2 text-sm text-charcoal/70">{wellnessTrend.band}</p>
+                </article>
+
+                <article className="rounded-2xl border border-ink-100 bg-white p-5 shadow-soft-sm lg:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-charcoal/45">Weekly Wellness Trend</p>
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {wellnessTrend.weeklyAverages.map((row) => (
+                      <div key={row.label} className={`rounded-xl px-3 py-3 ${row.isCurrent ? 'bg-[#edf4f1]' : 'bg-[#f7f9f8]'}`}>
+                        <p className="text-xs text-charcoal/55">{row.label}</p>
+                        <p className="mt-1 text-xl font-semibold text-charcoal">{row.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              </section>
+
+              <section className={`rounded-2xl border p-5 shadow-soft-sm ${therapistAlert.needsAttention ? 'border-rose-300 bg-rose-50' : 'border-ink-100 bg-white'}`}>
+                <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${therapistAlert.needsAttention ? 'text-rose-700' : 'text-charcoal/45'}`}>
+                  Smart Therapist Alert
+                </p>
+                <p className={`mt-2 text-sm ${therapistAlert.needsAttention ? 'text-rose-700' : 'text-charcoal/75'}`}>{therapistAlert.message}</p>
+              </section>
+
+              <section className="rounded-2xl border border-calm-sage/25 bg-gradient-to-r from-[#edf4f1] to-[#f8f5ee] p-5 shadow-soft-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-calm-sage">Anytime Buddy Insight</p>
+                <p className="mt-2 text-sm leading-6 text-charcoal/78">{aiMoodInsight}</p>
+              </section>
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
             </>
           )}
         </div>
       )}
 
+<<<<<<< HEAD
       {/* ══════════════════════════════════════════════════════════
           CLINICAL SCORES TAB
       ══════════════════════════════════════════════════════════ */}
@@ -1213,26 +1777,106 @@ export default function ProgressPage() {
                     <p className="text-sm font-semibold text-charcoal mb-2">Assessment Type</p>
                     <div className="flex flex-wrap gap-2">
                       {[{ value: 'all', label: 'All Types' }, { value: 'phq', label: 'PHQ-9' }, { value: 'gad', label: 'GAD-7' }].map((pill) => (
+=======
+      {activeTab === 'clinical' && (
+        <div className="space-y-6">
+          {clinicalQuery.isLoading && <div className="rounded-2xl border border-ink-100 bg-white p-5">Loading clinical score history...</div>}
+          {!!clinicalQuery.error && <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Unable to load clinical analytics right now.</div>}
+
+          {!clinicalQuery.isLoading && !clinicalQuery.error && (
+            <>
+              <section className={`rounded-2xl border p-5 shadow-soft-sm ${clinicalSummary.isComplete ? 'border-calm-sage/25 bg-gradient-to-r from-[#edf4f1] to-[#f8f5ee]' : 'border-ink-100 bg-white'}`}>
+                <p className={`text-xs font-semibold uppercase tracking-[0.16em] ${clinicalSummary.isComplete ? 'text-calm-sage' : 'text-charcoal/45'}`}>
+                  Clinical Report
+                </p>
+                <h2 className="mt-2 text-lg font-semibold text-charcoal">
+                  {clinicalSummary.isComplete ? 'Your PHQ-9 and GAD-7 report is ready here.' : 'Complete PHQ-9 and GAD-7 to generate your report here.'}
+                </h2>
+                <p className="mt-2 text-sm text-charcoal/72">
+                  {clinicalSummary.isComplete
+                    ? 'This page keeps your latest assessments, scores, and provider-ready report history in one place.'
+                    : 'Once both assessments are submitted, your score history and report summary will appear on this page.'}
+                </p>
+              </section>
+
+              <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <MetricCard
+                  label="PHQ-9 Status"
+                  value={clinicalSummary.hasPhq9 ? 'Completed' : 'Pending'}
+                  helper={clinicalSummary.hasPhq9 ? 'Latest PHQ-9 report saved here' : 'Required before provider connection'}
+                />
+                <MetricCard
+                  label="GAD-7 Status"
+                  value={clinicalSummary.hasGad7 ? 'Completed' : 'Pending'}
+                  helper={clinicalSummary.hasGad7 ? 'Latest GAD-7 report saved here' : 'Required before provider connection'}
+                />
+                <MetricCard
+                  label="Provider Unlock"
+                  value={clinicalSummary.isComplete ? 'Unlocked' : 'Locked'}
+                  helper={clinicalSummary.isComplete ? 'Clinical report ready for provider review' : 'Finish both assessments first'}
+                />
+              </section>
+
+              <section className="rounded-2xl border border-ink-100 bg-white p-5 shadow-soft-sm">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-sm font-semibold text-charcoal">Assessment Type</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {[
+                        { value: 'all', label: 'All' },
+                        { value: 'phq', label: 'PHQ-9' },
+                        { value: 'gad', label: 'GAD-7' },
+                      ].map((pill) => (
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                         <button
                           key={pill.value}
                           type="button"
                           onClick={() => setClinicalFilter(pill.value as ClinicalFilter)}
+<<<<<<< HEAD
                           className={`rounded-full px-4 py-2 text-xs font-semibold transition ${clinicalFilter === pill.value ? 'bg-calm-sage text-white shadow-soft-sm' : 'bg-[#f2f6f4] text-charcoal/70 hover:bg-[#e7efe9]'}`}
+=======
+                          className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                            clinicalFilter === pill.value
+                              ? 'bg-calm-sage text-white'
+                              : 'bg-[#f2f6f4] text-charcoal/70 hover:bg-[#e7efe9]'
+                          }`}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                         >
                           {pill.label}
                         </button>
                       ))}
                     </div>
                   </div>
+<<<<<<< HEAD
                   <div>
                     <p className="text-sm font-semibold text-charcoal mb-2">Time Range</p>
                     <div className="flex flex-wrap gap-2">
                       {[{ value: '1m', label: '1 Month' }, { value: '3m', label: '3 Months' }, { value: '6m', label: '6 Months' }, { value: '1y', label: '1 Year' }].map((pill) => (
+=======
+
+                  <div>
+                    <p className="text-sm font-semibold text-charcoal">Time Range</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {[
+                        { value: '1m', label: '1 Month' },
+                        { value: '3m', label: '3 Months' },
+                        { value: '6m', label: '6 Months' },
+                        { value: '1y', label: '1 Year' },
+                      ].map((pill) => (
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                         <button
                           key={pill.value}
                           type="button"
                           onClick={() => setTimeRange(pill.value as TimeRangeFilter)}
+<<<<<<< HEAD
                           className={`rounded-full px-4 py-2 text-xs font-semibold transition ${timeRange === pill.value ? 'bg-charcoal text-white shadow-soft-sm' : 'bg-[#f2f6f4] text-charcoal/70 hover:bg-[#e7efe9]'}`}
+=======
+                          className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                            timeRange === pill.value
+                              ? 'bg-charcoal text-white'
+                              : 'bg-[#f2f6f4] text-charcoal/70 hover:bg-[#e7efe9]'
+                          }`}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                         >
                           {pill.label}
                         </button>
@@ -1242,6 +1886,7 @@ export default function ProgressPage() {
                 </div>
               </section>
 
+<<<<<<< HEAD
               {/* Chart */}
               {clinicalChartData.length > 0 ? (
                 <section className="rounded-2xl border border-ink-100 bg-white p-5 shadow-soft-sm">
@@ -1311,11 +1956,60 @@ export default function ProgressPage() {
                   </div>
                 </section>
               )}
+=======
+              <section className="rounded-2xl border border-ink-100 bg-white p-5 shadow-soft-sm">
+                <h2 className="text-lg font-semibold text-charcoal">PHQ-9 & GAD-7 Score Timeline</h2>
+                <p className="mt-1 text-sm text-charcoal/62">Severity zones are shaded so your latest assessment report is easy to read at a glance.</p>
+                <div className="mt-5 h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={clinicalChartData} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
+                      <CartesianGrid stroke="rgba(38,51,51,0.08)" vertical={false} />
+                      <ReferenceArea y1={0} y2={4} fill="#2f9e4418" ifOverflow="extendDomain" />
+                      <ReferenceArea y1={5} y2={9} fill="#f0b42916" ifOverflow="extendDomain" />
+                      <ReferenceArea y1={10} y2={14} fill="#f08f2414" ifOverflow="extendDomain" />
+                      <ReferenceArea y1={15} y2={27} fill="#df475914" ifOverflow="extendDomain" />
+                      <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#5f6b6b' }} axisLine={false} tickLine={false} />
+                      <YAxis domain={[0, 27]} tick={{ fontSize: 11, fill: '#7c8686' }} axisLine={false} tickLine={false} />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="phq9" name="PHQ-9" stroke="#d97706" strokeWidth={3} dot={{ r: 3 }} connectNulls />
+                      <Line type="monotone" dataKey="gad7" name="GAD-7" stroke="#dc2626" strokeWidth={3} dot={{ r: 3 }} connectNulls />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-ink-100 bg-white p-5 shadow-soft-sm">
+                <h3 className="text-base font-semibold text-charcoal">Recent Clinical Scores</h3>
+                <div className="mt-4 space-y-3">
+                  {recentClinicalRows.map((row, index) => (
+                    <div key={`${row.attemptId || row.date.getTime()}-${index}`} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-100 px-3 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-charcoal">{row.type} • {row.score}</p>
+                        <p className="text-xs text-charcoal/58">{row.dateLabel} • {row.severity}</p>
+                      </div>
+                      <Link
+                        to="/patient/care-team"
+                        className="rounded-full border border-calm-sage/30 px-3 py-2 text-xs font-semibold text-calm-sage hover:bg-calm-sage/10"
+                      >
+                        View Full Breakdown
+                      </Link>
+                    </div>
+                  ))}
+                  {!recentClinicalRows.length && (
+                    <p className="text-sm text-charcoal/60">
+                      No clinical score history available for the selected filters. Submit PHQ-9 and GAD-7 to generate your report here.
+                    </p>
+                  )}
+                </div>
+              </section>
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
             </>
           )}
         </div>
       )}
 
+<<<<<<< HEAD
       {/* ══════════════════════════════════════════════════════════
           HABITS & EFFORT TAB
       ══════════════════════════════════════════════════════════ */}
@@ -1342,10 +2036,17 @@ export default function ProgressPage() {
               </button>
             </div>
           )}
+=======
+      {activeTab === 'habits' && (
+        <div className="space-y-6">
+          {habitsQuery.isLoading && <div className="rounded-2xl border border-ink-100 bg-white p-5">Loading habits and adherence analytics...</div>}
+          {!!habitsQuery.error && <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Unable to load habits and effort analytics right now.</div>}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
           {!habitsQuery.isLoading && !habitsQuery.error && (
             <>
               <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+<<<<<<< HEAD
                 <MetricCard
                   label="Exercises Completed"
                   value={habitsStats.exercisesCompleted}
@@ -1471,6 +2172,32 @@ export default function ProgressPage() {
                 </div>
                 <p className="text-sm text-charcoal/80">
                   The recovery story is clearest when effort is visible. Keep completing your planned exercises and wellness sessions to reinforce the gains shown in your mood trend.
+=======
+                <MetricCard label="Exercises Completed" value={habitsStats.exercisesCompleted} helper="Completed CBT and wellness actions" />
+                <MetricCard label="Audio Minutes Listened" value={`${habitsStats.audioMinutesListened} mins`} helper="From Premium Library audio sessions" />
+                <MetricCard label="Sessions Attended" value={habitsStats.sessionsAttended} helper="Completed therapist sessions" />
+              </section>
+
+              <section className="rounded-2xl border border-ink-100 bg-white p-5 shadow-soft-sm">
+                <h2 className="text-lg font-semibold text-charcoal">Correlation: Exercise Completion vs Average Mood</h2>
+                <p className="mt-1 text-sm text-charcoal/62">This visual compares mood between weeks with stronger action adherence and weeks with lighter activity.</p>
+                <div className="mt-5 h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={correlationData} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+                      <CartesianGrid stroke="rgba(38,51,51,0.08)" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#5f6b6b' }} axisLine={false} tickLine={false} />
+                      <YAxis domain={[0, 5]} tick={{ fontSize: 11, fill: '#7c8686' }} axisLine={false} tickLine={false} />
+                      <Tooltip formatter={(value: any) => [`${value}/5`, 'Average Mood']} />
+                      <Bar dataKey="mood" fill="#7ea695" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-calm-sage/25 bg-gradient-to-r from-[#edf4f1] to-[#f8f5ee] p-5 shadow-soft-sm">
+                <p className="text-sm text-charcoal/80">
+                  The recovery story is clearest when effort is visible. Keep closing your planned exercises and wellness sessions to reinforce the gains shown in your mood trend.
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 </p>
               </section>
             </>

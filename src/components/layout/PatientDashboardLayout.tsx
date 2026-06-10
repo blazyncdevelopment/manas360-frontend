@@ -124,8 +124,11 @@ export default function PatientDashboardLayout() {
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(`${path}/`);
 
+<<<<<<< HEAD
   const disableSidebarAndNav = location.pathname === '/patient/preferences';
 
+=======
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   const pageTitleMap: Record<string, string> = {
     '/patient/dashboard': 'Dashboard',
     '/patient/therapy-plan': 'My Therapy Plan',
@@ -169,7 +172,11 @@ export default function PatientDashboardLayout() {
       localStorage.removeItem('patient-clinical-assessment-draft-v1');
       sessionStorage.removeItem('patient-clinical-assessment-draft-v1');
     } catch { /* ignore storage errors */ }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     if (isMdcMode) {
       localStorage.removeItem(STORAGE_KEY_MDC);
       navigate('/mdc/login', { replace: true });
@@ -218,8 +225,13 @@ export default function PatientDashboardLayout() {
               to={item.to}
               onClick={() => setMobileSidebarOpen(false)}
               className={`flex min-h-[50px] items-center gap-3 rounded-2xl px-3.5 py-3 text-[15px] transition ${active
+<<<<<<< HEAD
                 ? 'bg-wellness-aqua font-semibold text-wellness-deep shadow-[0_10px_26px_rgba(30,75,63,0.08)]'
                 : 'text-charcoal/72 hover:bg-white/85 hover:text-charcoal'
+=======
+                  ? 'bg-wellness-aqua font-semibold text-wellness-deep shadow-[0_10px_26px_rgba(30,75,63,0.08)]'
+                  : 'text-charcoal/72 hover:bg-white/85 hover:text-charcoal'
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 }`}
             >
               <Icon className={`h-[19px] w-[19px] ${active ? 'text-wellness-sky' : 'text-charcoal/42'}`} />
@@ -227,10 +239,17 @@ export default function PatientDashboardLayout() {
               {item.badge && (
                 <span
                   className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold ${item.badge === 'AI'
+<<<<<<< HEAD
                     ? 'bg-wellness-sky text-white'
                     : item.badge === 'Premium'
                       ? 'bg-warm-terracotta/15 text-warm-terracotta'
                       : 'bg-wellness-aqua text-charcoal/75'
+=======
+                      ? 'bg-wellness-sky text-white'
+                      : item.badge === 'Premium'
+                        ? 'bg-warm-terracotta/15 text-warm-terracotta'
+                        : 'bg-wellness-aqua text-charcoal/75'
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                     }`}
                 >
                   {item.badge}
@@ -261,7 +280,11 @@ export default function PatientDashboardLayout() {
       <div className="mx-auto flex w-full max-w-[1600px] items-start">
         <aside
           className={`fixed left-0 top-0 z-50 flex h-full w-72 flex-col border-r border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(242,248,247,0.98))] backdrop-blur-md transition-transform duration-300 lg:sticky lg:top-0 lg:self-start lg:z-20 lg:h-screen lg:translate-x-0 ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+<<<<<<< HEAD
             } ${disableSidebarAndNav ? 'pointer-events-none opacity-50 select-none' : ''}`}
+=======
+            }`}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         >
           <div className="flex h-20 items-center justify-between border-b border-white/70 px-5">
             <Link
@@ -315,7 +338,11 @@ export default function PatientDashboardLayout() {
             <div className="flex items-center gap-2 sm:gap-3">
               <button
                 type="button"
+<<<<<<< HEAD
                 className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl text-charcoal/70 transition-colors hover:bg-wellness-aqua active:bg-wellness-aqua lg:hidden ${disableSidebarAndNav ? 'pointer-events-none opacity-50 select-none' : ''}`}
+=======
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-charcoal/70 transition-colors hover:bg-wellness-aqua active:bg-wellness-aqua lg:hidden"
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 onClick={() => setMobileSidebarOpen(true)}
                 aria-label="Open sidebar"
               >
@@ -393,7 +420,11 @@ export default function PatientDashboardLayout() {
         </div>
       </div>
 
+<<<<<<< HEAD
       <nav className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/80 bg-white/92 px-2 py-2 backdrop-blur-md lg:hidden ${disableSidebarAndNav ? 'pointer-events-none opacity-50 select-none' : ''}`}>
+=======
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/80 bg-white/92 px-2 py-2 backdrop-blur-md lg:hidden">
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
           {bottomNavItems.map((item) => {
             const Icon = item.icon;

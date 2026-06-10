@@ -192,10 +192,17 @@ export const FooterPage: React.FC = () => {
   const navigate = useNavigate();
 
   const footerQuickLinkRoutes: Record<string, string> = {
+<<<<<<< HEAD
     "About Us": "/about",
     "How It Works": "/how-it-works",
     "Specialized Care": "/specialized-care",
     "For Providers": "/provider-landing",
+=======
+    "About Us": "/landing",
+    "How It Works": "/how-it-works",
+    "Specialized Care": "/specialized-care",
+    "For Providers": "/my-digital-clinic",
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
     "NRI | Global Inc": "/nri-landing",
     Careers: "/landing",
 

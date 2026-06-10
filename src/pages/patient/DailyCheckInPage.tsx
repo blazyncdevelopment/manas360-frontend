@@ -61,13 +61,21 @@ export default function DailyCheckInPage() {
   const [todayDone, setTodayDone] = useState<{ morning: boolean; evening: boolean }>({ morning: false, evening: false });
 
   // Use shared therapy data hook for streak synchronization
+<<<<<<< HEAD
   const { streak, loading, refreshStreak } = useTherapyData();
+=======
+  const { streak, refreshStreak } = useTherapyData();
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
 
   // Fetch today's completion status on mount
   useEffect(() => {
     patientApi.getTodayCheckInStatus()
       .then(setTodayDone)
+<<<<<<< HEAD
       .catch(() => {/* ignore — default false */ });
+=======
+      .catch(() => {/* ignore — default false */});
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
   }, []);
 
   useEffect(() => {
@@ -213,10 +221,18 @@ export default function DailyCheckInPage() {
                     setMorningMood(face.value);
                     setTimeout(() => nextStep(), 300); // Small delay for visual feedback
                   }}
+<<<<<<< HEAD
                   className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all duration-200 ${morningMood === face.value
                     ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                     : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
+=======
+                  className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all duration-200 ${
+                    morningMood === face.value
+                      ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 >
                   <span className="text-3xl mb-2">{face.emoji}</span>
                   <span className="text-sm font-medium text-charcoal">{face.label}</span>
@@ -242,10 +258,18 @@ export default function DailyCheckInPage() {
                     setMorningEnergy(level);
                     setTimeout(() => nextStep(), 300);
                   }}
+<<<<<<< HEAD
                   className={`flex-1 max-w-[120px] rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${morningEnergy === level
                     ? 'border-charcoal bg-charcoal text-white'
                     : 'border-ink-200 bg-white text-charcoal/70 hover:border-charcoal/50'
                     }`}
+=======
+                  className={`flex-1 max-w-[120px] rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+                    morningEnergy === level
+                      ? 'border-charcoal bg-charcoal text-white'
+                      : 'border-ink-200 bg-white text-charcoal/70 hover:border-charcoal/50'
+                  }`}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 >
                   {level.charAt(0).toUpperCase() + level.slice(1)}
                 </button>
@@ -270,10 +294,18 @@ export default function DailyCheckInPage() {
                     setMorningSleep(hours);
                     setTimeout(() => nextStep(), 300);
                   }}
+<<<<<<< HEAD
                   className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${morningSleep === hours
                     ? 'border-charcoal bg-charcoal text-white'
                     : 'border-ink-200 bg-white text-charcoal/70 hover:border-charcoal/50'
                     }`}
+=======
+                  className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+                    morningSleep === hours
+                      ? 'border-charcoal bg-charcoal text-white'
+                      : 'border-ink-200 bg-white text-charcoal/70 hover:border-charcoal/50'
+                  }`}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 >
                   {hours} hours
                 </button>
@@ -297,10 +329,18 @@ export default function DailyCheckInPage() {
                     key={tag}
                     type="button"
                     onClick={() => toggleContextTag(tag)}
+<<<<<<< HEAD
                     className={`rounded-full border px-3 py-2 text-sm transition-all ${active
                       ? 'border-calm-sage bg-calm-sage text-white'
                       : 'border-ink-200 bg-white text-charcoal/65 hover:border-calm-sage/50'
                       }`}
+=======
+                    className={`rounded-full border px-3 py-2 text-sm transition-all ${
+                      active
+                        ? 'border-calm-sage bg-calm-sage text-white'
+                        : 'border-ink-200 bg-white text-charcoal/65 hover:border-calm-sage/50'
+                    }`}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                   >
                     {tag}
                   </button>
@@ -350,10 +390,18 @@ export default function DailyCheckInPage() {
                     setEveningMood(face.value);
                     setTimeout(() => nextStep(), 300); // Small delay for visual feedback
                   }}
+<<<<<<< HEAD
                   className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all duration-200 ${eveningMood === face.value
                     ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                     : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
+=======
+                  className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all duration-200 ${
+                    eveningMood === face.value
+                      ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
                 >
                   <span className="text-3xl mb-2">{face.emoji}</span>
                   <span className="text-sm font-medium text-charcoal">{face.label}</span>
@@ -456,21 +504,29 @@ export default function DailyCheckInPage() {
           </div>
           <div className="hidden lg:block rounded-[24px] border border-white/60 bg-white/75 p-5 shadow-wellness-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-charcoal/45">Progress</p>
+<<<<<<< HEAD
             {loading ? (
               <div className="mt-3 h-8 w-32 animate-pulse rounded-md bg-charcoal/10" />
             ) : (
               <p className="mt-3 text-2xl font-semibold text-charcoal">🔥 {streak} day streak</p>
             )}
+=======
+            <p className="mt-3 text-2xl font-semibold text-charcoal">🔥 {streak} day streak</p>
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
             <p className="mt-1 text-sm text-charcoal/65">Keep it up! Daily check-ins build better mental health habits.</p>
           </div>
         </div>
         {/* Mobile streak indicator */}
         <div className="lg:hidden mt-4 inline-flex gap-2 rounded-full bg-white/50 px-3 py-1.5">
+<<<<<<< HEAD
           {loading ? (
             <div className="h-5 w-24 animate-pulse rounded-md bg-charcoal/10" />
           ) : (
             <span className="text-sm font-semibold text-charcoal">🔥 {streak} day streak</span>
           )}
+=======
+          <span className="text-sm font-semibold text-charcoal">🔥 {streak} day streak</span>
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
         </div>
       </section>
 
@@ -484,10 +540,18 @@ export default function DailyCheckInPage() {
                 key={type.id}
                 type="button"
                 onClick={() => setCheckInType(type.id)}
+<<<<<<< HEAD
                 className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${isActive
                   ? 'bg-white text-charcoal shadow-sm'
                   : 'text-charcoal/60 hover:text-charcoal/80'
                   }`}
+=======
+                className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+                  isActive
+                    ? 'bg-white text-charcoal shadow-sm'
+                    : 'text-charcoal/60 hover:text-charcoal/80'
+                }`}
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
               >
                 <span className="mr-2">{type.emoji}</span>
                 {type.label}
@@ -521,6 +585,7 @@ export default function DailyCheckInPage() {
           </div>
         ) : (
           <>
+<<<<<<< HEAD
             {/* Progress Indicator */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
@@ -565,6 +630,52 @@ export default function DailyCheckInPage() {
                 </div>
               </div>
             </div>
+=======
+        {/* Progress Indicator */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-charcoal/60">
+              Step {currentStep + 1} of {totalSteps}
+            </span>
+            <span className="text-sm font-medium text-charcoal/60">
+              {completedSteps}/{totalSteps} completed
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-calm-sage h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(completedSteps / totalSteps) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Check-in Content */}
+        <div className="min-h-[400px] flex flex-col">
+          {activeCheckInType === 'morning' ? renderMorningStep() : renderEveningStep()}
+
+          {/* Navigation */}
+          <div className="mt-auto pt-6">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={currentStep === 0}
+                onClick={prevStep}
+                className="flex-1 rounded-full border border-ink-200 px-4 py-3 text-sm font-semibold text-charcoal/75 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                disabled={!canProceed || saving}
+                onClick={nextStep}
+                className="flex-1 rounded-full bg-charcoal px-4 py-3 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? 'Saving...' : currentStep === totalSteps - 1 ? 'Complete' : 'Next'}
+              </button>
+            </div>
+          </div>
+        </div>
+>>>>>>> 94cbd162f6615c2927072b3f82630100c9cfd9a6
           </>
         )}
       </section>
