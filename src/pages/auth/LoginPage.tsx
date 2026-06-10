@@ -64,8 +64,6 @@ export default function LoginPage() {
 	const [otpSent, setOtpSent] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [devOtp, setDevOtp] = useState<string | null>(null);
-
 	// Corporate login state
 	const [corpPhone, setCorpPhone] = useState('');
 	const [corpCompanyName, setCorpCompanyName] = useState('');
@@ -73,10 +71,6 @@ export default function LoginPage() {
 	const [corpOtpSent, setCorpOtpSent] = useState(false);
 	const [corpLoading, setCorpLoading] = useState(false);
 	const [corpError, setCorpError] = useState<string | null>(null);
-	const [devCorpOtp, setDevCorpOtp] = useState<string | null>(null);
-
-	// Development environment check
-	const isDevelopment = process.env.NODE_ENV === 'development';
 
 	const switchMode = (mode: LoginMode) => {
 		setLoginMode(mode);
@@ -86,8 +80,6 @@ export default function LoginPage() {
 		setCorpOtpSent(false);
 		setOtp('');
 		setCorpOtp('');
-		setDevOtp(null);
-		setDevCorpOtp(null);
 	};
 
 	const resolvePostLoginRouteWithSubscription = async (
@@ -156,13 +148,6 @@ export default function LoginPage() {
 		try {
 			await signupWithPhone(phone.trim());
 			setOtpSent(true);
-
-			// Development: Mock OTP for testing
-			if (isDevelopment) {
-				const mockOtp = Math.floor(1000 + Math.random() * 9000).toString();
-				setDevOtp(mockOtp);
-				console.log('[DEV] Mock OTP:', mockOtp);
-			}
 		} catch (err) {
 			setError(getApiErrorMessage(err, 'Failed to send OTP'));
 		} finally {
@@ -288,13 +273,6 @@ export default function LoginPage() {
 				phone: corpPhone.trim(),
 			});
 			setCorpOtpSent(true);
-
-			// Development: Mock OTP for testing
-			if (isDevelopment) {
-				const mockOtp = Math.floor(1000 + Math.random() * 9000).toString();
-				setDevCorpOtp(mockOtp);
-				console.log('[DEV] Mock Corporate OTP:', mockOtp);
-			}
 		} catch (err) {
 			setCorpError(getApiErrorMessage(err, 'Failed to send OTP'));
 		} finally {
@@ -404,29 +382,7 @@ export default function LoginPage() {
 												required
 											/>
 
-											{/* ── Development OTP Display ── */}
-											{isDevelopment && devOtp && (
-												<div className="rounded-lg border-l-4 border-yellow-400 bg-yellow-50 p-3 shadow-sm">
-													<p className="text-xs font-semibold text-yellow-800">
-														🔧 Development Mode - Test OTP
-													</p>
-													<div className="mt-2 flex items-center justify-between gap-2">
-														<code className="flex-1 rounded bg-yellow-100 px-2 py-1.5 font-mono text-sm font-bold text-yellow-900">
-															{devOtp}
-														</code>
-														<button
-															type="button"
-															onClick={() => {
-																setOtp(devOtp);
-																navigator.clipboard.writeText(devOtp).catch(() => { });
-															}}
-															className="rounded bg-yellow-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-yellow-700"
-														>
-															Copy & Fill
-														</button>
-													</div>
-												</div>
-											)}
+
 										</>
 									)}
 
@@ -528,29 +484,7 @@ export default function LoginPage() {
 												required
 											/>
 
-											{/* ── Development OTP Display ── */}
-											{isDevelopment && devCorpOtp && (
-												<div className="rounded-lg border-l-4 border-yellow-400 bg-yellow-50 p-3 shadow-sm">
-													<p className="text-xs font-semibold text-yellow-800">
-														🔧 Development Mode - Test OTP
-													</p>
-													<div className="mt-2 flex items-center justify-between gap-2">
-														<code className="flex-1 rounded bg-yellow-100 px-2 py-1.5 font-mono text-sm font-bold text-yellow-900">
-															{devCorpOtp}
-														</code>
-														<button
-															type="button"
-															onClick={() => {
-																setCorpOtp(devCorpOtp);
-																navigator.clipboard.writeText(devCorpOtp).catch(() => { });
-															}}
-															className="rounded bg-yellow-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-yellow-700"
-														>
-															Copy & Fill
-														</button>
-													</div>
-												</div>
-											)}
+
 
 											<button
 												type="button"
