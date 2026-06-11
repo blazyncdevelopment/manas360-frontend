@@ -504,9 +504,9 @@ export default function SettingsPage() {
 
       {state.profile.nriDeclared && (
         <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
-          <p className="text-sm font-semibold text-orange-800">Select Your Timezone</p>
+          <p className="text-sm font-semibold text-orange-800">NRI Therapist Matching Pool</p>
           <p className="mt-0.5 text-xs text-orange-700/70">
-            Your timezone determines which therapist pool you are matched with. Please select the region you are currently in.
+            Select your region so we match you with therapists certified for your time window. This sets your session pricing to NRI rates.
           </p>
           {!state.profile.nriTimezonePool && (
             <p className="mt-2 text-xs font-medium text-orange-600">Please select a timezone below to complete your NRI profile.</p>
