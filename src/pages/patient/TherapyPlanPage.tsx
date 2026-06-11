@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { patientApi } from '../../api/patient';
 import { useAuth } from '../../context/AuthContext';
-import { Sparkles, ClipboardCheck, UserPlus, Quote } from 'lucide-react';
+import { Sparkles, ClipboardCheck, UserPlus, Quote, Pill, Activity, Music, RefreshCw } from 'lucide-react';
 
 type GoalItem = {
   id: string;
@@ -121,6 +121,19 @@ export default function TherapyPlanPage() {
   }, {
     retry: false,
     refetchOnWindowFocus: true,
+  });
+
+  const carePlanQuery = useQuery(['patient-care-plan'], async () => {
+    const res = await patientApi.getCarePlan().catch(() => null);
+    return (res?.data ?? res) as {
+      medications?: Array<{ drug: string; dosage: string; frequency: string; prescribedBy?: string }>;
+      behavioralPrescriptions?: Array<{ title: string; category: string }>;
+      soundTherapy?: { preset: string; dailyMinutes: number };
+      nextSession?: { dateTime: string; provider?: { name: string } };
+    } | null;
+  }, {
+    retry: false,
+    staleTime: 1000 * 60 * 5,
   });
 
   const planData = therapyPlanQuery.data ?? null;
@@ -544,6 +557,94 @@ export default function TherapyPlanPage() {
           )}
         </section>
       </div>
+
+      {/* UNIFIED CARE PLAN — aggregated from all providers */}
+      {carePlanQuery.data && (
+        <section className="space-y-4">
+          <h2 className="text-lg font-bold text-charcoal">My Care Plan</h2>
+          <p className="text-xs text-charcoal/55">All active prescriptions from your care team — psychologist, therapist, and psychiatrist — in one view.</p>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Medication */}
+            {carePlanQuery.data.medications && carePlanQuery.data.medications.length > 0 && (
+              <div className="rounded-[1.6rem] bg-white/92 p-5 shadow-wellness-sm">
+                <div className="mb-3 flex items-center gap-2">
+                  <Pill className="h-5 w-5 text-violet-600" />
+                  <h3 className="font-semibold text-charcoal">Medication (Psychiatrist)</h3>
+                </div>
+                <div className="space-y-2">
+                  {carePlanQuery.data.medications.map((med, idx) => (
+                    <div key={idx} className="rounded-xl bg-violet-50 px-3 py-2">
+                      <p className="text-sm font-medium text-charcoal">{med.drug} {med.dosage}</p>
+                      <p className="text-xs text-charcoal/60">{med.frequency}</p>
+                      {med.prescribedBy && <p className="text-[11px] text-charcoal/45">{med.prescribedBy}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Behavioral Prescriptions */}
+            {carePlanQuery.data.behavioralPrescriptions && carePlanQuery.data.behavioralPrescriptions.length > 0 && (
+              <div className="rounded-[1.6rem] bg-white/92 p-5 shadow-wellness-sm">
+                <div className="mb-3 flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-sky-600" />
+                  <h3 className="font-semibold text-charcoal">Wellness Prescriptions</h3>
+                </div>
+                <div className="space-y-2">
+                  {carePlanQuery.data.behavioralPrescriptions.map((item, idx) => (
+                    <div key={idx} className="rounded-xl bg-sky-50 px-3 py-2">
+                      <p className="text-sm font-medium text-charcoal">{item.title}</p>
+                      <p className="text-[11px] text-charcoal/55 capitalize">{item.category}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sound Therapy */}
+            {carePlanQuery.data.soundTherapy && (
+              <div className="rounded-[1.6rem] bg-white/92 p-5 shadow-wellness-sm">
+                <div className="mb-3 flex items-center gap-2">
+                  <Music className="h-5 w-5 text-teal-600" />
+                  <h3 className="font-semibold text-charcoal">Sound Therapy</h3>
+                </div>
+                <div className="rounded-xl bg-teal-50 px-3 py-2">
+                  <p className="text-sm font-medium text-charcoal">{carePlanQuery.data.soundTherapy.preset}</p>
+                  <p className="text-xs text-charcoal/60">{carePlanQuery.data.soundTherapy.dailyMinutes} min/day</p>
+                </div>
+                <Link to="/patient/sound-therapy" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline">
+                  Open Sound Therapy →
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Rebook or next session */}
+          {carePlanQuery.data.nextSession ? (
+            <div className="flex items-center justify-between rounded-[1.5rem] bg-wellness-aqua/50 px-5 py-4">
+              <div>
+                <p className="text-sm font-semibold text-charcoal">Next session scheduled</p>
+                <p className="text-xs text-charcoal/60">
+                  {new Date(carePlanQuery.data.nextSession.dateTime).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  {carePlanQuery.data.nextSession.provider?.name ? ` with ${carePlanQuery.data.nextSession.provider.name}` : ''}
+                </p>
+              </div>
+              <Link to="/patient/sessions" className="wellness-secondary-btn text-sm px-4 py-2">
+                Manage
+              </Link>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between rounded-[1.5rem] bg-white/80 px-5 py-4 shadow-wellness-sm">
+              <p className="text-sm text-charcoal/70">No upcoming session — ready to book your next one?</p>
+              <Link to="/patient/sessions" className="wellness-primary-btn inline-flex items-center gap-1.5 text-sm px-4 py-2">
+                <RefreshCw className="h-4 w-4" />
+                Rebook
+              </Link>
+            </div>
+          )}
+        </section>
+      )}
 
     </div>
   );

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { corporateApi } from '../../api/corporate.api';
 import CorporateShellLayout from '../../components/corporate/CorporateShellLayout';
+import { useCorporateKey } from './useCorporateDashboardData';
 
 type DashboardPayload = {
   company: {
@@ -58,6 +59,7 @@ function StatCard({ title, value, caption }: { title: string; value: string; cap
 }
 
 export default function CorporateDashboardPage() {
+  const companyKey = useCorporateKey();
   const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +69,7 @@ export default function CorporateDashboardPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = (await corporateApi.getDashboard()) as DashboardPayload;
+        const data = (await corporateApi.getDashboard(companyKey)) as DashboardPayload;
         setDashboard(data);
       } catch (fetchError: any) {
         setError(fetchError?.response?.data?.message || 'Unable to load corporate dashboard');
@@ -77,7 +79,7 @@ export default function CorporateDashboardPage() {
     };
 
     void loadDashboard();
-  }, []);
+  }, [companyKey]);
 
   const summary = dashboard?.summary;
   const trend = dashboard?.utilizationTrend?.length ? dashboard.utilizationTrend : fallbackTrend;

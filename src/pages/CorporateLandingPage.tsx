@@ -148,8 +148,8 @@ const CorporateLandingPage: React.FC = () => {
           </div>
           <h1>For Corporates, Education & Healthcare</h1>
           <p>Employee wellness, student mental health, and hospital integration - scalable programs for institutions.</p>
-          <Link className="corporate-landing-primary" to="/corporate">
-            How it works
+          <Link className="corporate-landing-primary" to="/corporate?mode=demo">
+            Get a Demo
           </Link>
         </div>
       </section>
@@ -286,8 +286,25 @@ const CorporateLandingPage: React.FC = () => {
         <h2>Invest in Your People</h2>
         <p>CSR Section 135 tax deduction eligible. 25-30% tax benefit on mental health spend.</p>
         <Link to="/corporate?mode=demo">
-          Request Demo →
+          Get a Demo →
         </Link>
+      </section>
+
+      {/* Employee self-registration CTA */}
+      <section style={{ margin: '0 auto 40px', maxWidth: '1080px', padding: '0 20px' }}>
+        <div style={{ borderRadius: 20, border: '1px solid #c7ddd8', background: '#f0f8f5', padding: '28px 32px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#3B766E' }}>For Employees</p>
+            <h3 style={{ margin: '6px 0 4px', fontSize: 20, fontWeight: 800, color: '#173836' }}>Already have a Client ID?</h3>
+            <p style={{ margin: 0, fontSize: 14, color: '#446662' }}>Your company has enrolled you. Register in 60 seconds — free for you.</p>
+          </div>
+          <Link
+            to="/auth/corporate-employee"
+            style={{ borderRadius: 999, background: '#0f766e', color: '#fff', padding: '12px 28px', fontWeight: 700, fontSize: 15, textDecoration: 'none', whiteSpace: 'nowrap' }}
+          >
+            Register as Employee →
+          </Link>
+        </div>
       </section>
 
       {/* <footer className="corporate-landing-footer">

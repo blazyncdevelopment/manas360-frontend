@@ -3,11 +3,9 @@ import {
   Bell,
   Bot,
   Eye,
-  Gauge,
   Globe,
   Settings2,
   Shield,
-  SlidersHorizontal,
   User,
   Wallet,
   ChevronDown,
@@ -28,59 +26,42 @@ type SectionId =
   | 'profile'
   | 'notifications'
   | 'privacy'
-  | 'accessibility'
-  | 'preferences'
   | 'therapy'
   | 'aiAssistant'
   | 'billing'
   | 'security';
+
+const NRI_TIMEZONE_ZONES = [
+  { id: 'us_east', flag: '🇺🇸', label: 'US East', sub: 'EDT/EST (UTC-4/-5)', pool: 'C' },
+  { id: 'us_west', flag: '🇺🇸', label: 'US West', sub: 'PDT/PST (UTC-7/-8)', pool: 'D' },
+  { id: 'uk', flag: '🇬🇧', label: 'UK', sub: 'BST/GMT (UTC+1/0)', pool: 'B' },
+  { id: 'australia', flag: '🇦🇺', label: 'Australia', sub: 'AEST/AEDT (UTC+10/+11)', pool: 'A' },
+  { id: 'singapore', flag: '🇸🇬', label: 'Singapore', sub: 'SGT (UTC+8)', pool: 'B' },
+  { id: 'uae', flag: '🇦🇪', label: 'UAE / Gulf', sub: 'GST (UTC+4)', pool: 'B' },
+];
 
 type SettingsState = {
   profile: {
     name: string;
     email: string;
     phone: string;
-    carrier: string;
     gender: string;
-    location: string;
-    bio: string;
+    timezone: string;
     showNameToProviders: boolean;
+    nriDeclared: boolean;
+    nriTimezonePool: string;
   };
   notifications: {
-    push: boolean;
-    email: boolean;
-    sms: boolean;
+    communicationChannel: 'whatsapp' | 'sms' | 'email';
+    preferredLanguage: 'English' | 'Hindi' | 'Kannada' | 'Tamil' | 'Telugu';
     appointmentReminder: boolean;
-    labResults: boolean;
-    prescriptionAlerts: boolean;
     therapistMessages: boolean;
-    billing: boolean;
-    wellnessUpdates: boolean;
     crisisAlerts: boolean;
-    communityActivity: boolean;
   };
   privacy: {
-    visibility: 'public' | 'private' | 'therapist_only';
     shareWithTherapist: boolean;
-    shareWithPsychiatrist: boolean;
-    shareWithCoach: boolean;
     allowMoodTracking: boolean;
     allowAiSuggestions: boolean;
-    allowBehavioralInsights: boolean;
-  };
-  accessibility: {
-    theme: 'light' | 'dark';
-    fontSize: 'small' | 'medium' | 'large';
-    language: 'English' | 'Hindi' | 'Kannada';
-    highContrast: boolean;
-  };
-  preferences: {
-    timezone: string;
-    reminderFrequency: 'daily' | 'weekly' | 'custom';
-    moodReminder: boolean;
-    therapyExerciseReminder: boolean;
-    medicationReminder: boolean;
-    dailyCheckInReminder: boolean;
   };
   therapy: {
     preferredTherapistGender: 'any' | 'female' | 'male';
@@ -97,52 +78,51 @@ type SettingsState = {
 
 const STORAGE_KEY = 'manas360-patient-settings-v1';
 
+const TIMEZONES = [
+  { value: 'Asia/Kolkata',       label: '🇮🇳 India (IST, UTC+5:30)' },
+  { value: 'America/New_York',   label: '🇺🇸 US East (EST/EDT, UTC-5/-4)' },
+  { value: 'America/Chicago',    label: '🇺🇸 US Central (CST/CDT, UTC-6/-5)' },
+  { value: 'America/Denver',     label: '🇺🇸 US Mountain (MST/MDT, UTC-7/-6)' },
+  { value: 'America/Los_Angeles',label: '🇺🇸 US West (PST/PDT, UTC-8/-7)' },
+  { value: 'Europe/London',      label: '🇬🇧 UK (GMT/BST, UTC+0/+1)' },
+  { value: 'Europe/Paris',       label: '🇪🇺 Europe Central (CET/CEST, UTC+1/+2)' },
+  { value: 'Asia/Dubai',         label: '🇦🇪 UAE / Gulf (GST, UTC+4)' },
+  { value: 'Asia/Singapore',     label: '🇸🇬 Singapore (SGT, UTC+8)' },
+  { value: 'Australia/Sydney',   label: '🇦🇺 Australia East (AEST/AEDT, UTC+10/+11)' },
+  { value: 'Australia/Perth',    label: '🇦🇺 Australia West (AWST, UTC+8)' },
+  { value: 'America/Toronto',    label: '🇨🇦 Canada East (EST/EDT, UTC-5/-4)' },
+  { value: 'America/Vancouver',  label: '🇨🇦 Canada West (PST/PDT, UTC-8/-7)' },
+  { value: 'Asia/Riyadh',        label: '🇸🇦 Saudi Arabia (AST, UTC+3)' },
+  { value: 'Asia/Kuwait',        label: '🇰🇼 Kuwait (AST, UTC+3)' },
+  { value: 'Asia/Bahrain',       label: '🇧🇭 Bahrain (AST, UTC+3)' },
+  { value: 'Asia/Qatar',         label: '🇶🇦 Qatar (AST, UTC+3)' },
+  { value: 'Asia/Muscat',        label: '🇴🇲 Oman (GST, UTC+4)' },
+  { value: 'Africa/Nairobi',     label: '🇰🇪 East Africa (EAT, UTC+3)' },
+  { value: 'Pacific/Auckland',   label: '🇳🇿 New Zealand (NZST/NZDT, UTC+12/+13)' },
+];
+
 const defaultState: SettingsState = {
   profile: {
     name: '',
     email: '',
     phone: '',
-    carrier: '',
     gender: '',
-    location: '',
-    bio: '',
+    timezone: 'Asia/Kolkata',
     showNameToProviders: true,
+    nriDeclared: false,
+    nriTimezonePool: '',
   },
   notifications: {
-    push: true,
-    email: true,
-    sms: false,
+    communicationChannel: 'whatsapp',
+    preferredLanguage: 'English',
     appointmentReminder: true,
-    labResults: true,
-    prescriptionAlerts: true,
     therapistMessages: true,
-    billing: true,
-    wellnessUpdates: true,
     crisisAlerts: true,
-    communityActivity: false,
   },
   privacy: {
-    visibility: 'therapist_only',
     shareWithTherapist: true,
-    shareWithPsychiatrist: false,
-    shareWithCoach: false,
     allowMoodTracking: true,
     allowAiSuggestions: true,
-    allowBehavioralInsights: true,
-  },
-  accessibility: {
-    theme: 'light',
-    fontSize: 'medium',
-    language: 'English',
-    highContrast: false,
-  },
-  preferences: {
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata',
-    reminderFrequency: 'daily',
-    moodReminder: true,
-    therapyExerciseReminder: true,
-    medicationReminder: false,
-    dailyCheckInReminder: true,
   },
   therapy: {
     preferredTherapistGender: 'any',
@@ -161,15 +141,13 @@ const sectionMeta = [
   { id: 'profile' as const, label: 'Profile', icon: User },
   { id: 'notifications' as const, label: 'Notifications', icon: Bell },
   { id: 'privacy' as const, label: 'Privacy', icon: Eye },
-  { id: 'accessibility' as const, label: 'Accessibility', icon: Gauge },
-  { id: 'preferences' as const, label: 'Preferences', icon: SlidersHorizontal },
   { id: 'therapy' as const, label: 'Therapy Preferences', icon: Globe },
   { id: 'aiAssistant' as const, label: 'AI Assistant', icon: Bot },
   { id: 'billing' as const, label: 'Billing & Subscription', icon: Wallet },
   { id: 'security' as const, label: 'Security', icon: Shield },
 ];
 
-const validSectionIds: SectionId[] = ['profile', 'notifications', 'privacy', 'accessibility', 'preferences', 'therapy', 'aiAssistant', 'billing', 'security'];
+const validSectionIds: SectionId[] = ['profile', 'notifications', 'privacy', 'therapy', 'aiAssistant', 'billing', 'security'];
 
 const parseSectionId = (value: string | null): SectionId => {
   if (value && validSectionIds.includes(value as SectionId)) {
@@ -259,7 +237,6 @@ export default function SettingsPage() {
         if (serverSettings && typeof serverSettings === 'object') {
           merged = {
             ...merged,
-            ...serverSettings,
             profile: {
               ...merged.profile,
               ...(serverSettings.profile || {}),
@@ -271,14 +248,6 @@ export default function SettingsPage() {
             privacy: {
               ...merged.privacy,
               ...(serverSettings.privacy || {}),
-            },
-            accessibility: {
-              ...merged.accessibility,
-              ...(serverSettings.accessibility || {}),
-            },
-            preferences: {
-              ...merged.preferences,
-              ...(serverSettings.preferences || {}),
             },
             therapy: {
               ...merged.therapy,
@@ -299,7 +268,10 @@ export default function SettingsPage() {
             name: normalizedName,
             email: String(profile?.email || ''),
             phone: String(profile?.phone || ''),
+            timezone: String(profile?.timezone || profile?.timeZone || merged.profile.timezone || 'Asia/Kolkata'),
             showNameToProviders: typeof profile?.showNameToProviders === 'boolean' ? profile.showNameToProviders : true,
+            nriDeclared: Boolean(profile?.nriDeclared || profile?.nri_declared),
+            nriTimezonePool: String(profile?.nriTimezonePool || profile?.nri_timezone_pool || merged.profile.nriTimezonePool || ''),
           },
         };
         setState(merged);
@@ -372,15 +344,22 @@ export default function SettingsPage() {
         const name = state.profile.name.trim();
         const phone = state.profile.phone.trim();
         const email = state.profile.email.trim();
-        const carrier = state.profile.carrier.trim();
         if (!email && !phone) {
           throw new Error('At least Email or Phone is required.');
         }
-        const payload = {
+        const payload: Record<string, any> = {
           name,
           phone,
           showNameToProviders: state.profile.showNameToProviders,
+          timezone: state.profile.timezone,
+          nri_declared: state.profile.nriDeclared,
         };
+        if (email) payload.email = email;
+        if (state.profile.nriDeclared && state.profile.nriTimezonePool) {
+          payload.nri_timezone_pool = state.profile.nriTimezonePool;
+        } else if (!state.profile.nriDeclared) {
+          payload.nri_timezone_pool = null;
+        }
         const res = await http.patch('/v1/users/me', payload);
         const updated = res.data?.data ?? res.data;
         const updatedState: SettingsState = {
@@ -390,7 +369,6 @@ export default function SettingsPage() {
             name: String(updated?.name || name),
             email: String(updated?.email || email),
             phone: String(updated?.phone || phone),
-            carrier,
             showNameToProviders:
               typeof updated?.showNameToProviders === 'boolean'
                 ? updated.showNameToProviders
@@ -456,7 +434,14 @@ export default function SettingsPage() {
         </label>
         <label className="text-sm text-charcoal/80">
           Email
-          <input value={state.profile.email} readOnly className="mt-1 w-full rounded-xl border border-calm-sage/20 bg-[#F5F3F0] px-3 py-2" />
+          <input
+            type="email"
+            value={state.profile.email}
+            onChange={(event) => setState((prev) => ({ ...prev, profile: { ...prev.profile, email: event.target.value } }))}
+            className="mt-1 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2"
+            placeholder="your@email.com"
+          />
+          <span className="mt-0.5 block text-[11px] text-charcoal/45">Optional — used when preferred channel is email.</span>
         </label>
         <label className="text-sm text-charcoal/80">
           Phone
@@ -467,38 +452,26 @@ export default function SettingsPage() {
           />
         </label>
         <label className="text-sm text-charcoal/80">
-          Carrier (optional)
-          <input
-            value={state.profile.carrier}
-            onChange={(event) => setState((prev) => ({ ...prev, profile: { ...prev.profile, carrier: event.target.value } }))}
-            className="mt-1 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2"
-            placeholder="Airtel, Jio, VI..."
-          />
-        </label>
-        <label className="text-sm text-charcoal/80">
           Gender
           <input
             value={state.profile.gender}
             onChange={(event) => setState((prev) => ({ ...prev, profile: { ...prev.profile, gender: event.target.value } }))}
             className="mt-1 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2"
+            placeholder="e.g. Female, Male, Non-binary"
           />
         </label>
         <label className="text-sm text-charcoal/80 md:col-span-2">
-          Location
-          <input
-            value={state.profile.location}
-            onChange={(event) => setState((prev) => ({ ...prev, profile: { ...prev.profile, location: event.target.value } }))}
-            className="mt-1 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2"
-          />
-        </label>
-        <label className="text-sm text-charcoal/80 md:col-span-2">
-          Bio
-          <textarea
-            value={state.profile.bio}
-            onChange={(event) => setState((prev) => ({ ...prev, profile: { ...prev.profile, bio: event.target.value } }))}
-            rows={3}
-            className="mt-1 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2"
-          />
+          Timezone
+          <select
+            value={state.profile.timezone}
+            onChange={(event) => setState((prev) => ({ ...prev, profile: { ...prev.profile, timezone: event.target.value } }))}
+            className="mt-1 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2 text-sm"
+          >
+            {TIMEZONES.map((tz) => (
+              <option key={tz.value} value={tz.value}>{tz.label}</option>
+            ))}
+          </select>
+          <span className="mt-0.5 block text-[11px] text-charcoal/45">Used to schedule sessions and reminders in your local time.</span>
         </label>
       </div>
       {renderSwitch(
@@ -507,150 +480,118 @@ export default function SettingsPage() {
         'Show my name to providers',
         'Turn off to appear as Anonymous Patient in provider views.',
       )}
+
+      {/* NRI declaration checkbox */}
+      <div className={`rounded-xl border px-4 py-3.5 transition ${state.profile.nriDeclared ? 'border-orange-300 bg-orange-50' : 'border-calm-sage/20 bg-white/80'}`}>
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={state.profile.nriDeclared}
+            onChange={(e) => setState((prev) => ({
+              ...prev,
+              profile: { ...prev.profile, nriDeclared: e.target.checked, nriTimezonePool: e.target.checked ? prev.profile.nriTimezonePool : '' },
+            }))}
+            className="mt-0.5 h-4 w-4 flex-shrink-0 accent-orange-500"
+          />
+          <div>
+            <p className="text-sm font-semibold text-charcoal">I am an NRI / living outside India</p>
+            <p className="mt-0.5 text-xs text-charcoal/60">
+              Check this if you are based outside India. We will match you with therapists available in your timezone window at NRI rates.
+            </p>
+          </div>
+        </label>
+      </div>
+
+      {state.profile.nriDeclared && (
+        <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+          <p className="text-sm font-semibold text-orange-800">Select Your Timezone</p>
+          <p className="mt-0.5 text-xs text-orange-700/70">
+            Your timezone determines which therapist pool you are matched with. Please select the region you are currently in.
+          </p>
+          {!state.profile.nriTimezonePool && (
+            <p className="mt-2 text-xs font-medium text-orange-600">Please select a timezone below to complete your NRI profile.</p>
+          )}
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {NRI_TIMEZONE_ZONES.map((zone) => {
+              const selected = state.profile.nriTimezonePool === zone.id;
+              return (
+                <button
+                  key={zone.id}
+                  type="button"
+                  onClick={() => setState((prev) => ({ ...prev, profile: { ...prev.profile, nriTimezonePool: zone.id } }))}
+                  className={`rounded-xl border px-3 py-2.5 text-center transition ${selected ? 'border-orange-400 bg-orange-100 ring-1 ring-orange-400 text-orange-900' : 'border-calm-sage/20 bg-white text-charcoal/70 hover:border-orange-200 hover:bg-orange-50'}`}
+                >
+                  <div className="text-lg">{zone.flag}</div>
+                  <div className="mt-0.5 text-xs font-semibold">{zone.label}</div>
+                  <div className="text-[10px] text-charcoal/50">{zone.sub}</div>
+                  <div className={`mt-1 inline-block rounded px-1.5 text-[9px] font-bold ${selected ? 'bg-orange-300 text-orange-900' : 'bg-calm-sage/10 text-charcoal/50'}`}>Pool {zone.pool}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 
   const renderNotifications = () => (
     <div className="space-y-3">
-      {renderSwitch(state.notifications.push, () => setState((prev) => ({ ...prev, notifications: { ...prev.notifications, push: !prev.notifications.push } })), 'Push Notifications')}
-      {renderSwitch(state.notifications.email, () => setState((prev) => ({ ...prev, notifications: { ...prev.notifications, email: !prev.notifications.email } })), 'Email Notifications')}
-      {renderSwitch(state.notifications.sms, () => setState((prev) => ({ ...prev, notifications: { ...prev.notifications, sms: !prev.notifications.sms } })), 'SMS Notifications')}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {[
-          ['appointmentReminder', 'Appointment reminders'],
-          ['labResults', 'New lab results'],
-          ['prescriptionAlerts', 'Prescription refill alerts'],
-          ['therapistMessages', 'Therapist secure messages'],
-          ['billing', 'Billing invoices'],
-          ['wellnessUpdates', 'Wellness updates'],
-          ['crisisAlerts', 'Crisis alerts'],
-          ['communityActivity', 'Community activity'],
-        ].map(([key, label]) => (
-          <div key={`notif-${key}`}>
-            {renderSwitch(
-              Boolean((state.notifications as any)[key]),
-              () => setState((prev) => ({ ...prev, notifications: { ...prev.notifications, [key]: !(prev.notifications as any)[key] } })),
-              label,
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderPrivacy = () => (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-calm-sage/20 bg-white/80 p-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-charcoal/60">Visibility</p>
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-          {[
-            ['public', 'Public'],
-            ['private', 'Private'],
-            ['therapist_only', 'Therapist only'],
-          ].map(([value, label]) => (
+      <div className="rounded-xl border border-calm-sage/20 bg-white/80 px-3 py-3">
+        <p className="text-sm font-medium text-charcoal">Preferred Contact Channel</p>
+        <p className="mt-0.5 text-xs text-charcoal/60">How we reach you for reminders and updates.</p>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {(['whatsapp', 'sms', 'email'] as const).map((ch) => (
             <button
-              key={value}
+              key={ch}
               type="button"
-              onClick={() => setState((prev) => ({ ...prev, privacy: { ...prev.privacy, visibility: value as any } }))}
-              className={`rounded-lg border px-3 py-2 text-sm ${state.privacy.visibility === value ? 'border-calm-sage bg-[#E8EFE6] text-charcoal' : 'border-calm-sage/20 text-charcoal/70'}`}
+              onClick={() => setState((prev) => ({ ...prev, notifications: { ...prev.notifications, communicationChannel: ch } }))}
+              className={`rounded-lg border px-2 py-2 text-sm ${state.notifications.communicationChannel === ch ? 'border-calm-sage bg-[#E8EFE6] text-charcoal font-semibold' : 'border-calm-sage/20 text-charcoal/70'}`}
             >
-              {label}
+              {ch === 'whatsapp' ? '💬 WhatsApp' : ch === 'sms' ? '📱 SMS' : '✉️ Email'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-calm-sage/20 bg-white/80 px-3 py-3">
+        <p className="text-sm font-medium text-charcoal">Preferred Language</p>
+        <p className="mt-0.5 text-xs text-charcoal/60">Language for session reminders and communications.</p>
+        <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">
+          {(['English', 'Hindi', 'Kannada', 'Tamil', 'Telugu'] as const).map((lang) => (
+            <button
+              key={lang}
+              type="button"
+              onClick={() => setState((prev) => ({ ...prev, notifications: { ...prev.notifications, preferredLanguage: lang } }))}
+              className={`rounded-lg border px-2 py-2 text-sm ${state.notifications.preferredLanguage === lang ? 'border-calm-sage bg-[#E8EFE6] text-charcoal font-semibold' : 'border-calm-sage/20 text-charcoal/70'}`}
+            >
+              {lang}
             </button>
           ))}
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {renderSwitch(state.privacy.shareWithTherapist, () => setState((prev) => ({ ...prev, privacy: { ...prev.privacy, shareWithTherapist: !prev.privacy.shareWithTherapist } })), 'Share with therapist')}
-        {renderSwitch(state.privacy.shareWithPsychiatrist, () => setState((prev) => ({ ...prev, privacy: { ...prev.privacy, shareWithPsychiatrist: !prev.privacy.shareWithPsychiatrist } })), 'Share with psychiatrist')}
-        {renderSwitch(state.privacy.shareWithCoach, () => setState((prev) => ({ ...prev, privacy: { ...prev.privacy, shareWithCoach: !prev.privacy.shareWithCoach } })), 'Share with coach')}
-        {renderSwitch(state.privacy.allowMoodTracking, () => setState((prev) => ({ ...prev, privacy: { ...prev.privacy, allowMoodTracking: !prev.privacy.allowMoodTracking } })), 'Allow mood tracking')}
-        {renderSwitch(state.privacy.allowAiSuggestions, () => setState((prev) => ({ ...prev, privacy: { ...prev.privacy, allowAiSuggestions: !prev.privacy.allowAiSuggestions } })), 'Allow AI suggestions')}
-        {renderSwitch(state.privacy.allowBehavioralInsights, () => setState((prev) => ({ ...prev, privacy: { ...prev.privacy, allowBehavioralInsights: !prev.privacy.allowBehavioralInsights } })), 'Allow behavioral insights')}
+        {renderSwitch(state.notifications.appointmentReminder, () => setState((prev) => ({ ...prev, notifications: { ...prev.notifications, appointmentReminder: !prev.notifications.appointmentReminder } })), 'Appointment reminders', 'Session time, reschedule alerts')}
+        {renderSwitch(state.notifications.therapistMessages, () => setState((prev) => ({ ...prev, notifications: { ...prev.notifications, therapistMessages: !prev.notifications.therapistMessages } })), 'Therapist messages', 'Secure messages from your care team')}
+        {renderSwitch(state.notifications.crisisAlerts, () => setState((prev) => ({ ...prev, notifications: { ...prev.notifications, crisisAlerts: !prev.notifications.crisisAlerts } })), 'Crisis support alerts', 'Urgent safety notifications — recommended ON')}
       </div>
+    </div>
+  );
 
-      <div className="flex flex-wrap gap-2">
+  const renderPrivacy = () => (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        {renderSwitch(state.privacy.shareWithTherapist, () => setState((prev) => ({ ...prev, privacy: { ...prev.privacy, shareWithTherapist: !prev.privacy.shareWithTherapist } })), 'Share mood & journal with therapist', 'Your therapist can see your mood logs and journal entries')}
+        {renderSwitch(state.privacy.allowMoodTracking, () => setState((prev) => ({ ...prev, privacy: { ...prev.privacy, allowMoodTracking: !prev.privacy.allowMoodTracking } })), 'Mood tracking', 'Allow MANAS360 to track and store your daily mood data')}
+        {renderSwitch(state.privacy.allowAiSuggestions, () => setState((prev) => ({ ...prev, privacy: { ...prev.privacy, allowAiSuggestions: !prev.privacy.allowAiSuggestions } })), 'AI-personalised suggestions', 'AnytimeBuddy uses your history to personalise responses')}
+      </div>
+      <div className="flex flex-wrap gap-2 pt-1">
         <button type="button" className="rounded-lg border border-calm-sage/20 bg-white px-3 py-2 text-sm text-charcoal/80">Export Personal Data</button>
         <button type="button" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">Delete Account</button>
       </div>
     </div>
   );
 
-  const renderAccessibility = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <label className="text-sm text-charcoal/80">
-          Theme
-          <select
-            value={state.accessibility.theme}
-            onChange={(event) => setState((prev) => ({ ...prev, accessibility: { ...prev.accessibility, theme: event.target.value as any } }))}
-            className="mt-1 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2"
-          >
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
-        </label>
-        <label className="text-sm text-charcoal/80">
-          Font Size
-          <select
-            value={state.accessibility.fontSize}
-            onChange={(event) => setState((prev) => ({ ...prev, accessibility: { ...prev.accessibility, fontSize: event.target.value as any } }))}
-            className="mt-1 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2"
-          >
-            <option value="small">Small</option>
-            <option value="medium">Medium</option>
-            <option value="large">Large</option>
-          </select>
-        </label>
-        <label className="text-sm text-charcoal/80">
-          Language
-          <select
-            value={state.accessibility.language}
-            onChange={(event) => setState((prev) => ({ ...prev, accessibility: { ...prev.accessibility, language: event.target.value as any } }))}
-            className="mt-1 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2"
-          >
-            <option value="English">English</option>
-            <option value="Hindi">Hindi</option>
-            <option value="Kannada">Kannada</option>
-          </select>
-        </label>
-      </div>
-      {renderSwitch(state.accessibility.highContrast, () => setState((prev) => ({ ...prev, accessibility: { ...prev.accessibility, highContrast: !prev.accessibility.highContrast } })), 'High contrast mode')}
-    </div>
-  );
-
-  const renderPreferences = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <label className="text-sm text-charcoal/80">
-          Timezone
-          <input
-            value={state.preferences.timezone}
-            onChange={(event) => setState((prev) => ({ ...prev, preferences: { ...prev.preferences, timezone: event.target.value } }))}
-            className="mt-1 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2"
-          />
-        </label>
-        <label className="text-sm text-charcoal/80">
-          Reminder Frequency
-          <select
-            value={state.preferences.reminderFrequency}
-            onChange={(event) => setState((prev) => ({ ...prev, preferences: { ...prev.preferences, reminderFrequency: event.target.value as any } }))}
-            className="mt-1 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2"
-          >
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="custom">Custom</option>
-          </select>
-        </label>
-      </div>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {renderSwitch(state.preferences.moodReminder, () => setState((prev) => ({ ...prev, preferences: { ...prev.preferences, moodReminder: !prev.preferences.moodReminder } })), 'Mood tracking reminder')}
-        {renderSwitch(state.preferences.therapyExerciseReminder, () => setState((prev) => ({ ...prev, preferences: { ...prev.preferences, therapyExerciseReminder: !prev.preferences.therapyExerciseReminder } })), 'Therapy exercise reminder')}
-        {renderSwitch(state.preferences.medicationReminder, () => setState((prev) => ({ ...prev, preferences: { ...prev.preferences, medicationReminder: !prev.preferences.medicationReminder } })), 'Medication reminder')}
-        {renderSwitch(state.preferences.dailyCheckInReminder, () => setState((prev) => ({ ...prev, preferences: { ...prev.preferences, dailyCheckInReminder: !prev.preferences.dailyCheckInReminder } })), 'Daily check-in reminder')}
-      </div>
-    </div>
-  );
 
   const renderTherapy = () => (
     <div className="space-y-4">
@@ -735,41 +676,12 @@ export default function SettingsPage() {
           <option value="en-US">English (US)</option>
         </select>
       </div>
-
-      <div className="rounded-xl border border-calm-sage/20 bg-white/80 p-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-charcoal/60">Voice Profile</p>
-        <input
-          value={aiAssistant.voiceName}
-          onChange={(event) => setAiAssistant((prev) => ({ ...prev, voiceName: event.target.value }))}
-          placeholder="Auto (leave blank)"
-          className="mt-2 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2 text-sm"
-        />
-      </div>
-
       {renderSwitch(
         aiAssistant.preferIndianAccent,
         () => setAiAssistant((prev) => ({ ...prev, preferIndianAccent: !prev.preferIndianAccent })),
         'Prefer Indian accent voice',
+        'AnytimeBuddy uses an Indian English voice tone',
       )}
-
-      <div className="rounded-xl border border-calm-sage/20 bg-white/80 p-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-charcoal/60">Response Length</p>
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {[
-            { id: 'concise', label: 'Concise (default)' },
-            { id: 'detailed', label: 'Detailed' },
-          ].map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => setAiAssistant((prev) => ({ ...prev, responseLength: option.id as AIAssistantPreferences['responseLength'] }))}
-              className={`rounded-lg border px-3 py-2 text-sm ${aiAssistant.responseLength === option.id ? 'border-calm-sage bg-[#E8EFE6] text-charcoal' : 'border-calm-sage/20 text-charcoal/70'}`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 
@@ -1142,26 +1054,14 @@ export default function SettingsPage() {
 
   const renderSection = (section: SectionId) => {
     switch (section) {
-      case 'profile':
-        return renderProfile();
-      case 'notifications':
-        return renderNotifications();
-      case 'privacy':
-        return renderPrivacy();
-      case 'accessibility':
-        return renderAccessibility();
-      case 'preferences':
-        return renderPreferences();
-      case 'therapy':
-        return renderTherapy();
-      case 'aiAssistant':
-        return renderAIAssistant();
-      case 'billing':
-        return renderBilling();
-      case 'security':
-        return renderSecurity();
-      default:
-        return null;
+      case 'profile': return renderProfile();
+      case 'notifications': return renderNotifications();
+      case 'privacy': return renderPrivacy();
+      case 'therapy': return renderTherapy();
+      case 'aiAssistant': return renderAIAssistant();
+      case 'billing': return renderBilling();
+      case 'security': return renderSecurity();
+      default: return null;
     }
   };
 

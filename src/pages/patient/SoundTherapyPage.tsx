@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { patientApi } from '../../api/patient';
+import { Music, Lock, Play, Pause, X, Clock, Headphones } from 'lucide-react';
 
-/* ─── Types ─────────────────────────────────────────────────── */
 interface VimeoMeta {
   title: string;
   artist: string;
@@ -25,7 +26,6 @@ interface Track {
 
 type Genre = 'all' | 'healing_frequency' | 'indian_classical' | 'nature' | 'sleep';
 
-/* ─── Seed data (replace with Supabase fetch in production) ──── */
 const SEED: { vimeo_url: string; genre: string; freq: string }[] = [
   { vimeo_url: 'https://vimeo.com/427943407', genre: 'healing_frequency', freq: '432 Hz' },
   { vimeo_url: 'https://vimeo.com/332498613', genre: 'healing_frequency', freq: '528 Hz' },
@@ -44,13 +44,6 @@ const GENRE_ICONS: Record<string, string> = {
   sleep: '🌙',
 };
 
-const GENRE_CLASS: Record<string, string> = {
-  healing_frequency: 'freq',
-  indian_classical: 'raga',
-  nature: 'nature',
-  sleep: 'sleep',
-};
-
 const GENRE_LABEL: Record<string, string> = {
   healing_frequency: 'Frequency',
   indian_classical: 'Raga',
@@ -58,18 +51,23 @@ const GENRE_LABEL: Record<string, string> = {
   sleep: 'Sleep',
 };
 
-const MAX_PREVIEW = 180; // 3 minutes
+const GENRE_COLORS: Record<string, string> = {
+  healing_frequency: 'bg-teal-50 text-teal-700 border-teal-200',
+  indian_classical: 'bg-amber-50 text-amber-700 border-amber-200',
+  nature: 'bg-green-50 text-green-700 border-green-200',
+  sleep: 'bg-violet-50 text-violet-700 border-violet-200',
+};
 
-/* ─── Helpers ───────────────────────────────────────────────── */
+const MAX_PREVIEW = 180;
+const TASK_COMPLETE_THRESHOLD = 60;
+
 function fmtD(s: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
 async function fetchVimeoMeta(url: string): Promise<VimeoMeta | null> {
   try {
-    const r = await fetch(
-      `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`,
-    );
+    const r = await fetch(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`);
     if (!r.ok) return null;
     const d = await r.json();
     const m = url.match(/vimeo\.com\/(\d+)/);
@@ -85,7 +83,6 @@ async function fetchVimeoMeta(url: string): Promise<VimeoMeta | null> {
   }
 }
 
-/* ─── Component ─────────────────────────────────────────────── */
 export default function SoundTherapyPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -94,27 +91,43 @@ export default function SoundTherapyPage() {
   const [currentFilter, setCurrentFilter] = useState<Genre>('all');
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
   const [previewSeconds, setPreviewSeconds] = useState(0);
+  const [hasActivePlan, setHasActivePlan] = useState<boolean | null>(null);
+  const [planLoading, setPlanLoading] = useState(true);
+  const [taskCompletedIds, setTaskCompletedIds] = useState<Set<string>>(new Set());
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const taskCheckedRef = useRef(false);
 
-  /* Guard: redirect unauthenticated users */
+  /* Auth guard */
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate('/auth/login', { replace: true });
     }
   }, [authLoading, isAuthenticated, navigate]);
 
-  /* Load tracks progressively via Vimeo oEmbed */
+  /* Check subscription */
   useEffect(() => {
-    let cancelled = false;
+    if (!isAuthenticated) return;
+    setPlanLoading(true);
+    patientApi.getSubscription()
+      .then((sub: any) => {
+        const status = String(sub?.status || sub?.planStatus || '').toUpperCase();
+        setHasActivePlan(status === 'ACTIVE' || status === 'TRIALING');
+      })
+      .catch(() => setHasActivePlan(false))
+      .finally(() => setPlanLoading(false));
+  }, [isAuthenticated]);
 
+  /* Load tracks */
+  useEffect(() => {
+    if (!hasActivePlan) return;
+    let cancelled = false;
     async function loadTracks() {
       for (let i = 0; i < SEED.length; i++) {
         const s = SEED[i];
         const meta = await fetchVimeoMeta(s.vimeo_url);
         if (!meta || cancelled) continue;
         setTracks((prev) => {
-          // avoid duplicates on StrictMode double-invoke
           if (prev.some((t) => t.id === `trk-${i}`)) return prev;
           return [
             ...prev,
@@ -133,14 +146,34 @@ export default function SoundTherapyPage() {
         });
       }
     }
-
     loadTracks();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
+  }, [hasActivePlan]);
+
+  /* Auto-complete therapy task after threshold listening */
+  const tryCompleteTask = useCallback(async () => {
+    if (taskCheckedRef.current) return;
+    taskCheckedRef.current = true;
+    try {
+      const plan = await patientApi.getTherapyPlan().catch(() => null);
+      const payload = (plan as any)?.data ?? plan ?? {};
+      const tasks: any[] = Array.isArray(payload?.dailyTasks) ? payload.dailyTasks : [];
+      const soundTask = tasks.find((t: any) => {
+        const type = String(t?.type || t?.activityType || '').toUpperCase();
+        const title = String(t?.title || '').toUpperCase();
+        const isSound = type.includes('SOUND') || title.includes('SOUND') || title.includes('MUSIC');
+        const isPending = !String(t?.completed ?? t?.status ?? '').toUpperCase().includes('COMPLETE');
+        return isSound && isPending;
+      });
+      if (soundTask?.id) {
+        await patientApi.completeTherapyPlanTask(String(soundTask.id));
+        setTaskCompletedIds((prev) => new Set(prev).add(String(soundTask.id)));
+      }
+    } catch {
+      /* silently ignore */
+    }
   }, []);
 
-  /* Timer cleanup */
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -152,30 +185,32 @@ export default function SoundTherapyPage() {
     clearTimer();
     setCurrentTrackId(null);
     setPreviewSeconds(0);
+    taskCheckedRef.current = false;
   }, [clearTimer]);
 
   const playTrack = useCallback(
     (id: string) => {
       stopTrack();
+      taskCheckedRef.current = false;
       setCurrentTrackId(id);
       setPreviewSeconds(0);
 
       timerRef.current = setInterval(() => {
         setPreviewSeconds((prev) => {
           const next = prev + 1;
+          if (next === TASK_COMPLETE_THRESHOLD) {
+            void tryCompleteTask();
+          }
           if (next >= MAX_PREVIEW) {
             clearTimer();
             setCurrentTrackId(null);
-            alert(
-              `⏱ 3-minute preview ended.\n\nSubscribe to MANAS360 (₹99/month) for full-length access.`,
-            );
             return 0;
           }
           return next;
         });
       }, 1000);
     },
-    [stopTrack, clearTimer],
+    [stopTrack, clearTimer, tryCompleteTask],
   );
 
   const toggleTrack = useCallback(
@@ -185,257 +220,270 @@ export default function SoundTherapyPage() {
     [currentTrackId, stopTrack, playTrack],
   );
 
-  /* Cleanup on unmount */
   useEffect(() => () => clearTimer(), [clearTimer]);
 
   const currentTrack = tracks.find((t) => t.id === currentTrackId) ?? null;
+  const filteredTracks = currentFilter === 'all' ? tracks : tracks.filter((t) => t.genre === currentFilter);
 
-  const filteredTracks =
-    currentFilter === 'all' ? tracks : tracks.filter((t) => t.genre === currentFilter);
-
-  if (authLoading) {
+  if (authLoading || planLoading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', color: '#666' }}>
-        Loading…
+      <div className="mx-auto w-full max-w-[1400px] px-4 py-6 md:px-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 w-64 rounded-lg bg-calm-sage/10" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-20 rounded-2xl border border-calm-sage/15 bg-white/50" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!isAuthenticated) return null;
 
-  return (
-    <>
-      <style>{`
-        /* ── Reset scoped to this page ── */
-        .stp-root *{box-sizing:border-box}
-        .stp-root{font-family:'DM Sans',sans-serif;background:#0F1724;color:#E8EDF2;-webkit-font-smoothing:antialiased;min-height:100vh}
+  /* Permission gate */
+  if (hasActivePlan === false) {
+    return (
+      <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-6 md:px-6">
+        <header className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight text-charcoal md:text-4xl">Sound Therapy</h1>
+          <p className="text-sm text-charcoal/70">Healing frequencies, ragas, and soundscapes for mental wellness.</p>
+        </header>
 
-        /* Hero */
-        .stp-hero{background:linear-gradient(160deg,#001A4D 0%,#0A2A4A 40%,#0C3D3F 70%,#0F1724 100%);padding:48px 20px 36px;text-align:center;position:relative;overflow:hidden}
-        .stp-hero-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#0CBFAD;margin-bottom:10px}
-        .stp-hero h1{font-family:'Outfit',sans-serif;font-size:clamp(24px,4.5vw,38px);font-weight:800;line-height:1.12;margin-bottom:10px}
-        .stp-hero h1 span{color:#B8D44F}
-        .stp-hero-sub{font-size:14px;color:rgba(255,255,255,.5);max-width:520px;margin:0 auto 20px;line-height:1.5}
-        .stp-stats{display:flex;gap:24px;justify-content:center;flex-wrap:wrap}
-        .stp-stat .num{font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;color:#B8D44F}
-        .stp-stat .lbl{font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.6px}
-        .stp-neuro-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:16px auto 0;max-width:500px}
-        .stp-npill{padding:5px 12px;border-radius:20px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:4px}
-        .stp-npill.dopamine{background:rgba(251,191,36,.08);color:#FBBF24;border:1px solid rgba(251,191,36,.15)}
-        .stp-npill.serotonin{background:rgba(52,211,153,.08);color:#34D399;border:1px solid rgba(52,211,153,.15)}
-        .stp-npill.oxytocin{background:rgba(244,63,94,.08);color:#F43F5E;border:1px solid rgba(244,63,94,.15)}
-        .stp-npill.cortisol{background:rgba(59,130,246,.08);color:#60A5FA;border:1px solid rgba(59,130,246,.15)}
-
-        /* Filter bar */
-        .stp-filter-bar{display:flex;gap:6px;padding:12px 16px;overflow-x:auto;scrollbar-width:none;background:#0F1724;border-bottom:1px solid #1A2538;position:sticky;top:0;z-index:90}
-        .stp-filter-bar::-webkit-scrollbar{display:none}
-        .stp-chip{padding:7px 14px;border-radius:20px;border:1px solid #2A3548;font-size:11px;font-weight:600;cursor:pointer;background:transparent;color:#8899AA;white-space:nowrap;transition:all .2s;flex-shrink:0;font-family:inherit}
-        .stp-chip:hover{border-color:#0C7C8A;color:#E8EDF2}
-        .stp-chip.active{background:#002365;color:#fff;border-color:#002365}
-
-        /* Now playing */
-        .stp-np{margin:14px 16px 0;padding:12px 16px;background:linear-gradient(135deg,rgba(12,124,138,.1),rgba(12,124,138,.03));border:1px solid rgba(12,124,138,.2);border-radius:12px;display:flex;align-items:center;gap:12px}
-        .stp-np-bars{display:flex;gap:2px;align-items:flex-end;height:18px}
-        .stp-np-bar{width:3px;background:#0CBFAD;border-radius:2px;animation:stpEq .6s ease infinite alternate}
-        .stp-np-bar:nth-child(2){animation-delay:.15s}.stp-np-bar:nth-child(3){animation-delay:.3s}.stp-np-bar:nth-child(4){animation-delay:.45s}
-        @keyframes stpEq{0%{height:4px}100%{height:18px}}
-        .stp-np-info{flex:1;min-width:0}
-        .stp-np-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .stp-np-meta{font-size:10px;color:#666680}
-        .stp-np-timer{font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;color:#0CBFAD;flex-shrink:0}
-        .stp-np-close{background:none;border:none;color:#666680;font-size:16px;cursor:pointer;padding:4px;flex-shrink:0}
-        .stp-np-close:hover{color:#E8EDF2}
-
-        /* Vimeo player */
-        .stp-vimeo{margin:10px 16px 0;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:16/9;max-height:280px}
-        .stp-vimeo iframe{width:100%;height:100%;border:none}
-
-        /* Library */
-        .stp-library{padding:16px}
-        .stp-lib-label{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#4A90D9;margin-bottom:10px;display:flex;align-items:center;gap:8px}
-        .stp-lib-label::after{content:'';flex:1;height:1px;background:#1A2538}
-        .stp-table{width:100%;border-collapse:collapse}
-        .stp-table th{text-align:left;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#4A5568;border-bottom:1px solid #2A3548}
-        .stp-table td{padding:10px;border-bottom:1px solid #1A2538;vertical-align:middle}
-        .stp-table tr{transition:background .15s}
-        .stp-table tr:hover td{background:rgba(12,124,138,.04)}
-        .stp-num{font-size:11px;color:#4A5568;width:32px}
-        .stp-track-info{display:flex;align-items:center;gap:10px}
-        .stp-thumb{width:40px;height:40px;border-radius:8px;background:#1A2538;background-size:cover;background-position:center;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px}
-        .stp-track-title{font-size:13px;font-weight:600}
-        .stp-track-artist{font-size:10px;color:#666680}
-        .stp-preview-note{font-size:9px;color:#4A5568;margin-top:2px}
-        .stp-genre-tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
-        .stp-genre-tag.freq{background:rgba(12,124,138,.1);color:#0CBFAD}
-        .stp-genre-tag.raga{background:rgba(212,160,23,.1);color:#D4A017}
-        .stp-genre-tag.nature{background:rgba(52,211,153,.1);color:#34D399}
-        .stp-genre-tag.sleep{background:rgba(124,58,237,.1);color:#A855F7}
-        .stp-freq{font-size:11px;color:#0CBFAD;font-weight:600}
-        .stp-dur{font-size:12px;color:#666680;white-space:nowrap}
-        .stp-free-badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;background:rgba(52,211,153,.1);color:#34D399;margin-left:6px;vertical-align:middle}
-        .stp-play-btn{width:34px;height:34px;border-radius:50%;border:none;background:rgba(12,124,138,.12);color:#0CBFAD;font-size:14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center}
-        .stp-play-btn:hover{background:#0C7C8A;color:#fff;transform:scale(1.1)}
-        .stp-play-btn.playing{background:#0C7C8A;color:#fff;animation:stpPulse 1.5s infinite}
-        @keyframes stpPulse{0%,100%{box-shadow:0 0 0 0 rgba(12,124,138,.3)}50%{box-shadow:0 0 0 8px rgba(12,124,138,0)}}
-        .stp-empty{text-align:center;padding:40px 20px;color:#4A5568;font-size:13px}
-        .stp-loading{text-align:center;padding:30px;color:#4A5568;font-size:12px}
-
-        /* Footer */
-        .stp-footer{padding:20px;text-align:center;border-top:1px solid #1A2538;margin-top:16px}
-        .stp-footer p{font-size:11px;color:#4A5568;line-height:1.5;max-width:480px;margin:0 auto}
-        .stp-footer a{color:#0CBFAD;text-decoration:none}
-
-        @media(max-width:640px){
-          .stp-hero h1{font-size:22px}
-          .stp-table th:nth-child(1),.stp-table td:nth-child(1){display:none}
-          .stp-table th:nth-child(4),.stp-table td:nth-child(4){display:none}
-        }
-      `}</style>
-
-      <div className="stp-root">
-        {/* ── Hero ── */}
-        <div className="stp-hero">
-          <div className="stp-hero-eyebrow">Heal Through Sound</div>
-          <h1>Sound <span>Therapy</span></h1>
-          <p className="stp-hero-sub">
-            Healing frequencies, Indian classical ragas, nature soundscapes, and sleep audio —
-            curated for mental wellness. Free 3-minute preview on every track.
-          </p>
-          <div className="stp-stats">
-            <div className="stp-stat"><div className="num">{tracks.length}</div><div className="lbl">Tracks</div></div>
-            <div className="stp-stat"><div className="num">4</div><div className="lbl">Genres</div></div>
-            <div className="stp-stat"><div className="num">3 min</div><div className="lbl">Free Preview</div></div>
-            <div className="stp-stat"><div className="num">24/7</div><div className="lbl">Access</div></div>
-          </div>
-          <div className="stp-neuro-row">
-            <div className="stp-npill dopamine">🧬 Dopamine</div>
-            <div className="stp-npill serotonin">🧬 Serotonin</div>
-            <div className="stp-npill oxytocin">🧬 Oxytocin</div>
-            <div className="stp-npill cortisol">🧬 Cortisol ↓</div>
-          </div>
-        </div>
-
-        {/* ── Filter bar ── */}
-        <div className="stp-filter-bar">
-          {(['all', 'healing_frequency', 'indian_classical', 'nature', 'sleep'] as Genre[]).map(
-            (g) => (
-              <button
-                key={g}
-                className={`stp-chip${currentFilter === g ? ' active' : ''}`}
-                onClick={() => setCurrentFilter(g)}
-              >
-                {g === 'all'
-                  ? 'All'
-                  : `${GENRE_ICONS[g] ?? '🎵'} ${GENRE_LABEL[g] ?? g}`}
-              </button>
-            ),
-          )}
-        </div>
-
-        {/* ── Now Playing Bar ── */}
-        {currentTrack && (
-          <div className="stp-np">
-            <div className="stp-np-bars">
-              <div className="stp-np-bar" />
-              <div className="stp-np-bar" />
-              <div className="stp-np-bar" />
-              <div className="stp-np-bar" />
-            </div>
-            <div className="stp-np-info">
-              <div className="stp-np-title">{currentTrack.title} — {currentTrack.artist}</div>
-              <div className="stp-np-meta">
-                {GENRE_LABEL[currentTrack.genre] ?? ''} · Free preview · 3:00 max
+        <section className="rounded-3xl border border-calm-sage/15 bg-white p-10 text-center shadow-soft-sm">
+          <div className="mx-auto max-w-md space-y-5">
+            <div className="flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-50">
+                <Lock className="h-8 w-8 text-teal-600" />
               </div>
             </div>
-            <div className="stp-np-timer">{fmtD(previewSeconds)}</div>
-            <button className="stp-np-close" onClick={stopTrack}>✕</button>
+            <h3 className="text-lg font-bold text-charcoal">Plan Required</h3>
+            <p className="text-sm text-charcoal/70">
+              Sound Therapy is available to patients with an active plan. Get a plan to access healing frequencies,
+              Indian classical ragas, nature soundscapes, and sleep audio.
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+              <Link
+                to="/plans"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-teal-700"
+              >
+                View Plans
+              </Link>
+              <Link
+                to="/patient/sessions"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-calm-sage/20 bg-white px-6 py-3 text-sm font-semibold text-charcoal/70 transition hover:bg-calm-sage/5"
+              >
+                Back to My Care
+              </Link>
+            </div>
           </div>
-        )}
+        </section>
 
-        {/* ── Vimeo embedded player ── */}
-        {currentTrack && (
-          <div className="stp-vimeo">
-            <iframe
-              src={`https://player.vimeo.com/video/${currentTrack.video_id}?autoplay=1&byline=0&title=0&portrait=0`}
-              allow="autoplay; fullscreen"
-              allowFullScreen
-              title={currentTrack.title}
-            />
+        {/* Preview of what's inside */}
+        <section className="space-y-3">
+          <h3 className="text-sm font-bold text-charcoal">What's inside Sound Therapy</h3>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {Object.entries(GENRE_LABEL).map(([genre, label]) => (
+              <div key={genre} className="flex items-center gap-3 rounded-2xl border border-calm-sage/15 bg-white p-4 shadow-soft-sm opacity-60">
+                <span className="text-2xl">{GENRE_ICONS[genre]}</span>
+                <div>
+                  <p className="font-semibold text-charcoal">{label}</p>
+                  <p className="text-xs text-charcoal/50">Locked</p>
+                </div>
+                <Lock className="ml-auto h-4 w-4 text-charcoal/30" />
+              </div>
+            ))}
           </div>
-        )}
+        </section>
+      </div>
+    );
+  }
 
-        {/* ── Track library ── */}
-        <div className="stp-library">
-          <div className="stp-lib-label">
-            Library <span style={{ marginLeft: 6, color: '#4A5568', fontWeight: 400 }}>({filteredTracks.length})</span>
+  return (
+    <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 pb-20 md:px-6 lg:pb-6">
+      {/* Header */}
+      <header className="space-y-1">
+        <h1 className="text-3xl font-bold tracking-tight text-charcoal md:text-4xl">Sound Therapy</h1>
+        <p className="text-sm text-charcoal/70">Healing frequencies, ragas, and soundscapes for mental wellness.</p>
+      </header>
+
+      {/* Stats */}
+      <div className="flex flex-wrap gap-4">
+        <div className="rounded-2xl border border-calm-sage/15 bg-white px-5 py-3 shadow-soft-sm">
+          <p className="text-2xl font-bold text-charcoal">{tracks.length || SEED.length}</p>
+          <p className="text-xs text-charcoal/60">Tracks</p>
+        </div>
+        <div className="rounded-2xl border border-calm-sage/15 bg-white px-5 py-3 shadow-soft-sm">
+          <p className="text-2xl font-bold text-teal-600">4</p>
+          <p className="text-xs text-charcoal/60">Genres</p>
+        </div>
+        <div className="rounded-2xl border border-calm-sage/15 bg-white px-5 py-3 shadow-soft-sm">
+          <p className="text-2xl font-bold text-charcoal">3 min</p>
+          <p className="text-xs text-charcoal/60">Preview</p>
+        </div>
+        <div className="rounded-2xl border border-calm-sage/15 bg-white px-5 py-3 shadow-soft-sm">
+          <p className="text-2xl font-bold text-charcoal">24/7</p>
+          <p className="text-xs text-charcoal/60">Access</p>
+        </div>
+      </div>
+
+      {/* Neuroscience pills */}
+      <div className="flex flex-wrap gap-2">
+        {['🧬 Dopamine', '🧬 Serotonin', '🧬 Oxytocin', '🧬 Cortisol ↓'].map((pill) => (
+          <span key={pill} className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700">
+            {pill}
+          </span>
+        ))}
+      </div>
+
+      {/* Task completed banner */}
+      {taskCompletedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
+          <Headphones className="h-5 w-5 text-green-600 shrink-0" />
+          <p className="text-sm font-semibold text-green-800">
+            Sound therapy task marked complete! Great progress on your wellness journey.
+          </p>
+        </div>
+      )}
+
+      {/* Now playing bar */}
+      {currentTrack && (
+        <div className="flex items-center gap-3 rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3">
+          <div className="flex items-end gap-0.5 h-5 shrink-0">
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="w-1 rounded-sm bg-teal-600"
+                style={{
+                  height: `${40 + i * 20}%`,
+                  animation: `pulse ${0.6 + i * 0.15}s ease infinite alternate`,
+                }}
+              />
+            ))}
           </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-teal-900">{currentTrack.title}</p>
+            <p className="text-xs text-teal-700/70">
+              {GENRE_LABEL[currentTrack.genre] ?? ''} · Preview · 3:00 max
+            </p>
+          </div>
+          <span className="text-sm font-bold text-teal-700 shrink-0">{fmtD(previewSeconds)}</span>
+          <button
+            onClick={stopTrack}
+            className="shrink-0 rounded-lg p-1.5 text-teal-600 hover:bg-teal-100"
+            aria-label="Stop"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
-          {filteredTracks.length === 0 && tracks.length === 0 ? (
-            <div className="stp-loading">Loading tracks from library…</div>
-          ) : filteredTracks.length === 0 ? (
-            <div className="stp-empty">No tracks in this category yet.</div>
-          ) : (
-            <table className="stp-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Track</th>
-                  <th>Genre</th>
-                  <th>Frequency</th>
-                  <th>Duration</th>
-                  <th>Play</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTracks.map((t, i) => {
-                  const gc = GENRE_CLASS[t.genre] ?? 'freq';
-                  const gl = GENRE_LABEL[t.genre] ?? '';
-                  const ico = GENRE_ICONS[t.genre] ?? '🎵';
-                  const playing = currentTrackId === t.id;
+      {/* Vimeo player */}
+      {currentTrack && (
+        <div className="overflow-hidden rounded-2xl border border-calm-sage/15 bg-black shadow-soft-sm" style={{ aspectRatio: '16/9', maxHeight: 300 }}>
+          <iframe
+            src={`https://player.vimeo.com/video/${currentTrack.video_id}?autoplay=1&byline=0&title=0&portrait=0`}
+            allow="autoplay; fullscreen"
+            allowFullScreen
+            title={currentTrack.title}
+            className="h-full w-full border-0"
+          />
+        </div>
+      )}
 
-                  return (
-                    <tr key={t.id}>
-                      <td className="stp-num">{i + 1}</td>
-                      <td>
-                        <div className="stp-track-info">
-                          <div
-                            className="stp-thumb"
-                            style={t.thumbnail ? { backgroundImage: `url(${t.thumbnail})` } : {}}
-                          >
-                            {!t.thumbnail && ico}
-                          </div>
-                          <div>
-                            <div className="stp-track-title">
-                              {t.title}
-                              <span className="stp-free-badge">FREE</span>
-                            </div>
-                            <div className="stp-track-artist">{t.artist}</div>
-                            <div className="stp-preview-note">3 min free preview</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td><span className={`stp-genre-tag ${gc}`}>{gl}</span></td>
-                      <td className="stp-freq">{t.freq}</td>
-                      <td className="stp-dur">{fmtD(t.duration)}</td>
-                      <td>
-                        <button
-                          className={`stp-play-btn${playing ? ' playing' : ''}`}
-                          onClick={() => toggleTrack(t.id)}
-                          aria-label={playing ? `Pause ${t.title}` : `Play ${t.title}`}
-                        >
-                          {playing ? '⏸' : '▶'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+      {/* Genre filters */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setCurrentFilter('all')}
+          className={`rounded-full px-4 py-2 text-xs font-semibold transition ${currentFilter === 'all' ? 'bg-teal-600 text-white' : 'border border-calm-sage/20 bg-white text-charcoal/70 hover:bg-calm-sage/5'}`}
+        >
+          All
+        </button>
+        {Object.entries(GENRE_LABEL).map(([genre, label]) => (
+          <button
+            key={genre}
+            onClick={() => setCurrentFilter(genre as Genre)}
+            className={`rounded-full px-4 py-2 text-xs font-semibold transition ${currentFilter === genre ? 'bg-teal-600 text-white' : 'border border-calm-sage/20 bg-white text-charcoal/70 hover:bg-calm-sage/5'}`}
+          >
+            {GENRE_ICONS[genre]} {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Track list */}
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <Music className="h-4 w-4 text-teal-600" />
+          <h2 className="text-sm font-bold text-charcoal">Library ({filteredTracks.length})</h2>
         </div>
 
+        {filteredTracks.length === 0 && tracks.length === 0 ? (
+          <div className="rounded-2xl border border-calm-sage/15 bg-white/50 p-8 text-center">
+            <p className="text-sm text-charcoal/60">Loading tracks from library…</p>
+          </div>
+        ) : filteredTracks.length === 0 ? (
+          <div className="rounded-2xl border border-calm-sage/15 bg-white/50 p-8 text-center">
+            <p className="text-sm text-charcoal/60">No tracks in this category yet.</p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-calm-sage/15 bg-white shadow-soft-sm">
+            <div className="divide-y divide-calm-sage/10">
+              {filteredTracks.map((t, i) => {
+                const playing = currentTrackId === t.id;
+                const genreColor = GENRE_COLORS[t.genre] ?? 'bg-teal-50 text-teal-700 border-teal-200';
 
-      </div>
-    </>
+                return (
+                  <div
+                    key={t.id}
+                    className={`flex items-center gap-4 p-4 transition-colors ${playing ? 'bg-teal-50/50' : 'hover:bg-calm-sage/5'}`}
+                  >
+                    <span className="w-6 text-center text-xs text-charcoal/40 shrink-0">{i + 1}</span>
+
+                    <div
+                      className="h-12 w-12 shrink-0 rounded-xl bg-calm-sage/10 overflow-hidden flex items-center justify-center text-xl"
+                      style={t.thumbnail ? { backgroundImage: `url(${t.thumbnail})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+                    >
+                      {!t.thumbnail && (GENRE_ICONS[t.genre] ?? '🎵')}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-charcoal">{t.title}</p>
+                      <p className="mt-0.5 text-xs text-charcoal/55">{t.artist}</p>
+                      <p className="text-[10px] text-charcoal/40">3 min free preview</p>
+                    </div>
+
+                    <span className={`hidden rounded-full border px-2.5 py-1 text-[10px] font-semibold sm:inline-block ${genreColor}`}>
+                      {GENRE_LABEL[t.genre] ?? t.genre}
+                    </span>
+
+                    {t.freq !== '—' && (
+                      <span className="hidden text-xs font-semibold text-teal-600 sm:block">{t.freq}</span>
+                    )}
+
+                    <span className="hidden items-center gap-1 text-xs text-charcoal/50 sm:flex">
+                      <Clock className="h-3 w-3" />
+                      {fmtD(t.duration)}
+                    </span>
+
+                    <button
+                      onClick={() => toggleTrack(t.id)}
+                      aria-label={playing ? `Pause ${t.title}` : `Play ${t.title}`}
+                      className={`shrink-0 flex h-9 w-9 items-center justify-center rounded-full transition ${
+                        playing
+                          ? 'bg-teal-600 text-white shadow-md'
+                          : 'bg-teal-50 text-teal-600 hover:bg-teal-100'
+                      }`}
+                    >
+                      {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }

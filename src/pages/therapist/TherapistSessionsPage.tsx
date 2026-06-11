@@ -127,7 +127,7 @@ export default function TherapistSessionsPage() {
                       render: (row) =>
                         row.timing === 'upcoming' ? (
                           <button
-                            onClick={() => navigate(`/therapist/sessions/${row.sessionId}/live`)}
+                            onClick={() => navigate(`/video-session/${row.sessionId}`)}
                             className="rounded-lg bg-sage-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sage-600"
                           >
                             Start Session

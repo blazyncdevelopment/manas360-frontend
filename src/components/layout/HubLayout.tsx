@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ProviderSidebar } from './ProviderSidebar';
 import { useAuth } from '../../context/AuthContext';
 import { hasProviderSubmittedOnboarding } from '../../lib/providerOnboardingFlow';
 import PersistentVideoLayout from './PersistentVideoLayout';
-import { Lock, FileCheck, CreditCard, RefreshCw } from 'lucide-react';
+import { Lock, FileCheck, CreditCard, RefreshCw, MessageSquare } from 'lucide-react';
 import { http } from '../../lib/http';
 import toast from 'react-hot-toast';
 
@@ -76,6 +76,15 @@ export const HubLayout = () => {
                 <span className="w-2 h-2 bg-[#4A6741] rounded-full animate-pulse"></span>
                 Online
               </div>
+
+              <Link
+                to="/provider/messages"
+                className="relative p-2 rounded-lg hover:bg-gray-100 transition flex items-center justify-center"
+                title="Messages"
+                aria-label="Messages"
+              >
+                <MessageSquare size={20} className="text-gray-600" />
+              </Link>
 
               {/* Notification Bell */}
               <button className="relative p-2 rounded-lg hover:bg-gray-100 transition">

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Activity,
   AlertTriangle,
@@ -92,6 +92,7 @@ const normalizeProviderRole = (value: unknown): ProviderRole => {
 };
 
 export default function TherapistDashboardPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { selectedPatientId, setSelectedPatientId, dashboardMode } = useProviderDashboardContext();
 
@@ -389,25 +390,6 @@ export default function TherapistDashboardPage() {
 
       {dashboardMode === 'professional' ? (
         <>
-          <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 max-[1200px]:grid-cols-2 max-[768px]:grid-cols-1">
-            {THERAPIST_MODULES.map((module) => {
-              const Icon = module.icon;
-              return (
-                <Link
-                  key={module.key}
-                  to={module.route}
-                  className="group rounded-xl border border-ink-100 bg-white p-4 transition hover:border-sage-200 hover:shadow-soft-sm"
-                >
-                  <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-sage-50 text-sage-600">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <h3 className="font-display text-sm font-bold text-ink-800">{module.title}</h3>
-                  <p className="mt-1 text-xs text-ink-500">{module.description}</p>
-                </Link>
-              );
-            })}
-          </section>
-
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-3 max-[1200px]:grid-cols-1">
             <div className="space-y-6 xl:col-span-2">
               <TherapistCard className="p-5">
@@ -565,17 +547,32 @@ export default function TherapistDashboardPage() {
                             )}
                           </td>
                           <td className="px-5 py-3">
-                            {session.status !== 'completed' ? (
-                              <TherapistButton className="min-h-[36px] px-3 py-1.5 text-xs">
-                                <Video className="h-3.5 w-3.5" />
-                                Join
-                              </TherapistButton>
-                            ) : (
-                              <TherapistButton variant="secondary" className="min-h-[36px] px-3 py-1.5 text-xs">
-                                <FileText className="h-3.5 w-3.5" />
-                                {session.noteSubmitted ? 'View Notes' : 'Write Notes'}
-                              </TherapistButton>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {session.status !== 'completed' ? (
+                                <TherapistButton
+                                  onClick={() => navigate(`/video-session/${session.id}`)}
+                                  className="min-h-[36px] px-3 py-1.5 text-xs"
+                                >
+                                  <Video className="h-3.5 w-3.5" />
+                                  Join
+                                </TherapistButton>
+                              ) : (
+                                <TherapistButton variant="secondary" className="min-h-[36px] px-3 py-1.5 text-xs">
+                                  <FileText className="h-3.5 w-3.5" />
+                                  {session.noteSubmitted ? 'View Notes' : 'Write Notes'}
+                                </TherapistButton>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const pt = patientDirectory.find((p) => p.name === session.patientName);
+                                  navigate(pt ? `/provider/patient/${pt.id}/overview` : `/provider/patients`);
+                                }}
+                                className="rounded-lg border border-ink-100 bg-surface-bg px-2.5 py-1.5 text-[11px] font-semibold text-ink-600 transition hover:bg-ink-100"
+                              >
+                                View Patient
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -696,6 +693,26 @@ export default function TherapistDashboardPage() {
                 ) : null}
               </TherapistCard>
             </div>
+          </section>
+
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 max-[1200px]:grid-cols-2 max-[768px]:grid-cols-1">
+            <p className="col-span-full text-xs font-semibold uppercase tracking-wider text-ink-500">Quick Access</p>
+            {THERAPIST_MODULES.map((module) => {
+              const Icon = module.icon;
+              return (
+                <Link
+                  key={module.key}
+                  to={module.route}
+                  className="group rounded-xl border border-ink-100 bg-white p-4 transition hover:border-sage-200 hover:shadow-soft-sm"
+                >
+                  <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-sage-50 text-sage-600">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <h3 className="font-display text-sm font-bold text-ink-800">{module.title}</h3>
+                  <p className="mt-1 text-xs text-ink-500">{module.description}</p>
+                </Link>
+              );
+            })}
           </section>
 
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-3 max-[1200px]:grid-cols-1">

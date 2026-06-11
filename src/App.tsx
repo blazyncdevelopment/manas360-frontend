@@ -63,7 +63,6 @@ const BuddyChatPage = lazy(() => import('./pages/patient/BuddyChatPage'));
 const ProviderMessagesPage = lazy(() => import('./pages/patient/ProviderMessagesPage'));
 const PatientOnboardingPage = lazy(() => import('./pages/patient/PatientOnboardingPage'));
 // const PatientProfilePreferences = lazy(() => import('./pages/patient/PatientProfilePreferences'));
-const CommunicationPreferencesPage = lazy(() => import('./pages/patient/CommunicationPreferencesPage'));
 const DailyCheckInPage = lazy(() => import('./pages/patient/DailyCheckInPage'));
 const HitASixerGamePage = lazy(() => import('./pages/patient/HitASixerGamePage'));
 const WalletPage = lazy(() => import('./pages/patient/WalletPage'));
@@ -147,6 +146,7 @@ const SSOSettingsPage = lazy(() => import('./pages/corporate/SSOSettingsPage'));
 const CorporateDashboardPage = lazy(() => import('./pages/corporate/CorporateDashboard'));
 const EapScreeningPage = lazy(() => import('./pages/corporate/EapScreeningPage'));
 const CorporateOnboardingPage = lazy(() => import('./pages/corporate/CorporateOnboardingPage'));
+const CorporateEmployeeSignupPage = lazy(() => import('./pages/auth/CorporateEmployeeSignupPage'));
 const MyDigitalClinicPricingPage = lazy(() => import('./pages/clinic/PricingPage'));
 const RegisterClinicPage = lazy(() => import('./pages/clinic/RegisterClinicPage'));
 const RegistrationSuccessPage = lazy(() => import('./pages/clinic/RegistrationSuccessPage'));
@@ -563,6 +563,7 @@ function App() {
                     <Route path="/psychiatrist/*" element={<Navigate to="/provider/dashboard" replace />} />
                     <Route path="/psychologist/*" element={<Navigate to="/provider/dashboard" replace />} />
                     <Route path="/auth/signup" element={<SignupPage />} />
+                    <Route path="/auth/corporate-employee" element={<CorporateEmployeeSignupPage />} />
                     <Route
                       path="/auth/legal-accept"
                       element={
@@ -780,10 +781,10 @@ function App() {
                         </ProtectedRoute>
                       }
                     >
-                      <Route index element={<Navigate to="preferences" replace />} />
+                      <Route index element={<Navigate to="dashboard" replace />} />
                       <Route path="dashboard" element={<DashboardPage />} />
                       <Route path="onboarding" element={<PatientOnboardingPage />} />
-                      <Route path="preferences" element={<CommunicationPreferencesPage />} />
+                      <Route path="preferences" element={<Navigate to="/patient/settings" replace />} />
                       <Route path="therapy-plan" element={<TherapyPlanPage />} />
                       <Route path="care-team" element={<Navigate to="/patient/sessions" replace />} />
                       <Route path="providers" element={<Navigate to="/patient/sessions" replace />} />
@@ -805,7 +806,6 @@ function App() {
                       <Route path="provider-messages/:providerId" element={<ProviderMessagesPage />} />
                       <Route path="messages" element={<AIChatPage />} />
                       <Route path="profile" element={<ProfilePage />} />
-                      <Route path="preferences" element={<CommunicationPreferencesPage />} />
                       <Route path="settings" element={<SettingsPage />} />
                       <Route path="assessments" element={<Navigate to="/patient/care-team" replace />} />
                       <Route path="assessment-reports" element={<Navigate to="/patient/progress?tab=clinical" replace />} />

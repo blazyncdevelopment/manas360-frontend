@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { corporateApi } from '../../api/corporate.api';
 import CorporateShellLayout from '../../components/corporate/CorporateShellLayout';
+import { useCorporateKey } from './useCorporateDashboardData';
 
 type PaymentMethod = {
   id: string;
@@ -12,6 +13,7 @@ type PaymentMethod = {
 };
 
 export default function CorporatePaymentMethodsPage() {
+  const companyKey = useCorporateKey();
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export default function CorporatePaymentMethodsPage() {
     setLoading(true);
     setError(null);
     try {
-      const result = (await corporateApi.getPaymentMethods('techcorp-india')) as { rows: PaymentMethod[] };
+      const result = (await corporateApi.getPaymentMethods(companyKey)) as { rows: PaymentMethod[] };
       setMethods(Array.isArray(result?.rows) ? result.rows : []);
     } catch (fetchError: any) {
       setError(fetchError?.response?.data?.message || 'Unable to load payment methods');
@@ -45,7 +47,7 @@ export default function CorporatePaymentMethodsPage() {
     setSavingId(id);
     setError(null);
     try {
-      const result = (await corporateApi.updatePaymentMethod(id, { isPrimary: true }, 'techcorp-india')) as {
+      const result = (await corporateApi.updatePaymentMethod(id, { isPrimary: true }, companyKey)) as {
         rows: PaymentMethod[];
       };
       setMethods(Array.isArray(result?.rows) ? result.rows : []);
@@ -60,7 +62,7 @@ export default function CorporatePaymentMethodsPage() {
     setSavingId(id);
     setError(null);
     try {
-      const result = (await corporateApi.updatePaymentMethod(id, { isActive }, 'techcorp-india')) as {
+      const result = (await corporateApi.updatePaymentMethod(id, { isActive }, companyKey)) as {
         rows: PaymentMethod[];
       };
       setMethods(Array.isArray(result?.rows) ? result.rows : []);
@@ -87,7 +89,7 @@ export default function CorporatePaymentMethodsPage() {
           details: form.details.trim(),
           isPrimary: form.isPrimary,
         },
-        'techcorp-india',
+        companyKey,
       )) as { rows: PaymentMethod[] };
 
       setMethods(Array.isArray(result?.rows) ? result.rows : []);

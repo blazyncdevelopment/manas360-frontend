@@ -127,7 +127,9 @@ export default function GPSDashboard({
 
     socket.on('connect', () => {
       setConnected(true);
-      socket.emit('gps:join', { sessionId, monitoringId });
+      if (monitoringId) {
+        socket.emit('gps:join', { sessionId, monitoringId });
+      }
     });
 
     socket.on('disconnect', () => setConnected(false));

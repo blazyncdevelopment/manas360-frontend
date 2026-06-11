@@ -282,6 +282,19 @@ export const corporateApi = {
     const response = await http.post('/v1/corporate/public/create-account', payload);
     return unwrap(response.data);
   },
+
+  validateEmployeeClientId: async (clientId: string, workEmail: string): Promise<{ valid: boolean; companyName: string; seatsLeft: number }> => {
+    const response = await http.post('/v1/corporate/public/employee/validate', { clientId, workEmail });
+    return unwrap(response.data);
+  },
+  requestEmployeeB2bOtp: async (payload: { clientId: string; workEmail: string; phone: string; name: string }) => {
+    const response = await http.post('/v1/corporate/public/employee/request-otp', payload);
+    return unwrap(response.data);
+  },
+  verifyEmployeeB2bRegistration: async (payload: { clientId: string; workEmail: string; phone: string; otp: string; name: string }) => {
+    const response = await http.post('/v1/corporate/public/employee/verify', payload);
+    return unwrap(response.data);
+  },
   createAdminContract: async (payload: CreateAdminContractPayload) => {
     const response = await http.post('/v1/admin/contracts/create', payload);
     return unwrap(response.data);

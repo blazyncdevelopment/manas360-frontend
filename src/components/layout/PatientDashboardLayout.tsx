@@ -35,18 +35,18 @@ const mainNavItems = [
 
 
 const selfCareNavItems = [
-  { to: '/patient/messages', label: 'Anytime Buddy (AI)', icon: MessageSquare, badge: 'AI', feature: 'ai-support' },
   { to: '/patient/check-in', label: 'Daily Check-in', icon: HeartPulse, feature: 'daily-checkin' },
   { to: '/patient/wellness-library', label: 'Premium Library', icon: Sparkles, feature: 'wellness-library' },
-  { to: '/patient/preferences', label: 'My Preferences', icon: SlidersHorizontal },
+  { to: '/patient/settings', label: 'My Preferences', icon: SlidersHorizontal },
 ];
 
 const progressNavItems = [
   { to: '/patient/progress', label: 'My Progress', icon: BarChart3, feature: 'progress-tracking' },
+  { to: '/patient/reports', label: 'My Reports', icon: ClipboardList },
+  { to: '/patient/documents', label: 'My Documents', icon: ClipboardList },
 ];
 
 const supportNavItems = [
-  { to: '/patient/provider-messages', label: 'Messages', icon: MessageSquare },
   { to: '/patient/support', label: 'Help Center', icon: LifeBuoy },
 ];
 
@@ -66,12 +66,25 @@ type NavItem = {
   feature?: string;
 };
 
+type BuddyMessage = { role: 'user' | 'assistant'; content: string };
+
+const BUDDY_QUICK_PROMPTS = [
+  "I'm feeling anxious right now",
+  'Help me calm down',
+  'I need to talk to someone',
+  'Give me a breathing exercise',
+];
+
 export default function PatientDashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [buddyFullOpen, setBuddyFullOpen] = useState(false);
+  const [buddyMessages, setBuddyMessages] = useState<BuddyMessage[]>([]);
+  const [buddyInput, setBuddyInput] = useState('');
+  const [buddySending, setBuddySending] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const { balance } = useWallet();
   const [mdcUser, setMdcUser] = useState<any>(null);
@@ -124,7 +137,26 @@ export default function PatientDashboardLayout() {
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(`${path}/`);
 
-  const disableSidebarAndNav = location.pathname === '/patient/preferences';
+  const disableSidebarAndNav = false;
+
+  const sendBuddyMessage = async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || buddySending) return;
+    const userMsg: BuddyMessage = { role: 'user', content: trimmed };
+    setBuddyMessages((prev) => [...prev, userMsg]);
+    setBuddyInput('');
+    setBuddySending(true);
+    try {
+      const history = [...buddyMessages, userMsg].map((m) => ({ role: m.role, content: m.content }));
+      const res = await patientApi.aiChat({ messages: history }) as any;
+      const reply = res?.data?.message || res?.message || 'I\'m here for you. Could you tell me more?';
+      setBuddyMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
+    } catch {
+      setBuddyMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, I\'m having trouble connecting right now. Please try again.' }]);
+    } finally {
+      setBuddySending(false);
+    }
+  };
 
   const pageTitleMap: Record<string, string> = {
     '/patient/dashboard': 'Dashboard',
@@ -350,6 +382,15 @@ export default function PatientDashboardLayout() {
               )}
 
               <Link
+                to="/patient/provider-messages"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-2xl text-charcoal/55 transition hover:bg-wellness-aqua"
+                aria-label="Messages"
+                title="Messages"
+              >
+                <MessageSquare className="h-4 w-4" />
+              </Link>
+
+              <Link
                 to="/patient/notifications"
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-2xl text-charcoal/55 transition hover:bg-wellness-aqua"
                 aria-label="Open notifications"
@@ -412,6 +453,142 @@ export default function PatientDashboardLayout() {
           })}
         </div>
       </nav>
+
+      {/* Floating AnytimeBuddy button — opens full modal directly */}
+      <div className={`fixed bottom-[80px] right-4 z-[55] lg:bottom-6 lg:right-6 ${disableSidebarAndNav ? 'pointer-events-none opacity-0' : ''}`}>
+        <button
+          type="button"
+          onClick={() => setBuddyFullOpen(true)}
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-600 text-white shadow-lg transition hover:scale-105 hover:bg-teal-700 active:scale-95"
+          aria-label="Open AnytimeBuddy AI"
+        >
+          <MessageSquare className="h-6 w-6" />
+        </button>
+      </div>
+
+      {/* Full-screen AnytimeBuddy chat modal */}
+      {buddyFullOpen && (
+        <div className="fixed inset-0 z-[80] flex flex-col bg-white">
+          {/* Header */}
+          <div className="flex items-center justify-between bg-teal-600 px-4 py-3 shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-base font-bold text-white">AnytimeBuddy</p>
+                <p className="text-xs text-white/75">Your 24/7 AI wellness companion</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setBuddyFullOpen(false)}
+              className="rounded-xl p-2 text-white/80 transition hover:bg-white/20 hover:text-white"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+            {buddyMessages.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full text-center gap-4 py-8">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal-50">
+                  <Sparkles className="h-8 w-8 text-teal-500" />
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-gray-800">Hi, I'm AnytimeBuddy</p>
+                  <p className="mt-1 text-sm text-gray-500">I'm here to support you between sessions. What's on your mind?</p>
+                </div>
+                <div className="grid grid-cols-1 gap-2 w-full max-w-sm mt-2">
+                  {BUDDY_QUICK_PROMPTS.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => sendBuddyMessage(prompt)}
+                      className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-left text-sm text-teal-800 transition hover:bg-teal-100"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {buddyMessages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role === 'assistant' && (
+                  <div className="mr-2 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-teal-100 mt-1">
+                    <Sparkles className="h-3.5 w-3.5 text-teal-600" />
+                  </div>
+                )}
+                <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
+                  msg.role === 'user'
+                    ? 'bg-teal-600 text-white rounded-br-sm'
+                    : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                }`}>
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+            {buddySending && (
+              <div className="flex justify-start">
+                <div className="mr-2 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-teal-100 mt-1">
+                  <Sparkles className="h-3.5 w-3.5 text-teal-600" />
+                </div>
+                <div className="rounded-2xl rounded-bl-sm bg-gray-100 px-4 py-3">
+                  <div className="flex gap-1">
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:0ms]" />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:150ms]" />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:300ms]" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quick prompts (when messages exist) */}
+          {buddyMessages.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto px-4 py-2 border-t border-gray-100 scrollbar-hide">
+              {BUDDY_QUICK_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => sendBuddyMessage(prompt)}
+                  className="flex-shrink-0 rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs text-teal-800 transition hover:bg-teal-100"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Input */}
+          <div className="border-t border-gray-200 bg-white px-4 py-3">
+            <form
+              onSubmit={(e) => { e.preventDefault(); void sendBuddyMessage(buddyInput); }}
+              className="flex items-center gap-2"
+            >
+              <input
+                type="text"
+                value={buddyInput}
+                onChange={(e) => setBuddyInput(e.target.value)}
+                placeholder="Type a message…"
+                disabled={buddySending}
+                className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 disabled:opacity-60"
+              />
+              <button
+                type="submit"
+                disabled={buddySending || !buddyInput.trim()}
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white transition hover:bg-teal-700 disabled:opacity-50"
+                aria-label="Send"
+              >
+                <MessageSquare className="h-4 w-4" />
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {profileMenuOpen && (
         <div

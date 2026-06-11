@@ -28,6 +28,8 @@ import {
   TrendingUp,
   Calendar,
   ArrowLeft,
+  MessageCircle,
+  Siren,
 } from 'lucide-react';
 import {
   clearMarketplaceBookingPending,
@@ -148,6 +150,7 @@ export default function SessionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [sessionTab, setSessionTab] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<any | null>(null);
   const [isSmartMatchOpen, setIsSmartMatchOpen] = useState(false);
@@ -826,7 +829,7 @@ export default function SessionsPage() {
       const responseData = error?.response?.data;
 
       if (status === 409) {
-        toast.error('Invoice is not available until the session is completed.');
+        toast.error('No invoice found for this session.');
         return;
       }
 
@@ -1028,7 +1031,8 @@ export default function SessionsPage() {
   const isWithin10Minutes = useMemo(() => {
     if (!nextSession) return false;
     const now = new Date().getTime();
-    const scheduledAt = new Date(nextSession.scheduled_at || nextSession.scheduledAt).getTime();
+    const scheduledAt = new Date(nextSession.dateTime || nextSession.scheduled_at || nextSession.scheduledAt).getTime();
+    if (Number.isNaN(scheduledAt)) return false;
     const diffMins = (scheduledAt - now) / 1000 / 60;
     return diffMins > -60 && diffMins <= 10;
   }, [nextSession]);
@@ -1049,7 +1053,8 @@ export default function SessionsPage() {
   const isSessionTomorrow = useMemo(() => {
     if (!nextSession) return false;
     const now = new Date().getTime();
-    const scheduledAt = new Date(nextSession.scheduled_at || nextSession.scheduledAt).getTime();
+    const scheduledAt = new Date(nextSession.dateTime || nextSession.scheduled_at || nextSession.scheduledAt).getTime();
+    if (Number.isNaN(scheduledAt)) return false;
     const diffHours = (scheduledAt - now) / 1000 / 60 / 60;
     return diffHours <= 48 && diffHours > 0;
   }, [nextSession]);
@@ -1058,6 +1063,81 @@ export default function SessionsPage() {
 
   // Clinical Assessment Full-Page View
   if (isClinicalAssessmentOpen) {
+    if (clinicalFlowPhase === 'next-phase') {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-gradient-to-br from-emerald-50 via-white to-teal-50 px-4 py-8">
+          <div className="w-full max-w-lg">
+            <div className="mb-6 flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-teal-700">My Care Clinical Check-in</p>
+              <button
+                type="button"
+                onClick={closeClinicalAssessmentFlow}
+                className="rounded-lg border border-calm-sage/20 bg-white p-2 text-charcoal/70 hover:bg-calm-sage/5"
+                aria-label="Close"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              {/* Congratulations card */}
+              <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-6">
+                <p className="text-3xl">🎉</p>
+                <h3 className="mt-3 text-xl font-bold text-charcoal">You completed your assessment!</h3>
+                <p className="mt-1.5 text-sm text-charcoal/70">
+                  Great first step. Stay in your journey — book your first session now or access urgent support if needed.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {clinicalResults.map((result, idx) => {
+                    const sev = result.severity.toLowerCase();
+                    const cls = sev.includes('severe') ? 'bg-red-100 text-red-700 border-red-200' : sev.includes('moderate') ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-green-100 text-green-700 border-green-200';
+                    return (
+                      <span key={`${result.type}-${idx}`} className={`rounded-full border px-3 py-1 text-xs font-semibold ${cls}`}>
+                        {result.type}: {result.score} · {result.severity}
+                      </span>
+                    );
+                  })}
+                </div>
+                {String(clinicalJourney?.recommendedProvider || '').toLowerCase().includes('psychiatrist') && (
+                  <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+                    💊 Your scores suggest a psychiatrist consultation may help. See Urgent Care below.
+                  </div>
+                )}
+              </div>
+              {adPresetProviderType ? (
+                <button
+                  type="button"
+                  onClick={startAdPresetPath}
+                  className="w-full rounded-xl border border-calm-sage/25 bg-white p-4 text-left hover:border-calm-sage/45"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Your Recommended Path</p>
+                  <p className="mt-1 text-sm font-medium text-charcoal">Continue with {adPresetLabel} providers</p>
+                </button>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => void startCarePath('recommended')}
+                    className="rounded-xl border border-teal-200 bg-teal-50 p-5 text-left transition hover:bg-teal-100"
+                  >
+                    <p className="text-base font-bold text-teal-800">Book a Session</p>
+                    <p className="mt-1 text-sm text-teal-700/80">Best-matched therapist for your scores. Start healing today.</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void startCarePath('urgent')}
+                    className="rounded-xl border border-rose-200 bg-rose-50 p-5 text-left transition hover:bg-rose-100"
+                  >
+                    <p className="text-base font-bold text-rose-800">Urgent Care</p>
+                    <p className="mt-1 text-sm text-rose-700/80">Priority psychiatrist pathway for immediate support.</p>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-6 pb-20 md:px-6 lg:pb-6">
         <div className="flex items-center justify-between border-b border-calm-sage/15 pb-4 mb-6">
@@ -1156,54 +1236,59 @@ export default function SessionsPage() {
 
           {clinicalFlowPhase === 'next-phase' ? (
             <div className="space-y-4">
-              <div className="rounded-xl border border-calm-sage/15 bg-calm-sage/5 p-4">
-                <p className="text-sm font-semibold text-charcoal">Assessment complete</p>
-                <div className="mt-2 space-y-1 text-xs text-charcoal/70">
-                  {clinicalResults.map((result, idx) => (
-                    <p key={`${result.type}-${idx}`}>{result.type}: {result.score} ({result.severity})</p>
-                  ))}
+              {/* Congratulations card */}
+              <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-5">
+                <p className="text-2xl">🎉</p>
+                <h3 className="mt-2 text-base font-bold text-charcoal">You completed your assessment!</h3>
+                <p className="mt-1 text-sm text-charcoal/70">
+                  Great first step. Stay in your journey — book your first session now or access urgent support if needed.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {clinicalResults.map((result, idx) => {
+                    const sev = result.severity.toLowerCase();
+                    const cls = sev.includes('severe') ? 'bg-red-100 text-red-700 border-red-200' : sev.includes('moderate') ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-green-100 text-green-700 border-green-200';
+                    return (
+                      <span key={`${result.type}-${idx}`} className={`rounded-full border px-3 py-1 text-xs font-semibold ${cls}`}>
+                        {result.type}: {result.score} · {result.severity}
+                      </span>
+                    );
+                  })}
                 </div>
-                {String(clinicalJourney?.recommendedProvider || '').toLowerCase().includes('psychiatrist') ? (
-                  <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-900">
-                    Medication Needed
-                    <div className="mt-0.5">💊 PSYCHIATRIST</div>
+                {String(clinicalJourney?.recommendedProvider || '').toLowerCase().includes('psychiatrist') && (
+                  <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+                    💊 Your scores suggest a psychiatrist consultation may help. See Urgent Care below.
                   </div>
-                ) : null}
+                )}
               </div>
 
+              {/* Next step cards */}
               {adPresetProviderType ? (
-                <div className="grid gap-2">
-                  <button
-                    type="button"
-                    onClick={startAdPresetPath}
-                    className="rounded-xl border border-calm-sage/25 bg-white p-3 text-left hover:border-calm-sage/45"
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Ad Priority Route</p>
-                    <p className="mt-1 text-sm text-charcoal">Continue with {adPresetLabel} providers</p>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={startAdPresetPath}
+                  className="w-full rounded-xl border border-calm-sage/25 bg-white p-4 text-left hover:border-calm-sage/45"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Your Recommended Path</p>
+                  <p className="mt-1 text-sm font-medium text-charcoal">Continue with {adPresetLabel} providers</p>
+                  <p className="mt-0.5 text-xs text-charcoal/55">Based on your assessment results</p>
+                </button>
               ) : (
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <button
                     type="button"
                     onClick={() => void startCarePath('recommended')}
-                    className="rounded-xl border border-calm-sage/25 bg-white p-3 text-left hover:border-calm-sage/45"
+                    className="rounded-xl border border-teal-200 bg-teal-50 p-4 text-left transition hover:bg-teal-100"
                   >
-                    <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Recommended</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void startCarePath('direct')}
-                    className="rounded-xl border border-calm-sage/25 bg-white p-3 text-left hover:border-calm-sage/45"
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">🎯 Choose Provider</p>
+                    <p className="text-sm font-bold text-teal-800">Book a Session</p>
+                    <p className="mt-1 text-xs text-teal-700/80">Best-matched therapist for your scores. Start healing today.</p>
                   </button>
                   <button
                     type="button"
                     onClick={() => void startCarePath('urgent')}
-                    className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-left hover:border-rose-300"
+                    className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-left transition hover:bg-rose-100"
                   >
-                    <p className="text-xs font-semibold uppercase tracking-wide text-rose-700">Urgent Care</p>
+                    <p className="text-sm font-bold text-rose-800">Urgent Care</p>
+                    <p className="mt-1 text-xs text-rose-700/80">Priority psychiatrist pathway for immediate support.</p>
                   </button>
                 </div>
               )}
@@ -1414,11 +1499,38 @@ export default function SessionsPage() {
             <section className="overflow-hidden rounded-2xl border border-teal-200 bg-teal-50 shadow-sm p-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-teal-900">Your request is submitted — hang tight!</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-teal-900">Finding your therapist...</h3>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      Matching
+                    </span>
+                  </div>
                   <p className="mt-1 max-w-2xl text-sm text-teal-800">
-                    We've received your request and it's now live in the marketplace. As soon as a provider accepts, you'll be matched and your session date &amp; details will appear right here.
-                    <span className="mt-1 block font-medium text-teal-700">⏳ Most requests are matched within a few hours.</span>
+                    Our TherapeuticGPS is reviewing language, specialization, availability, and match score. You'll be notified as soon as a provider accepts.
+                    <span className="mt-1 block font-medium text-teal-700">⏳ Usually matched within a few hours.</span>
                   </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="text-xs font-semibold text-teal-700 self-center">Explore while you wait:</span>
+                    <Link
+                      to="/patient/mood"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-white px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
+                    >
+                      😊 Mood Tracker
+                    </Link>
+                    <Link
+                      to="/patient/buddy/chat"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-white px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
+                    >
+                      🤖 AnytimeBuddy AI
+                    </Link>
+                    <Link
+                      to="/patient/sound-therapy"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-white px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
+                    >
+                      🎵 Sound Therapy
+                    </Link>
+                  </div>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-2">
                   <button
@@ -1428,10 +1540,6 @@ export default function SessionsPage() {
                   >
                     🚨 Urgent Care
                   </button>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                    Pending Match
-                  </span>
                 </div>
               </div>
             </section>
@@ -1604,7 +1712,7 @@ export default function SessionsPage() {
 
           <section className="space-y-4">
             <h3 className="text-lg font-bold text-charcoal">My Active Care Team</h3>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {myProviders.map((provider) => (
                 <div key={provider.id} className="group relative overflow-hidden rounded-2xl border border-calm-sage/15 bg-white p-5 shadow-soft-sm transition-all hover:border-teal-200 hover:shadow-md">
                   <div className="flex items-start gap-4">
@@ -1614,6 +1722,16 @@ export default function SessionsPage() {
                     <div className="min-w-0 flex-1">
                       <h4 className="truncate font-bold text-charcoal">{provider.name}</h4>
                       <p className="text-xs font-semibold uppercase tracking-wider text-teal-600/70">{provider.role || 'Therapist'}</p>
+                      {provider.specialization && (
+                        <p className="mt-0.5 text-xs text-charcoal/55">{provider.specialization}</p>
+                      )}
+                      {provider.experience && (
+                        <p className="text-xs text-charcoal/50">{provider.experience} yrs experience</p>
+                      )}
+                      <div className="mt-1 flex items-center gap-1">
+                        <span className="inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
+                        <span className="text-[11px] text-green-700 font-medium">Active Provider</span>
+                      </div>
 
                       <div className="mt-4 flex flex-wrap gap-2">
                         {!hasUrgentSession && !hasMarketplacePending && (
@@ -1628,6 +1746,7 @@ export default function SessionsPage() {
                           to={getProviderMessageLink(provider)}
                           className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-calm-sage/20 bg-white px-3 py-2 text-xs font-semibold text-charcoal/80 transition hover:bg-calm-sage/5 hover:text-charcoal"
                         >
+                          <MessageCircle className="h-3.5 w-3.5" />
                           Message
                         </Link>
                       </div>
@@ -1635,38 +1754,61 @@ export default function SessionsPage() {
                   </div>
                 </div>
               ))}
-
-              {todaysAssessmentResults.length > 0 && (
-                <div className="rounded-2xl border border-teal-200/60 bg-teal-50/80 p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100">
-                      <TrendingUp className="h-5 w-5 text-teal-600" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-teal-900">Assessment Results</h4>
-                      <p className="text-xs text-teal-700/80">Completed {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</p>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    {todaysAssessmentResults.map((result, index) => (
-                      <div key={`${result.type}-${index}`} className="flex items-center justify-between rounded-lg bg-white/80 p-3">
-                        <div>
-                          <p className="text-sm font-semibold text-charcoal">{result.type}</p>
-                          <p className="text-xs text-charcoal/60">Score: {result.score}</p>
-                        </div>
-                        <span className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${result.severity.includes('severe') ? 'bg-red-100 text-red-700' :
-                          result.severity.includes('moderate') ? 'bg-amber-100 text-amber-700' :
-                            'bg-green-100 text-green-700'
-                          }`}>
-                          {result.severity}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </section>
+
+          {/* Urgent / Crisis Support — always Manas 360 staff, never the patient's provider */}
+          <section className="rounded-2xl border border-red-200/60 bg-red-50/60 p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100">
+                  <Siren className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-red-900">Need Urgent Support?</p>
+                  <p className="mt-0.5 text-xs text-red-700/80">Our Manas 360 crisis support team is available 24/7. This is separate from your therapist — our trained staff will assist you immediately.</p>
+                </div>
+              </div>
+              <Link
+                to="/patient/crisis"
+                className="shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-red-700"
+              >
+                <Siren className="h-4 w-4" />
+                Connect to Crisis Support
+              </Link>
+            </div>
+          </section>
+
+          {todaysAssessmentResults.length > 0 && (
+            <section className="rounded-2xl border border-teal-200/60 bg-teal-50/80 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100">
+                  <TrendingUp className="h-5 w-5 text-teal-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-teal-900">Latest Assessment Results</h4>
+                  <p className="text-xs text-teal-700/80">Completed {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} · Shared with your care team</p>
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {todaysAssessmentResults.map((result, index) => (
+                  <div key={`${result.type}-${index}`} className="flex items-center justify-between rounded-xl bg-white/90 p-4">
+                    <div>
+                      <p className="text-sm font-bold text-charcoal">{result.type}</p>
+                      <p className="text-xs text-charcoal/60 mt-0.5">Score: {result.score} / {result.type === 'PHQ-9' ? '27' : '21'}</p>
+                    </div>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${result.severity.includes('severe') ? 'bg-red-100 text-red-700' :
+                      result.severity.includes('moderate') ? 'bg-amber-100 text-amber-700' :
+                        'bg-green-100 text-green-700'
+                      }`}>
+                      {result.severity}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-[11px] text-teal-700/60">Your provider will review these scores before your next session and adjust your care plan accordingly.</p>
+            </section>
+          )}
 
           <section className="space-y-4 pt-6">
             <div className="flex items-center justify-between gap-3">
@@ -1726,50 +1868,96 @@ export default function SessionsPage() {
           </section>
 
           <section className="space-y-4 pt-6">
-            <h3 className="text-lg font-bold text-charcoal">Session History & Notes</h3>
-            {history.length > 0 ? (
-              <div className="overflow-hidden rounded-2xl border border-calm-sage/15 bg-white shadow-soft-sm">
-                <div className="divide-y divide-calm-sage/10">
-                  {history.map((session) => {
-                    const scheduledDate = new Date(session.scheduled_at || session.scheduledAt);
-                    const isCompleted = isSessionCompleted(session);
-
-                    return (
-                      <div key={session.id} className="flex flex-col gap-4 p-4 transition-colors hover:bg-calm-sage/5 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`rounded-xl p-2 ${isCompleted ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                            <Activity className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-charcoal">{session.provider?.name || 'Assigned Therapist'}</p>
-                            <p className="mt-0.5 text-xs text-charcoal/60">
-                              {scheduledDate.toLocaleString('en-US', {
-                                weekday: 'short',
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2 pl-12 sm:pl-0">
-                          {isCompleted ? (
-                            <button
-                              onClick={() => void handleDownloadInvoice(session)}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-calm-sage/20 px-3 py-1.5 text-xs font-medium text-charcoal/70 transition hover:bg-calm-sage/10 hover:text-charcoal"
-                            >
-                              <Download className="h-3.5 w-3.5" />
-                              Invoice
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h3 className="text-lg font-bold text-charcoal">Session History & Notes</h3>
+              <div className="flex gap-1 rounded-xl border border-calm-sage/20 bg-calm-sage/5 p-1">
+                {(['all', 'upcoming', 'completed'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setSessionTab(tab)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition ${
+                      sessionTab === tab
+                        ? 'bg-white text-charcoal shadow-sm'
+                        : 'text-charcoal/60 hover:text-charcoal'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
               </div>
-            ) : null}
+            </div>
+            {(() => {
+              const now = new Date();
+              const filtered = history.filter((s) => {
+                const scheduledDate = new Date(s.scheduled_at || s.scheduledAt);
+                const isCompleted = isSessionCompleted(s);
+                const isFuture = !isNaN(scheduledDate.getTime()) && scheduledDate > now;
+                if (sessionTab === 'completed') return isCompleted;
+                if (sessionTab === 'upcoming') return !isCompleted && isFuture;
+                return true;
+              });
+              if (filtered.length === 0) {
+                return (
+                  <div className="rounded-2xl border border-calm-sage/15 bg-white/50 p-6 text-center text-sm text-charcoal/60">
+                    No {sessionTab === 'all' ? '' : sessionTab} sessions found.
+                  </div>
+                );
+              }
+              return (
+                <div className="overflow-hidden rounded-2xl border border-calm-sage/15 bg-white shadow-soft-sm">
+                  <div className="divide-y divide-calm-sage/10">
+                    {filtered.map((session) => {
+                      const scheduledDate = new Date(session.scheduled_at || session.scheduledAt);
+                      const isCompleted = isSessionCompleted(session);
+                      const isFuture = !isNaN(scheduledDate.getTime()) && scheduledDate > now;
+                      const statusLabel = isCompleted ? 'Completed' : isFuture ? 'Upcoming' : 'Pending';
+                      const statusClass = isCompleted
+                        ? 'bg-green-100 text-green-700'
+                        : isFuture
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-amber-100 text-amber-700';
+
+                      return (
+                        <div key={session.id} className="flex flex-col gap-4 p-4 transition-colors hover:bg-calm-sage/5 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`rounded-xl p-2 ${isCompleted ? 'bg-green-50 text-green-600' : isFuture ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'}`}>
+                              <Activity className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-charcoal">{session.provider?.name || 'Assigned Therapist'}</p>
+                              <p className="mt-0.5 text-xs text-charcoal/60">
+                                {scheduledDate.toLocaleString('en-US', {
+                                  weekday: 'short',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })}
+                              </p>
+                              <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusClass}`}>
+                                {statusLabel}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 pl-12 sm:pl-0">
+                            {isCompleted ? (
+                              <button
+                                onClick={() => void handleDownloadInvoice(session)}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-calm-sage/20 px-3 py-1.5 text-xs font-medium text-charcoal/70 transition hover:bg-calm-sage/10 hover:text-charcoal"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                                Invoice
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </section>
         </div>
       )}

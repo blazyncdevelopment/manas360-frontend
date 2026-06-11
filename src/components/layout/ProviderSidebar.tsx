@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Users, Calendar, Settings, MessageSquare, CreditCard, LogOut, ClipboardCheck, Star, Radio, Award, Zap } from 'lucide-react';
+import { Home, Users, Calendar, Settings, CreditCard, LogOut, ClipboardCheck, Star, Radio, Award, Zap } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const ProviderSidebar = () => {
@@ -34,7 +34,6 @@ export const ProviderSidebar = () => {
             { label: 'Certifications', path: '/provider/certifications', icon: <Award size={18} /> },
             { label: 'My Certifications', path: '/provider/my-certifications', icon: <ClipboardCheck size={18} /> },
             { label: 'Complete Onboarding', path: '/onboarding/provider-setup', icon: <Star size={18} /> },
-            { label: 'Messages', path: '/provider/messages', icon: <MessageSquare size={18} /> },
             { label: 'Settings', path: '/provider/settings', icon: <Settings size={18} /> },
           ],
         },
@@ -62,7 +61,6 @@ export const ProviderSidebar = () => {
           { label: 'Earnings', path: '/provider/earnings', icon: <CreditCard size={18} /> },
           { label: 'Premium Plan', path: '/provider/subscription', icon: <Star size={18} /> },
           { label: 'Certifications', path: '/provider/certifications', icon: <Award size={18} /> },
-          { label: 'Messages', path: '/provider/messages', icon: <MessageSquare size={18} /> },
           { label: 'Settings', path: '/provider/settings', icon: <Settings size={18} /> },
         ]
       }

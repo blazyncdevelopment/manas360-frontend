@@ -965,3 +965,57 @@ export const quickAssignCbtTemplate = async (
   return unwrap<{ assignmentId: string; status: string; title?: string }>(response.data);
 };
 
+// ============ PRESCRIPTIONS ============
+
+export const DISORDER_TAG_OPTIONS = [
+  { value: 'anxiety', label: 'Anxiety' },
+  { value: 'depression', label: 'Depression' },
+  { value: 'stress', label: 'Stress' },
+  { value: 'insomnia', label: 'Insomnia' },
+  { value: 'ptsd', label: 'PTSD' },
+  { value: 'ocd', label: 'OCD' },
+] as const;
+
+export type DisorderTag = (typeof DISORDER_TAG_OPTIONS)[number]['value'];
+
+export const BEHAVIORAL_RX_ITEMS = [
+  { key: 'morning_walk', label: 'Morning Walk 20 min (Mon, Wed, Fri)', category: 'behavioral' },
+  { key: 'gratitude_journal', label: 'Gratitude Journal — 5 min/day', category: 'behavioral' },
+  { key: 'screen_free', label: 'Screen-free 9PM–7AM', category: 'digital_detox' },
+  { key: 'social_media_limit', label: 'Social media limit 30 min/day', category: 'digital_detox' },
+  { key: 'deep_breathing', label: 'Deep breathing 10 min/day', category: 'behavioral' },
+  { key: 'cold_shower', label: 'Cold shower (2 min) — morning', category: 'behavioral' },
+] as const;
+
+export const createSoundTherapyRx = async (
+  patientId: string,
+  disorderTag: string,
+): Promise<{ prescriptionId: string; preset: string }> => {
+  const response = await http.post<Envelope<{ prescriptionId: string; preset: string }>>(
+    `/v1/prescriptions/sound-therapy`,
+    { patientId, disorderTag },
+  );
+  return unwrap<{ prescriptionId: string; preset: string }>(response.data);
+};
+
+export const createBehavioralRx = async (
+  patientId: string,
+  items: string[],
+): Promise<{ prescriptionId: string }> => {
+  const response = await http.post<Envelope<{ prescriptionId: string }>>(
+    `/v1/prescriptions/behavioral`,
+    { patientId, items },
+  );
+  return unwrap<{ prescriptionId: string }>(response.data);
+};
+
+export const generateWellnessPlan = async (
+  patientId: string,
+): Promise<{ pdfUrl: string; sentViaWhatsapp: boolean }> => {
+  const response = await http.post<Envelope<{ pdfUrl: string; sentViaWhatsapp: boolean }>>(
+    `/v1/wellness-plan/generate`,
+    { patientId },
+  );
+  return unwrap<{ pdfUrl: string; sentViaWhatsapp: boolean }>(response.data);
+};
+

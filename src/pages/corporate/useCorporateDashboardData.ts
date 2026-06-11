@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
 import { corporateApi } from '../../api/corporate.api';
+import { useAuth } from '../../context/AuthContext';
+
+export const useCorporateKey = (): string => {
+  const { user } = useAuth();
+  return (user as any)?.companyKey || (user as any)?.company_key || '';
+};
 
 export type CorporateDashboardPayload = {
   company: {
@@ -27,7 +33,7 @@ export type CorporateDashboardPayload = {
   privacy: { note: string };
 };
 
-export const useCorporateDashboardData = (companyKey = 'techcorp-india') => {
+export const useCorporateDashboardData = (companyKey = '') => {
   const [dashboard, setDashboard] = useState<CorporateDashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

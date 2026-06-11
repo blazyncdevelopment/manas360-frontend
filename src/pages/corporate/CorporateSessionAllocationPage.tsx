@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import CorporateShellLayout from '../../components/corporate/CorporateShellLayout';
 import { corporateApi } from '../../api/corporate.api';
+import { useCorporateKey } from './useCorporateDashboardData';
 
 type AllocationRow = { department: string; allocatedSessions: number; usedSessions: number };
 
 export default function CorporateSessionAllocationPage() {
+  const companyKey = useCorporateKey();
   const [rows, setRows] = useState<AllocationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -12,7 +14,7 @@ export default function CorporateSessionAllocationPage() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await corporateApi.getSessionAllocation('techcorp-india');
+        const data = await corporateApi.getSessionAllocation(companyKey);
         setRows(data?.rows || []);
       } catch (err: any) {
         setError(err?.response?.data?.message || 'Unable to load allocations');
@@ -20,7 +22,7 @@ export default function CorporateSessionAllocationPage() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [companyKey]);
 
   return (
     <CorporateShellLayout title="Session Allocation" subtitle="Department-wise allocated and used sessions.">

@@ -196,13 +196,29 @@ export default function PatientList() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/provider/patient/${item.id}/overview`)}
-                      className="rounded-lg bg-[#4A6741] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#2D4128]"
-                    >
-                      Open Chart
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/provider/patient/${item.id}/overview`)}
+                        className="rounded-lg bg-[#4A6741] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#2D4128]"
+                      >
+                        View Patient
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/provider/messages?patientId=${encodeURIComponent(item.id)}`)}
+                        className="rounded-lg border border-[#E5E5E5] bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-[#FAFAF8]"
+                      >
+                        Message
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/provider/appointments?patientId=${encodeURIComponent(item.id)}`)}
+                        className="rounded-lg border border-[#E5E5E5] bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-[#FAFAF8]"
+                      >
+                        Book
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

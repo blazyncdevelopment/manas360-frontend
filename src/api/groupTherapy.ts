@@ -44,9 +44,14 @@ export const groupTherapyApi = {
     return unwrap<GroupTherapySession>(res.data);
   },
 
-  listMyRequests: async (): Promise<{ items: GroupTherapySession[] }> => {
+  listMyRequests: async (): Promise<{ items: (GroupTherapySession & { joinedCount?: number })[] }> => {
     const res = await http.get('/v1/group-therapy/requests/mine');
-    return unwrap<{ items: GroupTherapySession[] }>(res.data);
+    return unwrap<{ items: (GroupTherapySession & { joinedCount?: number })[] }>(res.data);
+  },
+
+  getSessionParticipants: async (sessionId: string): Promise<{ participants: any[]; total: number }> => {
+    const res = await http.get(`/v1/group-therapy/requests/${encodeURIComponent(sessionId)}/participants`);
+    return unwrap<{ participants: any[]; total: number }>(res.data);
   },
 
   listAdminQueue: async (): Promise<{ items: any[] }> => {
@@ -79,7 +84,7 @@ export const groupTherapyApi = {
     sessionId: string,
     payload?: { guestName?: string; guestEmail?: string },
   ) => {
-    const res = await publicHttp.post(`/v1/group-therapy/public/sessions/${encodeURIComponent(sessionId)}/join/payment-intent`, payload || {});
+    const res = await http.post(`/v1/group-therapy/public/sessions/${encodeURIComponent(sessionId)}/join/payment-intent`, payload || {});
     return unwrap<{ transactionId: string; redirectUrl: string; enrollmentId: string; amountMinor: number }>(res.data);
   },
 

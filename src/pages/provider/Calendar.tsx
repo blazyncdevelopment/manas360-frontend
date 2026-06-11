@@ -154,19 +154,21 @@ export default function Calendar() {
 											{isToday && <span className="rounded-full bg-[#23313A] px-2 py-0.5 text-[10px] font-semibold text-white">Today</span>}
 										</div>
 
-										<div className="mt-3 space-y-2">
+										<div className="mt-2 space-y-1">
 											{sessions.map((session) => (
 												<button
 													key={session.id}
 													type="button"
 													onClick={() => navigate(`/provider/patient/${session.patientId}/overview`)}
-													className={`w-full rounded-xl border px-3 py-2 text-left transition hover:shadow-sm ${statusClasses(session.status)}`}
+													className={`w-full rounded-lg border px-2 py-1 text-left transition hover:shadow-sm ${statusClasses(session.status)}`}
 												>
-													<p className="truncate text-xs font-semibold">{session.patientName}</p>
-													<p className="mt-1 text-[11px] opacity-80">{formatSessionTime(session.dateTime)} • {session.status}</p>
+													<div className="flex items-baseline gap-1">
+														<span className="truncate text-[11px] font-semibold leading-snug">{session.patientName}</span>
+														<span className="shrink-0 text-[10px] font-normal opacity-60">· {formatSessionTime(session.dateTime)}</span>
+													</div>
 												</button>
 											))}
-											{sessions.length === 0 && <div className="h-9 rounded-lg border border-dashed border-[#EEF2EA] bg-[#FBFCFA]" />}
+											{sessions.length === 0 && <div className="h-6 rounded-lg border border-dashed border-[#EEF2EA] bg-[#FBFCFA]" />}
 										</div>
 									</div>
 								);

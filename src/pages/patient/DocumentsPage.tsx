@@ -7,6 +7,7 @@ import { patientApi } from '../../api/patient';
 
 type DocItem = {
   id: string;
+  downloadId?: string;
   title: string;
   date: string;
   category: 'official' | 'session' | 'assessment';
@@ -356,9 +357,20 @@ export default function DocumentsPage() {
                                 return;
                               }
                               try {
-                                const res = await patientApi.getDocumentDownloadUrl(doc.id);
-                                const data = res?.data ?? res;
-                                if (data?.url) window.open(data.url, '_blank', 'noopener,noreferrer'); else toast.error('No file available');
+                                // Session notes and assessments use downloadId → secure record URL
+                                // S3-uploaded documents use the regular document download URL
+                                if (doc.downloadId) {
+                                  const res = await patientApi.getRecordSecureUrl(doc.downloadId);
+                                  const data = (res as any)?.data ?? res;
+                                  const url = data?.url ?? data?.secureUrl ?? data?.downloadUrl;
+                                  if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                                  else toast.error('No download link available for this record');
+                                } else {
+                                  const res = await patientApi.getDocumentDownloadUrl(doc.id);
+                                  const data = (res as any)?.data ?? res;
+                                  if (data?.url) window.open(data.url, '_blank', 'noopener,noreferrer');
+                                  else toast.error('No file available');
+                                }
                               } catch (e) {
                                 toast.error('Download failed');
                               }

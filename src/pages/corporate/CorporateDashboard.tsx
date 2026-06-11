@@ -8,6 +8,7 @@ import RoiStatsSection from './dashboard/RoiStatsSection';
 import WellnessChallengesSection from './dashboard/WellnessChallengesSection';
 import type { LeaderboardEntry, RoiStat, WellnessChallenge } from './dashboard/CorporateDashboard.types';
 import { corporateApi } from '../../api/corporate.api';
+import { useCorporateKey } from './useCorporateDashboardData';
 
 type ChallengeApiItem = {
   id?: string | number;
@@ -81,6 +82,7 @@ type EapQrAnalytics = {
 };
 
 export default function CorporateDashboard() {
+  const companyKey = useCorporateKey();
   const [wellnessChallenges, setWellnessChallenges] = useState<WellnessChallenge[]>([]);
   const [challengesLoading, setChallengesLoading] = useState(true);
   const [challengesError, setChallengesError] = useState<string | null>(null);
@@ -257,7 +259,7 @@ export default function CorporateDashboard() {
     setLeaderboardError(null);
 
     try {
-      const payload = await corporateApi.getDashboard();
+      const payload = await corporateApi.getDashboard(companyKey);
 
       const source = ((payload as DashboardApiPayload | null)?.data ?? payload ?? {}) as {
         leaderboard?: LeaderboardApiItem[];
@@ -308,7 +310,7 @@ export default function CorporateDashboard() {
     } finally {
       setLeaderboardLoading(false);
     }
-  }, []);
+  }, [companyKey]);
 
   useEffect(() => {
     void fetchLeaderboard();
@@ -319,7 +321,7 @@ export default function CorporateDashboard() {
     setEapError(null);
 
     try {
-      const payload = await corporateApi.getEapQrAnalytics('techcorp-india');
+      const payload = await corporateApi.getEapQrAnalytics(companyKey);
       const data = ((payload as { data?: EapQrAnalytics } | null)?.data ?? payload ?? {}) as EapQrAnalytics;
       setEapAnalytics(data);
     } catch (error) {
@@ -329,7 +331,7 @@ export default function CorporateDashboard() {
     } finally {
       setEapLoading(false);
     }
-  }, []);
+  }, [companyKey]);
 
   useEffect(() => {
     void fetchEapAnalytics();
@@ -339,7 +341,7 @@ export default function CorporateDashboard() {
     const location = window.prompt('Enter EAP standee location', 'blr-campus-1')?.trim() || 'blr-campus-1';
     setEapGenerating(true);
     try {
-      const response = await corporateApi.createEapQr({ location }, 'techcorp-india');
+      const response = await corporateApi.createEapQr({ location }, companyKey);
       toast.success('EAP QR generated');
       
       const payload = (response && typeof response === 'object' && 'data' in response ? (response as any).data : response) as any;

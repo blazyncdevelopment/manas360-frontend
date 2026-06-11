@@ -503,19 +503,23 @@ export default function ProviderMarketplacePage() {
               className={`px-5 py-3 text-sm font-bold capitalize transition-all border-b-2 -mb-px ${tab === t ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
             >
-              {t === 'marketplace' ? `Buy Leads (${leads.length})` : `My Purchased (${purchasedLeads.length})`}
+              {t === 'marketplace' ? `Lead Marketplace (${leads.length})` : `My GPS-Matched Leads (${purchasedLeads.length})`}
             </button>
           ))}
         </div>
 
-        {/* Purchased Leads Tab */}
+        {/* GPS-Matched Leads Tab */}
         {tab === 'purchased' && (
           <div className="space-y-4">
+            <div className="rounded-2xl border border-teal-100 bg-teal-50 px-4 py-3">
+              <p className="text-sm font-semibold text-teal-800">🎯 TherapeuticGPS Matched Leads</p>
+              <p className="mt-1 text-xs text-teal-700">These leads are routed <strong>specifically to you</strong> by TherapeuticGPS based on your Expertise (40pts) + Communication (35pts) + Quality (25pts) score. New patients are matched to 1–3 specific providers only — not broadcast to everyone.</p>
+            </div>
             {purchasedLeads.length === 0 ? (
               <div className="bg-white rounded-3xl border border-dashed border-slate-200 py-20 flex flex-col items-center gap-3">
                 <ShoppingCart className="h-10 w-10 text-slate-300" />
-                <p className="text-slate-400 font-bold">No purchased leads yet</p>
-                <p className="text-slate-400 text-sm">Buy leads from the marketplace to see patient details here</p>
+                <p className="text-slate-400 font-bold">No GPS-matched leads yet</p>
+                <p className="text-slate-400 text-sm">When new patients are matched to your profile, they appear here. Buy marketplace leads for additional volume.</p>
               </div>
             ) : (
               purchasedLeads.map((lead: any) => (

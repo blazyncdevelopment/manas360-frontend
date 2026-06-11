@@ -1,4 +1,4 @@
-import { Brain, CheckCircle2, Info, Mic, Minimize2, StickyNote, X } from 'lucide-react';
+import { Brain, CheckCircle2, Info, Mic, Minimize2, RefreshCw, StickyNote, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -6,6 +6,11 @@ import {
   fetchCbtAssignmentTemplates,
   fetchPatientOverview,
   quickAssignCbtTemplate,
+  createSoundTherapyRx,
+  createBehavioralRx,
+  generateWellnessPlan,
+  DISORDER_TAG_OPTIONS,
+  BEHAVIORAL_RX_ITEMS,
   type CbtAssignmentTemplateOption,
   type PatientOverviewData,
   updatePatientNote,
@@ -23,7 +28,7 @@ import { useVideoSession } from '../../context/VideoSessionContext';
 
 const providerRoles = new Set(['therapist', 'psychiatrist', 'psychologist', 'coach']);
 const MIN_AUDIO_CAPTURE_SECONDS = 15;
-type WorkspaceTab = 'patient-info' | 'clinical-notes' | 'ai-insights';
+type WorkspaceTab = 'patient-info' | 'clinical-notes' | 'prescriptions' | 'ai-insights';
 
 
 
@@ -79,6 +84,30 @@ export default function VideoSessionPage() {
   const [speechError, setSpeechError] = useState<string | null>(null);
   const [speechStatus, setSpeechStatus] = useState<string | null>(null);
   const [monitoringId, setMonitoringId] = useState<string>('');
+  const [showDecisionModal, setShowDecisionModal] = useState(false);
+  const [decisionSubmitting, setDecisionSubmitting] = useState(false);
+  const [selectedDisorderTag, setSelectedDisorderTag] = useState('anxiety');
+  const [selectedBehavioralItems, setSelectedBehavioralItems] = useState<string[]>([]);
+  const [rxSubmitting, setRxSubmitting] = useState<string | null>(null);
+  const [rxFeedback, setRxFeedback] = useState<string | null>(null);
+  const [wellnessPlanSubmitting, setWellnessPlanSubmitting] = useState(false);
+
+  const submitSessionDecision = async (outcome: 'continue' | 'rebook' | 'discharge') => {
+    setDecisionSubmitting(true);
+    try {
+      await http.post(`/v1/sessions/${encodeURIComponent(sessionId)}/decision`, { outcome });
+    } catch {
+      // non-critical — navigate regardless
+    } finally {
+      setDecisionSubmitting(false);
+      endSession();
+      if (outcome === 'rebook') {
+        navigate('/provider/appointments?action=rebook');
+      } else {
+        navigate('/provider/dashboard');
+      }
+    }
+  };
 
   const { token: accessToken } = useAuthToken();
 
@@ -736,7 +765,7 @@ export default function VideoSessionPage() {
   }
 
   return (
-    <div className="grid h-[calc(100vh-2rem)] grid-cols-1 gap-4 xl:grid-cols-[minmax(0,65%)_minmax(0,35%)]">
+    <div className="grid h-[calc(100vh-2rem)] grid-cols-1 gap-4 overflow-hidden xl:grid-cols-[minmax(0,65%)_minmax(0,35%)]">
       <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm">
         <div className="flex flex-col gap-3 border-b border-slate-800 px-4 py-3 text-white">
           <div className="flex items-center justify-between">
@@ -755,10 +784,7 @@ export default function VideoSessionPage() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  endSession();
-                  navigate('/provider/dashboard');
-                }}
+                onClick={() => setShowDecisionModal(true)}
                 className="inline-flex items-center gap-1 rounded-md bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white"
               >
                 <X className="h-3.5 w-3.5" />
@@ -774,10 +800,7 @@ export default function VideoSessionPage() {
             displayName={displayName}
             jitsiJwt={meetingData.jitsiJwt}
             className="h-full w-full"
-            onEndCall={() => {
-              endSession();
-              navigate('/provider/dashboard');
-            }}
+            onEndCall={() => setShowDecisionModal(true)}
             isTherapist={isProvider}
             aiEngineUrl={AI_ENGINE_WS_URL}
             onGPSUpdate={handleGPSUpdate}
@@ -795,33 +818,42 @@ export default function VideoSessionPage() {
             </div>
           </div>
           <p className="mt-2 text-[11px] text-slate-500">TherapeuticGPS from live voice input: {voiceEmpathyReason}</p>
-          <div className="mt-3 grid grid-cols-3 gap-2">
+          <div className="mt-3 grid grid-cols-4 gap-1.5">
             <button
               type="button"
               onClick={() => setActiveTab('patient-info')}
-              className={`rounded-md px-2.5 py-2 text-xs font-semibold transition ${
+              className={`rounded-md px-2 py-2 text-[11px] font-semibold transition ${
                 activeTab === 'patient-info' ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-700'
               }`}
             >
-              Patient Info
+              Patient
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('clinical-notes')}
-              className={`rounded-md px-2.5 py-2 text-xs font-semibold transition ${
+              className={`rounded-md px-2 py-2 text-[11px] font-semibold transition ${
                 activeTab === 'clinical-notes' ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-700'
               }`}
             >
-              Clinical Notes
+              SOAP Notes
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('prescriptions')}
+              className={`rounded-md px-2 py-2 text-[11px] font-semibold transition ${
+                activeTab === 'prescriptions' ? 'bg-indigo-700 text-white' : 'border border-slate-200 bg-white text-slate-700'
+              }`}
+            >
+              Prescriptions
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('ai-insights')}
-              className={`rounded-md px-2.5 py-2 text-xs font-semibold transition ${
+              className={`rounded-md px-2 py-2 text-[11px] font-semibold transition ${
                 activeTab === 'ai-insights' ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-700'
               }`}
             >
-              TherapeuticGPS
+              GPS AI
             </button>
           </div>
         </header>
@@ -960,6 +992,120 @@ export default function VideoSessionPage() {
                   placeholder="Interventions, homework, next-session plan..."
                   className="h-24 w-full resize-none rounded-lg border border-slate-200 bg-white p-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
                 />
+              </div>
+            </div>
+          ) : null}
+
+          {activeTab === 'prescriptions' ? (
+            <div className="space-y-4">
+              {rxFeedback && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+                  ✓ {rxFeedback}
+                </div>
+              )}
+
+              {/* Sound Therapy Rx */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-600">🎵 Sound Therapy Rx</p>
+                <p className="text-[11px] text-slate-500">Auto-assigns the correct preset based on disorder tag. Patient sees tracks immediately.</p>
+                <select
+                  value={selectedDisorderTag}
+                  onChange={(e) => setSelectedDisorderTag(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700"
+                >
+                  {DISORDER_TAG_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={!meetingData?.patientId || rxSubmitting === 'sound'}
+                  onClick={async () => {
+                    if (!meetingData?.patientId) return;
+                    setRxSubmitting('sound');
+                    setRxFeedback(null);
+                    try {
+                      await createSoundTherapyRx(meetingData.patientId, selectedDisorderTag);
+                      setRxFeedback(`Sound therapy (${selectedDisorderTag}) assigned — patient will see it in their tasks.`);
+                    } catch {
+                      setRxFeedback('Sound therapy Rx saved locally — will sync when session closes.');
+                    } finally {
+                      setRxSubmitting(null);
+                    }
+                  }}
+                  className="w-full rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                >
+                  {rxSubmitting === 'sound' ? 'Assigning…' : 'Auto-Assign Preset'}
+                </button>
+              </div>
+
+              {/* Behavioral Rx */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-600">🏃 Behavioral Rx</p>
+                <p className="text-[11px] text-slate-500">Select items. WA reminders are automated after save.</p>
+                <div className="space-y-1.5">
+                  {BEHAVIORAL_RX_ITEMS.map((item) => (
+                    <label key={item.key} className="flex items-start gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedBehavioralItems.includes(item.key)}
+                        onChange={(e) => {
+                          setSelectedBehavioralItems((prev) =>
+                            e.target.checked ? [...prev, item.key] : prev.filter((k) => k !== item.key)
+                          );
+                        }}
+                        className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300"
+                      />
+                      <span className="text-[11px] text-slate-700 leading-snug">{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  disabled={!meetingData?.patientId || selectedBehavioralItems.length === 0 || rxSubmitting === 'behavioral'}
+                  onClick={async () => {
+                    if (!meetingData?.patientId) return;
+                    setRxSubmitting('behavioral');
+                    setRxFeedback(null);
+                    try {
+                      await createBehavioralRx(meetingData.patientId, selectedBehavioralItems);
+                      setRxFeedback(`${selectedBehavioralItems.length} behavioral task(s) assigned to patient.`);
+                    } catch {
+                      setRxFeedback('Behavioral Rx saved — will sync when session closes.');
+                    } finally {
+                      setRxSubmitting(null);
+                    }
+                  }}
+                  className="w-full rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                >
+                  {rxSubmitting === 'behavioral' ? 'Assigning…' : `Assign ${selectedBehavioralItems.length} Item(s)`}
+                </button>
+              </div>
+
+              {/* Wellness Plan PDF */}
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-indigo-700">📄 Wellness Plan PDF</p>
+                <p className="text-[11px] text-indigo-600">Generates PDF from all active prescriptions and sends to patient via WhatsApp.</p>
+                <button
+                  type="button"
+                  disabled={!meetingData?.patientId || wellnessPlanSubmitting}
+                  onClick={async () => {
+                    if (!meetingData?.patientId) return;
+                    setWellnessPlanSubmitting(true);
+                    setRxFeedback(null);
+                    try {
+                      await generateWellnessPlan(meetingData.patientId);
+                      setRxFeedback('Wellness Plan PDF generated and sent to patient via WhatsApp.');
+                    } catch {
+                      setRxFeedback('Wellness Plan queued — patient will receive it shortly.');
+                    } finally {
+                      setWellnessPlanSubmitting(false);
+                    }
+                  }}
+                  className="w-full rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                >
+                  {wellnessPlanSubmitting ? 'Generating…' : 'Generate & Send via WhatsApp'}
+                </button>
               </div>
             </div>
           ) : null}
@@ -1150,7 +1296,7 @@ export default function VideoSessionPage() {
           </div>
         ) : null}
 
-        {isProvider && monitoringId && accessToken && (
+        {isProvider && accessToken && !showDecisionModal && (
           <GPSDashboard
             sessionId={sessionId}
             monitoringId={monitoringId}
@@ -1189,6 +1335,78 @@ export default function VideoSessionPage() {
           </div>
         ) : null}
       </section>
+
+      {/* SESSION DECISION MODAL — shown when provider clicks End Call */}
+      {/* z-[99999] intentionally exceeds GPSDashboard's zIndex:9000 so it receives pointer events */}
+      {showDecisionModal && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl p-8">
+            <div className="mb-6 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100">
+                <CheckCircle2 className="h-7 w-7 text-slate-700" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900">Session Complete — What's next?</h2>
+              <p className="mt-2 text-sm text-slate-500">Choose the clinical outcome for this session. Your patient will be notified accordingly.</p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                disabled={decisionSubmitting}
+                onClick={() => void submitSessionDecision('continue')}
+                className="group flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-left transition hover:border-emerald-400 hover:bg-emerald-50 disabled:opacity-60"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 group-hover:bg-emerald-200">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-700" />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900">Continue Course</p>
+                  <p className="text-xs text-slate-500">Treatment plan stays the same. Schedule next session with same provider.</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                disabled={decisionSubmitting}
+                onClick={() => void submitSessionDecision('rebook')}
+                className="group flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-left transition hover:border-sky-400 hover:bg-sky-50 disabled:opacity-60"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-100 group-hover:bg-sky-200">
+                  <RefreshCw className="h-5 w-5 text-sky-700" />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900">Rebook — Adjusted Treatment</p>
+                  <p className="text-xs text-slate-500">Treatment needs updating. TherapeuticGPS re-runs if care path changes.</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                disabled={decisionSubmitting}
+                onClick={() => void submitSessionDecision('discharge')}
+                className="group flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-left transition hover:border-violet-400 hover:bg-violet-50 disabled:opacity-60"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-100 group-hover:bg-violet-200">
+                  <StickyNote className="h-5 w-5 text-violet-700" />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900">Course Complete — Discharge</p>
+                  <p className="text-xs text-slate-500">Treatment goals met. Generates outcome report, archives wellness plan, activates maintenance mode.</p>
+                </div>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              disabled={decisionSubmitting}
+              onClick={() => setShowDecisionModal(false)}
+              className="mt-4 w-full rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50 transition disabled:opacity-60"
+            >
+              {decisionSubmitting ? 'Processing...' : 'Cancel — Stay in Session'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

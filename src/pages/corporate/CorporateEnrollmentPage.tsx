@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import CorporateShellLayout from '../../components/corporate/CorporateShellLayout';
 import { corporateApi } from '../../api/corporate.api';
+import { useCorporateKey } from './useCorporateDashboardData';
 
 type BulkUploadResult = {
   requested: number;
@@ -12,6 +13,7 @@ type BulkUploadResult = {
 };
 
 export default function CorporateEnrollmentPage() {
+  const companyKey = useCorporateKey();
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -58,7 +60,7 @@ export default function CorporateEnrollmentPage() {
     setError(null);
     setLastResult(null);
     try {
-      const result = (await corporateApi.bulkUploadEmployeesFile(file, 'techcorp-india')) as BulkUploadResult;
+      const result = (await corporateApi.bulkUploadEmployeesFile(file, companyKey)) as BulkUploadResult;
       setStatus(result?.message || 'Employee file uploaded successfully.');
       setLastResult(result);
       setFile(null);
@@ -103,7 +105,7 @@ export default function CorporateEnrollmentPage() {
     setError(null);
     setLastResult(null);
     try {
-      const result = (await corporateApi.bulkUploadEmployees(rows, 'techcorp-india')) as BulkUploadResult;
+      const result = (await corporateApi.bulkUploadEmployees(rows, companyKey)) as BulkUploadResult;
       setStatus(result?.message || 'Employees uploaded successfully.');
       setLastResult(result);
       setRowsText('');
@@ -134,7 +136,7 @@ export default function CorporateEnrollmentPage() {
         department: singleEmployee.department,
         location: singleEmployee.location || 'Bengaluru',
         manager: singleEmployee.manager || 'Unassigned',
-      }], 'techcorp-india')) as BulkUploadResult;
+      }], companyKey)) as BulkUploadResult;
       
       setStatus(result?.message || 'Employee uploaded successfully.');
       setLastResult(result);

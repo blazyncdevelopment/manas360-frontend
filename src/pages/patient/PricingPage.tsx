@@ -509,8 +509,8 @@ export default function PricingPage() {
               </tr>
               <tr>
                 <td>🌏 NRI Coach</td>
-                <td><strong>₹2,999</strong></td>
-                <td>₹3,299</td>
+                <td><strong>₹2,999</strong><br /><small style={{ color: '#6b7280', fontSize: '11px' }}>≈ $36 USD</small></td>
+                <td>₹3,299<br /><small style={{ color: '#6b7280', fontSize: '11px' }}>≈ $40 USD</small></td>
                 <td>Cross-cultural, dual timezone</td>
               </tr>
             </tbody>
@@ -541,19 +541,19 @@ export default function PricingPage() {
               </tr>
               <tr>
                 <td>🌏 NRI — Psychologist</td>
-                <td><strong>₹2,999</strong>/session</td>
+                <td><strong>₹2,999</strong>/session<br /><small style={{ color: '#6b7280', fontSize: '11px' }}>≈ $36 USD</small></td>
                 <td>Video 50 min</td>
                 <td>IST eve / NRI AM</td>
               </tr>
               <tr>
                 <td>🌏 NRI — Psychiatrist</td>
-                <td><strong>₹3,499</strong>/session</td>
+                <td><strong>₹3,499</strong>/session<br /><small style={{ color: '#6b7280', fontSize: '11px' }}>≈ $42 USD</small></td>
                 <td>Video 30 min</td>
                 <td>IST eve / NRI AM</td>
               </tr>
               <tr>
                 <td>🌏 NRI — Therapist</td>
-                <td><strong>₹3,599</strong>/session</td>
+                <td><strong>₹3,599</strong>/session<br /><small style={{ color: '#6b7280', fontSize: '11px' }}>≈ $43 USD</small></td>
                 <td>Video 50 min</td>
                 <td>IST eve / NRI AM</td>
               </tr>

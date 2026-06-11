@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { corporateApi } from '../../api/corporate.api';
 import CorporateShellLayout from '../../components/corporate/CorporateShellLayout';
+import { useCorporateKey } from './useCorporateDashboardData';
 
 type CorporateSupportSettings = {
   companyName: string;
@@ -12,6 +13,7 @@ type CorporateSupportSettings = {
 };
 
 export default function CorporateHelpPage() {
+  const companyKey = useCorporateKey();
   const [settings, setSettings] = useState<CorporateSupportSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +23,7 @@ export default function CorporateHelpPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = (await corporateApi.getSettings('techcorp-india')) as CorporateSupportSettings;
+        const data = (await corporateApi.getSettings(companyKey)) as CorporateSupportSettings;
         setSettings(data);
       } catch (fetchError: any) {
         setError(fetchError?.response?.data?.message || 'Unable to load support details');
@@ -31,7 +33,7 @@ export default function CorporateHelpPage() {
     };
 
     void load();
-  }, []);
+  }, [companyKey]);
 
   return (
     <CorporateShellLayout title="Help & Support" subtitle="Support channels for corporate members.">

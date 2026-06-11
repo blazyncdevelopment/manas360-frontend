@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import CorporateShellLayout from '../../components/corporate/CorporateShellLayout';
 import { corporateApi } from '../../api/corporate.api';
+import { useCorporateKey } from './useCorporateDashboardData';
 
 type EmployeeRow = {
   id: string;
@@ -15,6 +16,7 @@ type EmployeeRow = {
 };
 
 export default function CorporateEmployeeDirectoryPage() {
+  const companyKey = useCorporateKey();
   const [rows, setRows] = useState<EmployeeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +26,7 @@ export default function CorporateEmployeeDirectoryPage() {
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const response = await corporateApi.getEmployees('techcorp-india', { limit: 100 });
+      const response = await corporateApi.getEmployees(companyKey, { limit: 100 });
       setRows(response?.rows || []);
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Unable to load employee directory');
@@ -48,7 +50,7 @@ export default function CorporateEmployeeDirectoryPage() {
         phone: editingEmployee.phone || '',
         department: editingEmployee.department || '',
         manager: editingEmployee.managerName || '',
-      }, 'techcorp-india');
+      }, companyKey);
       setEditingEmployee(null);
       await fetchEmployees();
     } catch (err: any) {

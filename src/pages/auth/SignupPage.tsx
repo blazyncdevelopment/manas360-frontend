@@ -448,8 +448,8 @@ export default function SignupPage() {
 	};
 
 	const verifyOtp = async () => {
-		if (!isCertificationContext && !isProviderFlow && nriConsent.nri_declared && !nriConsent.nri_tos_accepted) {
-			setError('Please review and accept NRI Terms of Service to complete registration.');
+		if (!isCertificationContext && !isProviderFlow && nriConsent.nri_declared && (!nriConsent.nri_tos_accepted || !nriConsent.nri_timezone_pool)) {
+			setError(!nriConsent.nri_timezone_pool ? 'Please select your timezone window.' : 'Please accept NRI Terms to complete registration.');
 			return;
 		}
 
@@ -508,6 +508,7 @@ export default function SignupPage() {
 				nri_declared: nriConsent.nri_declared,
 				nri_tos_accepted: nriConsent.nri_tos_accepted,
 				nri_tos_accepted_at: nriConsent.nri_tos_accepted_at || undefined,
+				nri_timezone_pool: nriConsent.nri_timezone_pool || undefined,
 			}, guestGameToken);
 
 			if (guestGameToken) {
@@ -702,10 +703,6 @@ export default function SignupPage() {
 							</label>
 						) : null}
 
-						{!isCertificationContext && !isProviderFlow ? (
-							<NriPatch onChange={setNriConsent} blockSubmitButtons={false} />
-						) : null}
-
 						{otpSent ? (
 							<>
 								<Input
@@ -720,7 +717,9 @@ export default function SignupPage() {
 									onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, isProviderFlow ? 6 : 4))}
 									required
 								/>
-
+								{!isCertificationContext && !isProviderFlow ? (
+									<NriPatch onChange={setNriConsent} blockSubmitButtons={false} />
+								) : null}
 							</>
 						) : null}
 
@@ -746,9 +745,11 @@ export default function SignupPage() {
 							</Button>
 						)}
 
-						{nriConsent.nri_declared && !nriConsent.nri_tos_accepted ? (
+						{nriConsent.nri_declared && (!nriConsent.nri_timezone_pool || !nriConsent.nri_tos_accepted) ? (
 							<p className="text-xs text-warning">
-								NRI Terms of Service must be accepted before final registration. You can send OTP now and accept NRI terms before verifying OTP.
+								{!nriConsent.nri_timezone_pool
+									? 'Select your timezone window to complete NRI setup.'
+									: 'Accept the legal terms to complete NRI registration.'}
 							</p>
 						) : null}
 					</div>
