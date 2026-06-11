@@ -34,16 +34,27 @@ type PlanEdit = {
 };
 
 const labelForProviderType = (value: string): string => {
-  const key = String(value || '').toLowerCase();
+  const key = String(value || '').toLowerCase().replace(/_/g, '-');
   if (key === 'clinical-psychologist') return 'Clinical Psychologist';
   if (key === 'psychiatrist') return 'Psychiatrist (MD)';
+  if (key === 'nlp-coach') return 'NLP Coach';
+  if (key === 'executive-coach') return 'Executive Coach';
+  if (key === 'couple-therapist') return 'Couple Therapist';
+  if (key === 'sleep-therapist') return 'Sleep Therapist';
   if (key === 'specialized-therapist') return 'Specialized Therapist';
-  if (key === 'nri_psychologist') return 'NRI Psychologist';
-  if (key === 'nri_psychiatrist') return 'NRI Psychiatrist (MD)';
-  if (key === 'nri_therapist') return 'NRI Therapist';
   if (key === 'psychologist') return 'Psychologist';
   if (key === 'therapist') return 'Therapist';
+  if (key === 'nri-psychologist') return 'NRI Psychologist';
+  if (key === 'nri-psychiatrist') return 'NRI Psychiatrist (MD)';
+  if (key === 'nri-therapist') return 'NRI Therapist';
+  if (key === 'nri-coach') return 'NRI Coach';
   return value;
+};
+
+const isNriProviderType = (value: string) => String(value || '').toLowerCase().startsWith('nri');
+const isSpecialtyProviderType = (value: string) => {
+  const k = String(value || '').toLowerCase();
+  return k === 'couple-therapist' || k === 'sleep-therapist';
 };
 
 export default function AdminPricingManagementPage() {
@@ -277,6 +288,22 @@ export default function AdminPricingManagementPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const [newSessionRow, setNewSessionRow] = useState<SessionEdit>({ providerType: '', durationMinutes: 50, price: 0 });
+  const [addingSession, setAddingSession] = useState(false);
+
+  const addSessionRow = () => {
+    const pt = newSessionRow.providerType.trim();
+    if (!pt || newSessionRow.price < 0) return;
+    const exists = sessionRows.some((r) => r.providerType === pt && r.durationMinutes === newSessionRow.durationMinutes);
+    if (exists) {
+      setError(`Row for ${pt} / ${newSessionRow.durationMinutes} min already exists.`);
+      return;
+    }
+    setSessionRows([...sessionRows, { ...newSessionRow }]);
+    setNewSessionRow({ providerType: '', durationMinutes: 50, price: 0 });
+    setAddingSession(false);
   };
 
   const [freeDays, setFreeDays] = useState('30');
@@ -551,56 +578,130 @@ export default function AdminPricingManagementPage() {
       </div>
 
       <div className="rounded-xl border border-ink-100 bg-white p-4">
-        <h3 className="font-display text-base font-bold text-ink-800">Session Pricing</h3>
-        <p className="mt-2 text-sm text-ink-600">
-          💡 <strong>NRI Pricing:</strong> To add or modify NRI session prices, add rows with provider types <code className="bg-ink-50 px-1.5 py-0.5 rounded text-xs">nri_psychologist</code>, <code className="bg-ink-50 px-1.5 py-0.5 rounded text-xs">nri_psychiatrist</code>, or <code className="bg-ink-50 px-1.5 py-0.5 rounded text-xs">nri_therapist</code>. These prices will be used for NRI patients who match your entry criteria. Domestic pricing uses standard provider types (therapist, psychologist, psychiatrist).
-        </p>
-        <div className="mt-3 overflow-x-auto">
-          <table className="min-w-full divide-y divide-ink-100">
-            <thead className="bg-ink-50">
-              <tr>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Provider</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Duration</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Price</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink-100">
-              {sessionRows.map((row, index) => (
-                <tr key={`${row.providerType}-${row.durationMinutes}`}>
-                  <td className="px-3 py-2 text-sm text-ink-700">{labelForProviderType(row.providerType)}</td>
-                  <td className="px-3 py-2 text-sm text-ink-700">{row.durationMinutes} min</td>
-                  <td className="px-3 py-2">
-                    <input
-                      type="number"
-                      min={0}
-                      value={row.price}
-                      onChange={(event) => updateSessionPrice(index, event.target.value)}
-                      className="w-32 rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2"
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="font-display text-base font-bold text-ink-800">Session Pricing</h3>
+            <p className="mt-0.5 text-xs text-ink-500">Revenue split: Provider 60% / Platform 40%. Video sessions auto-charge +10% at booking.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAddingSession((v) => !v)}
+            className="rounded-lg border border-sage-300 bg-sage-50 px-3 py-1.5 text-xs font-semibold text-sage-700 hover:bg-sage-100"
+          >
+            {addingSession ? 'Cancel' : '+ Add Row'}
+          </button>
         </div>
+
+        {addingSession && (
+          <div className="mt-3 flex flex-wrap items-end gap-3 rounded-lg border border-sage-200 bg-sage-50 p-3">
+            <label className="flex flex-col gap-1 text-xs text-ink-700">
+              Provider Type (e.g. clinical-psychologist)
+              <input
+                type="text"
+                value={newSessionRow.providerType}
+                onChange={(e) => setNewSessionRow({ ...newSessionRow, providerType: e.target.value })}
+                placeholder="clinical-psychologist"
+                className="w-52 rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs text-ink-700">
+              Duration (min)
+              <input
+                type="number"
+                min={1}
+                value={newSessionRow.durationMinutes}
+                onChange={(e) => setNewSessionRow({ ...newSessionRow, durationMinutes: Number(e.target.value) })}
+                className="w-24 rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs text-ink-700">
+              Price (₹)
+              <input
+                type="number"
+                min={0}
+                value={newSessionRow.price}
+                onChange={(e) => setNewSessionRow({ ...newSessionRow, price: Number(e.target.value) })}
+                className="w-32 rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={addSessionRow}
+              className="rounded-lg bg-sage-600 px-3 py-2 text-xs font-semibold text-white hover:bg-sage-700"
+            >
+              Add
+            </button>
+          </div>
+        )}
+
+        {(['domestic', 'specialty', 'nri'] as const).map((group) => {
+          const rows = sessionRows.map((row, index) => ({ row, index })).filter(({ row }) => {
+            if (group === 'nri') return isNriProviderType(row.providerType);
+            if (group === 'specialty') return !isNriProviderType(row.providerType) && isSpecialtyProviderType(row.providerType);
+            return !isNriProviderType(row.providerType) && !isSpecialtyProviderType(row.providerType);
+          });
+          if (rows.length === 0) return null;
+          const groupLabel = group === 'nri' ? 'NRI Sessions' : group === 'specialty' ? 'Specialty Services' : 'Domestic Sessions';
+          const groupColor = group === 'nri' ? 'text-orange-600' : group === 'specialty' ? 'text-purple-600' : 'text-ink-600';
+          return (
+            <div key={group} className="mt-4">
+              <p className={`mb-1.5 text-[11px] font-bold uppercase tracking-wider ${groupColor}`}>{groupLabel}</p>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-ink-100">
+                  <thead className="bg-ink-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Provider</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Duration</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Price (₹)</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Provider 60%</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Platform 40%</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-ink-100">
+                    {rows.map(({ row, index }) => {
+                      const provShare = Math.round(row.price * 0.6);
+                      const platShare = row.price - provShare;
+                      return (
+                        <tr key={`${row.providerType}-${row.durationMinutes}`}>
+                          <td className="px-3 py-2 text-sm font-medium text-ink-800">{labelForProviderType(row.providerType)}</td>
+                          <td className="px-3 py-2 text-sm text-ink-600">{row.durationMinutes} min</td>
+                          <td className="px-3 py-2">
+                            <input
+                              type="number"
+                              min={0}
+                              value={row.price}
+                              onChange={(event) => updateSessionPrice(index, event.target.value)}
+                              className="w-28 rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2"
+                            />
+                          </td>
+                          <td className="px-3 py-2 text-sm text-emerald-700">₹{provShare}</td>
+                          <td className="px-3 py-2 text-sm text-ink-500">₹{platShare}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="rounded-xl border border-ink-100 bg-white p-4">
-        <h3 className="font-display text-base font-bold text-ink-800">Premium Bundles</h3>
+        <h3 className="font-display text-base font-bold text-ink-800">AnytimeBuddy Add-ons</h3>
+        <p className="mt-0.5 text-xs text-ink-500">Subscription tiers for the AI wellness companion. Basic / Standard / Premium.</p>
         <div className="mt-3 overflow-x-auto">
           <table className="min-w-full divide-y divide-ink-100">
             <thead className="bg-ink-50">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Bundle</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Minutes</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Price</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Tier</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Price (₹/month)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
               {bundleRows.map((row, index) => (
                 <tr key={`${row.bundleName}-${row.minutes}`}>
-                  <td className="px-3 py-2 text-sm text-ink-700">{row.bundleName}</td>
-                  <td className="px-3 py-2 text-sm text-ink-700">{row.minutes}</td>
+                  <td className="px-3 py-2 text-sm font-medium text-ink-800">{row.bundleName}</td>
                   <td className="px-3 py-2">
                     <input
                       type="number"
@@ -618,16 +719,28 @@ export default function AdminPricingManagementPage() {
       </div>
 
       <div className="rounded-xl border border-ink-100 bg-white p-4">
-        <h3 className="font-display text-base font-bold text-ink-800">Preview</h3>
-        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <h3 className="font-display text-base font-bold text-ink-800">Pricing Preview</h3>
+        <p className="mt-0.5 text-xs text-ink-500">Standard price shown. Video = standard +10%.</p>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {groupedPreview.map(([providerType, rows]) => {
-            const row45 = rows.find((row) => row.durationMinutes === 45);
-            const row60 = rows.find((row) => row.durationMinutes === 60);
+            const mainRow = rows[0];
+            const videoPrice = mainRow ? Math.round(mainRow.price * 1.1) : null;
+            const isNri = isNriProviderType(providerType);
+            const isSpecialty = isSpecialtyProviderType(providerType);
+            const tagColor = isNri ? 'bg-orange-100 text-orange-700' : isSpecialty ? 'bg-purple-100 text-purple-700' : 'bg-sage-100 text-sage-700';
+            const tagLabel = isNri ? 'NRI' : isSpecialty ? 'Specialty' : 'Domestic';
             return (
-              <div key={providerType} className="rounded-lg border border-ink-100 bg-ink-50 px-3 py-2">
-                <p className="text-sm font-semibold text-ink-800">{labelForProviderType(providerType)}</p>
-                <p className="text-xs text-ink-600">45 min: ₹{row45?.price ?? '-'}</p>
-                <p className="text-xs text-ink-600">60 min: ₹{row60?.price ?? '-'}</p>
+              <div key={providerType} className="rounded-lg border border-ink-100 bg-ink-50 px-3 py-2.5">
+                <div className="flex items-center justify-between gap-1">
+                  <p className="text-sm font-semibold text-ink-800 leading-tight">{labelForProviderType(providerType)}</p>
+                  <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${tagColor}`}>{tagLabel}</span>
+                </div>
+                {mainRow && (
+                  <>
+                    <p className="mt-1 text-xs text-ink-600">{mainRow.durationMinutes} min · Standard: <span className="font-semibold text-ink-800">₹{mainRow.price}</span></p>
+                    <p className="text-xs text-ink-500">Video: ₹{videoPrice}</p>
+                  </>
+                )}
               </div>
             );
           })}
