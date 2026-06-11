@@ -223,56 +223,8 @@ export const corporateApi = {
       phone_number: String(payload.phone || '').trim(),
     };
 
-    const response = await fetch('/api/corporate/demo-request', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    let responsePayload: {
-      success?: boolean;
-      message?: string;
-      data?: unknown;
-      error?: { message?: string };
-    } = {};
-
-    try {
-      responsePayload = (await response.json()) as {
-        success?: boolean;
-        message?: string;
-        data?: unknown;
-        error?: { message?: string };
-      };
-    } catch (parseError) {
-      console.error('Corporate demo request: failed to parse response JSON', {
-        status: response.status,
-        statusText: response.statusText,
-        parseError,
-      });
-    }
-
-    if (!response.ok || responsePayload.success === false) {
-      let message = 'Failed to submit demo request';
-      if (responsePayload?.message) {
-        message = responsePayload.message;
-      } else if (responsePayload?.error?.message) {
-        message = responsePayload.error.message;
-      }
-
-      console.error('Corporate demo request failed', {
-        status: response.status,
-        statusText: response.statusText,
-        requestBody,
-        responsePayload,
-      });
-
-      throw new Error(message);
-    }
-
-    return unwrap(responsePayload as ApiEnvelope<unknown> | unknown);
+    const response = await http.post('/v1/corporate/public/request-demo', requestBody);
+    return unwrap(response.data);
   },
   requestCorporateOtp: async (payload: CorporateOtpRequestPayload) => {
     const response = await http.post('/v1/corporate/public/request-otp', payload);

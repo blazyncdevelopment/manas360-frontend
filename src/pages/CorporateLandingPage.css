@@ -161,6 +161,7 @@
   font-size: clamp(26px, 2.3vw, 36px);
   line-height: 1.12;
   font-weight: 800;
+  color: #ffffff;
 }
 
 .corporate-landing-cta p {

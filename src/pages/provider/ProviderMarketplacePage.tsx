@@ -455,8 +455,8 @@ export default function ProviderMarketplacePage() {
         <div className="mx-auto max-w-7xl relative z-10">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
             <div className="space-y-2">
-              <span className="text-[10px] font-black tracking-[0.2em] text-teal-400 uppercase">Growth Marketplace</span>
-              <h1 className="text-4xl font-black tracking-tight md:text-5xl">Buy Additional Leads</h1>
+              <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Growth Marketplace</span>
+              <h1 className="text-4xl font-black tracking-tight md:text-5xl text-white">Buy Additional Leads</h1>
               <p className="mt-4 text-slate-400 max-w-xl leading-relaxed">
                 Scale your practice beyond your weekly plan constraints. First-come, first-served premium patient matches.
               </p>

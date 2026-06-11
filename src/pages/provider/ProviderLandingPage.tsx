@@ -25,6 +25,7 @@ const ProviderLandingPage: React.FC = () => {
     const [seconds, setSeconds] = useState('32');
     const [notification, setNotification] = useState<SocialProofNotification>({ name: 'Dr. Rajesh K.', action: 'Just completed NLP Certification', time: '2 minutes ago', city: 'Mumbai' });
     const [showNotification, setShowNotification] = useState(true);
+    const [isFomoCollapsed, setIsFomoCollapsed] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState<ProviderProfileFormData>({
@@ -147,29 +148,58 @@ const ProviderLandingPage: React.FC = () => {
             </div> */}
 
             {/* FOMO Timer Banner */}
-            <div className="fomo-banner">
-                <div className="fomo-title">⚡ Limited Time: Early Bird Discount</div>
-                <p style={{ fontSize: '13px', margin: '8px 0' }}>Join in the next 24 hours & get:</p>
-                <ul style={{ fontSize: '12px', marginLeft: '18px', lineHeight: '1.4' }}>
-                    <li>₹5,000 lead credits FREE</li>
-                    <li>First certification 50% off</li>
-                    <li>Priority profile verification</li>
-                </ul>
-                <div className="timer">
-                    <div className="timer-block">
-                        <span className="timer-number">{hours}</span>
-                        <span className="timer-label">HOURS</span>
-                    </div>
-                    <div className="timer-block">
-                        <span className="timer-number">{minutes}</span>
-                        <span className="timer-label">MINS</span>
-                    </div>
-                    <div className="timer-block">
-                        <span className="timer-number">{seconds}</span>
-                        <span className="timer-label">SECS</span>
+            {isFomoCollapsed ? (
+                <div 
+                    className="fomo-banner" 
+                    onClick={() => setIsFomoCollapsed(false)}
+                    style={{ cursor: 'pointer', padding: '8px 16px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    title="Click to expand"
+                >
+                    <span style={{ fontSize: '14px', fontWeight: 'bold' }}>⚡ Early Bird</span>
+                </div>
+            ) : (
+                <div className="fomo-banner">
+                    <button 
+                        onClick={() => setIsFomoCollapsed(true)}
+                        style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            opacity: 0.8
+                        }}
+                        aria-label="Collapse"
+                    >
+                        ✕
+                    </button>
+                    <div className="fomo-title">⚡ Limited Time: Early Bird Discount</div>
+                    <p style={{ fontSize: '13px', margin: '8px 0' }}>Join in the next 24 hours & get:</p>
+                    <ul style={{ fontSize: '12px', marginLeft: '18px', lineHeight: '1.4' }}>
+                        <li>₹5,000 lead credits FREE</li>
+                        <li>First certification 50% off</li>
+                        <li>Priority profile verification</li>
+                    </ul>
+                    <div className="timer">
+                        <div className="timer-block">
+                            <span className="timer-number">{hours}</span>
+                            <span className="timer-label">HOURS</span>
+                        </div>
+                        <div className="timer-block">
+                            <span className="timer-number">{minutes}</span>
+                            <span className="timer-label">MINS</span>
+                        </div>
+                        <div className="timer-block">
+                            <span className="timer-number">{seconds}</span>
+                            <span className="timer-label">SECS</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Social Proof Notifications */}
             <div className={`social-proof ${!showNotification ? 'hidden-proof' : ''}`}>

@@ -461,6 +461,27 @@ export const HeaderPage: React.FC = () => {
   const [activeQuickNav, setActiveQuickNav] = useState<string | null>(null);
   const [loginDropdownTop, setLoginDropdownTop] = useState<number | null>(null);
   const [quickNavMegaTop, setQuickNavMegaTop] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const target = new Date();
+    target.setHours(23, 59, 59, 999);
+    return Math.max(0, target.getTime() - new Date().getTime());
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const target = new Date();
+      target.setHours(23, 59, 59, 999);
+      setTimeLeft(Math.max(0, target.getTime() - new Date().getTime()));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (ms: number) => {
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
   const quickNavCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const quickNavTouchStart = useRef<{ x: number; y: number } | null>(null);
   const quickNavTouchHandled = useRef(false);
@@ -711,7 +732,7 @@ export const HeaderPage: React.FC = () => {
       { icon: "\u2728", label: "Find a Spark Again" },
       { icon: "\uD83C\uDFDB\uFE0F", label: "For Corporates / Edu / Healthcare" },
       { icon: "\uD83C\uDF93", label: "Certify 2 Earn More" },
-      { icon: "\uD83D\uDCCB", label: "MyDigitalClinic" },
+      // { icon: "\uD83D\uDCCB", label: "MyDigitalClinic" },
       { icon: "\uD83C\uDF10", label: "NRI | Global Inc" }
     ],
     []
@@ -1099,7 +1120,7 @@ export const HeaderPage: React.FC = () => {
               </button>
 
               <span style={{ fontSize: "11px", fontWeight: 600, opacity: 0.9, whiteSpace: "nowrap" }}>
-                Offer expires in 23:57:36
+                Offer expires in {formatTime(timeLeft)}
               </span>
 
               <button

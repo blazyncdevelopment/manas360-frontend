@@ -59,10 +59,11 @@
   font-size: 32px;
   font-weight: 800;
   margin-bottom: 8px;
+  color: white;
 }
 
 .specialized-care-page .sc-header h1 span {
-  color: var(--olive-bright);
+  color: white;
 }
 
 .specialized-care-page .sc-header p {
@@ -367,6 +368,7 @@
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 6px;
+  color: white;
 }
 
 .specialized-care-page .bcta p {

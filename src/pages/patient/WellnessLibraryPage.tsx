@@ -243,7 +243,7 @@ export default function WellnessLibraryPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] opacity-90">{module.code}</p>
-                  <h2 className="mt-1 text-xl font-bold" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                  <h2 className="mt-1 text-xl font-bold text-white" style={{ fontFamily: 'DM Sans, sans-serif' }}>
                     {module.title}
                   </h2>
                 </div>

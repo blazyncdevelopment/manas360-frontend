@@ -90,7 +90,7 @@ export default function AboutUsPage() {
       <div className="hero">
         <div className="hero-inner">
           <div className="hero-eyebrow">About MANAS360</div>
-          <h1>
+          <h1 style={{ color: 'white' }}>
             From Episodic Care
             <br />
             to <em>Transformational Wellness</em>

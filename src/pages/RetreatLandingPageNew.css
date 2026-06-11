@@ -119,10 +119,11 @@
   margin-bottom: 14px;
   line-height: 1.15;
   letter-spacing: -0.5px;
+  color: var(--white);
 }
 
 .hero h1 i {
-  color: #B8D44F;
+  color: var(--white);
   font-style: italic;
 }
 

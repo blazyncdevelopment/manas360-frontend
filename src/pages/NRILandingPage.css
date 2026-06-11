@@ -369,6 +369,7 @@
   margin: 0;
   font-size: clamp(28px, 2.6vw, 42px);
   font-family: Georgia, "Times New Roman", serif;
+  color: #ffffff;
 }
 
 .nri-cta-strip p {

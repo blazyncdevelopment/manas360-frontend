@@ -95,38 +95,36 @@ const LandingPage: React.FC = () => {
     navigate("/assessment");
   };
 
-  const gtSessions: GtSession[] = useMemo(
-    () => [
-      {
-        theme: "Anxiety Circle",
-        emoji: "\uD83D\uDE30",
-        host: "Dr. Priya",
-        lang: "English",
-        spots: { total: 12, taken: 11 },
-        startsInMs: -5 * 60000,
-        durationMin: 60
-      },
-      {
-        theme: "Grief & Loss",
-        emoji: "\uD83D\uDD6F\uFE0F",
-        host: "Dr. Rajan",
-        lang: "Hindi",
-        spots: { total: 10, taken: 8 },
-        startsInMs: 12 * 60000,
-        durationMin: 45
-      },
-      {
-        theme: "Mindful Parenting",
-        emoji: "\uD83D\uDC68\u200D\uD83D\uDC67",
-        host: "Ms. Kavitha",
-        lang: "Tamil",
-        spots: { total: 15, taken: 6 },
-        startsInMs: 95 * 60000,
-        durationMin: 60
+  const [gtSessions, setGtSessions] = useState<GtSession[]>([]);
+
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+        const res = await fetch(`${apiUrl}/v1/group-therapy/public/sessions`);
+        const json = await res.json();
+        if (json.success && json.data?.items) {
+          const fetchedSessions: GtSession[] = json.data.items.slice(0, 3).map((item: any) => {
+            const scheduledAtTime = new Date(item.scheduledAt).getTime();
+            const startsInMs = scheduledAtTime - pageEpoch.current;
+            return {
+              theme: item.title || "Group Therapy",
+              emoji: "\uD83C\uDF31", // 🌱
+              host: item.hostName || "Therapist",
+              lang: item.language || "English",
+              spots: { total: item.maxMembers || 15, taken: item.joinedCount || 0 },
+              startsInMs: startsInMs,
+              durationMin: item.durationMinutes || 60
+            };
+          });
+          setGtSessions(fetchedSessions);
+        }
+      } catch (err) {
+        console.error('Failed to fetch sessions:', err);
       }
-    ],
-    []
-  );
+    };
+    fetchSessions();
+  }, []);
 
   const visibleGtSessions = useMemo(
     () =>
@@ -514,595 +512,588 @@ const LandingPage: React.FC = () => {
       </div>
 
       <main className="landing-main">
-      <section className="landing-gt-strip" aria-label="Live and next 2 hours">
-        <div className="landing-gt-strip-inner">
-          <div className="landing-gt-strip-header">
-            <div className="landing-gt-strip-left">
-              <span style={{ fontSize: "13px" }} aria-hidden="true">
-                &#128308;
-              </span>
-              <span className="landing-gt-strip-title">Live &amp; Next 2 Hours</span>
-              <span className="landing-gt-strip-badge">FREE</span>
-            </div>
-            <button
-              type="button"
-              className="landing-gt-strip-link"
-              onClick={() => navigate("/group-therapy")}
-            >
-              View full schedule &rarr;
-            </button>
-          </div>
-          <div
-            className="landing-gt-boxes"
-            style={{
-              gridTemplateColumns:
-                visibleGtSessions.length === 1
-                  ? "1fr"
-                  : visibleGtSessions.length === 2
-                    ? "1fr 1fr"
-                    : "repeat(3, 1fr)"
-            }}
-          >
-            {visibleGtSessions.length === 0 ? (
-              <div className="landing-gt-box-empty">
-                No sessions in the next 2 hours.{" "}
-                <button type="button" onClick={() => navigate("/group-therapy")}>
-                  See full schedule &rarr;
-                </button>
+        <section className="landing-gt-strip" aria-label="Live and next 2 hours">
+          <div className="landing-gt-strip-inner">
+            <div className="landing-gt-strip-header">
+              <div className="landing-gt-strip-left">
+                <span style={{ fontSize: "13px" }} aria-hidden="true">
+                  &#128308;
+                </span>
+                <span className="landing-gt-strip-title">Live &amp; Next 2 Hours</span>
+                <span className="landing-gt-strip-badge">FREE</span>
               </div>
-            ) : (
-              visibleGtSessions.map((session) => {
-                const status = getGtStatus(session, now, pageEpoch.current);
-                const countdown = getGtCountdown(session, now, pageEpoch.current);
-                const seatsLeft = session.spots.total - session.spots.taken;
-                const seatPct = (session.spots.taken / session.spots.total) * 100;
-                const boxClass =
-                  status === "live" ? "landing-gt-box-live" : status === "soon" ? "landing-gt-box-soon" : "landing-gt-box-upcoming";
-                const barColor = status === "live" ? "#FF9933" : status === "soon" ? "#3B82F6" : "#EAB308";
+              <button
+                type="button"
+                className="landing-gt-strip-link"
+                onClick={() => navigate("/group-therapy")}
+              >
+                View full schedule &rarr;
+              </button>
+            </div>
+            <div
+              className="landing-gt-boxes"
+              style={{
+                gridTemplateColumns: "repeat(3, 1fr)"
+              }}
+            >
+              {visibleGtSessions.length === 0 ? (
+                <div className="landing-gt-box-empty">
+                  No sessions in the next 2 hours.{" "}
+                  <button type="button" onClick={() => navigate("/group-therapy")}>
+                    See full schedule &rarr;
+                  </button>
+                </div>
+              ) : (
+                visibleGtSessions.map((session) => {
+                  const status = getGtStatus(session, now, pageEpoch.current);
+                  const countdown = getGtCountdown(session, now, pageEpoch.current);
+                  const seatsLeft = session.spots.total - session.spots.taken;
+                  const seatPct = (session.spots.taken / session.spots.total) * 100;
+                  const boxClass =
+                    status === "live" ? "landing-gt-box-live" : status === "soon" ? "landing-gt-box-soon" : "landing-gt-box-upcoming";
+                  const barColor = status === "live" ? "#FF9933" : status === "soon" ? "#3B82F6" : "#EAB308";
 
-                return (
-                  <div key={session.theme} className={`landing-gt-box ${boxClass}`}>
-                    <div className="landing-gt-box-top">
-                      <span className="landing-gt-box-theme">
-                        <span className="landing-gt-emoji">{session.emoji}</span> {session.theme}
-                      </span>
-                      {status === "live" ? (
-                        <span className="landing-gt-status landing-gt-status-live">
-                          <span className="landing-gt-dot" />
-                          LIVE
+                  return (
+                    <div key={session.theme} className={`landing-gt-box ${boxClass}`}>
+                      <div className="landing-gt-box-top">
+                        <span className="landing-gt-box-theme">
+                          <span className="landing-gt-emoji">{session.emoji}</span> {session.theme}
                         </span>
-                      ) : status === "soon" ? (
-                        <span className="landing-gt-status landing-gt-status-soon">
-                          &#128293; {formatCountdown(countdown)}
-                        </span>
+                        {status === "live" ? (
+                          <span className="landing-gt-status landing-gt-status-live">
+                            <span className="landing-gt-dot" />
+                            LIVE
+                          </span>
+                        ) : status === "soon" ? (
+                          <span className="landing-gt-status landing-gt-status-soon">
+                            &#128293; {formatCountdown(countdown)}
+                          </span>
+                        ) : (
+                          <span className="landing-gt-status landing-gt-status-upcoming">
+                            &#9200; {formatCountdown(countdown)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="landing-gt-box-meta">
+                        <span>&#128104;&#8205;&#9877;&#65039; {session.host}</span>
+                        <span>&#127760; {session.lang}</span>
+                      </div>
+                      {seatsLeft <= 3 && seatsLeft > 0 ? (
+                        <div className="landing-gt-box-seats landing-gt-box-seats-hot">
+                          &#128293; Only {seatsLeft} seat{seatsLeft > 1 ? "s" : ""} left!
+                          <span className="landing-gt-seats-bar">
+                            <span className="landing-gt-seats-fill" style={{ width: `${seatPct}%`, background: barColor }} />
+                          </span>
+                        </div>
                       ) : (
-                        <span className="landing-gt-status landing-gt-status-upcoming">
-                          &#9200; {formatCountdown(countdown)}
-                        </span>
+                        <div className="landing-gt-box-seats-muted">
+                          &#128101; {session.spots.taken}/{session.spots.total} joined
+                        </div>
                       )}
-                    </div>
-                    <div className="landing-gt-box-meta">
-                      <span>&#128104;&#8205;&#9877;&#65039; {session.host}</span>
-                      <span>&#127760; {session.lang}</span>
-                    </div>
-                    {seatsLeft <= 3 && seatsLeft > 0 ? (
-                      <div className="landing-gt-box-seats landing-gt-box-seats-hot">
-                        &#128293; Only {seatsLeft} seat{seatsLeft > 1 ? "s" : ""} left!
-                        <span className="landing-gt-seats-bar">
-                          <span className="landing-gt-seats-fill" style={{ width: `${seatPct}%`, background: barColor }} />
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="landing-gt-box-seats-muted">
-                        &#128101; {session.spots.taken}/{session.spots.total} joined
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      className={`landing-gt-box-btn ${
-                        status === "live"
+                      <button
+                        type="button"
+                        className={`landing-gt-box-btn ${status === "live"
                           ? "landing-gt-box-btn-live"
                           : status === "soon"
                             ? "landing-gt-box-btn-soon"
                             : "landing-gt-box-btn-upcoming"
-                      }`}
-                      onClick={() => navigate("/group-therapy")}
-                    >
-                      {status === "live"
-                        ? "\u26A1 JOIN NOW \u2014 FREE"
-                        : status === "soon"
-                          ? "\uD83D\uDD25 JOIN \u2014 Starting Soon"
-                          : "\uD83D\uDD14 Remind Me"}
-                    </button>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </section>
-
-      <div className="landing-hero-section" style={{ textAlign: "center", padding: "50px 24px 30px", maxWidth: "980px", margin: "0 auto", width: "100%" }}>
-        <h1 className="landing-hero-title">
-          You're <span className="landing-hero-accent">not alone</span>. Let's take
-          <br />
-          this <span className="landing-hero-accent">together</span>.
-        </h1>
-        <p className="landing-hero-subtitle">
-          Feeling overwhelmed? Confused? That's okay. We'll help you
-          <br />
-          understand your feelings in a safe, quiet space.
-        </p>
-        <p className="landing-hero-hint">Takes just 60 seconds.</p>
-
-        <button type="button" className="landing-hero-cta" onClick={handleScrollToAssess}>
-          START FREE SCREENING &rarr;
-        </button>
-
-        <div className="landing-trust-badges">
-          {["Confidential", "No Judgment", "Immediate"].map((t) => (
-            <div key={t} className="landing-trust-badge">
-              <span className="landing-trust-dot" aria-hidden="true" />
-              <span>{t}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <section
-        className="landing-pros-section"
-        aria-label="For Mental Health Professionals"
-        style={{
-          background: "transparent",
-          padding: "42px 16px 42px 16px"
-        }}
-      >
-        <div style={{ maxWidth: "1200px", margin: "0 auto", textAlign: "center" }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "10px",
-              fontSize: "11px",
-              fontWeight: 800,
-              letterSpacing: "2px",
-              textTransform: "uppercase",
-              color: "#001A4D",
-              opacity: 0.7,
-              marginBottom: "8px"
-            }}
-          >
-            <span style={{ fontSize: "14px" }}>&#10022;</span>
-            FOR MENTAL HEALTH PROFESSIONALS
-          </div>
-
-          <div
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontStyle: "italic",
-              fontSize: "14px",
-              fontWeight: 400,
-              color: "#3D3D5C",
-              marginBottom: "24px"
-            }}
-          >
-            Join India&apos;s growing network &mdash; Discover plans, create your profile, start earning
-          </div>
-
-          <div className="pro-grid">
-            <div className="landing-pro-card">
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <span style={{ fontSize: "10px", fontWeight: 900, color: "white", background: "linear-gradient(135deg,#7C3AED,#A78BFA)", padding: "4px 8px", borderRadius: "999px" }}>RCI VERIFIED</span>
-              </div>
-              <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-                <div style={{ width: "92px", height: "92px", borderRadius: "999px", border: "2px dashed rgba(124,58,237,0.45)", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(237,233,254,0.65)" }}>
-                  <span style={{ fontSize: "34px" }}>&#129504;</span>
-                </div>
-              </div>
-              <div style={{ marginTop: "14px", fontSize: "13px", fontWeight: 800, color: "#1A1A2E" }}>Psychologist</div>
-              <div style={{ marginTop: "6px", fontSize: "10px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>Clinical &amp; counseling psychology. RCI registered. Earn ₹60K&ndash;₹2L/mo</div>
-              <button type="button" onClick={() => navigate("/provider-landing")} style={{ marginTop: "14px", border: "1.5px solid rgba(124,58,237,0.7)", background: "rgba(255,255,255,0.95)", color: "#6D28D9", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
-                &#10022; Join Now
-              </button>
-              <div style={{ marginTop: "10px", fontSize: "8.5px", fontWeight: 600, color: "#666680" }}>Discover &mdash; Plans &mdash; Profile</div>
-            </div>
-
-            <div className="landing-pro-card">
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <span style={{ fontSize: "10px", fontWeight: 900, color: "white", background: "linear-gradient(135deg,#0EA5A6,#22C1C3)", padding: "4px 8px", borderRadius: "999px" }}>NMC VERIFIED</span>
-              </div>
-              <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-                <div style={{ width: "92px", height: "92px", borderRadius: "999px", border: "2px dashed rgba(14,165,166,0.45)", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(204,251,241,0.55)" }}>
-                  <span style={{ fontSize: "34px" }}>&#128181;</span>
-                </div>
-              </div>
-              <div style={{ marginTop: "14px", fontSize: "13px", fontWeight: 800, color: "#1A1A2E" }}>Psychiatrist</div>
-              <div style={{ marginTop: "6px", fontSize: "10px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>Diagnosis, medication, e-prescriptions. NMC registered MDs</div>
-              <button type="button" onClick={() => navigate("/provider-landing")} style={{ marginTop: "14px", border: "1.5px solid rgba(14,165,166,0.7)", background: "rgba(255,255,255,0.95)", color: "#0F766E", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
-                &#10022; Join Now
-              </button>
-              <div style={{ marginTop: "10px", fontSize: "8.5px", fontWeight: 600, color: "#666680" }}>Discover &mdash; Plans &mdash; Profile</div>
-            </div>
-
-            <div className="landing-pro-card">
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <span style={{ fontSize: "10px", fontWeight: 900, color: "white", background: "linear-gradient(135deg,#16A34A,#22C55E)", padding: "4px 8px", borderRadius: "999px" }}>0% FEE &mdash; 3 MO</span>
-              </div>
-              <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-                <div style={{ width: "92px", height: "92px", borderRadius: "999px", border: "2px dashed rgba(34,197,94,0.45)", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(220,252,231,0.6)" }}>
-                  <span style={{ fontSize: "34px" }}>&#128154;</span>
-                </div>
-              </div>
-              <div style={{ marginTop: "14px", fontSize: "13px", fontWeight: 800, color: "#1A1A2E" }}>Therapist</div>
-              <div style={{ marginTop: "6px", fontSize: "10px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>CBT, DBT, REBT, integrative. Build your practice on your terms</div>
-              <button type="button" onClick={() => navigate("/provider-landing")} style={{ marginTop: "14px", border: "1.5px solid rgba(34,197,94,0.7)", background: "rgba(255,255,255,0.95)", color: "#15803D", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
-                &#10022; Join Now
-              </button>
-              <div style={{ marginTop: "10px", fontSize: "8.5px", fontWeight: 600, color: "#666680" }}>Discover &mdash; Plans &mdash; Profile</div>
-            </div>
-
-            <div className="landing-pro-card">
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <span style={{ fontSize: "10px", fontWeight: 900, color: "white", background: "linear-gradient(135deg,#D97706,#F59E0B)", padding: "4px 8px", borderRadius: "999px" }}>CERTIFIED</span>
-              </div>
-              <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-                <div style={{ width: "92px", height: "92px", borderRadius: "999px", border: "2px dashed rgba(245,158,11,0.45)", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(254, 243, 199, 0.7)" }}>
-                  <span style={{ fontSize: "34px" }}>&#11088;</span>
-                </div>
-              </div>
-              <div style={{ marginTop: "14px", fontSize: "13px", fontWeight: 800, color: "#1A1A2E" }}>NLP Coach</div>
-              <div style={{ marginTop: "6px", fontSize: "10px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>Neuro-linguistic programming. Life coaching. Transformation specialists</div>
-              <button type="button" onClick={() => navigate("/provider-landing")} style={{ marginTop: "14px", border: "1.5px solid rgba(245,158,11,0.75)", background: "rgba(255,255,255,0.95)", color: "#B45309", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
-                &#10022; Join Now
-              </button>
-              <div style={{ marginTop: "10px", fontSize: "8.5px", fontWeight: 600, color: "#666680" }}>Discover &mdash; Plans &mdash; Profile</div>
+                          }`}
+                        onClick={() => navigate("/group-therapy")}
+                      >
+                        {status === "live"
+                          ? "\u26A1 JOIN NOW \u2014 FREE"
+                          : status === "soon"
+                            ? "\uD83D\uDD25 JOIN \u2014 Starting Soon"
+                            : "\uD83D\uDD14 Remind Me"}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section
-        id="assessSection"
-        className="landing-assess-section"
-        style={{
-          background: "transparent",
-          padding: "28px 16px"
-        }}
-      >
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <div
-            className="landing-assess-card"
-            style={{
-              background: "rgba(255,255,255,0.92)",
-              borderRadius: "28px",
-              border: "1px solid rgba(226,232,240,0.9)",
-              boxShadow: "0 18px 60px rgba(0,0,0,0.10)",
-              padding: "34px 32px"
-            }}
-          >
-            <div className="assess-grid">
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-                  <span style={{ width: "8px", height: "8px", borderRadius: "999px", background: "#059669" }} />
-                  <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase", color: "#002365" }}>FREE MENTAL HEALTH CHECK-UP</span>
-                </div>
+        <div className="landing-hero-section" style={{ textAlign: "center", padding: "50px 24px 30px", maxWidth: "980px", margin: "0 auto", width: "100%" }}>
+          <h1 className="landing-hero-title">
+            You're <span className="landing-hero-accent">not alone</span>. Let's take
+            <br />
+            this <span className="landing-hero-accent">together</span>.
+          </h1>
+          <p className="landing-hero-subtitle">
+            Feeling overwhelmed? Confused? That's okay. We'll help you
+            <br />
+            understand your feelings in a safe, quiet space.
+          </p>
+          <p className="landing-hero-hint">Takes just 60 seconds.</p>
 
-                <div className="landing-assess-heading">
-                  Not sure where to start?
-                  <br />
-                  Take a <em>free assessment</em> &mdash; your way.
-                </div>
+          <button type="button" className="landing-hero-cta" onClick={handleScrollToAssess}>
+            START FREE SCREENING &rarr;
+          </button>
 
-                <div style={{ fontSize: "13px", color: "#666680", lineHeight: 1.7, fontWeight: 400, maxWidth: "640px" }}>
-                  A quick PHQ-9 screening takes 3 minutes. Available in Hindi, Kannada, Tamil, Telugu &amp; English. Get your results instantly &mdash; no signup,
-                  no charge, completely confidential.
-                </div>
-
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", marginTop: "18px", fontSize: "11px", fontWeight: 600, color: "#3D3D5C" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ width: "22px", height: "22px", borderRadius: "8px", background: "rgba(226,232,240,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}>
-                      &#128274;
-                    </span>
-                    100% Confidential
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ width: "22px", height: "22px", borderRadius: "8px", background: "rgba(226,232,240,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}>
-                      &#127381;
-                    </span>
-                    Always Free
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ width: "22px", height: "22px", borderRadius: "8px", background: "rgba(226,232,240,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}>
-                      &#127760;
-                    </span>
-                    5 Languages
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ width: "22px", height: "22px", borderRadius: "8px", background: "rgba(226,232,240,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}>
-                      &#9889;
-                    </span>
-                    Instant Results
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <div
-                  style={{
-                    background: "rgba(255,255,255,0.95)",
-                    border: "1px solid rgba(226,232,240,0.95)",
-                    borderRadius: "18px",
-                    padding: "16px",
-                    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.06)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "14px"
-                  }}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-                    <div style={{ width: "44px", height: "44px", borderRadius: "14px", background: "rgba(237,233,254,0.8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>
-                      &#128241;
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: "14px", fontWeight: 700, color: "#1A1A2E" }}>In-App Check-In</div>
-                      <div style={{ marginTop: "3px", fontSize: "10.5px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>
-                        Emoji mood picker &bull; 60-second Vibe Check &bull; Track your streak
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 900,
-                      padding: "8px 12px",
-                      borderRadius: "999px",
-                      background: "rgba(237,233,254,0.95)",
-                      color: "#6D28D9",
-                      whiteSpace: "nowrap"
-                    }}
-                  >
-                    OPEN APP
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    background: "rgba(255,255,255,0.95)",
-                    border: "1px solid rgba(226,232,240,0.95)",
-                    borderRadius: "18px",
-                    padding: "16px",
-                    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.06)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "14px"
-                  }}
-                  onClick={() => window.open("https://wa.me/919876543210", "_blank")}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-                    <div style={{ width: "44px", height: "44px", borderRadius: "14px", background: "rgba(220,252,231,0.85)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>
-                      &#128172;
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: "14px", fontWeight: 700, color: "#1A1A2E" }}>WhatsApp Assessment</div>
-                      <div style={{ marginTop: "3px", fontSize: "10.5px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>
-                        Chat-based PHQ-9 &bull; Reply at your pace &bull; Get PDF report
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 900,
-                      padding: "8px 12px",
-                      borderRadius: "999px",
-                      background: "rgba(220,252,231,0.95)",
-                      color: "#15803D",
-                      whiteSpace: "nowrap"
-                    }}
-                  >
-                    CHAT NOW
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-triple-section" aria-label="Feature cards" style={{ padding: "0 16px" }}>
-        <div style={{ maxWidth: "1260px", margin: "0 auto" }}>
-          <div className="triple-grid">
-            <div
-              className="landing-feature-card"
-              style={{
-                borderRadius: "18px",
-                border: "2px solid rgba(245, 158, 11, 0.9)",
-                background: "linear-gradient(135deg, rgba(255, 237, 213, 0.98), rgba(255, 247, 237, 0.9))",
-                padding: "18px",
-                boxShadow: "0 16px 40px rgba(0,0,0,0.08)",
-                cursor: "pointer"
-              }}
-              role="button"
-              tabIndex={0}
-              onClick={() => navigate("/nri-landing")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  navigate("/nri-landing");
-                }
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", fontWeight: 900, letterSpacing: "2px", textTransform: "uppercase", color: "#F97316" }}>
-                <span style={{ width: "8px", height: "8px", borderRadius: "999px", background: "#38BDF8" }} />
-                FOR NRIS & GLOBAL INDIANS
-              </div>
-              <div style={{ fontSize: "24px", fontWeight: 900, color: "#9A3412", lineHeight: 1.15, marginTop: "10px" }}>
-                Find a <span style={{ fontStyle: "italic", fontFamily: "'Playfair Display', serif" }}>Janmabhoomi</span>
-                <br />
-                Connection &mdash; Heal
-              </div>
-              <div style={{ fontSize: "12px", color: "#7C2D12", lineHeight: 1.6, fontWeight: 700, marginTop: "10px" }}>
-                Therapy in your mother tongue with Indian therapists who understand your desi dilemma &mdash; career pressure abroad, family guilt, identity crisis,
-                relationships across continents.
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
-                {["IST + Your Timezone", "Hindi · Tamil · Telugu · Kannada", "HIPAA + DPDPA", "USD / GBP / AED / SGD"].map((chip) => (
-                  <div key={chip} style={{ fontSize: "10px", fontWeight: 900, color: "#9A3412", background: "rgba(255,255,255,0.65)", border: "1px solid rgba(251, 191, 36, 0.55)", padding: "4px 8px", borderRadius: "999px" }}>
-                    {chip}
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: "10px", marginTop: "12px" }}>
-                <span style={{ fontSize: "12px", color: "#9CA3AF", textDecoration: "line-through", fontWeight: 800 }}>$45/session</span>
-                <span style={{ fontSize: "22px", fontWeight: 900, color: "#B45309" }}>$29</span>
-                <span style={{ fontSize: "11px", fontWeight: 900, color: "#166534", background: "rgba(187, 247, 208, 0.7)", border: "1px solid #BBF7D0", padding: "4px 10px", borderRadius: "999px" }}>
-                  SAVE 35%
-                </span>
-              </div>
-              <button type="button" onClick={() => navigate("/nri-landing")} style={{ marginTop: "12px", width: "100%", border: "none", cursor: "pointer", borderRadius: "14px", padding: "12px 14px", background: "linear-gradient(135deg, #C2410C, #EA580C)", color: "white", fontWeight: 900, fontSize: "12px", boxShadow: "0 18px 40px rgba(0,0,0,0.12)" }}>
-                IN Connect to Home &mdash; Start Free &rarr;
-              </button>
-            </div>
-
-            <div className="landing-feature-card" style={{ borderRadius: "18px", border: "2px solid rgba(34, 197, 94, 0.55)", background: "linear-gradient(135deg, rgba(220, 252, 231, 0.96), rgba(240, 253, 244, 0.92))", padding: "18px", boxShadow: "0 16px 40px rgba(0,0,0,0.08)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", fontWeight: 900, letterSpacing: "2px", textTransform: "uppercase", color: "#15803D" }}>
-                <span style={{ width: "8px", height: "8px", borderRadius: "999px", background: "#A78BFA" }} />
-                FOR PRACTICING THERAPISTS
-              </div>
-              <div style={{ fontSize: "24px", fontWeight: 900, color: "#14532D", lineHeight: 1.15, marginTop: "10px" }}>MyDigitalClinic</div>
-              <div style={{ fontSize: "12px", color: "#166534", lineHeight: 1.6, fontWeight: 700, marginTop: "10px" }}>
-                Already have patients? Digitize your practice. Your patients, your records, your control. No marketplace. No patient-sharing.
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
-                {["Session Notes", "Scheduling", "Prescriptions", "PHQ-9 Tracking", "DPDPA"].map((chip) => (
-                  <div key={chip} style={{ fontSize: "10px", fontWeight: 900, color: "#14532D", background: "rgba(255,255,255,0.65)", border: "1px solid rgba(34, 197, 94, 0.35)", padding: "4px 8px", borderRadius: "999px" }}>
-                    {chip}
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "12px" }}>
-                <span style={{ fontSize: "10px", fontWeight: 900, color: "white", background: "rgba(21, 128, 61, 0.9)", padding: "5px 10px", borderRadius: "999px" }}>3 DAYS FREE</span>
-                <span style={{ fontSize: "12px", fontWeight: 900, color: "#166534" }}>Pick only modules you need &mdash; from &#8377;99/mo</span>
-              </div>
-              <button type="button" onClick={() => navigate("/my-digital-clinic")} style={{ marginTop: "12px", width: "100%", border: "none", cursor: "pointer", borderRadius: "14px", padding: "12px 14px", background: "linear-gradient(135deg, #14532D, #1F7A3D)", color: "white", fontWeight: 900, fontSize: "12px", boxShadow: "0 18px 40px rgba(0,0,0,0.12)" }}>
-                Configure My Clinic &rarr;
-              </button>
-            </div>
-
-            <div className="landing-feature-card" style={{ borderRadius: "18px", border: "2px solid rgba(99, 102, 241, 0.6)", background: "linear-gradient(135deg, rgba(224, 231, 255, 0.98), rgba(245, 243, 255, 0.9))", padding: "18px", boxShadow: "0 16px 40px rgba(0,0,0,0.08)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", fontWeight: 900, letterSpacing: "2px", textTransform: "uppercase", color: "#7C3AED" }}>
-                <span style={{ width: "8px", height: "8px", borderRadius: "999px", background: "#111827" }} />
-                DIGITAL COMPANIONS
-              </div>
-              <div style={{ fontSize: "24px", fontWeight: 900, color: "#4C1D95", lineHeight: 1.15, marginTop: "10px" }}>
-                Meet Your Healing
-                <br />
-                Companions
-              </div>
-              <div style={{ fontSize: "12px", color: "#6D28D9", lineHeight: 1.6, fontWeight: 700, marginTop: "10px" }}>Nurture a companion that grows with your wellness journey.</div>
-              <div className="landing-pet-grid" style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "12px", background: "rgba(255,255,255,0.7)", border: "1px solid rgba(99, 102, 241, 0.25)", padding: "10px", borderRadius: "14px" }}>
-                {[{ name: "Baby Dino", sub: "Oxytocin", icon: "\uD83E\uDD96" }, { name: "Retriever", sub: "Serotonin", icon: "\uD83D\uDC36" }, { name: "Elephant", sub: "Dopamine", icon: "\uD83D\uDC18" }, { name: "Chintu", sub: "Endorphins", icon: "\uD83D\uDC31" }].map((p) => (
-                  <div key={p.name} style={{ flex: "1 1 110px", display: "flex", alignItems: "center", gap: "8px" }}>
-                    <div style={{ width: "34px", height: "34px", borderRadius: "12px", background: "rgba(124,58,237,0.10)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>{p.icon}</div>
-                    <div>
-                      <div style={{ fontSize: "11px", fontWeight: 900, color: "#4C1D95" }}>{p.name}</div>
-                      <div style={{ fontSize: "10px", fontWeight: 900, color: "#6D28D9" }}>{p.sub}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ fontSize: "11px", fontWeight: 800, color: "#6D28D9", marginTop: "10px" }}>&bull; Oxytocin (love) &bull; Serotonin (happy) &bull; Dopamine (reward) &bull; Endorphins (energy)</div>
-              <button type="button" onClick={() => navigate("/pet")} style={{ marginTop: "12px", width: "100%", border: "none", cursor: "pointer", borderRadius: "14px", padding: "12px 14px", background: "linear-gradient(135deg, #6D28D9, #7C3AED)", color: "white", fontWeight: 900, fontSize: "12px", boxShadow: "0 18px 40px rgba(0,0,0,0.12)" }}>Name Your Pet &mdash; Adopt FREE</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-group-section" aria-label="Live and upcoming group sessions">
-        <div className="landing-group-zone">
-          <div className="landing-group-zone-header">
-            <div className="landing-group-zone-title">
-              <span aria-hidden="true">&#128293;</span>
-              Live &amp; Upcoming Group Sessions
-            </div>
-            <div className="landing-group-zone-count">{liveGroupCount} LIVE NOW</div>
-          </div>
-        </div>
-        <div className="landing-group-zone-grid">
-          <div className="landing-group-glow-grid">
-            {groupGlowSessions.map((session) => (
-              <div
-                key={session.topic}
-                className={`landing-group-glow-box${session.isLive ? " landing-group-glow-box-live" : ""}`}
-              >
-                <div className="landing-gg-header">
-                  <div className="landing-gg-topic">
-                    {session.emoji} {session.topic}
-                  </div>
-                  {session.isLive ? (
-                    <div className="landing-gg-live-dot">LIVE</div>
-                  ) : (
-                    <span className="landing-gg-upcoming-dot">{session.upcomingLabel}</span>
-                  )}
-                </div>
-                <div className="landing-gg-body">
-                  <div className="landing-gg-therapist">
-                    <div className="landing-gg-avatar">{session.avatar}</div>
-                    <div>
-                      <div className="landing-gg-tname">{session.therapistName}</div>
-                      <div className="landing-gg-tcred">{session.therapistCred}</div>
-                    </div>
-                  </div>
-                  <div className="landing-gg-details">
-                    {session.details.map((detail) => (
-                      <span key={detail}>{detail}</span>
-                    ))}
-                  </div>
-                  <div className="landing-gg-seats">
-                    <div className="landing-gg-seats-label">
-                      <span className="landing-gg-seats-left">
-                        {session.isUpcoming
-                          ? `${session.seatsLeft} couples left!`
-                          : `${session.seatsLeft} seats left!`}
-                      </span>
-                      <span className="landing-gg-seats-total">
-                        {session.isUpcoming ? `${session.seatsMax} couples max` : `${session.seatsMax} max`}
-                      </span>
-                    </div>
-                    <div className="landing-gg-seats-bar">
-                      <div className="landing-gg-seats-fill" style={{ width: `${session.seatsFillPct}%` }} />
-                    </div>
-                  </div>
-                  <div className="landing-gg-price-row">
-                    <div className="landing-gg-price">
-                      {session.wasPrice ? (
-                        <span className="landing-gg-price-was">&#8377;{session.wasPrice}</span>
-                      ) : null}{" "}
-                      &#8377;{session.price} <span className="landing-gg-price-per">{session.perLabel}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className={`landing-gg-join-btn ${
-                        session.isUpcoming ? "landing-gg-join-btn-upcoming" : "landing-gg-join-btn-live"
-                      }`}
-                      onClick={() => navigate("/group-therapy")}
-                    >
-                      {session.buttonText}
-                    </button>
-                  </div>
-                </div>
-                <div className="landing-gg-social-proof">{session.socialProof}</div>
+          <div className="landing-trust-badges">
+            {["Confidential", "No Judgment", "Immediate"].map((t) => (
+              <div key={t} className="landing-trust-badge">
+                <span className="landing-trust-dot" aria-hidden="true" />
+                <span>{t}</span>
               </div>
             ))}
           </div>
         </div>
-      </section>
+
+        <section
+          className="landing-pros-section"
+          aria-label="For Mental Health Professionals"
+          style={{
+            background: "transparent",
+            padding: "42px 16px 42px 16px"
+          }}
+        >
+          <div style={{ maxWidth: "1200px", margin: "0 auto", textAlign: "center" }}>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "10px",
+                fontSize: "11px",
+                fontWeight: 800,
+                letterSpacing: "2px",
+                textTransform: "uppercase",
+                color: "#001A4D",
+                opacity: 0.7,
+                marginBottom: "8px"
+              }}
+            >
+              <span style={{ fontSize: "14px" }}>&#10022;</span>
+              FOR MENTAL HEALTH PROFESSIONALS
+            </div>
+
+            <div
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontStyle: "italic",
+                fontSize: "14px",
+                fontWeight: 400,
+                color: "#3D3D5C",
+                marginBottom: "24px"
+              }}
+            >
+              Join India&apos;s growing network &mdash; Discover plans, create your profile, start earning
+            </div>
+
+            <div className="pro-grid">
+              <div className="landing-pro-card">
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 900, color: "white", background: "linear-gradient(135deg,#7C3AED,#A78BFA)", padding: "4px 8px", borderRadius: "999px" }}>RCI VERIFIED</span>
+                </div>
+                <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+                  <div style={{ width: "92px", height: "92px", borderRadius: "999px", border: "2px dashed rgba(124,58,237,0.45)", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(237,233,254,0.65)" }}>
+                    <span style={{ fontSize: "34px" }}>&#129504;</span>
+                  </div>
+                </div>
+                <div style={{ marginTop: "14px", fontSize: "13px", fontWeight: 800, color: "#1A1A2E" }}>Psychologist</div>
+                <div style={{ marginTop: "6px", fontSize: "10px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>Clinical &amp; counseling psychology. RCI registered. Earn ₹60K&ndash;₹2L/mo</div>
+                <button type="button" onClick={() => navigate("/provider-landing")} style={{ marginTop: "14px", border: "1.5px solid rgba(124,58,237,0.7)", background: "rgba(255,255,255,0.95)", color: "#6D28D9", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
+                  &#10022; Join Now
+                </button>
+                <div style={{ marginTop: "10px", fontSize: "8.5px", fontWeight: 600, color: "#666680" }}>Discover &mdash; Plans &mdash; Profile</div>
+              </div>
+
+              <div className="landing-pro-card">
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 900, color: "white", background: "linear-gradient(135deg,#0EA5A6,#22C1C3)", padding: "4px 8px", borderRadius: "999px" }}>NMC VERIFIED</span>
+                </div>
+                <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+                  <div style={{ width: "92px", height: "92px", borderRadius: "999px", border: "2px dashed rgba(14,165,166,0.45)", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(204,251,241,0.55)" }}>
+                    <span style={{ fontSize: "34px" }}>&#128181;</span>
+                  </div>
+                </div>
+                <div style={{ marginTop: "14px", fontSize: "13px", fontWeight: 800, color: "#1A1A2E" }}>Psychiatrist</div>
+                <div style={{ marginTop: "6px", fontSize: "10px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>Diagnosis, medication, e-prescriptions. NMC registered MDs</div>
+                <button type="button" onClick={() => navigate("/provider-landing")} style={{ marginTop: "14px", border: "1.5px solid rgba(14,165,166,0.7)", background: "rgba(255,255,255,0.95)", color: "#0F766E", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
+                  &#10022; Join Now
+                </button>
+                <div style={{ marginTop: "10px", fontSize: "8.5px", fontWeight: 600, color: "#666680" }}>Discover &mdash; Plans &mdash; Profile</div>
+              </div>
+
+              <div className="landing-pro-card">
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 900, color: "white", background: "linear-gradient(135deg,#16A34A,#22C55E)", padding: "4px 8px", borderRadius: "999px" }}>0% FEE &mdash; 3 MO</span>
+                </div>
+                <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+                  <div style={{ width: "92px", height: "92px", borderRadius: "999px", border: "2px dashed rgba(34,197,94,0.45)", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(220,252,231,0.6)" }}>
+                    <span style={{ fontSize: "34px" }}>&#128154;</span>
+                  </div>
+                </div>
+                <div style={{ marginTop: "14px", fontSize: "13px", fontWeight: 800, color: "#1A1A2E" }}>Therapist</div>
+                <div style={{ marginTop: "6px", fontSize: "10px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>CBT, DBT, REBT, integrative. Build your practice on your terms</div>
+                <button type="button" onClick={() => navigate("/provider-landing")} style={{ marginTop: "14px", border: "1.5px solid rgba(34,197,94,0.7)", background: "rgba(255,255,255,0.95)", color: "#15803D", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
+                  &#10022; Join Now
+                </button>
+                <div style={{ marginTop: "10px", fontSize: "8.5px", fontWeight: 600, color: "#666680" }}>Discover &mdash; Plans &mdash; Profile</div>
+              </div>
+
+              <div className="landing-pro-card">
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 900, color: "white", background: "linear-gradient(135deg,#D97706,#F59E0B)", padding: "4px 8px", borderRadius: "999px" }}>CERTIFIED</span>
+                </div>
+                <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+                  <div style={{ width: "92px", height: "92px", borderRadius: "999px", border: "2px dashed rgba(245,158,11,0.45)", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(254, 243, 199, 0.7)" }}>
+                    <span style={{ fontSize: "34px" }}>&#11088;</span>
+                  </div>
+                </div>
+                <div style={{ marginTop: "14px", fontSize: "13px", fontWeight: 800, color: "#1A1A2E" }}>NLP Coach</div>
+                <div style={{ marginTop: "6px", fontSize: "10px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>Neuro-linguistic programming. Life coaching. Transformation specialists</div>
+                <button type="button" onClick={() => navigate("/provider-landing")} style={{ marginTop: "14px", border: "1.5px solid rgba(245,158,11,0.75)", background: "rgba(255,255,255,0.95)", color: "#B45309", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
+                  &#10022; Join Now
+                </button>
+                <div style={{ marginTop: "10px", fontSize: "8.5px", fontWeight: 600, color: "#666680" }}>Discover &mdash; Plans &mdash; Profile</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="assessSection"
+          className="landing-assess-section"
+          style={{
+            background: "transparent",
+            padding: "28px 16px"
+          }}
+        >
+          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+            <div
+              className="landing-assess-card"
+              style={{
+                background: "rgba(255,255,255,0.92)",
+                borderRadius: "28px",
+                border: "1px solid rgba(226,232,240,0.9)",
+                boxShadow: "0 18px 60px rgba(0,0,0,0.10)",
+                padding: "34px 32px"
+              }}
+            >
+              <div className="assess-grid">
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+                    <span style={{ width: "8px", height: "8px", borderRadius: "999px", background: "#059669" }} />
+                    <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase", color: "#002365" }}>FREE MENTAL HEALTH CHECK-UP</span>
+                  </div>
+
+                  <div className="landing-assess-heading">
+                    Not sure where to start?
+                    <br />
+                    Take a <em>free assessment</em> &mdash; your way.
+                  </div>
+
+                  <div style={{ fontSize: "13px", color: "#666680", lineHeight: 1.7, fontWeight: 400, maxWidth: "640px" }}>
+                    A quick PHQ-9 screening takes 3 minutes. Available in Hindi, Kannada, Tamil, Telugu &amp; English. Get your results instantly &mdash; no signup,
+                    no charge, completely confidential.
+                  </div>
+
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", marginTop: "18px", fontSize: "11px", fontWeight: 600, color: "#3D3D5C" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ width: "22px", height: "22px", borderRadius: "8px", background: "rgba(226,232,240,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}>
+                        &#128274;
+                      </span>
+                      100% Confidential
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ width: "22px", height: "22px", borderRadius: "8px", background: "rgba(226,232,240,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}>
+                        &#127381;
+                      </span>
+                      Always Free
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ width: "22px", height: "22px", borderRadius: "8px", background: "rgba(226,232,240,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}>
+                        &#127760;
+                      </span>
+                      5 Languages
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ width: "22px", height: "22px", borderRadius: "8px", background: "rgba(226,232,240,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}>
+                        &#9889;
+                      </span>
+                      Instant Results
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,0.95)",
+                      border: "1px solid rgba(226,232,240,0.95)",
+                      borderRadius: "18px",
+                      padding: "16px",
+                      boxShadow: "0 14px 34px rgba(15, 23, 42, 0.06)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "14px"
+                    }}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                      <div style={{ width: "44px", height: "44px", borderRadius: "14px", background: "rgba(237,233,254,0.8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>
+                        &#128241;
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: "14px", fontWeight: 700, color: "#1A1A2E" }}>In-App Check-In</div>
+                        <div style={{ marginTop: "3px", fontSize: "10.5px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>
+                          Emoji mood picker &bull; 60-second Vibe Check &bull; Track your streak
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 900,
+                        padding: "8px 12px",
+                        borderRadius: "999px",
+                        background: "rgba(237,233,254,0.95)",
+                        color: "#6D28D9",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      OPEN APP
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,0.95)",
+                      border: "1px solid rgba(226,232,240,0.95)",
+                      borderRadius: "18px",
+                      padding: "16px",
+                      boxShadow: "0 14px 34px rgba(15, 23, 42, 0.06)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "14px"
+                    }}
+                    onClick={() => window.open("https://wa.me/919876543210", "_blank")}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                      <div style={{ width: "44px", height: "44px", borderRadius: "14px", background: "rgba(220,252,231,0.85)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>
+                        &#128172;
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: "14px", fontWeight: 700, color: "#1A1A2E" }}>WhatsApp Assessment</div>
+                        <div style={{ marginTop: "3px", fontSize: "10.5px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>
+                          Chat-based PHQ-9 &bull; Reply at your pace &bull; Get PDF report
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 900,
+                        padding: "8px 12px",
+                        borderRadius: "999px",
+                        background: "rgba(220,252,231,0.95)",
+                        color: "#15803D",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      CHAT NOW
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-triple-section" aria-label="Feature cards" style={{ padding: "0 16px" }}>
+          <div style={{ maxWidth: "1260px", margin: "0 auto" }}>
+            <div className="triple-grid">
+              <div
+                className="landing-feature-card"
+                style={{
+                  borderRadius: "18px",
+                  border: "2px solid rgba(245, 158, 11, 0.9)",
+                  background: "linear-gradient(135deg, rgba(255, 237, 213, 0.98), rgba(255, 247, 237, 0.9))",
+                  padding: "18px",
+                  boxShadow: "0 16px 40px rgba(0,0,0,0.08)",
+                  cursor: "pointer"
+                }}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/nri-landing")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/nri-landing");
+                  }
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", fontWeight: 900, letterSpacing: "2px", textTransform: "uppercase", color: "#F97316" }}>
+                  <span style={{ width: "8px", height: "8px", borderRadius: "999px", background: "#38BDF8" }} />
+                  FOR NRIS & GLOBAL INDIANS
+                </div>
+                <div style={{ fontSize: "24px", fontWeight: 900, color: "#9A3412", lineHeight: 1.15, marginTop: "10px" }}>
+                  Find a <span style={{ fontStyle: "italic", fontFamily: "'Playfair Display', serif" }}>Janmabhoomi</span>
+                  <br />
+                  Connection &mdash; Heal
+                </div>
+                <div style={{ fontSize: "12px", color: "#7C2D12", lineHeight: 1.6, fontWeight: 700, marginTop: "10px" }}>
+                  Therapy in your mother tongue with Indian therapists who understand your desi dilemma &mdash; career pressure abroad, family guilt, identity crisis,
+                  relationships across continents.
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
+                  {["IST + Your Timezone", "Hindi · Tamil · Telugu · Kannada", "HIPAA + DPDPA", "USD / GBP / AED / SGD"].map((chip) => (
+                    <div key={chip} style={{ fontSize: "10px", fontWeight: 900, color: "#9A3412", background: "rgba(255,255,255,0.65)", border: "1px solid rgba(251, 191, 36, 0.55)", padding: "4px 8px", borderRadius: "999px" }}>
+                      {chip}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: "10px", marginTop: "12px" }}>
+                  <span style={{ fontSize: "12px", color: "#9CA3AF", textDecoration: "line-through", fontWeight: 800 }}>$45/session</span>
+                  <span style={{ fontSize: "22px", fontWeight: 900, color: "#B45309" }}>$29</span>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#166534", background: "rgba(187, 247, 208, 0.7)", border: "1px solid #BBF7D0", padding: "4px 10px", borderRadius: "999px" }}>
+                    SAVE 35%
+                  </span>
+                </div>
+                <button type="button" onClick={() => navigate("/nri-landing")} style={{ marginTop: "12px", width: "100%", border: "none", cursor: "pointer", borderRadius: "14px", padding: "12px 14px", background: "linear-gradient(135deg, #C2410C, #EA580C)", color: "white", fontWeight: 900, fontSize: "12px", boxShadow: "0 18px 40px rgba(0,0,0,0.12)" }}>
+                  IN Connect to Home &mdash; Start Free &rarr;
+                </button>
+              </div>
+
+              <div className="landing-feature-card" style={{ borderRadius: "18px", border: "2px solid rgba(34, 197, 94, 0.55)", background: "linear-gradient(135deg, rgba(220, 252, 231, 0.96), rgba(240, 253, 244, 0.92))", padding: "18px", boxShadow: "0 16px 40px rgba(0,0,0,0.08)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", fontWeight: 900, letterSpacing: "2px", textTransform: "uppercase", color: "#15803D" }}>
+                  <span style={{ width: "8px", height: "8px", borderRadius: "999px", background: "#A78BFA" }} />
+                  FOR PRACTICING THERAPISTS
+                </div>
+                <div style={{ fontSize: "24px", fontWeight: 900, color: "#14532D", lineHeight: 1.15, marginTop: "10px" }}>MyDigitalClinic</div>
+                <div style={{ fontSize: "12px", color: "#166534", lineHeight: 1.6, fontWeight: 700, marginTop: "10px" }}>
+                  Already have patients? Digitize your practice. Your patients, your records, your control. No marketplace. No patient-sharing.
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
+                  {["Session Notes", "Scheduling", "Prescriptions", "PHQ-9 Tracking", "DPDPA"].map((chip) => (
+                    <div key={chip} style={{ fontSize: "10px", fontWeight: 900, color: "#14532D", background: "rgba(255,255,255,0.65)", border: "1px solid rgba(34, 197, 94, 0.35)", padding: "4px 8px", borderRadius: "999px" }}>
+                      {chip}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "12px" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 900, color: "white", background: "rgba(21, 128, 61, 0.9)", padding: "5px 10px", borderRadius: "999px" }}>3 DAYS FREE</span>
+                  <span style={{ fontSize: "12px", fontWeight: 900, color: "#166534" }}>Pick only modules you need &mdash; from &#8377;99/mo</span>
+                </div>
+                <button type="button" onClick={() => navigate("/my-digital-clinic")} style={{ marginTop: "12px", width: "100%", border: "none", cursor: "pointer", borderRadius: "14px", padding: "12px 14px", background: "linear-gradient(135deg, #14532D, #1F7A3D)", color: "white", fontWeight: 900, fontSize: "12px", boxShadow: "0 18px 40px rgba(0,0,0,0.12)" }}>
+                  Configure My Clinic &rarr;
+                </button>
+              </div>
+
+              <div className="landing-feature-card" style={{ borderRadius: "18px", border: "2px solid rgba(99, 102, 241, 0.6)", background: "linear-gradient(135deg, rgba(224, 231, 255, 0.98), rgba(245, 243, 255, 0.9))", padding: "18px", boxShadow: "0 16px 40px rgba(0,0,0,0.08)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", fontWeight: 900, letterSpacing: "2px", textTransform: "uppercase", color: "#7C3AED" }}>
+                  <span style={{ width: "8px", height: "8px", borderRadius: "999px", background: "#111827" }} />
+                  DIGITAL COMPANIONS
+                </div>
+                <div style={{ fontSize: "24px", fontWeight: 900, color: "#4C1D95", lineHeight: 1.15, marginTop: "10px" }}>
+                  Meet Your Healing
+                  <br />
+                  Companions
+                </div>
+                <div style={{ fontSize: "12px", color: "#6D28D9", lineHeight: 1.6, fontWeight: 700, marginTop: "10px" }}>Nurture a companion that grows with your wellness journey.</div>
+                <div className="landing-pet-grid" style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "12px", background: "rgba(255,255,255,0.7)", border: "1px solid rgba(99, 102, 241, 0.25)", padding: "10px", borderRadius: "14px" }}>
+                  {[{ name: "Baby Dino", sub: "Oxytocin", icon: "\uD83E\uDD96" }, { name: "Retriever", sub: "Serotonin", icon: "\uD83D\uDC36" }, { name: "Elephant", sub: "Dopamine", icon: "\uD83D\uDC18" }, { name: "Chintu", sub: "Endorphins", icon: "\uD83D\uDC31" }].map((p) => (
+                    <div key={p.name} style={{ flex: "1 1 110px", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div style={{ width: "34px", height: "34px", borderRadius: "12px", background: "rgba(124,58,237,0.10)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>{p.icon}</div>
+                      <div>
+                        <div style={{ fontSize: "11px", fontWeight: 900, color: "#4C1D95" }}>{p.name}</div>
+                        <div style={{ fontSize: "10px", fontWeight: 900, color: "#6D28D9" }}>{p.sub}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: "11px", fontWeight: 800, color: "#6D28D9", marginTop: "10px" }}>&bull; Oxytocin (love) &bull; Serotonin (happy) &bull; Dopamine (reward) &bull; Endorphins (energy)</div>
+                <button type="button" onClick={() => navigate("/pet")} style={{ marginTop: "12px", width: "100%", border: "none", cursor: "pointer", borderRadius: "14px", padding: "12px 14px", background: "linear-gradient(135deg, #6D28D9, #7C3AED)", color: "white", fontWeight: 900, fontSize: "12px", boxShadow: "0 18px 40px rgba(0,0,0,0.12)" }}>Name Your Pet &mdash; Adopt FREE</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-group-section" aria-label="Live and upcoming group sessions">
+          <div className="landing-group-zone">
+            <div className="landing-group-zone-header">
+              <div className="landing-group-zone-title">
+                <span aria-hidden="true">&#128293;</span>
+                Live &amp; Upcoming Group Sessions
+              </div>
+              <div className="landing-group-zone-count">{liveGroupCount} LIVE NOW</div>
+            </div>
+          </div>
+          <div className="landing-group-zone-grid">
+            <div className="landing-group-glow-grid">
+              {groupGlowSessions.map((session) => (
+                <div
+                  key={session.topic}
+                  className={`landing-group-glow-box${session.isLive ? " landing-group-glow-box-live" : ""}`}
+                >
+                  <div className="landing-gg-header">
+                    <div className="landing-gg-topic">
+                      {session.emoji} {session.topic}
+                    </div>
+                    {session.isLive ? (
+                      <div className="landing-gg-live-dot">LIVE</div>
+                    ) : (
+                      <span className="landing-gg-upcoming-dot">{session.upcomingLabel}</span>
+                    )}
+                  </div>
+                  <div className="landing-gg-body">
+                    <div className="landing-gg-therapist">
+                      <div className="landing-gg-avatar">{session.avatar}</div>
+                      <div>
+                        <div className="landing-gg-tname">{session.therapistName}</div>
+                        <div className="landing-gg-tcred">{session.therapistCred}</div>
+                      </div>
+                    </div>
+                    <div className="landing-gg-details">
+                      {session.details.map((detail) => (
+                        <span key={detail}>{detail}</span>
+                      ))}
+                    </div>
+                    <div className="landing-gg-seats">
+                      <div className="landing-gg-seats-label">
+                        <span className="landing-gg-seats-left">
+                          {session.isUpcoming
+                            ? `${session.seatsLeft} couples left!`
+                            : `${session.seatsLeft} seats left!`}
+                        </span>
+                        <span className="landing-gg-seats-total">
+                          {session.isUpcoming ? `${session.seatsMax} couples max` : `${session.seatsMax} max`}
+                        </span>
+                      </div>
+                      <div className="landing-gg-seats-bar">
+                        <div className="landing-gg-seats-fill" style={{ width: `${session.seatsFillPct}%` }} />
+                      </div>
+                    </div>
+                    <div className="landing-gg-price-row">
+                      <div className="landing-gg-price">
+                        {session.wasPrice ? (
+                          <span className="landing-gg-price-was">&#8377;{session.wasPrice}</span>
+                        ) : null}{" "}
+                        &#8377;{session.price} <span className="landing-gg-price-per">{session.perLabel}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className={`landing-gg-join-btn ${session.isUpcoming ? "landing-gg-join-btn-upcoming" : "landing-gg-join-btn-live"
+                          }`}
+                        onClick={() => navigate("/group-therapy")}
+                      >
+                        {session.buttonText}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="landing-gg-social-proof">{session.socialProof}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       </main>
       <style>{`
         @keyframes landingAvatarFloat {

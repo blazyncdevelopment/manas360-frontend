@@ -52,7 +52,7 @@
   letter-spacing: 0.2em;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #a7f3d0;
+  color: #ffffff;
   margin-bottom: 1rem;
 }
 
@@ -61,13 +61,11 @@
   font-weight: 800;
   margin-bottom: 1.5rem;
   line-height: 1.1;
+  color: #ffffff;
 }
 
 .st-hero h1 span {
-  color: #2f7a5f;
-  background: linear-gradient(to bottom, #4ade80, #22c55e);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
 }
 
 .st-hero-sub {

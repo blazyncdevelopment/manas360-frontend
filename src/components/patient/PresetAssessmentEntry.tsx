@@ -423,7 +423,7 @@ export const PresetAssessmentEntry = () => {
               ) : null}
 
               <button
-                onClick={handleStart}
+                onClick={() => navigate('/assessment')}
                 className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-calm px-6 py-4 text-base font-medium text-white shadow-sm transition-all hover:bg-none hover:bg-[var(--brand-navy-hover)] active:scale-[0.98]"
               >
                 {presetConfig.ctaText} (Takes ~2 mins)

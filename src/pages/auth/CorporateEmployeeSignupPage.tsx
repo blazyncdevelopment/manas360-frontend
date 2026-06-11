@@ -75,9 +75,6 @@ export default function CorporateEmployeeSignupPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-emerald-50 px-4 py-10">
       <div className="mx-auto max-w-md">
-        <Link to="/" className="inline-flex items-center gap-2 rounded-full border border-teal-100 bg-white px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-50">
-          ← MANAS360
-        </Link>
 
         <div className="mt-6 overflow-hidden rounded-3xl border border-[#D5E0DA] bg-white shadow-[0_20px_60px_rgba(8,57,53,0.1)]">
           <div className="bg-gradient-to-r from-teal-700 to-emerald-600 px-7 py-6">
