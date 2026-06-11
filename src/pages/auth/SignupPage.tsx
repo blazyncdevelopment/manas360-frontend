@@ -190,6 +190,7 @@ export default function SignupPage() {
 		nri_declared: false,
 		nri_tos_accepted: false,
 		nri_tos_accepted_at: '',
+		nri_timezone_pool: '',
 	});
 	const [showPatientTermsModal, setShowPatientTermsModal] = useState(false);
 	const [canAcceptPatientTerms, setCanAcceptPatientTerms] = useState(false);

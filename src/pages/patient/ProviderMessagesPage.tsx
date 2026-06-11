@@ -635,12 +635,12 @@ export default function ProviderMessagesPage() {
                   {!msgLoading && (
                     <div className="space-y-2">
                       {messages.map((msg, idx) => {
-                        const isPatient = String(msg.role || msg.senderRole || '').toLowerCase() === 'patient';
+                        const isPatient = String(msg.role || (msg as any).senderRole || '').toLowerCase() === 'patient';
                         const isSystem = msg.messageType !== 'TEXT';
                         // Last sent message by patient (for read receipt tick)
                         const isLastPatient =
                           isPatient &&
-                          idx === messages.reduce((last, m, i) => (String(m.role || m.senderRole || '').toLowerCase() === 'patient' ? i : last), -1);
+                          idx === messages.reduce((last, m, i) => (String(m.role || (m as any).senderRole || '').toLowerCase() === 'patient' ? i : last), -1);
 
                         if (isSystem) {
                           return (

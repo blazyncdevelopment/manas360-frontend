@@ -113,6 +113,7 @@ export interface SignupConsentPayload {
 	nri_declared?: boolean;
 	nri_tos_accepted?: boolean;
 	nri_tos_accepted_at?: string;
+	nri_timezone_pool?: string;
 	clinicalScreening?: ClinicalScreeningOtpPayload;
 }
 

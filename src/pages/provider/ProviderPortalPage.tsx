@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Users, Clock3, Globe2, Lock, CalendarDays, UserPlus, Video, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { Plus, Users, Globe2, Lock, CalendarDays, UserPlus, Video, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { groupTherapyApi } from '../../api/groupTherapy';
 

@@ -1234,7 +1234,7 @@ export default function SessionsPage() {
             </div>
           ) : null}
 
-          {clinicalFlowPhase === 'next-phase' ? (
+          {(clinicalFlowPhase as string) === 'next-phase' ? (
             <div className="space-y-4">
               {/* Congratulations card */}
               <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-5">

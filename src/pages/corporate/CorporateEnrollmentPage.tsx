@@ -132,7 +132,6 @@ export default function CorporateEnrollmentPage() {
         employeeId: singleEmployee.employeeId,
         name: singleEmployee.name,
         email: singleEmployee.email,
-        phone: singleEmployee.phone || '',
         department: singleEmployee.department,
         location: singleEmployee.location || 'Bengaluru',
         manager: singleEmployee.manager || 'Unassigned',

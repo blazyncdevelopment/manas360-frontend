@@ -10,7 +10,7 @@ import {
   type ProviderSettingsResponse,
 } from '../../api/provider';
 import {
-  User, Clock, Globe, Tag, DollarSign, Bell, Shield, CreditCard, Globe2,
+  User, Clock, Globe, DollarSign, Bell, Shield, CreditCard, Globe2,
 } from 'lucide-react';
 
 type SectionId = 'profile' | 'availability' | 'languages' | 'pricing' | 'international' | 'notifications' | 'security' | 'billing';

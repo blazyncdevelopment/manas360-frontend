@@ -140,6 +140,18 @@ export type BulkEmployeeRow = {
   manager?: string;
 };
 
+export type CorporateEmployeeRow = {
+  id?: string;
+  employeeId?: string;
+  name?: string;
+  email?: string;
+  department?: string;
+  location?: string;
+  manager?: string;
+  status?: string;
+  [key: string]: unknown;
+};
+
 export type CorporateDemoRequestPayload = {
   companyName: string;
   companySize?: string;

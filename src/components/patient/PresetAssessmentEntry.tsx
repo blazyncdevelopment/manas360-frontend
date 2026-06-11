@@ -3,7 +3,6 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { getPresetConfig, parseUtmParams, isValidPresetEntryType } from '../../config/presetDefaults';
 import {
   CLINICAL_ASSESSMENT_OPTIONS,
-  CLINICAL_ASSESSMENT_TEMPLATE_KEYS,
 } from '../../utils/clinicalAssessments';
 import { patientApi } from '../../api/patient';
 import { useAuth } from '../../context/AuthContext';
@@ -92,15 +91,16 @@ export const PresetAssessmentEntry = () => {
   const [answers, setAnswers] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [metaError, setMetaError] = useState<string | null>(null);
+  const [metaError, _setMetaError] = useState<string | null>(null);
+  void _setMetaError;
   const [selectedTimezone, setSelectedTimezone] = useState<string>('');
   const [selectedConcerns, setSelectedConcerns] = useState<string[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
 
   const entryType = searchParams.get('entry');
   const presetConfig = entryType && isValidPresetEntryType(entryType) ? getPresetConfig(entryType) : null;
-  const assessmentType = presetConfig?.assessmentType || 'PHQ-9';
-  const [questions, setQuestions] = useState<string[]>([]);
+  void (presetConfig?.assessmentType);
+  const [questions] = useState<string[]>([]);
   const options = CLINICAL_ASSESSMENT_OPTIONS.map((option: any) => ({ label: option.label, value: option.points }));
   const utmParams = parseUtmParams(searchParams);
   const totalQuestions = questions.length;
@@ -136,44 +136,6 @@ export const PresetAssessmentEntry = () => {
     setSelectedTimezone(detectedRegion);
   }, [isNriEntry, selectedTimezone]);
 
-  const handleStart = async () => {
-    if (isNriEntry) {
-      if (!selectedTimezone) {
-        setMetaError('Please select your timezone region.');
-        return;
-      }
-      if (selectedConcerns.length === 0) {
-        setMetaError('Please select at least one primary concern.');
-        return;
-      }
-    }
-
-    if (!presetConfig) {
-      setMetaError('Unable to load assessment questions.');
-      return;
-    }
-
-    setMetaError(null);
-    setHasError(false);
-    setIsSubmitting(true);
-
-    try {
-      if (questions.length === 0) {
-        const response = await patientApi.startStructuredAssessment({
-          templateKey: CLINICAL_ASSESSMENT_TEMPLATE_KEYS[assessmentType],
-        });
-        setQuestions(response.questions.map((question) => String(question.prompt || '')));
-      }
-      setStep(1);
-      setAnswers([]);
-    } catch (error) {
-      console.error('Unable to load assessment questions:', error);
-      setMetaError('Unable to load assessment questions. Please try again.');
-      setHasError(true);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const toggleConcern = (concern: string) => {
     setSelectedConcerns((prev) => {
@@ -340,11 +302,11 @@ export const PresetAssessmentEntry = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-charcoal/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-xl overflow-hidden rounded-[24px] bg-white shadow-2xl ring-1 ring-charcoal/5">
-        
+
         {/* Progress Bar Header for Questions */}
         {step >= 1 && step < completionStep && (
           <div className="h-1.5 w-full bg-calm-sage/20 relative">
-            <div 
+            <div
               className="absolute left-0 top-0 h-full bg-teal-600 transition-all duration-300 ease-out"
               style={{ width: `${progressPercentage}%` }}
             />
@@ -352,7 +314,7 @@ export const PresetAssessmentEntry = () => {
         )}
 
         <div className="p-8 md:p-10 relative">
-          
+
           {/* STEP 0: Warm Up */}
           {step === 0 && (
             <div className="text-center space-y-6">

@@ -13,7 +13,6 @@ import {
   CloudSun,
   MoonStar,
   Video,
-  RefreshCw,
   Clock,
   AlertTriangle,
   UserCheck,
@@ -137,7 +136,6 @@ export default function DashboardPage() {
   const userName = dashboard?.user?.name?.split(' ')[0] || 'there';
   const upcomingSession = dashboard?.upcomingSession || null;
   const moodTrend = Array.isArray(dashboard?.moodTrend) ? dashboard.moodTrend : [];
-  const recentActivity = Array.isArray(dashboard?.recentActivity) ? dashboard.recentActivity : [];
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -167,7 +165,7 @@ export default function DashboardPage() {
   const deteriorationAlert = useMemo(() => {
     if (moodTrend.length < 3) return false;
     const lastThree = moodTrend.slice(-3).map((m: any) => Number(m.score || 0));
-    return lastThree.every((s) => s < 3);
+    return lastThree.every((s: number) => s < 3);
   }, [moodTrend]);
 
   const connectedProvider = useMemo(() => {

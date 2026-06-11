@@ -245,8 +245,8 @@ export default function Messages() {
 	};
 
 	const renderBubble = (message: ProviderDirectMessage) => {
-		const isProvider = String(message.role || message.senderRole || '').toLowerCase() === 'provider';
-		const isSystem = String(message.role || message.senderRole || '').toLowerCase() === 'system';
+		const isProvider = String(message.role || (message as any).senderRole || '').toLowerCase() === 'provider';
+		const isSystem = String(message.role || (message as any).senderRole || '').toLowerCase() === 'system';
 
 		return (
 			<div
@@ -254,13 +254,12 @@ export default function Messages() {
 				className={`flex ${isProvider ? 'justify-end' : 'justify-start'}`}
 			>
 				<div
-					className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-						isSystem
-							? 'bg-amber-50 text-amber-900'
-							: isProvider
+					className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm shadow-sm ${isSystem
+						? 'bg-amber-50 text-amber-900'
+						: isProvider
 							? 'bg-[#2D4128] text-white'
 							: 'bg-[#F3F5F2] text-slate-800'
-					}`}
+						}`}
 				>
 					<p className="whitespace-pre-wrap leading-6">{message.content}</p>
 					<p className={`mt-2 text-[11px] ${isProvider ? 'text-white/70' : 'text-slate-500'}`}>
@@ -317,9 +316,8 @@ export default function Messages() {
 									key={conversation.id}
 									type="button"
 									onClick={() => setActiveConversationId(conversation.id)}
-									className={`mb-2 flex w-full items-start gap-3 rounded-2xl px-4 py-4 text-left transition ${
-										isActive ? 'bg-[#E8EFE6]' : 'hover:bg-[#F1F4EE]'
-									}`}
+									className={`mb-2 flex w-full items-start gap-3 rounded-2xl px-4 py-4 text-left transition ${isActive ? 'bg-[#E8EFE6]' : 'hover:bg-[#F1F4EE]'
+										}`}
 								>
 									<div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#DDE7D7] text-sm font-semibold text-[#2D4128]">
 										{initialsFor(conversation)}

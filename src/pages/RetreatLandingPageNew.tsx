@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { submitRetreatIntentApi } from '../api/retreat.api';
 import './RetreatLandingPageNew.css';
 
@@ -91,7 +91,6 @@ const RETREAT_THEMES = [
 ];
 
 export default function RetreatLandingPageNew() {
-  const navigate = useNavigate();
   const [form, setForm] = useState<FormState>({
     name: '',
     phone: '',
@@ -104,7 +103,6 @@ export default function RetreatLandingPageNew() {
     consentContact: false,
   });
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleChange = (field: keyof FormState, value: string | boolean) => {
@@ -141,44 +139,24 @@ export default function RetreatLandingPageNew() {
         consentContact: form.consentContact,
       });
 
-      setSubmitted(true);
-      setTimeout(() => {
-        setForm({
-          name: '',
-          phone: '',
-          email: '',
-          theme: '',
-          preferredDates: '',
-          groupSize: '',
-          budgetRange: '',
-          personalNote: '',
-          consentContact: false,
-        });
-        navigate('/');
-      }, 3000);
+      toast.success("Thank You! We've received your intent. Our team will contact you within 48 hours.");
+      setForm({
+        name: '',
+        phone: '',
+        email: '',
+        theme: '',
+        preferredDates: '',
+        groupSize: '',
+        budgetRange: '',
+        personalNote: '',
+        consentContact: false,
+      });
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Failed to submit. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
-
-  if (submitted) {
-    return (
-      <div className="retreat-page retreat-success-state">
-        <div className="retreat-success-overlay">
-          <div className="retreat-success-card">
-            <div className="success-emoji">🌿</div>
-            <h2>Thank You, {form.name}!</h2>
-            <p>Your retreat intent for <strong>{form.theme}</strong> has been received.</p>
-            <p>Our retreat team will contact you on WhatsApp within 48 hours with a custom plan.</p>
-            <p><small>No payment needed yet — this is just the start of a conversation.</small></p>
-            <button onClick={() => navigate('/')}>← Back to Home</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="retreat-page">
@@ -283,6 +261,8 @@ export default function RetreatLandingPageNew() {
         <div className="intent-section" id="intent-form">
           <h2>Share Your Intent</h2>
           <p className="sub">Not a booking. Not a commitment. Just a conversation starter. Our retreat team will reach out within 48 hours.</p>
+
+
 
           <div className="intent-form">
             <form onSubmit={handleSubmit}>

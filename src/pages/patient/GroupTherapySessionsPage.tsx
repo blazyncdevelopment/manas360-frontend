@@ -214,17 +214,6 @@ export default function GroupTherapySessionsPage() {
     }
   };
 
-  const sortedFeed = useMemo(() => {
-    return [...publicSessions]
-      .map((row) => ({ row, state: computeState(row, nowTs) }))
-      .sort((a, b) => {
-        const od = STATE_ORDER[a.state] - STATE_ORDER[b.state];
-        if (od !== 0) return od;
-        return new Date(String(a.row.scheduledAt || '')).getTime() - new Date(String(b.row.scheduledAt || '')).getTime();
-      })
-      .slice(0, 4);
-  }, [publicSessions, nowTs]);
-
   const filteredSessions = useMemo(() => {
     return publicSessions
       .map((row) => ({ row, state: computeState(row, nowTs) }))
