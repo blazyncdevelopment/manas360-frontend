@@ -84,6 +84,39 @@ const BUDDY_QUICK_PROMPTS = [
   "I'm feeling low today",
 ];
 
+const BUDDY_LANGUAGES = [
+  { code: 'en-IN', label: 'English' },
+  { code: 'hi-IN', label: 'हिन्दी' },
+  { code: 'ta-IN', label: 'தமிழ்' },
+  { code: 'te-IN', label: 'తెలుగు' },
+  { code: 'kn-IN', label: 'ಕನ್ನಡ' },
+] as const;
+
+type BuddyLangCode = typeof BUDDY_LANGUAGES[number]['code'];
+
+const HIGH_RISK_KEYWORDS = ['suicide', 'kill myself', 'end my life', 'self harm', 'hurt myself', "don't want to live", 'want to die'];
+const MED_RISK_KEYWORDS = ['panic', 'crisis', "can't breathe", 'scared', 'terrified', 'helpless', 'overwhelmed'];
+
+const detectRisk = (messages: BuddyMessage[]): 'HIGH' | 'MEDIUM' | 'LOW' | null => {
+  const text = messages.filter((m) => m.role === 'user').map((m) => m.content.toLowerCase()).join(' ');
+  if (!text.trim()) return null;
+  if (HIGH_RISK_KEYWORDS.some((k) => text.includes(k))) return 'HIGH';
+  if (MED_RISK_KEYWORDS.some((k) => text.includes(k))) return 'MEDIUM';
+  if (text.length > 15) return 'LOW';
+  return null;
+};
+
+type BreathingCard = { name: string; instruction: string; icon: string };
+const detectBreathingCard = (text: string): BreathingCard | null => {
+  const t = text.toLowerCase();
+  if (t.includes('4-7-8') || t.includes('4–7–8')) return { name: '4-7-8 Breathing', instruction: 'Inhale 4s · Hold 7s · Exhale 8s', icon: '💨' };
+  if (t.includes('box breathing') || t.includes('square breathing') || t.includes('4-4-4')) return { name: 'Box Breathing', instruction: 'Inhale 4s · Hold 4s · Exhale 4s · Hold 4s', icon: '⬜' };
+  if (t.includes('grounding') && (t.includes('5-4-3') || t.includes('5 things'))) return { name: '5-4-3-2-1 Grounding', instruction: '5 see · 4 hear · 3 touch · 2 smell · 1 taste', icon: '🌱' };
+  if (t.includes('belly breath') || t.includes('diaphragm') || t.includes('deep breath')) return { name: 'Deep Breathing', instruction: 'Breathe in slowly · Hold · Release fully', icon: '🌬️' };
+  if (t.includes('progressive muscle') || t.includes('pmt') || t.includes('tense and relax')) return { name: 'Progressive Muscle', instruction: 'Tense each muscle group · Hold 5s · Release', icon: '💪' };
+  return null;
+};
+
 export default function PatientDashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -95,6 +128,8 @@ export default function PatientDashboardLayout() {
   const [buddyInput, setBuddyInput] = useState('');
   const [buddySending, setBuddySending] = useState(false);
   const [buddyListening, setBuddyListening] = useState(false);
+  const [buddyMode, setBuddyMode] = useState<'text' | 'voice'>('text');
+  const [buddyLang, setBuddyLang] = useState<BuddyLangCode>(() => (readAIAssistantPreferences().voiceLanguage as BuddyLangCode) || 'en-IN');
   const [buddyPrefs, setBuddyPrefs] = useState<AIAssistantPreferences>(() => readAIAssistantPreferences());
   const buddyBottomRef = useRef<HTMLDivElement>(null);
   const buddyRecognitionRef = useRef<any>(null);
@@ -164,12 +199,22 @@ export default function PatientDashboardLayout() {
       const payload = (res as any)?.data ?? res;
       const reply = String(payload?.response || payload?.message || 'I hear you. I am with you. Let us take this one step at a time.');
       setBuddyMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
+      if (buddyMode === 'voice') speakBuddyReply(reply);
     } catch {
       setBuddyMessages((prev) => [...prev, { role: 'assistant', content: 'Connection is unstable right now. I am still here — try again in a moment.' }]);
     } finally {
       setBuddySending(false);
       setTimeout(() => buddyBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     }
+  };
+
+  const speakBuddyReply = (text: string) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text.slice(0, 300));
+    utter.lang = buddyLang;
+    utter.rate = 0.95;
+    window.speechSynthesis.speak(utter);
   };
 
   const toggleBuddyVoice = () => {
@@ -181,18 +226,28 @@ export default function PatientDashboardLayout() {
       return;
     }
     const recognition = new SpeechRecognition();
-    recognition.lang = buddyPrefs.voiceLanguage;
+    recognition.lang = buddyLang;
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.onresult = (e: any) => {
       const transcript = e.results[0]?.[0]?.transcript || '';
-      if (transcript) setBuddyInput((prev) => prev + (prev ? ' ' : '') + transcript);
+      if (transcript) {
+        setBuddyInput('');
+        void sendBuddyMessage(transcript);
+      }
     };
     recognition.onend = () => setBuddyListening(false);
     recognition.onerror = () => setBuddyListening(false);
     buddyRecognitionRef.current = recognition;
     recognition.start();
     setBuddyListening(true);
+  };
+
+  const changeBuddyLang = (code: BuddyLangCode) => {
+    setBuddyLang(code);
+    const next = { ...buddyPrefs, voiceLanguage: code as AIAssistantPreferences['voiceLanguage'] };
+    setBuddyPrefs(next);
+    saveAIAssistantPreferences(next);
   };
 
   const pageTitleMap: Record<string, string> = {
@@ -504,135 +559,178 @@ export default function PatientDashboardLayout() {
       </div>
 
       {/* AnytimeBuddy floating chat window */}
-      {buddyFullOpen && (
-        <div className="fixed bottom-[88px] right-4 z-[80] flex w-[340px] flex-col overflow-hidden rounded-2xl border border-calm-sage/20 bg-white shadow-2xl sm:w-[380px] lg:bottom-8 lg:right-6">
-          {/* Header */}
-          <div className="bg-teal-600 px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-white" />
-                <div>
-                  <p className="text-sm font-bold text-white">AnytimeBuddy</p>
-                  <p className="text-[11px] text-white/75">24/7 AI companion · ₹150/call or Premium Free</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setBuddyFullOpen(false)}
-                className="rounded-lg p-1 text-white/80 transition hover:bg-white/20 hover:text-white"
-                aria-label="Close"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            {/* Language + response style row */}
-            <div className="mt-2 flex items-center gap-2">
-              <select
-                value={buddyPrefs.voiceLanguage}
-                onChange={(e) => {
-                  const next = { ...buddyPrefs, voiceLanguage: e.target.value as AIAssistantPreferences['voiceLanguage'] };
-                  setBuddyPrefs(next);
-                  saveAIAssistantPreferences(next);
-                }}
-                className="flex-1 rounded-lg bg-white/20 px-2 py-1 text-xs font-medium text-white outline-none focus:bg-white/30"
-              >
-                <option value="en-IN" className="text-charcoal bg-white">🇮🇳 English (India)</option>
-                <option value="hi-IN" className="text-charcoal bg-white">🇮🇳 Hindi</option>
-                <option value="en-US" className="text-charcoal bg-white">🇺🇸 English (US)</option>
-              </select>
-              <button
-                type="button"
-                onClick={() => {
-                  const next = { ...buddyPrefs, responseLength: buddyPrefs.responseLength === 'concise' ? 'detailed' : 'concise' as AIAssistantPreferences['responseLength'] };
-                  setBuddyPrefs(next);
-                  saveAIAssistantPreferences(next);
-                }}
-                className="rounded-lg bg-white/20 px-2 py-1 text-xs font-medium text-white transition hover:bg-white/30"
-              >
-                {buddyPrefs.responseLength === 'concise' ? '📝 Concise' : '📄 Detailed'}
-              </button>
-            </div>
-          </div>
+      {buddyFullOpen && (() => {
+        const riskLevel = detectRisk(buddyMessages);
+        const riskColor = riskLevel === 'HIGH' ? 'text-red-600 border-red-200 bg-red-50' : riskLevel === 'MEDIUM' ? 'text-amber-600 border-amber-200 bg-amber-50' : 'text-emerald-600 border-emerald-200 bg-emerald-50';
+        return (
+          <div className="fixed bottom-[88px] right-4 z-[80] flex w-[360px] flex-col overflow-hidden rounded-2xl border border-calm-sage/20 bg-[#f8faf9] shadow-2xl sm:w-[420px] lg:bottom-8 lg:right-6">
 
-          {/* Quick prompts strip */}
-          <div className="flex gap-2 overflow-x-auto px-4 py-2 border-b border-gray-100 scrollbar-hide">
-            {BUDDY_QUICK_PROMPTS.map((prompt) => (
-              <button
-                key={prompt}
-                type="button"
-                disabled={buddySending}
-                onClick={() => { void sendBuddyMessage(prompt); }}
-                className="flex-shrink-0 rounded-full border border-calm-sage/20 bg-white px-3 py-1.5 text-xs font-medium text-charcoal/70 hover:border-calm-sage/50 disabled:opacity-50"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-
-          {/* Messages */}
-          <div className="h-[340px] overflow-y-auto px-4 py-4 space-y-3">
-            {buddyMessages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                {msg.role === 'assistant' && (
-                  <div className="mr-2 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-teal-100 mt-1">
-                    <Sparkles className="h-3.5 w-3.5 text-teal-600" />
+            {/* Header */}
+            <div className="bg-white border-b border-gray-100 px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500">
+                    <HeartPulse className="h-5 w-5 text-white" />
                   </div>
-                )}
-                <div className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                  msg.role === 'user'
-                    ? 'bg-teal-600 text-white rounded-br-sm'
-                    : 'border border-calm-sage/15 bg-white text-charcoal shadow-sm rounded-bl-sm'
-                }`}>
-                  {msg.content}
+                  <div>
+                    <p className="text-sm font-bold text-charcoal">Anytime Buddy</p>
+                    <p className="text-[11px] text-charcoal/55">Your Personal Wellness Companion</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {riskLevel && (
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${riskColor}`}>
+                      ⚠ Risk status: {riskLevel}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setBuddyFullOpen(false)}
+                    className="rounded-lg p-1.5 text-charcoal/40 transition hover:bg-gray-100 hover:text-charcoal"
+                    aria-label="Close"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
-            ))}
-            {buddySending && (
-              <div className="flex justify-start">
-                <div className="mr-2 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-teal-100 mt-1">
-                  <Sparkles className="h-3.5 w-3.5 text-teal-600" />
-                </div>
-                <div className="rounded-2xl rounded-bl-sm border border-calm-sage/15 bg-white px-4 py-3 shadow-sm">
-                  <p className="text-xs text-charcoal/55">AnytimeBuddy is typing…</p>
-                </div>
-              </div>
-            )}
-            <div ref={buddyBottomRef} />
-          </div>
 
-          {/* Input */}
-          <div className="border-t border-gray-200 bg-white px-4 py-3">
-            <form
-              onSubmit={(e) => { e.preventDefault(); void sendBuddyMessage(buddyInput); }}
-              className="flex items-center gap-2"
-            >
-              <input
-                type="text"
-                value={buddyInput}
-                onChange={(e) => setBuddyInput(e.target.value)}
-                placeholder={buddyListening ? '🎙 Listening…' : 'Share how you are feeling right now…'}
-                disabled={buddySending}
-                className="h-12 flex-1 rounded-xl border border-calm-sage/25 bg-white px-4 text-sm text-charcoal outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 disabled:opacity-60"
-              />
-              <button
-                type="button"
-                onClick={toggleBuddyVoice}
-                className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border transition ${buddyListening ? 'border-red-300 bg-red-50 text-red-600 animate-pulse' : 'border-calm-sage/25 bg-white text-charcoal/60 hover:bg-calm-sage/10'}`}
-                aria-label={buddyListening ? 'Stop voice input' : 'Start voice input'}
-              >
-                {buddyListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </button>
-              <button
-                type="submit"
-                disabled={buddySending || !buddyInput.trim()}
-                className="h-12 rounded-xl bg-teal-600 px-5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-50"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </form>
+              {/* Row 1: Language pills */}
+              <div className="mt-3 flex gap-1.5 overflow-x-auto scrollbar-hide">
+                {BUDDY_LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => changeBuddyLang(lang.code)}
+                    className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${buddyLang === lang.code ? 'bg-teal-500 text-white' : 'bg-gray-100 text-charcoal/60 hover:bg-gray-200'}`}
+                  >
+                    {lang.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Row 2: Text / Voice toggle */}
+              <div className="mt-2 flex">
+                <div className="flex rounded-xl border border-gray-200 bg-gray-100 p-0.5">
+                  {(['text', 'voice'] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => { setBuddyMode(m); if (m === 'voice') toggleBuddyVoice(); }}
+                      className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition ${buddyMode === m ? 'bg-white text-charcoal shadow-sm' : 'text-charcoal/50 hover:text-charcoal'}`}
+                    >
+                      {m === 'text' ? 'Text Chat' : 'Voice Session'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="h-[360px] overflow-y-auto px-4 py-4 space-y-4">
+              {buddyMessages.map((msg, i) => {
+                const card = msg.role === 'assistant' ? detectBreathingCard(msg.content) : null;
+                return (
+                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start gap-2'}`}>
+                    {msg.role === 'assistant' && (
+                      <div className="mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-teal-500">
+                        <HeartPulse className="h-3.5 w-3.5 text-white" />
+                      </div>
+                    )}
+                    <div className="max-w-[80%] space-y-2">
+                      <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                        msg.role === 'user'
+                          ? 'bg-charcoal text-white rounded-br-sm'
+                          : 'border border-calm-sage/15 bg-white text-charcoal shadow-sm rounded-bl-sm'
+                      }`}>
+                        {msg.content}
+                      </div>
+                      {card && (
+                        <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-4 text-center">
+                          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-teal-500 text-2xl">
+                            {card.icon}
+                          </div>
+                          <p className="text-sm font-bold text-teal-700">{card.name}</p>
+                          <p className="mt-0.5 text-xs text-teal-600/80">{card.instruction}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {buddySending && (
+                <div className="flex justify-start gap-2">
+                  <div className="mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-teal-500">
+                    <HeartPulse className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  <div className="rounded-2xl rounded-bl-sm border border-calm-sage/15 bg-white px-4 py-3 shadow-sm">
+                    <p className="text-xs text-charcoal/55">AnytimeBuddy is typing…</p>
+                  </div>
+                </div>
+              )}
+              <div ref={buddyBottomRef} />
+            </div>
+
+            {/* Quick prompts strip */}
+            <div className="flex gap-2 overflow-x-auto border-t border-gray-100 bg-white px-4 py-2 scrollbar-hide">
+              {BUDDY_QUICK_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  disabled={buddySending}
+                  onClick={() => { void sendBuddyMessage(prompt); }}
+                  className="flex-shrink-0 rounded-full border border-calm-sage/20 bg-white px-3 py-1.5 text-xs font-medium text-charcoal/70 hover:border-calm-sage/50 disabled:opacity-50"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+
+            {/* Input */}
+            <div className="border-t border-gray-100 bg-white px-4 py-3">
+              {buddyMode === 'voice' ? (
+                <div className="flex flex-col items-center gap-2 py-2">
+                  <button
+                    type="button"
+                    onClick={toggleBuddyVoice}
+                    className={`flex h-14 w-14 items-center justify-center rounded-full transition ${buddyListening ? 'bg-red-500 animate-pulse text-white' : 'bg-teal-500 text-white hover:bg-teal-600'}`}
+                  >
+                    {buddyListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+                  </button>
+                  <p className="text-xs text-charcoal/55">{buddyListening ? 'Listening — speak now…' : 'Tap mic to speak'}</p>
+                </div>
+              ) : (
+                <form
+                  onSubmit={(e) => { e.preventDefault(); void sendBuddyMessage(buddyInput); }}
+                  className="flex items-center gap-2"
+                >
+                  <input
+                    type="text"
+                    value={buddyInput}
+                    onChange={(e) => setBuddyInput(e.target.value)}
+                    placeholder="Type your message to Anytime Buddy..."
+                    disabled={buddySending}
+                    className="h-11 flex-1 rounded-xl border border-calm-sage/25 bg-gray-50 px-4 text-sm text-charcoal outline-none transition focus:border-teal-400 focus:bg-white disabled:opacity-60"
+                  />
+                  <button
+                    type="button"
+                    onClick={toggleBuddyVoice}
+                    className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border transition ${buddyListening ? 'border-red-300 bg-red-50 text-red-500 animate-pulse' : 'border-calm-sage/25 bg-white text-charcoal/50 hover:bg-teal-50 hover:text-teal-600'}`}
+                  >
+                    {buddyListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={buddySending || !buddyInput.trim()}
+                    className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-teal-500 text-white transition hover:bg-teal-600 disabled:opacity-50"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {profileMenuOpen && (
         <div
