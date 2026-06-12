@@ -217,15 +217,21 @@ export const ProviderPortalPage: React.FC = () => {
                     <span>{joined}/{capacity} joined</span>
                     <span>₹{Math.round(Number(row.priceMinor || 0) / 100)}/seat</span>
                   </div>
-                  <a
-                    href={`https://meet.jit.si/${row.jitsiRoomName || `manas360-group-${row.id}`}#config.prejoinPageEnabled=false`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 rounded-xl bg-teal-600 py-2 text-xs font-bold text-white transition hover:bg-teal-700"
-                  >
-                    <Video className="h-3.5 w-3.5" />
-                    {isLive ? 'Join Now' : 'Open Room'}
-                  </a>
+                  {row.googleMeetLink ? (
+                    <a
+                      href={row.googleMeetLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 rounded-xl bg-[#1a73e8] py-2 text-xs font-bold text-white transition hover:bg-[#1558b0]"
+                    >
+                      <Video className="h-3.5 w-3.5" />
+                      {isLive ? 'Join with Google Meet' : 'Open Google Meet'}
+                    </a>
+                  ) : (
+                    <span className="flex items-center justify-center gap-1 rounded-xl bg-white/10 py-2 text-xs text-white/50">
+                      <Video className="h-3.5 w-3.5" /> Meet link pending
+                    </span>
+                  )}
                 </div>
               );
             })}

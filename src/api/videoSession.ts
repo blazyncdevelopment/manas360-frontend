@@ -14,6 +14,7 @@ export type MeetingLinkResponse = {
   meetingRoomName: string;
   jitsiJwt: string | null;
   jitsiDomain: string;
+  googleMeetLink: string | null;
   patientId: string;
   noteId: string | null;
   noteSubjective: string;

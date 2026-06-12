@@ -1519,12 +1519,13 @@ export default function SessionsPage() {
                     >
                       😊 Mood Tracker
                     </Link>
-                    <Link
-                      to="/patient/buddy/chat"
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-buddy'))}
                       className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-white px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
                     >
                       🤖 AnytimeBuddy AI
-                    </Link>
+                    </button>
                     <Link
                       to="/patient/sound-therapy"
                       className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-white px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"

@@ -15,6 +15,7 @@ export type GroupTherapySession = {
   allowGuestJoin: boolean;
   requiresPayment: boolean;
   jitsiRoomName?: string | null;
+  googleMeetLink?: string | null;
   hostTherapistId: string;
   joinedCount?: number;
 };

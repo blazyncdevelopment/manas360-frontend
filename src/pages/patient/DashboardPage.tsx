@@ -226,9 +226,13 @@ export default function DashboardPage() {
             <p className="mt-0.5 text-xs text-amber-700">Your mood average is below 3 — your provider has been notified. Remember, small steps count.</p>
           </div>
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-            <Link to="/patient/buddy/chat" className="inline-flex items-center gap-1 rounded-xl bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-200 transition">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-buddy'))}
+              className="inline-flex items-center gap-1 rounded-xl bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-200 transition"
+            >
               Talk to Buddy
-            </Link>
+            </button>
             <button
               type="button"
               onClick={() => navigate('/crisis')}
@@ -355,12 +359,16 @@ export default function DashboardPage() {
               <h3 className="text-base font-semibold text-charcoal">Finding your provider…</h3>
               <p className="mt-2 text-xs text-charcoal/60 max-w-xs mx-auto">TherapeuticGPS is matching you with the best provider. We'll notify you when confirmed.</p>
               <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                <Link to="/patient/buddy/chat" className="rounded-xl border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition">
+                <Link to="/patient/mood-tracker" className="rounded-xl border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition">
                   😊 Mood Tracker
                 </Link>
-                <Link to="/patient/buddy/chat" className="rounded-xl border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition">
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('open-buddy'))}
+                  className="rounded-xl border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition"
+                >
                   🤖 AnytimeBuddy AI
-                </Link>
+                </button>
                 <Link to="/patient/sound-therapy" className="rounded-xl border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition">
                   🎵 Sound Therapy
                 </Link>

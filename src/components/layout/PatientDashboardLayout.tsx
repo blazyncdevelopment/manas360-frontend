@@ -167,6 +167,12 @@ export default function PatientDashboardLayout() {
 
   useEffect(() => { void fetchUnread(); }, [fetchUnread]);
 
+  useEffect(() => {
+    const handler = () => setBuddyFullOpen(true);
+    window.addEventListener('open-buddy', handler);
+    return () => window.removeEventListener('open-buddy', handler);
+  }, []);
+
   const userName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || user?.email || 'Patient';
   const initials = userName
     .split(' ')
