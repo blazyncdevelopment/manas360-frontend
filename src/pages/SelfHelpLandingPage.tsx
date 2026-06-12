@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import "./SelfHelpLandingPage.css";
 
 type ToolCard = {
@@ -56,6 +57,7 @@ const toolCards: ToolCard[] = [
 ];
 
 const SelfHelpLandingPage: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <main className="self-help-page">
       {/* <header className="self-help-header">
@@ -76,7 +78,7 @@ const SelfHelpLandingPage: React.FC = () => {
           </div>
           <h1>Self-Help Tools</h1>
           <p>Free tools you can use right now - no login, no signup, no cost. Build healthy habits at your own pace.</p>
-          <button type="button" className="self-help-primary">Explore Free Tools →</button>
+          <button type="button" className="self-help-primary" onClick={() => navigate("/sound-therapy")}>Explore Free Tools →</button>
         </div>
       </section>
 
@@ -106,9 +108,9 @@ const SelfHelpLandingPage: React.FC = () => {
       <section className="self-help-container self-help-cta">
         <h2>Free Tools, Real Results</h2>
         <p>No signup needed. Start using these tools right now.</p>
-        <button type="button">Start Now - It's Free →</button>
+        <button type="button" onClick={() => navigate("/sound-therapy")}>Start Now - It's Free →</button>
       </section>
-{/* 
+      {/* 
       <footer className="self-help-footer">
         <div className="self-help-footer-logo">
           MANAS<span>360</span>

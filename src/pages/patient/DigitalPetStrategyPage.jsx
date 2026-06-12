@@ -237,22 +237,22 @@ const PetCatalog = () => (
       <p style={{ textAlign: "center", fontSize: 13, color: tokens.slate4, maxWidth: 500, margin: "0 auto 24px" }}>Each species is designed for a specific therapeutic purpose. Your pet isn't just cute — it's medicine.</p>
 
       <TierSection title="Tier 1 — Ambient Companions" badge={<Badge bg={tokens.greenLight} color={tokens.green}>FREE</Badge>} sub="Watch, breathe, be present">
-        <PetCard emoji="🐟" name="Koi Fish" env="🌊 Zen Pond" bg="linear-gradient(135deg,#DBEAFE,#BFDBFE)" benefits={[{label:"Anxiety",cls:"calm"},{label:"Stress Relief",cls:"calm"}]} price="FREE" priceColor={tokens.green} priceBg={tokens.greenLight} />
-        <PetCard emoji="🐱" name="Lotus Cat" env="🏯 Garden Temple" bg="linear-gradient(135deg,#D1FAE5,#A7F3D0)" benefits={[{label:"Grounding",cls:"calm"},{label:"Mindfulness",cls:"mind"}]} price="FREE" priceColor={tokens.green} priceBg={tokens.greenLight} />
-        <PetCard emoji="✨" name="Cloud Sprite" env="☁️ Sky Realm" bg="linear-gradient(135deg,#E0E7FF,#C7D2FE)" benefits={[{label:"Lightness",cls:"calm"},{label:"Letting Go",cls:"growth"}]} price="FREE" priceColor={tokens.green} priceBg={tokens.greenLight} />
+        <PetCard emoji="🐟" name="Koi Fish" env="🌊 Zen Pond" bg="linear-gradient(135deg,#DBEAFE,#BFDBFE)" benefits={[{ label: "Anxiety", cls: "calm" }, { label: "Stress Relief", cls: "calm" }]} price="FREE" priceColor={tokens.green} priceBg={tokens.greenLight} />
+        <PetCard emoji="🐱" name="Lotus Cat" env="🏯 Garden Temple" bg="linear-gradient(135deg,#D1FAE5,#A7F3D0)" benefits={[{ label: "Grounding", cls: "calm" }, { label: "Mindfulness", cls: "mind" }]} price="FREE" priceColor={tokens.green} priceBg={tokens.greenLight} />
+        <PetCard emoji="✨" name="Cloud Sprite" env="☁️ Sky Realm" bg="linear-gradient(135deg,#E0E7FF,#C7D2FE)" benefits={[{ label: "Lightness", cls: "calm" }, { label: "Letting Go", cls: "growth" }]} price="FREE" priceColor={tokens.green} priceBg={tokens.greenLight} />
       </TierSection>
 
       <TierSection title="Tier 2 — Interactive Companions" badge={<Badge bg={tokens.violetLight} color={tokens.violet}>₹99/mo or ₹199 OWN</Badge>} sub="Pet, play, breathe, grow">
-        <Link to="/patient/chintu" style={{textDecoration:'none',color:'inherit'}}><PetCard emoji="🦊" name="Chintu - The Clever Fox" env="🔥 Dopamine Engine" bg="linear-gradient(135deg,#FFE4CC,#FFD1AA)" benefits={[{label:"Dopamine Boost",cls:"joy"},{label:"Rewards & Play",cls:"joy"}]} price="₹99/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} /></Link>
-        <Link to="/patient/dino" style={{textDecoration:'none',color:'inherit'}}><PetCard emoji="🦕" name="Baby Dino" env="🌿 Love Nest" bg="linear-gradient(135deg,#D1FAE5,#A7F3D0)" benefits={[{label:"Oxytocin Bond",cls:"calm"},{label:"Nurturing Care",cls:"growth"}]} price="₹99/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} /></Link>
-        <Link to="/patient/elephant" style={{textDecoration:'none',color:'inherit'}}><PetCard emoji="🐘" name="Appu - Healing Elephant" env="🌳 Sacred Grove" bg="linear-gradient(135deg,#D1FAE5,#6EE7B7)" benefits={[{label:"Emotional Strength",cls:"strength"},{label:"Memory",cls:"mind"}]} price="₹99/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} /></Link>
-        <Link to="/patient/goldenPup" style={{textDecoration:'none',color:'inherit'}}><PetCard emoji="🐕" name="Golden Pup" env="🏡 Home Base" bg="linear-gradient(135deg,#FFE4CC,#FFD1AA)" benefits={[{label:"Loyalty",cls:"calm"},{label:"Playfulness",cls:"joy"}]} price="₹99/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} /></Link>
+        <Link to="/patient/chintu" style={{ textDecoration: 'none', color: 'inherit' }}><PetCard emoji="🦊" name="Chintu - The Clever Fox" env="🔥 Dopamine Engine" bg="linear-gradient(135deg,#FFE4CC,#FFD1AA)" benefits={[{ label: "Dopamine Boost", cls: "joy" }, { label: "Rewards & Play", cls: "joy" }]} price="₹99/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} /></Link>
+        <Link to="/patient/dino" style={{ textDecoration: 'none', color: 'inherit' }}><PetCard emoji="🦕" name="Baby Dino" env="🌿 Love Nest" bg="linear-gradient(135deg,#D1FAE5,#A7F3D0)" benefits={[{ label: "Oxytocin Bond", cls: "calm" }, { label: "Nurturing Care", cls: "growth" }]} price="₹99/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} /></Link>
+        <Link to="/patient/elephant" style={{ textDecoration: 'none', color: 'inherit' }}><PetCard emoji="🐘" name="Appu - Healing Elephant" env="🌳 Sacred Grove" bg="linear-gradient(135deg,#D1FAE5,#6EE7B7)" benefits={[{ label: "Emotional Strength", cls: "strength" }, { label: "Memory", cls: "mind" }]} price="₹99/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} /></Link>
+        <Link to="/patient/goldenPup" style={{ textDecoration: 'none', color: 'inherit' }}><PetCard emoji="🐕" name="Golden Pup" env="🏡 Home Base" bg="linear-gradient(135deg,#FFE4CC,#FFD1AA)" benefits={[{ label: "Loyalty", cls: "calm" }, { label: "Playfulness", cls: "joy" }]} price="₹99/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} /></Link>
       </TierSection>
 
       <TierSection title="Tier 3 — AI Companions" badge={<Badge bg={tokens.goldLight} color={tokens.gold}>₹299/mo or ₹499 OWN</Badge>} sub="Talk, remember, evolve, heal">
-        <PetCard emoji="🦋" name="Phoenix Friend" env="🔥 Rebirth Temple" bg="linear-gradient(135deg,#FCE7F3,#FBCFE8)" benefits={[{label:"Transformation",cls:"strength"},{label:"Crisis Support",cls:"growth"}]} price="₹299/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} />
-        <PetCard emoji="🐉" name="Guardian Dragon" env="⛰️ Crystal Cave" bg="linear-gradient(135deg,#EDE9FE,#DDD6FE)" benefits={[{label:"Protection",cls:"strength"},{label:"Voice Chat",cls:"mind"}]} price="₹299/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} />
-        <PetCard emoji="🦚" name="Wisdom Peacock" env="🕉️ Lotus Garden" bg="linear-gradient(135deg,#FEF9EB,#FEF3C7)" benefits={[{label:"Vedic Wisdom",cls:"mind"},{label:"Self-Discovery",cls:"growth"}]} price="₹299/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} />
+        <PetCard emoji="🦋" name="Phoenix Friend" env="🔥 Rebirth Temple" bg="linear-gradient(135deg,#FCE7F3,#FBCFE8)" benefits={[{ label: "Transformation", cls: "strength" }, { label: "Crisis Support", cls: "growth" }]} price="₹299/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} />
+        <PetCard emoji="🐉" name="Guardian Dragon" env="⛰️ Crystal Cave" bg="linear-gradient(135deg,#EDE9FE,#DDD6FE)" benefits={[{ label: "Protection", cls: "strength" }, { label: "Voice Chat", cls: "mind" }]} price="₹299/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} />
+        <PetCard emoji="🦚" name="Wisdom Peacock" env="🕉️ Lotus Garden" bg="linear-gradient(135deg,#FEF9EB,#FEF3C7)" benefits={[{ label: "Vedic Wisdom", cls: "mind" }, { label: "Self-Discovery", cls: "growth" }]} price="₹299/mo" priceColor={tokens.violet} priceBg={tokens.violetLight} />
       </TierSection>
     </div>
   </section>
@@ -420,7 +420,7 @@ const Revenue = () => (
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, borderRadius: 14, overflow: "hidden", border: `1px solid ${tokens.stoneLighter}`, background: tokens.white }}>
           <thead>
-            <tr>{["Segment","Users (Mo 12)","ARPU","Annual Revenue","Notes"].map((h) => (
+            <tr>{["Segment", "Users (Mo 12)", "ARPU", "Annual Revenue", "Notes"].map((h) => (
               <th key={h} style={{ background: tokens.violetLight, color: tokens.violet, fontSize: 11, fontWeight: 700, letterSpacing: ".5px", textTransform: "uppercase", padding: "10px 14px", textAlign: "left" }}>{h}</th>
             ))}</tr>
           </thead>
@@ -435,7 +435,7 @@ const Revenue = () => (
               </tr>
             ))}
             <tr>
-              {["TOTAL YEAR 1","36,500 users","—","₹1.95 Crore","62% margin (low infra cost, one-time pet design)"].map((v, i) => (
+              {["TOTAL YEAR 1", "36,500 users", "—", "₹1.95 Crore", "62% margin (low infra cost, one-time pet design)"].map((v, i) => (
                 <td key={i} style={{ ...tdStyle, fontWeight: 700, color: tokens.violet, background: tokens.violetLight, fontSize: 13 }}>{v}</td>
               ))}
             </tr>

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 const landingBg = encodeURI("/You renot alone-Beach.jpeg");
 
-type GtSessionStatus = "live" | "soon" | "upcoming";
+type GtSessionStatus = "live" | "soon" | "upcoming" | "completed" | "hidden";
 
 type GtSession = {
   theme: string;
@@ -39,10 +39,11 @@ function getGtStatus(session: GtSession, now: number, pageEpoch: number): GtSess
   const startsAt = pageEpoch + session.startsInMs;
   const endTime = startsAt + session.durationMin * 60000;
   const diff = startsAt - now;
-  if (diff <= 0 && now < endTime) return "live";
-  if (diff > 0 && diff <= 15 * 60000) return "soon";
-  if (diff > 15 * 60000 && diff <= 120 * 60000) return "upcoming";
-  return "upcoming";
+  if (now >= endTime) return "completed";
+  if (diff <= 0) return "live";
+  if (diff <= 15 * 60000) return "soon";
+  if (diff <= 120 * 60000) return "upcoming";
+  return "hidden";
 }
 
 function getGtCountdown(session: GtSession, now: number, pageEpoch: number): number {
@@ -56,9 +57,9 @@ function formatCountdown(ms: number): string {
   if (min >= 60) {
     const hr = Math.floor(min / 60);
     const rm = min % 60;
-    return `${hr}h ${rm}m`;
+    return `${hr}H ${rm}M`;
   }
-  return `${min}m ${sec < 10 ? "0" : ""}${sec}s`;
+  return `${min}M ${sec < 10 ? "0" : ""}${sec}S`;
 }
 
 const LandingPage: React.FC = () => {
@@ -104,12 +105,25 @@ const LandingPage: React.FC = () => {
         const res = await fetch(`${apiUrl}/v1/group-therapy/public/sessions`);
         const json = await res.json();
         if (json.success && json.data?.items) {
-          const fetchedSessions: GtSession[] = json.data.items.slice(0, 3).map((item: any) => {
+          const fetchedSessions: GtSession[] = json.data.items.map((item: any) => {
             const scheduledAtTime = new Date(item.scheduledAt).getTime();
             const startsInMs = scheduledAtTime - pageEpoch.current;
+            
+            const titleLower = (item.title || "").toLowerCase();
+            let emoji = item.emoji || "🌱";
+            if (!item.emoji) {
+              if (titleLower.includes("anxiety") || titleLower.includes("worry") || titleLower.includes("stress")) {
+                emoji = "😨";
+              } else if (titleLower.includes("grief") || titleLower.includes("loss") || titleLower.includes("sadness")) {
+                emoji = "🕯️";
+              } else if (titleLower.includes("parenting") || titleLower.includes("child") || titleLower.includes("mother") || titleLower.includes("father") || titleLower.includes("mindful")) {
+                emoji = "👤";
+              }
+            }
+
             return {
               theme: item.title || "Group Therapy",
-              emoji: "\uD83C\uDF31", // 🌱
+              emoji: emoji,
               host: item.hostName || "Therapist",
               lang: item.language || "English",
               spots: { total: item.maxMembers || 15, taken: item.joinedCount || 0 },
@@ -128,10 +142,12 @@ const LandingPage: React.FC = () => {
 
   const visibleGtSessions = useMemo(
     () =>
-      gtSessions.filter((session) => {
-        const status = getGtStatus(session, now, pageEpoch.current);
-        return status === "live" || status === "soon" || status === "upcoming";
-      }),
+      gtSessions
+        .filter((session) => {
+          const status = getGtStatus(session, now, pageEpoch.current);
+          return status === "live" || status === "soon" || status === "upcoming";
+        })
+        .slice(0, 3),
     [gtSessions, now]
   );
 
@@ -534,6 +550,12 @@ const LandingPage: React.FC = () => {
               className="landing-gt-boxes"
               style={{
                 gridTemplateColumns: "repeat(3, 1fr)"
+                // gridTemplateColumns:
+                //   visibleGtSessions.length === 1
+                //     ? "1fr"
+                //     : visibleGtSessions.length === 2
+                //       ? "1fr 1fr"
+                //       : "repeat(3, 1fr)"
               }}
             >
               {visibleGtSessions.length === 0 ? (
@@ -1479,34 +1501,19 @@ const LandingPage: React.FC = () => {
           transform: translateY(-3px);
         }
         .landing-gt-box-live {
-          background: linear-gradient(145deg, #fff7ed 0%, #ffedd5 40%, #fed7aa 100%);
-          border: 1.5px solid rgba(255, 153, 51, 0.4);
-          box-shadow: 0 0 16px rgba(255, 153, 51, 0.2), 0 0 32px rgba(255, 153, 51, 0.08);
-          animation: landingSaffronGlow 2s ease infinite;
+          background: #fff7ed;
+          border: 1.5px solid #fed7aa;
+          box-shadow: 0 4px 20px rgba(249, 115, 22, 0.08);
         }
         .landing-gt-box-soon {
-          background: linear-gradient(145deg, #eff6ff 0%, #dbeafe 40%, #bfdbfe 100%);
-          border: 1.5px solid rgba(59, 130, 246, 0.35);
-          box-shadow: 0 0 14px rgba(59, 130, 246, 0.15);
-          animation: landingBlueGlow 2.5s ease infinite;
+          background: #eff6ff;
+          border: 1.5px solid #bfdbfe;
+          box-shadow: 0 4px 20px rgba(37, 99, 235, 0.08);
         }
         .landing-gt-box-upcoming {
-          background: linear-gradient(145deg, #fefce8 0%, #fef9c3 40%, #fef08a 100%);
-          border: 1.5px solid rgba(234, 179, 8, 0.35);
-          box-shadow: 0 0 12px rgba(234, 179, 8, 0.15);
-          animation: landingYellowGlow 3s ease infinite;
-        }
-        @keyframes landingSaffronGlow {
-          0%, 100% { box-shadow: 0 0 16px rgba(255, 153, 51, 0.2), 0 0 32px rgba(255, 153, 51, 0.08); }
-          50% { box-shadow: 0 0 24px rgba(255, 153, 51, 0.3), 0 0 48px rgba(255, 153, 51, 0.14); }
-        }
-        @keyframes landingBlueGlow {
-          0%, 100% { box-shadow: 0 0 14px rgba(59, 130, 246, 0.15), 0 0 28px rgba(59, 130, 246, 0.06); }
-          50% { box-shadow: 0 0 22px rgba(59, 130, 246, 0.25), 0 0 42px rgba(59, 130, 246, 0.1); }
-        }
-        @keyframes landingYellowGlow {
-          0%, 100% { box-shadow: 0 0 12px rgba(234, 179, 8, 0.15), 0 0 24px rgba(234, 179, 8, 0.06); }
-          50% { box-shadow: 0 0 18px rgba(234, 179, 8, 0.22), 0 0 36px rgba(234, 179, 8, 0.1); }
+          background: #fefce8;
+          border: 1.5px solid #fef08a;
+          box-shadow: 0 4px 20px rgba(202, 138, 4, 0.08);
         }
         .landing-gt-box-top {
           display: flex;
@@ -1529,10 +1536,10 @@ const LandingPage: React.FC = () => {
           flex-shrink: 0;
         }
         .landing-gt-status {
-          font-size: 8px;
+          font-size: 8.5px;
           font-weight: 800;
-          padding: 2.5px 9px;
-          border-radius: 10px;
+          padding: 3.5px 10px;
+          border-radius: 12px;
           text-transform: uppercase;
           letter-spacing: 0.8px;
           display: flex;
@@ -1541,7 +1548,7 @@ const LandingPage: React.FC = () => {
           white-space: nowrap;
         }
         .landing-gt-status-live {
-          background: #ff9933;
+          background: #f97316;
           color: white;
         }
         .landing-gt-dot {
@@ -1556,12 +1563,13 @@ const LandingPage: React.FC = () => {
           50% { opacity: 0.35; }
         }
         .landing-gt-status-soon {
-          background: linear-gradient(135deg, #3b82f6, #2563eb);
+          background: #2563eb;
           color: white;
         }
         .landing-gt-status-upcoming {
-          background: rgba(234, 179, 8, 0.25);
-          color: #92400e;
+          background: #fef3c7;
+          color: #b45309;
+          border: 1px solid #fde68a;
         }
         .landing-gt-box-meta {
           display: flex;
@@ -1617,15 +1625,15 @@ const LandingPage: React.FC = () => {
           letter-spacing: 0.2px;
         }
         .landing-gt-box-btn-live {
-          background: linear-gradient(135deg, #ff9933, #ea580c);
+          background: #ea580c;
           color: white;
         }
         .landing-gt-box-btn-soon {
-          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+          background: #2563eb;
           color: white;
         }
         .landing-gt-box-btn-upcoming {
-          background: linear-gradient(135deg, #eab308, #ca8a04);
+          background: #ca8a04;
           color: white;
         }
         .landing-group-section {

@@ -628,10 +628,10 @@ client.init('52401c7067f54ff3813da84df073b5f6',{
         <button
           onClick={onClose}
           className="absolute top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 group"
-          style={{ 
-            background: 'rgba(255,255,255,0.1)', 
-            backdropFilter: 'blur(12px)', 
-            border: '1px solid rgba(255,255,255,0.2)' 
+          style={{
+            background: 'rgba(255,255,255,0.1)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.2)'
           }}
           aria-label="Back to Hub"
         >

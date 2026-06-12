@@ -40,6 +40,9 @@ export const CheckoutPage: React.FC = () => {
     const applicableWallet = Math.min(walletAmount, totalToday);
     const finalTotal = totalToday - applicableWallet;
 
+    //  const applicableWallet = 0;
+    // const finalTotal = totalToday;
+
     React.useEffect(() => {
         if (!cert || getEnrollmentBySlug(cert.slug)) {
             return;
@@ -259,115 +262,112 @@ export const CheckoutPage: React.FC = () => {
                     </div>
                 </div>
 
-                    <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 h-fit">
-                        <h3 className="text-xl font-bold text-slate-800 mb-6"> {cert.price_inr === 0 ? 'Start Training' : 'Payment Method'}</h3>
+                <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 h-fit">
+                    <h3 className="text-xl font-bold text-slate-800 mb-6"> {cert.price_inr === 0 ? 'Start Training' : 'Payment Method'}</h3>
 
-                        {cert.price_inr > 0 && (
-                          <div className="space-y-4 mb-8">
+                    {cert.price_inr > 0 && (
+                        <div className="space-y-4 mb-8">
                             <label className="block text-sm font-bold text-slate-700">Choose Payment Frequency</label>
                             <div className="grid grid-cols-1 gap-3">
-                              <button 
-                                onClick={() => setPlan('full')}
-                                className={`p-4 rounded-xl border-2 text-left transition ${plan === 'full' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}
-                              >
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="font-bold">Full Payment</span>
-                                  {plan === 'full' && <CheckCircle size={16} className="text-purple-600" />}
-                                </div>
-                                <p className="text-xs text-slate-500">Fastest way to unlock certification</p>
-                              </button>
-                              
-                              <button 
-                                onClick={() => setPlan('installment')}
-                                className={`p-4 rounded-xl border-2 text-left transition ${plan === 'installment' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}
-                              >
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="font-bold">3 Easy Installments</span>
-                                  {plan === 'installment' && <CheckCircle size={16} className="text-purple-600" />}
-                                </div>
-                                <p className="text-xs text-slate-500">₹{installmentAmount.toLocaleString()} per month</p>
-                              </button>
+                                <button
+                                    onClick={() => setPlan('full')}
+                                    className={`p-4 rounded-xl border-2 text-left transition ${plan === 'full' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}
+                                >
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="font-bold">Full Payment</span>
+                                        {plan === 'full' && <CheckCircle size={16} className="text-purple-600" />}
+                                    </div>
+                                    <p className="text-xs text-slate-500">Fastest way to unlock certification</p>
+                                </button>
+
+                                <button
+                                    onClick={() => setPlan('installment')}
+                                    className={`p-4 rounded-xl border-2 text-left transition ${plan === 'installment' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}
+                                >
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="font-bold">3 Easy Installments</span>
+                                        {plan === 'installment' && <CheckCircle size={16} className="text-purple-600" />}
+                                    </div>
+                                    <p className="text-xs text-slate-500">₹{installmentAmount.toLocaleString()} per month</p>
+                                </button>
                             </div>
-                          </div>
-                        )}
-                <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 h-fit">
+                        </div>
+                    )}
                     {cert.price_inr === 0 ? (
                         <>
-                        <div className="text-center py-8">
-                            <h3 className="text-xl font-bold text-slate-800 mb-4">Free Enrollment</h3>
-                            <button
-                                onClick={handlePayment}
-                                disabled={processing}
-                                className="w-full bg-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-purple-700 transition disabled:opacity-50"
-                            >
-                                {processing ? 'Enrolling...' : 'Confirm Enrollment'}
-                            </button>
-                        </div>
+                            <div className="text-center py-8">
+                                <h3 className="text-xl font-bold text-slate-800 mb-4">Free Enrollment</h3>
+                                <button
+                                    onClick={handlePayment}
+                                    disabled={processing}
+                                    className="w-full bg-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-purple-700 transition disabled:opacity-50"
+                                >
+                                    {processing ? 'Enrolling...' : 'Confirm Enrollment'}
+                                </button>
+                            </div>
 
-                        <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 mb-8">
-                            <div className="flex justify-between items-center text-sm text-slate-600 mb-2">
-                                <span>Access</span>
-                                <span className="font-bold text-slate-800">{cert.price_inr === 0 ? 'Immediate' : 'Once payment verified'}</span>
+                            <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 mb-8">
+                                <div className="flex justify-between items-center text-sm text-slate-600 mb-2">
+                                    <span>Access</span>
+                                    <span className="font-bold text-slate-800">Immediate</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm text-slate-600">
+                                    <span>Secure</span>
+                                    <span className="font-bold text-emerald-600">PhonePe Protected</span>
+                                </div>
                             </div>
-                            <div className="flex justify-between items-center text-sm text-slate-600">
-                                <span>Secure</span>
-                                <span className="font-bold text-emerald-600">PhonePe Protected</span>
+                        </>
+                    ) : (
+                        <>
+                            <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 mb-8">
+                                <div className="flex justify-between items-center text-sm text-slate-600 mb-2">
+                                    <span>Access</span>
+                                    <span className="font-bold text-slate-800">Once payment verified</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm text-slate-600">
+                                    <span>Secure</span>
+                                    <span className="font-bold text-emerald-600">PhonePe Protected</span>
+                                </div>
                             </div>
-                        </div>
-                            <div className="text-2xl font-bold text-slate-900 mt-2">₹{installmentAmount.toLocaleString()} <span className="text-sm font-normal text-slate-500">/mo</span></div>
 
                             {plan === 'installment' && (
-                                <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
-                                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                                        <Calendar size={12} className="text-purple-500" />
-                                        <span>Payment 2 due {nextMonth.toLocaleDateString()}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                                        <Calendar size={12} className="text-purple-500" />
-                                        <span>Payment 3 due {monthAfter.toLocaleDateString()}</span>
+                                <div className="mb-6">
+                                    <div className="text-2xl font-bold text-slate-900 mt-2">₹{installmentAmount.toLocaleString()} <span className="text-sm font-normal text-slate-500">/mo</span></div>
+                                    <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
+                                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                                            <Calendar size={12} className="text-purple-500" />
+                                            <span>Payment 2 due {nextMonth.toLocaleDateString()}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                                            <Calendar size={12} className="text-purple-500" />
+                                            <span>Payment 3 due {monthAfter.toLocaleDateString()}</span>
+                                        </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Pay button */}
                             <button
                                 onClick={handlePayment}
                                 disabled={processing}
-                                className="w-full bg-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-purple-700 transition flex items-center justify-center gap-2 disabled:opacity-70 mb-6"
+                                className="w-full bg-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-purple-700 transition flex items-center justify-center gap-2 disabled:opacity-70 mb-6 shadow-lg shadow-purple-100"
                             >
                                 {processing ? (
                                     <>Processing...</>
                                 ) : (
                                     <>
                                         <Lock size={18} className="text-purple-200" />
-                                        Pay ₹{finalTotal.toLocaleString()}
+                                        Proceed to Pay ₹{finalTotal.toLocaleString()}
                                     </>
                                 )}
                             </button>
 
-                        <button
-                            onClick={handlePayment}
-                            disabled={processing}
-                            className="w-full bg-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-purple-700 transition flex items-center justify-center gap-2 disabled:opacity-70 mb-6 shadow-lg shadow-purple-100"
-                        >
-                            {processing ? (
-                                <>Processing...</>
-                            ) : (
-                                <>
-                                    <Lock size={18} className="text-purple-200" />
-                                    {cert.price_inr === 0 ? 'Start Learning' : `Proceed to Pay ₹${finalTotal.toLocaleString()}`}
-                                </>
-                            )}
-                        </button>
-
-                        <div className="flex items-center justify-center gap-2 text-slate-400 text-xs mb-2">
-                            <CreditCard size={14} /> UPI • Cards • Net Banking
-                        </div>
+                            <div className="flex items-center justify-center gap-2 text-slate-400 text-xs mb-2">
+                                <CreditCard size={14} /> UPI • Cards • Net Banking
+                            </div>
                         </>
-                    ) : null}
-                    </div>
+                    )}
+                </div>
             </div>
-        </div>
         </div>
     );
 };

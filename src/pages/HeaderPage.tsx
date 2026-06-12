@@ -848,7 +848,7 @@ export const HeaderPage: React.FC = () => {
         columns: 4,
         items: [
           { icon: "\uD83C\uDFC6", title: "Certification Hub", subtitle: "CBT, NLP, 5Whys training", badge: "Pro" },
-          { icon: "\uD83E\uDDD1", title: "Join as Therapist", subtitle: "Earn \u20B950K-2L/month" }
+          // { icon: "\uD83E\uDDD1", title: "Join as Therapist", subtitle: "Earn \u20B950K-2L/month" }
         ]
       },
       MyDigitalClinic: {

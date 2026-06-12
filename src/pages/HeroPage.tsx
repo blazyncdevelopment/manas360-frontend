@@ -11,18 +11,30 @@ const HERO_VIDEO_S3_URL = `https://${AWS_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws
 const HERO_VIDEO_SRC =
   import.meta.env.VITE_HERO_VIDEO_URL?.trim() || HERO_VIDEO_S3_URL;
 
+/** sessionStorage keys */
+const SESSION_KEY_NEW  = 'manas360_hero_seen';   // set by one-cycle patch
+const SESSION_KEY_LEGACY = 'heroVideoPlayed';     // legacy key kept for compat
 
-
+const FADE_MS = 1500;
 
 export const Hero: React.FC = () => {
   const navigate = useNavigate();
   const NAVIGATION_DELAY_MS = 180;
-  const [videoAvailable, setVideoAvailable] = useState<boolean>(true);
-  const [videoPlaying, setVideoPlaying] = useState<boolean>(false);
-  const videoEnded = sessionStorage.getItem('heroVideoPlayed') === 'true';
-  const videoRef = React.useRef<HTMLVideoElement>(null);
+
+  // Determine up-front whether this session has already seen the video.
+  // Either key being set counts as "seen".
+  const alreadySeen =
+    sessionStorage.getItem(SESSION_KEY_NEW) === '1' ||
+    sessionStorage.getItem(SESSION_KEY_LEGACY) === 'true';
+
+  const [videoAvailable, setVideoAvailable] = useState<boolean>(!alreadySeen);
+  const [videoPlaying,   setVideoPlaying]   = useState<boolean>(false);
+
+  const videoRef    = React.useRef<HTMLVideoElement>(null);
+  const wrapRef     = React.useRef<HTMLDivElement>(null);
 
 
+  // ── Body-scroll lock ──────────────────────────────────────────────────────
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
     const mq = window.matchMedia('(max-width: 900px)');
@@ -37,10 +49,10 @@ export const Hero: React.FC = () => {
     return () => {
       document.body.style.overflow = prevOverflow;
       mq.removeEventListener('change', applyOverflow);
-      sessionStorage.setItem('heroVideoPlayed', 'true');
     };
   }, []);
 
+  // ── Particles ─────────────────────────────────────────────────────────────
   useEffect(() => {
     // Particles initialization from the provided HTML script
     const container = document.getElementById('particles');
@@ -66,9 +78,91 @@ export const Hero: React.FC = () => {
     }
   }, []);
 
-  // We optimistically render the video and switch to the styled navy fallback on error.
+  // ── Hero-video one-cycle patch ────────────────────────────────────────────
+  //
+  //  • First visit   : video plays once → 1.5s fade → DOM removal + src clear
+  //  • Same-session  : video element never rendered (alreadySeen gate above)
+  //  • New session   : plays once again
+  //  • Error         : silent destroy
+  //  • 30s stall     : silent destroy (slow connection guard)
+  //  • Memory saved  : ~168 MB freed after fade completes
+  //
+  useEffect(() => {
+    if (alreadySeen) return;           // video was never rendered — nothing to do
 
+    const wrap = wrapRef.current;
+    const vid  = videoRef.current;
 
+    if (!wrap || !vid) return;
+
+    // Remove loop defensively
+    vid.removeAttribute('loop');
+
+    // Mark session as seen immediately so navigation/unmount can't re-show it
+    const markSeen = () => {
+      sessionStorage.setItem(SESSION_KEY_NEW,    '1');
+      sessionStorage.setItem(SESSION_KEY_LEGACY, 'true');
+    };
+
+    // Stall guard — destroy silently if video hasn't buffered in 30 s
+    const stallTimer = window.setTimeout(() => {
+      if (vid.readyState < 2) {
+        markSeen();
+        destroyVideo();
+      }
+    }, 30_000);
+
+    const onCanPlay = () => clearTimeout(stallTimer);
+
+    const onEnded = () => {
+      markSeen();
+      clearTimeout(stallTimer);
+      fadeAndDestroy();
+    };
+
+    const onError = () => {
+      clearTimeout(stallTimer);
+      destroyVideo();
+    };
+
+    vid.addEventListener('canplay', onCanPlay);
+    vid.addEventListener('ended',   onEnded);
+    vid.addEventListener('error',   onError);
+
+    return () => {
+      clearTimeout(stallTimer);
+      vid.removeEventListener('canplay', onCanPlay);
+      vid.removeEventListener('ended',   onEnded);
+      vid.removeEventListener('error',   onError);
+    };
+
+    // ── Local helpers ──
+
+    function fadeAndDestroy() {
+      const w = wrapRef.current;
+      if (w) {
+        w.style.transition = `opacity ${FADE_MS}ms ease`;
+        w.style.opacity    = '0';
+      }
+      setTimeout(destroyVideo, FADE_MS + 100);
+    }
+
+    function destroyVideo() {
+      // Release the video decode buffer (~168 MB) before React unmounts
+      const v = videoRef.current;
+      if (v) {
+        v.pause();
+        v.removeAttribute('src');
+        v.load();
+      }
+      // ⚠️  Do NOT call wrap.remove() here — React owns this node.
+      // Setting state to false lets React unmount it cleanly, avoiding
+      // the "removeChild: node is not a child" NotFoundError.
+      setVideoAvailable(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // ─────────────────────────────────────────────────────────────────────────
 
   const goToLanding = () => {
     window.setTimeout(() => {
@@ -76,7 +170,8 @@ export const Hero: React.FC = () => {
     }, NAVIGATION_DELAY_MS);
   };
 
-  const isStatic = videoEnded || !videoAvailable || !videoPlaying;
+  // isStatic drives gradient / pattern opacity (true when no video is playing)
+  const isStatic = alreadySeen || !videoAvailable || !videoPlaying;
 
   return (
     <div className="hero-wrapper min-h-screen h-screen flex flex-col relative overflow-hidden">
@@ -368,27 +463,29 @@ export const Hero: React.FC = () => {
 
       {/* Background layers */}
       <div className={`hero-bg${isStatic ? ' hero-bg--static' : ''}`}>
-        {!videoEnded && videoAvailable && (
-          <video
-            ref={videoRef}
-            className={`hero-bg-video ${videoPlaying ? 'playing' : ''}`}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            aria-hidden="true"
-            disablePictureInPicture
-            onCanPlay={() => {
-              if (videoRef.current) {
-                videoRef.current.play().catch(() => {});
-              }
-            }}
-            onPlaying={() => setVideoPlaying(true)}
-            onError={() => setVideoAvailable(false)}
-          >
-            <source src={HERO_VIDEO_SRC} type="video/mp4" />
-          </video>
+        {/* Video wrapper — id="heroVideo" / id="bgVideo" wired for the one-cycle patch.
+            Rendered only when this session has NOT already seen the video. */}
+        {!alreadySeen && videoAvailable && (
+          <div ref={wrapRef} id="heroVideo" style={{ position: 'absolute', inset: 0 }}>
+            <video
+              id="bgVideo"
+              ref={videoRef}
+              className={`hero-bg-video ${videoPlaying ? 'playing' : ''}`}
+              autoPlay
+              muted
+              playsInline
+              preload="auto"
+              aria-hidden="true"
+              disablePictureInPicture
+              onCanPlay={() => {
+                videoRef.current?.play().catch(() => {});
+              }}
+              onPlaying={() => setVideoPlaying(true)}
+              onError={() => setVideoAvailable(false)}
+            >
+              <source src={HERO_VIDEO_SRC} type="video/mp4" />
+            </video>
+          </div>
         )}
         <div className="hero-bg-gradient" />
         <div className="hero-bg-pattern" />
@@ -437,7 +534,7 @@ export const Hero: React.FC = () => {
         <div className="tier-3">
           <p className="tier-3-text">
             India's complete mental wellness ecosystem. <strong>Verified therapists</strong>
-            in your language, <strong>AI companion</strong> at 2 AM, clinical care from <strong>₹99/month</strong>.
+            {' '}in your language, <strong>AI companion</strong> at 2 AM, clinical care from <strong>₹99/month</strong>.
             You don't have to carry it alone.
           </p>
         </div>

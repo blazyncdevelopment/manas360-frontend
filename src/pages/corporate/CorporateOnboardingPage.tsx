@@ -32,6 +32,10 @@ export default function CorporateOnboardingPage() {
   const [contactName, setContactName] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
+  const [organizationType, setOrganizationType] = useState('CORP');
+  const [utmSource, setUtmSource] = useState('linkedin');
+  const [utmMedium, setUtmMedium] = useState('social');
+  const [utmCampaign, setUtmCampaign] = useState('q3_wellness_promo');
 
   const modeCopy = useMemo(
     () => ({
@@ -136,15 +140,29 @@ export default function CorporateOnboardingPage() {
           email: workEmail.trim(),
           companySize: companySize.trim(),
           industry: industry.trim(),
-          country: country.trim(),
           contactName: contactName.trim(),
           phone: phone.trim(),
+          organizationType: organizationType.trim(),
+          utm_source: utmSource.trim(),
+          utm_medium: utmMedium.trim(),
+          utm_campaign: utmCampaign.trim(),
         };
 
         await corporateApi.requestDemo({
           ...demoPayload,
         });
         setSuccess('Demo request submitted. Our enterprise team will contact you shortly.');
+        setCompanyName('');
+        setWorkEmail('');
+        setCompanySize('200');
+        setIndustry('Technology');
+        setCountry('India');
+        setContactName('');
+        setPhone('');
+        setOrganizationType('CORP');
+        setUtmSource('linkedin');
+        setUtmMedium('social');
+        setUtmCampaign('q3_wellness_promo');
         return;
       }
 
@@ -160,11 +178,11 @@ export default function CorporateOnboardingPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_10%_10%,#D8ECE7_0,#F5F7F2_35%,#EEF4F1_100%)] px-4 py-8 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-6xl">
+        {/* 
         <Link to="/" className="inline-flex items-center gap-2 rounded-full border border-[#D4E3DE] bg-white/80 px-3 py-1.5 text-xs font-semibold tracking-wide text-[#20554D] hover:bg-white">
           <img src="/Untitled.png" alt="MANAS360" className="h-5 w-5 rounded-md object-cover" />
           MANAS360 Corporate Wellness
-        </Link>
-
+        </Link> */}
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr]">
           <section className="rounded-3xl border border-[#D5E0DA] bg-white/85 p-6 shadow-[0_18px_50px_rgba(8,57,53,0.12)] sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#3B766E]">Enterprise Mental Wellness</p>
@@ -267,7 +285,7 @@ export default function CorporateOnboardingPage() {
                   </Field>
 
                   {mode === 'demo' && (
-                    <Field label="Work Email (Optional)" icon={<Mail className="h-4 w-4" />}>
+                    <Field label="Work Email" icon={<Mail className="h-4 w-4" />}>
                       <input className={inputClassName} type="email" value={workEmail} onChange={(e) => setWorkEmail(e.target.value)} />
                     </Field>
                   )}
@@ -282,9 +300,11 @@ export default function CorporateOnboardingPage() {
                   </div>
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <Field label="Country" icon={<Globe2 className="h-4 w-4" />}>
-                      <input className={inputClassName} value={country} onChange={(e) => setCountry(e.target.value)} />
-                    </Field>
+                    {mode === 'create' && (
+                      <Field label="Country" icon={<Globe2 className="h-4 w-4" />}>
+                        <input className={inputClassName} value={country} onChange={(e) => setCountry(e.target.value)} />
+                      </Field>
+                    )}
                     <Field label="Contact Name" icon={<User2 className="h-4 w-4" />}>
                       <input className={inputClassName} value={contactName} onChange={(e) => setContactName(e.target.value)} />
                     </Field>
@@ -300,6 +320,27 @@ export default function CorporateOnboardingPage() {
                       required
                     />
                   </Field>
+
+                  {mode === 'demo' && (
+                    <>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <Field label="Organization Type" icon={<Building2 className="h-4 w-4" />}>
+                          <input className={inputClassName} value={organizationType} onChange={(e) => setOrganizationType(e.target.value)} />
+                        </Field>
+                        <Field label="UTM Source" icon={<Globe2 className="h-4 w-4" />}>
+                          <input className={inputClassName} value={utmSource} onChange={(e) => setUtmSource(e.target.value)} />
+                        </Field>
+                      </div>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <Field label="UTM Medium" icon={<Globe2 className="h-4 w-4" />}>
+                          <input className={inputClassName} value={utmMedium} onChange={(e) => setUtmMedium(e.target.value)} />
+                        </Field>
+                        <Field label="UTM Campaign" icon={<Globe2 className="h-4 w-4" />}>
+                          <input className={inputClassName} value={utmCampaign} onChange={(e) => setUtmCampaign(e.target.value)} />
+                        </Field>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
 

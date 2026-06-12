@@ -17,7 +17,7 @@ export const CertificationLessonPage: React.FC = () => {
   // Best practice: pass it via router state. If not available, fall back to
   // searching enrollments for a match.
   const { enrollments, syncEnrollments } = useEnrollmentStore();
-  const { markModuleComplete, isQuizUnlocked } = useCertificationProgress();
+  const { markModuleComplete, isQuizUnlocked, isModuleCompleted } = useCertificationProgress();
 
   React.useEffect(() => {
     void syncEnrollments();
@@ -47,10 +47,10 @@ export const CertificationLessonPage: React.FC = () => {
   // ── Payment Locking Logic ───────────────────────────────────────────────
   React.useEffect(() => {
     if (!enrollment || !lessonId) return;
-    
+
     const modules = getModulesByCertification((enrollment as any).certificationName, (enrollment as any).slug);
     const currentIndex = modules.findIndex(m => m.id === lessonId);
-    
+
     // Calculate max unlocked modules based on installments
     const installmentsPaid = (enrollment as any).installmentsPaidCount || 0;
     const isFullPaid = (enrollment as any).paymentStatus === 'Paid';
@@ -84,6 +84,8 @@ export const CertificationLessonPage: React.FC = () => {
     if (!enrollmentId || !lessonId) return;
     markModuleComplete(enrollmentId, lessonId, allModuleIds);
   }, [enrollmentId, lessonId, allModuleIds, markModuleComplete]);
+
+  const isCompleted = enrollmentId && lessonId ? isModuleCompleted(enrollmentId, lessonId) : false;
 
   // ── Helpers (unchanged from original) ────────────────────────────────────
   const isOpeningSession = lessonId === "ATMT-OPENING";
@@ -433,6 +435,7 @@ export const CertificationLessonPage: React.FC = () => {
         </h1>
 
         {/* Video Player */}
+        {/* Video Player */}
         {useVimeoEmbed ? (
           <div className="mb-8">
             <div
@@ -452,9 +455,21 @@ export const CertificationLessonPage: React.FC = () => {
             <div className="mt-4 flex justify-end">
               <button
                 onClick={handleMarkComplete}
-                className="px-5 py-2.5 rounded-full bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition-colors"
+                className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all duration-200 active:scale-95 flex items-center gap-1.5 ${isCompleted
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100"
+                  : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+                  }`}
               >
-                Mark Module Complete
+                {isCompleted ? (
+                  <>
+                    <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Module Completed
+                  </>
+                ) : (
+                  "Mark Module Complete"
+                )}
               </button>
             </div>
           </div>
@@ -474,11 +489,31 @@ export const CertificationLessonPage: React.FC = () => {
                 Your browser does not support the video tag.
               </video>
             </div>
-            {vimeoEmbed && vimeoBlocked && (
-              <p className="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                Vimeo embed is unavailable in this environment (403). Using local lesson video fallback.
-              </p>
-            )}
+            <div className="mt-4 flex justify-between items-center">
+              {vimeoEmbed && vimeoBlocked ? (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  Vimeo embed is unavailable in this environment (403). Using local lesson video fallback.
+                </p>
+              ) : <div />}
+              <button
+                onClick={handleMarkComplete}
+                className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all duration-200 active:scale-95 flex items-center gap-1.5 ${isCompleted
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100"
+                  : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+                  }`}
+              >
+                {isCompleted ? (
+                  <>
+                    <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Module Completed
+                  </>
+                ) : (
+                  "Mark Module Complete"
+                )}
+              </button>
+            </div>
           </div>
         )}
 

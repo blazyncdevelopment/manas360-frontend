@@ -160,16 +160,53 @@ export type CorporateDemoRequestPayload = {
   contactName?: string;
   phone?: string;
   email?: string;
+  organizationType?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+};
+
+export type DemoRequestRow = {
+  id: string;
+  // camelCase fields (actual API response)
+  companyName?: string;
+  companyKey?: string;
+  contactEmail?: string;
+  contactName?: string;
+  phone?: string;
+  companySize?: string;
+  industry?: string;
+  country?: string | null;
+  status: string;
+  requestedAt?: string;
+  organizationType?: string;
+  proposalUrl?: string | null;
+  corporateAccountId?: string | null;
+  // legacy snake_case aliases (old endpoint fallback)
+  company_name?: string;
+  work_email?: string;
+  phone_number?: string;
+  contact_name?: string;
+  company_size?: string;
+  organization_type?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  created_at?: string;
 };
 
 type CorporateDemoRequestApiPayload = {
-  company_name: string;
-  work_email: string;
-  company_size: string;
-  industry: string;
-  country: string;
-  contact_name: string;
-  phone_number: string;
+  companyName: string;
+  email: string;
+  companySize?: string;
+  industry?: string;
+  country?: string;
+  contactName?: string;
+  phone: string;
+  organizationType?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
 };
 
 export type CorporateOtpRequestPayload = {
@@ -226,17 +263,81 @@ export type AdminCreateAgreementResponse = {
 export const corporateApi = {
   requestDemo: async (payload: CorporateDemoRequestPayload) => {
     const requestBody: CorporateDemoRequestApiPayload = {
-      company_name: String(payload.companyName || '').trim(),
-      work_email: String(payload.email || '').trim(),
-      company_size: String(payload.companySize || '').trim(),
+      companyName: String(payload.companyName || '').trim(),
+      email: String(payload.email || '').trim(),
+      companySize: String(payload.companySize || '').trim(),
       industry: String(payload.industry || '').trim(),
-      country: String(payload.country || '').trim(),
-      contact_name: String(payload.contactName || '').trim(),
-      phone_number: String(payload.phone || '').trim(),
+      contactName: String(payload.contactName || '').trim(),
+      phone: String(payload.phone || '').trim(),
+      organizationType: String(payload.organizationType || '').trim(),
+      utm_source: String(payload.utm_source || '').trim(),
+      utm_medium: String(payload.utm_medium || '').trim(),
+      utm_campaign: String(payload.utm_campaign || '').trim(),
     };
+
+    if (payload.country) {
+      requestBody.country = String(payload.country).trim();
+    }
 
     const response = await http.post('/v1/corporate/public/request-demo', requestBody);
     return unwrap(response.data);
+  },
+  getDemoRequests: async (page = 1, limit = 50) => {
+    try {
+      const response = await http.get('/v1/admin/corporate-demo-requests', { params: { page, limit } });
+      const data = unwrap(response.data) as
+        | { requests: DemoRequestRow[] }
+        | { rows: DemoRequestRow[] }
+        | DemoRequestRow[];
+      if (Array.isArray(data)) return data;
+      if ('requests' in data && Array.isArray((data as any).requests)) return (data as { requests: DemoRequestRow[] }).requests;
+      if ('rows' in data && Array.isArray((data as any).rows)) return (data as { rows: DemoRequestRow[] }).rows;
+      return [];
+    } catch (err: any) {
+      // Only fall back to old endpoint on 404 route-not-found; re-throw auth/server errors
+      const status = Number(err?.response?.status || 0);
+      if (status > 0 && status !== 404) throw err;
+      try {
+        const response = await http.get('/v1/corporate/demo-requests');
+        return unwrap(response.data) as DemoRequestRow[];
+      } catch {
+        return [];
+      }
+    }
+  },
+  acceptDemoRequest: async (id: string, userCount: number, pricePerSeat: number) => {
+    // Try the b2b-leads route first, fall back to corporate-demo-requests route
+    try {
+      const response = await http.post(`/v1/admin/b2b-leads/${id}/accept`, { userCount, pricePerSeat });
+      return unwrap(response.data) as { message: string; proposalUrl: string };
+    } catch (err: any) {
+      const status = Number(err?.response?.status || 0);
+      if (status > 0 && status !== 404) throw err;
+      const response = await http.post(`/v1/admin/corporate-demo-requests/${id}/accept`, { userCount, pricePerSeat });
+      return unwrap(response.data) as { message: string; proposalUrl: string };
+    }
+  },
+  rejectDemoRequest: async (id: string) => {
+    try {
+      const response = await http.post(`/v1/admin/b2b-leads/${id}/reject`, {});
+      return unwrap(response.data) as { message: string };
+    } catch (err: any) {
+      const status = Number(err?.response?.status || 0);
+      if (status > 0 && status !== 404) throw err;
+      const response = await http.post(`/v1/admin/corporate-demo-requests/${id}/reject`, {});
+      return unwrap(response.data) as { message: string };
+    }
+  },
+  createAccountFromLead: async (id: string) => {
+    try {
+      const response = await http.post(`/v1/admin/b2b-leads/${id}/create-account`, {});
+      return unwrap(response.data) as { message: string; company: { id: string; companyName: string; status: string } };
+    } catch (err: any) {
+      const status = Number(err?.response?.status || 0);
+      if (status > 0 && status !== 404) throw err;
+      const response = await http.post(`/v1/admin/corporate-demo-requests/${id}/create-account`, {});
+      return unwrap(response.data) as { message: string; company: { id: string; companyName: string; status: string } };
+    }
   },
   requestCorporateOtp: async (payload: CorporateOtpRequestPayload) => {
     const response = await http.post('/v1/corporate/public/request-otp', payload);

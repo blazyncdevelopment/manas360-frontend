@@ -1,7 +1,9 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import "./NRILandingPage.css";
 
 const NRILandingPage: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <main className="nri-page">
       {/* <div className="nri-top-strip">
@@ -61,7 +63,7 @@ const NRILandingPage: React.FC = () => {
             <li>AnytimeBuddy AI support</li>
             <li>PHQ-9 / GAD-7 check-ins</li>
           </ul>
-          <button type="button" className="ghost">Book Session →</button>
+          <button type="button" className="ghost" onClick={() => navigate("/auth/login")}>Book Session →</button>
         </article>
 
         <article className="nri-plan-card featured">
@@ -75,7 +77,7 @@ const NRILandingPage: React.FC = () => {
             <li>Timezone-aligned appointment slots</li>
             <li>Private and compliant care journey</li>
           </ul>
-          <button type="button">Book Session →</button>
+          <button type="button" onClick={() => navigate("/auth/login")}>Book Session →</button>
         </article>
 
         <article className="nri-plan-card">
@@ -89,7 +91,7 @@ const NRILandingPage: React.FC = () => {
             <li>Works with existing AI check-ins and reflections</li>
             <li>Session-by-session flexibility</li>
           </ul>
-          <button type="button">Book Session →</button>
+          <button type="button" onClick={() => navigate("/auth/login")}>Book Session →</button>
         </article>
       </section>
 
@@ -128,7 +130,7 @@ const NRILandingPage: React.FC = () => {
         <div className="nri-shell">
           <h3>Your Roots. Your Language. Your Healing.</h3>
           <p>Book with the current NRI per-session model and get matched to the right care expert.</p>
-          <button type="button">Book NRI Session →</button>
+          <button type="button" onClick={() => navigate("/auth/login")}>Book NRI Session →</button>
         </div>
       </section>
 
