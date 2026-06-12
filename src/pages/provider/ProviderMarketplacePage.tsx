@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Filter, Lock, Info, CheckCircle2, Loader2 } from 'lucide-react';
-import { fetchProviderMarketplace, fetchProviderLeadStats, fetchProviderLeads, purchaseProviderLead } from '../../api/provider';
+import { ShoppingCart, Filter, Lock, Info, CheckCircle2, Loader2, X, Calendar, Clock, User } from 'lucide-react';
+import { fetchProviderMarketplace, fetchProviderLeadStats, fetchProviderLeads, purchaseProviderLead, scheduleLeadSession } from '../../api/provider';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -306,6 +306,12 @@ export default function ProviderMarketplacePage() {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
   const paymentReturnHandledRef = useRef(false);
+  const [scheduleModal, setScheduleModal] = useState<{ lead: any } | null>(null);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('10:00');
+  // Track confirmed session datetimes keyed by leadId for post-schedule display
+  const [confirmedSessions, setConfirmedSessions] = useState<Record<string, string>>({});
+  const [scheduling, setScheduling] = useState(false);
 
   const isPlatformActive = user?.platformAccessActive;
   const leadsRemaining = stats?.leadsRemaining ?? 0;
@@ -389,6 +395,28 @@ export default function ProviderMarketplacePage() {
       });
   }, [searchParams, navigate]);
 
+  const handleScheduleSession = async () => {
+    if (!scheduleModal || !scheduleDate || !scheduleTime) {
+      toast.error('Please select a date and time');
+      return;
+    }
+    const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString();
+    setScheduling(true);
+    try {
+      await scheduleLeadSession(scheduleModal.lead.id, scheduledAt);
+      setConfirmedSessions((prev) => ({ ...prev, [scheduleModal.lead.id]: scheduledAt }));
+      toast.success('Session scheduled! The patient will be notified.');
+      setScheduleModal(null);
+      setScheduleDate('');
+      setScheduleTime('10:00');
+      loadData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to schedule session');
+    } finally {
+      setScheduling(false);
+    }
+  };
+
   const filteredLeads = filter === 'all' ? leads : leads.filter((l) => l.leadType === filter);
 
   const onPurchase = async (leadId: string) => {
@@ -448,6 +476,7 @@ export default function ProviderMarketplacePage() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-[#F8FAFC] pb-24">
       {/* Premium Header */}
       <section className="bg-slate-900 px-6 py-12 text-white relative overflow-hidden">
@@ -522,25 +551,63 @@ export default function ProviderMarketplacePage() {
                 <p className="text-slate-400 text-sm">When new patients are matched to your profile, they appear here. Buy marketplace leads for additional volume.</p>
               </div>
             ) : (
-              purchasedLeads.map((lead: any) => (
-                <div key={lead.id} className="bg-white rounded-2xl border border-slate-200 p-5 flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Purchased</span>
-                      {lead.tier && <span className="text-xs text-slate-500 font-semibold">{lead.tier}</span>}
+              purchasedLeads.map((lead: any) => {
+                const isScheduled = String(lead.status || '').toUpperCase() === 'ACCEPTED';
+                return (
+                  <div key={lead.id} className="bg-white rounded-2xl border border-slate-200 p-5 flex items-start justify-between gap-4">
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-black uppercase px-2 py-0.5 rounded-full ${isScheduled ? 'bg-green-100 text-green-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                          {isScheduled ? 'Scheduled' : 'Purchased'}
+                        </span>
+                        {lead.tier && <span className="text-xs text-slate-500 font-semibold">{lead.tier}</span>}
+                      </div>
+                      <LeadPatientPreview lead={lead} />
+                      <p className="text-xs text-slate-400">Match Score: {lead.matchScore ?? '—'}</p>
+                      <p className="text-xs text-slate-400">Purchased: {new Date(lead.purchasedAt || lead.createdAt).toLocaleDateString('en-IN')}</p>
+                      {isScheduled && (
+                        <p className="text-xs font-semibold text-green-700 mt-1">
+                          {confirmedSessions[lead.id]
+                            ? `Scheduled: ${new Date(confirmedSessions[lead.id]).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+                            : 'Session scheduled — check your calendar.'}
+                        </p>
+                      )}
                     </div>
-                    <LeadPatientPreview lead={lead} />
-                    <p className="text-xs text-slate-400">Match Score: {lead.matchScore ?? '—'}</p>
-                    <p className="text-xs text-slate-400">Purchased: {new Date(lead.purchasedAt || lead.createdAt).toLocaleDateString('en-IN')}</p>
+                    {!isScheduled ? (
+                      <button
+                        onClick={() => {
+                          // Pre-fill with patient's preferred time if available
+                          const preferred = lead.scheduledAt;
+                          if (preferred) {
+                            const dt = new Date(preferred);
+                            if (!Number.isNaN(dt.getTime()) && dt > new Date()) {
+                              setScheduleDate(dt.toISOString().slice(0, 10));
+                              setScheduleTime(`${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`);
+                            } else {
+                              setScheduleDate('');
+                              setScheduleTime('10:00');
+                            }
+                          } else {
+                            setScheduleDate('');
+                            setScheduleTime('10:00');
+                          }
+                          setScheduleModal({ lead });
+                        }}
+                        className="px-4 py-2 rounded-xl bg-teal-600 text-white text-xs font-black hover:bg-teal-700 transition whitespace-nowrap"
+                      >
+                        Schedule Session →
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => navigate(lead.patientId ? `/provider/patient/${lead.patientId}/overview` : '/provider/patients')}
+                        className="px-4 py-2 rounded-xl bg-green-600 text-white text-xs font-black hover:bg-green-700 transition whitespace-nowrap"
+                      >
+                        View Patient →
+                      </button>
+                    )}
                   </div>
-                  <button
-                    onClick={() => navigate(`/provider/appointments`)}
-                    className="px-4 py-2 rounded-xl bg-teal-600 text-white text-xs font-black hover:bg-teal-700 transition whitespace-nowrap"
-                  >
-                    View Request →
-                  </button>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}
@@ -725,5 +792,95 @@ export default function ProviderMarketplacePage() {
         </>}
       </div>
     </div>
+
+    {/* Schedule Session Modal */}
+
+    {scheduleModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+            <div>
+              <h3 className="text-base font-black text-slate-900">Schedule Session</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Pick a date & time for this patient's session</p>
+            </div>
+            <button onClick={() => setScheduleModal(null)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-100 text-teal-700 shrink-0">
+                <User className="h-4 w-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-900 truncate">{scheduleModal.lead.patientName || 'Patient'}</p>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
+                  {scheduleModal.lead.phq9Score != null && <span>PHQ-9: <b className="text-slate-700">{scheduleModal.lead.phq9Score}</b></span>}
+                  {scheduleModal.lead.gad7Score != null && <span>GAD-7: <b className="text-slate-700">{scheduleModal.lead.gad7Score}</b></span>}
+                  {scheduleModal.lead.primaryLanguage && <span>Lang: <b className="text-slate-700">{scheduleModal.lead.primaryLanguage}</b></span>}
+                </div>
+                {scheduleModal.lead.issue && scheduleModal.lead.issue.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {scheduleModal.lead.issue.map((c: string) => (
+                      <span key={c} className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-medium text-teal-700 capitalize">{c.replace(/_/g, ' ')}</span>
+                    ))}
+                  </div>
+                )}
+                {scheduleModal.lead.scheduledAt && (
+                  <p className="mt-1.5 text-[11px] text-amber-600 font-semibold">
+                    Patient preferred: {new Date(scheduleModal.lead.scheduledAt).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6 py-4 space-y-4">
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 mb-1.5">
+                <Calendar className="h-3.5 w-3.5" /> Session Date *
+              </label>
+              <input
+                type="date"
+                value={scheduleDate}
+                onChange={(e) => setScheduleDate(e.target.value)}
+                min={new Date().toISOString().slice(0, 10)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+              />
+            </div>
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 mb-1.5">
+                <Clock className="h-3.5 w-3.5" /> Session Time *
+              </label>
+              <input
+                type="time"
+                value={scheduleTime}
+                onChange={(e) => setScheduleTime(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3 border-t border-slate-100 px-6 py-4">
+            <button
+              onClick={() => setScheduleModal(null)}
+              className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleScheduleSession}
+              disabled={scheduling || !scheduleDate || !scheduleTime}
+              className="flex-1 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-black text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+            >
+              {scheduling && <Loader2 className="h-4 w-4 animate-spin" />}
+              {scheduling ? 'Scheduling...' : 'Confirm Session'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

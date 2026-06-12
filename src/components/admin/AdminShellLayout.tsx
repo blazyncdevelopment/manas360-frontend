@@ -40,7 +40,7 @@ const ADMIN_DOMAINS: AdminDomain[] = [
 			{ to: '/admin/billing/company-subscriptions', label: 'Subscriptions', shortLabel: 'Sub' },
 			{ to: '/admin/billing/company-reports', label: 'Company Reports', shortLabel: 'Rep' },
 			{ to: '/admin/billing/revenue', label: 'Revenue', shortLabel: 'Rev' },
-			{ to: '/admin/billing/pricing', label: 'Pricing', shortLabel: 'Prc' },
+			{ to: '/admin/billing/pricing', label: 'Pricing Setup', shortLabel: 'Prc' },
 			{ to: '/admin/billing/offers', label: 'Offer Marquee', shortLabel: 'Off' },
 			{ to: '/admin/billing/payouts', label: 'Payouts', shortLabel: 'Pay' },
 			{ to: '/admin/billing/wallets', label: 'Wallet Management', shortLabel: 'Wal' },

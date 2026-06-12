@@ -6,7 +6,7 @@ import { patientApi } from '../../api/patient';
 import { useAuth } from '../../context/AuthContext';
 import { Clock, Globe, Users, AlertCircle, ChevronRight } from 'lucide-react';
 
-type ComputedState = 'LIVE' | 'NEXT' | 'TODAY' | 'UPCOMING' | 'FULL';
+type ComputedState = 'LIVE' | 'NEXT' | 'TODAY' | 'UPCOMING' | 'FULL' | 'EXPIRED';
 
 const FIXED_TOPICS = [
   { key: 'anxiety', label: 'Anxiety', emoji: '😟' },
@@ -19,7 +19,7 @@ const FIXED_TOPICS = [
   { key: 'self-worth', label: 'Self-worth', emoji: '🌅' },
 ];
 
-const STATE_ORDER: Record<ComputedState, number> = { LIVE: 0, NEXT: 1, TODAY: 2, UPCOMING: 3, FULL: 4 };
+const STATE_ORDER: Record<ComputedState, number> = { LIVE: 0, NEXT: 1, TODAY: 2, UPCOMING: 3, FULL: 4, EXPIRED: 5 };
 
 const computeState = (row: any, nowTs: number): ComputedState => {
   const max = Number(row?.maxMembers || 0);
@@ -34,7 +34,7 @@ const computeState = (row: any, nowTs: number): ComputedState => {
   const end = start + dur * 60_000;
 
   if (nowTs >= start && nowTs <= end) return 'LIVE';
-  if (nowTs > end) return 'UPCOMING';
+  if (nowTs > end) return 'EXPIRED';
   if (start - nowTs < 2 * 60 * 60_000) return 'NEXT';
 
   const today = new Date(nowTs);
@@ -218,6 +218,7 @@ export default function GroupTherapySessionsPage() {
     return publicSessions
       .map((row) => ({ row, state: computeState(row, nowTs) }))
       .filter(({ row, state }) => {
+        if (state === 'EXPIRED') return false; // never show expired sessions to patients
         if (activeFilter === 'all') return true;
         if (activeFilter === 'live') return state === 'LIVE';
         return matchesTopic(row, activeFilter);
@@ -455,14 +456,14 @@ export default function GroupTherapySessionsPage() {
                       {ctaLabel(state, Number(row.priceMinor || 29900))}
                     </button>
 
-                    {state === 'LIVE' && row.jitsiRoomName && (
+                    {state === 'LIVE' && (
                       <a
-                        href={`https://meet.jit.si/${row.jitsiRoomName}`}
+                        href={`https://meet.jit.si/${row.jitsiRoomName || `manas360-group-${row.id}`}#config.prejoinPageEnabled=false`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mt-2 block w-full rounded-xl border border-teal-200 bg-teal-50 px-4 py-2 text-center text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
                       >
-                        Open Jitsi Room
+                        Join Session
                       </a>
                     )}
                   </div>

@@ -101,7 +101,7 @@ const AdminSectionPage = lazy(() => import('./pages/admin/AdminSectionPage'));
 const AdminPayoutsPage = lazy(() => import('./pages/admin/Payouts'));
 const ZohoDeskPanel = lazy(() => import('./pages/admin/ZohoDeskPanel'));
 const OfferMarqueeEditor = lazy(() => import('./pages/admin/OfferMarqueeEditor'));
-const PricingSubscriptionsPage = lazy(() => import('./pages/admin/PricingSubscriptions'));
+const PricingManagementPage = lazy(() => import('./pages/admin/PricingManagement'));
 const CrisisConsole = lazy(() => import('./pages/admin/CrisisConsole'));
 const AuditTrail = lazy(() => import('./pages/admin/AuditTrail'));
 const GroupManagement = lazy(() => import('./pages/admin/GroupManagement'));
@@ -664,7 +664,7 @@ function App() {
                         <Route path="billing/company-subscriptions" element={<AdminCompanySubscriptionsPage />} />
                         <Route path="billing/company-reports" element={<AdminReportsPage />} />
                         <Route path="billing/revenue" element={<AdminRevenuePage />} />
-                        <Route path="billing/pricing" element={<PricingSubscriptionsPage />} />
+                        <Route path="billing/pricing" element={<PricingManagementPage />} />
                         <Route path="billing/offers" element={<OfferMarqueeEditor />} />
                         <Route path="billing/payouts" element={<AdminPayoutsPage />} />
                         <Route path="billing/payment-reliability" element={<AdminPaymentReliability />} />

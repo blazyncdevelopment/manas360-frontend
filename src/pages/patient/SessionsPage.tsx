@@ -1028,15 +1028,6 @@ export default function SessionsPage() {
     setIsSmartMatchOpen(true);
   };
 
-  const isWithin10Minutes = useMemo(() => {
-    if (!nextSession) return false;
-    const now = new Date().getTime();
-    const scheduledAt = new Date(nextSession.dateTime || nextSession.scheduled_at || nextSession.scheduledAt).getTime();
-    if (Number.isNaN(scheduledAt)) return false;
-    const diffMins = (scheduledAt - now) / 1000 / 60;
-    return diffMins > -60 && diffMins <= 10;
-  }, [nextSession]);
-
   const hasUrgentSession = nextSession != null;
 
   const unresolvedPendingRequests = useMemo(
@@ -1495,20 +1486,30 @@ export default function SessionsPage() {
         </div>
       ) : (
         <div className="animate-in fade-in duration-300 space-y-8">
-          {showPendingMatchBanner && (
-            <section className="overflow-hidden rounded-2xl border border-teal-200 bg-teal-50 shadow-sm p-6">
+          {showPendingMatchBanner && (() => {
+            const matchedLead = unresolvedPendingRequests.find((r: any) => r.type === 'marketplace_lead' && r.providerAssigned);
+            const providerName = matchedLead?.providerName;
+            return (
+            <section className={`overflow-hidden rounded-2xl border shadow-sm p-6 ${matchedLead ? 'border-green-200 bg-green-50' : 'border-teal-200 bg-teal-50'}`}>
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-teal-900">Finding your therapist...</h3>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      Matching
+                    <h3 className={`text-lg font-bold ${matchedLead ? 'text-green-900' : 'text-teal-900'}`}>
+                      {matchedLead ? (providerName ? `${providerName} has accepted your request!` : 'Provider matched! Scheduling your session...') : 'Finding your therapist...'}
+                    </h3>
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${matchedLead ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${matchedLead ? 'bg-green-500' : 'bg-amber-500'}`} />
+                      {matchedLead ? 'Matched' : 'Matching'}
                     </span>
                   </div>
-                  <p className="mt-1 max-w-2xl text-sm text-teal-800">
-                    Our TherapeuticGPS is reviewing language, specialization, availability, and match score. You'll be notified as soon as a provider accepts.
-                    <span className="mt-1 block font-medium text-teal-700">⏳ Usually matched within a few hours.</span>
+                  <p className={`mt-1 max-w-2xl text-sm ${matchedLead ? 'text-green-800' : 'text-teal-800'}`}>
+                    {matchedLead
+                      ? `${providerName ? `${providerName} has purchased your request and` : 'Your provider'} will schedule your session shortly. You'll see the session time here once confirmed.`
+                      : 'Our TherapeuticGPS is reviewing language, specialization, availability, and match score. You\'ll be notified as soon as a provider accepts.'
+                    }
+                    <span className={`mt-1 block font-medium ${matchedLead ? 'text-green-700' : 'text-teal-700'}`}>
+                      {matchedLead ? 'Session time will appear here once your provider confirms it.' : '⏳ Usually matched within a few hours.'}
+                    </span>
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <span className="text-xs font-semibold text-teal-700 self-center">Explore while you wait:</span>
@@ -1543,7 +1544,8 @@ export default function SessionsPage() {
                 </div>
               </div>
             </section>
-          )}
+            );
+          })()}
 
           {hasUrgentSession ? (
             <section className="overflow-hidden rounded-2xl bg-[#1a2e2a] shadow-lg">
@@ -1575,26 +1577,15 @@ export default function SessionsPage() {
                   </span>
                 )}
 
-                {/* Join / countdown button */}
+                {/* Join button — always active for confirmed sessions */}
                 <div className="shrink-0">
-                  {isWithin10Minutes && !needsPreSessionCheckin ? (
-                    <Link
-                      to={`/video-session/${nextSession.id}`}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-green-400"
-                    >
-                      <Video className="h-4 w-4" />
-                      Join Session
-                    </Link>
-                  ) : (
-                    <div className="rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
-                        {needsPreSessionCheckin ? 'Action required' : 'Join link opens'}
-                      </p>
-                      <p className="mt-0.5 text-sm font-bold text-white/70">
-                        {needsPreSessionCheckin ? 'Complete check-in' : '10 min before'}
-                      </p>
-                    </div>
-                  )}
+                  <Link
+                    to={`/video-session/${nextSession.id}`}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-green-400"
+                  >
+                    <Video className="h-4 w-4" />
+                    Join Session
+                  </Link>
                 </div>
 
               </div>

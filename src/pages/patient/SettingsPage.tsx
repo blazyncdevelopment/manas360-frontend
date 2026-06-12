@@ -32,12 +32,12 @@ type SectionId =
   | 'security';
 
 const NRI_TIMEZONE_ZONES = [
-  { id: 'us_east', flag: '🇺🇸', label: 'US East', sub: 'EDT/EST (UTC-4/-5)', pool: 'C' },
-  { id: 'us_west', flag: '🇺🇸', label: 'US West', sub: 'PDT/PST (UTC-7/-8)', pool: 'D' },
-  { id: 'uk', flag: '🇬🇧', label: 'UK', sub: 'BST/GMT (UTC+1/0)', pool: 'B' },
-  { id: 'australia', flag: '🇦🇺', label: 'Australia', sub: 'AEST/AEDT (UTC+10/+11)', pool: 'A' },
-  { id: 'singapore', flag: '🇸🇬', label: 'Singapore', sub: 'SGT (UTC+8)', pool: 'B' },
-  { id: 'uae', flag: '🇦🇪', label: 'UAE / Gulf', sub: 'GST (UTC+4)', pool: 'B' },
+  { id: 'us_east',   code: 'US', label: 'US East',    sub: 'EDT/EST (UTC-4/-5)',    pool: 'C' },
+  { id: 'us_west',   code: 'US', label: 'US West',    sub: 'PDT/PST (UTC-7/-8)',    pool: 'D' },
+  { id: 'uk',        code: 'GB', label: 'UK',          sub: 'BST/GMT (UTC+1/0)',     pool: 'B' },
+  { id: 'australia', code: 'AU', label: 'Australia',   sub: 'AEST/AEDT (UTC+10/+11)', pool: 'A' },
+  { id: 'singapore', code: 'SG', label: 'Singapore',   sub: 'SGT (UTC+8)',           pool: 'B' },
+  { id: 'uae',       code: 'AE', label: 'UAE / Gulf',  sub: 'GST (UTC+4)',           pool: 'B' },
 ];
 
 type SettingsState = {
@@ -78,35 +78,13 @@ type SettingsState = {
 
 const STORAGE_KEY = 'manas360-patient-settings-v1';
 
-const TIMEZONES = [
-  { value: 'Asia/Kolkata',       label: '🇮🇳 India (IST, UTC+5:30)' },
-  { value: 'America/New_York',   label: '🇺🇸 US East (EST/EDT, UTC-5/-4)' },
-  { value: 'America/Chicago',    label: '🇺🇸 US Central (CST/CDT, UTC-6/-5)' },
-  { value: 'America/Denver',     label: '🇺🇸 US Mountain (MST/MDT, UTC-7/-6)' },
-  { value: 'America/Los_Angeles',label: '🇺🇸 US West (PST/PDT, UTC-8/-7)' },
-  { value: 'Europe/London',      label: '🇬🇧 UK (GMT/BST, UTC+0/+1)' },
-  { value: 'Europe/Paris',       label: '🇪🇺 Europe Central (CET/CEST, UTC+1/+2)' },
-  { value: 'Asia/Dubai',         label: '🇦🇪 UAE / Gulf (GST, UTC+4)' },
-  { value: 'Asia/Singapore',     label: '🇸🇬 Singapore (SGT, UTC+8)' },
-  { value: 'Australia/Sydney',   label: '🇦🇺 Australia East (AEST/AEDT, UTC+10/+11)' },
-  { value: 'Australia/Perth',    label: '🇦🇺 Australia West (AWST, UTC+8)' },
-  { value: 'America/Toronto',    label: '🇨🇦 Canada East (EST/EDT, UTC-5/-4)' },
-  { value: 'America/Vancouver',  label: '🇨🇦 Canada West (PST/PDT, UTC-8/-7)' },
-  { value: 'Asia/Riyadh',        label: '🇸🇦 Saudi Arabia (AST, UTC+3)' },
-  { value: 'Asia/Kuwait',        label: '🇰🇼 Kuwait (AST, UTC+3)' },
-  { value: 'Asia/Bahrain',       label: '🇧🇭 Bahrain (AST, UTC+3)' },
-  { value: 'Asia/Qatar',         label: '🇶🇦 Qatar (AST, UTC+3)' },
-  { value: 'Asia/Muscat',        label: '🇴🇲 Oman (GST, UTC+4)' },
-  { value: 'Africa/Nairobi',     label: '🇰🇪 East Africa (EAT, UTC+3)' },
-  { value: 'Pacific/Auckland',   label: '🇳🇿 New Zealand (NZST/NZDT, UTC+12/+13)' },
-];
 
 const defaultState: SettingsState = {
   profile: {
     name: '',
     email: '',
     phone: '',
-    gender: '',
+    gender: 'prefer_not_to_say',
     timezone: 'Asia/Kolkata',
     showNameToProviders: true,
     nriDeclared: false,
@@ -268,6 +246,7 @@ export default function SettingsPage() {
             name: normalizedName,
             email: String(profile?.email || ''),
             phone: String(profile?.phone || ''),
+            gender: String(profile?.gender || 'prefer_not_to_say'),
             timezone: String(profile?.timezone || profile?.timeZone || merged.profile.timezone || 'Asia/Kolkata'),
             showNameToProviders: typeof profile?.showNameToProviders === 'boolean' ? profile.showNameToProviders : true,
             nriDeclared: Boolean(profile?.nriDeclared || profile?.nri_declared),
@@ -351,14 +330,12 @@ export default function SettingsPage() {
           name,
           phone,
           showNameToProviders: state.profile.showNameToProviders,
-          timezone: state.profile.timezone,
           nri_declared: state.profile.nriDeclared,
+          gender: state.profile.gender,
         };
         if (email) payload.email = email;
-        if (state.profile.nriDeclared && state.profile.nriTimezonePool) {
+        if (state.profile.nriTimezonePool) {
           payload.nri_timezone_pool = state.profile.nriTimezonePool;
-        } else if (!state.profile.nriDeclared) {
-          payload.nri_timezone_pool = null;
         }
         const res = await http.patch('/v1/users/me', payload);
         const updated = res.data?.data ?? res.data;
@@ -369,10 +346,13 @@ export default function SettingsPage() {
             name: String(updated?.name || name),
             email: String(updated?.email || email),
             phone: String(updated?.phone || phone),
+            gender: String(updated?.gender ?? state.profile.gender),
             showNameToProviders:
               typeof updated?.showNameToProviders === 'boolean'
                 ? updated.showNameToProviders
                 : state.profile.showNameToProviders,
+            nriDeclared: typeof updated?.nriDeclared === 'boolean' ? updated.nriDeclared : state.profile.nriDeclared,
+            nriTimezonePool: String(updated?.nriTimezonePool ?? state.profile.nriTimezonePool),
           },
         };
         await patientApi.updateSettings(updatedState);
@@ -453,25 +433,17 @@ export default function SettingsPage() {
         </label>
         <label className="text-sm text-charcoal/80">
           Gender
-          <input
+          <select
             value={state.profile.gender}
             onChange={(event) => setState((prev) => ({ ...prev, profile: { ...prev.profile, gender: event.target.value } }))}
-            className="mt-1 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2"
-            placeholder="e.g. Female, Male, Non-binary"
-          />
-        </label>
-        <label className="text-sm text-charcoal/80 md:col-span-2">
-          Timezone
-          <select
-            value={state.profile.timezone}
-            onChange={(event) => setState((prev) => ({ ...prev, profile: { ...prev.profile, timezone: event.target.value } }))}
             className="mt-1 w-full rounded-xl border border-calm-sage/25 bg-white px-3 py-2 text-sm"
           >
-            {TIMEZONES.map((tz) => (
-              <option key={tz.value} value={tz.value}>{tz.label}</option>
-            ))}
+            <option value="prefer_not_to_say">Prefer not to say</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+            <option value="non-binary">Non-binary</option>
+            <option value="other">Other</option>
           </select>
-          <span className="mt-0.5 block text-[11px] text-charcoal/45">Used to schedule sessions and reminders in your local time.</span>
         </label>
       </div>
       {renderSwitch(
@@ -480,36 +452,22 @@ export default function SettingsPage() {
         'Show my name to providers',
         'Turn off to appear as Anonymous Patient in provider views.',
       )}
+      {renderSwitch(
+        state.profile.nriDeclared,
+        () => setState((prev) => ({ ...prev, profile: { ...prev.profile, nriDeclared: !prev.profile.nriDeclared, nriTimezonePool: prev.profile.nriDeclared ? '' : prev.profile.nriTimezonePool } })),
+        'I am an NRI / living outside India',
+        'Enables NRI session rates and timezone-based therapist matching.',
+      )}
 
-      {/* NRI declaration checkbox */}
-      <div className={`rounded-xl border px-4 py-3.5 transition ${state.profile.nriDeclared ? 'border-orange-300 bg-orange-50' : 'border-calm-sage/20 bg-white/80'}`}>
-        <label className="flex cursor-pointer items-start gap-3">
-          <input
-            type="checkbox"
-            checked={state.profile.nriDeclared}
-            onChange={(e) => setState((prev) => ({
-              ...prev,
-              profile: { ...prev.profile, nriDeclared: e.target.checked, nriTimezonePool: e.target.checked ? prev.profile.nriTimezonePool : '' },
-            }))}
-            className="mt-0.5 h-4 w-4 flex-shrink-0 accent-orange-500"
-          />
-          <div>
-            <p className="text-sm font-semibold text-charcoal">I am an NRI / living outside India</p>
-            <p className="mt-0.5 text-xs text-charcoal/60">
-              Check this if you are based outside India. We will match you with therapists available in your timezone window at NRI rates.
-            </p>
-          </div>
-        </label>
-      </div>
-
+      {/* NRI timezone pool */}
       {state.profile.nriDeclared && (
         <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
-          <p className="text-sm font-semibold text-orange-800">NRI Therapist Matching Pool</p>
+          <p className="text-sm font-semibold text-orange-800">Your Timezone</p>
           <p className="mt-0.5 text-xs text-orange-700/70">
-            Select your region so we match you with therapists certified for your time window. This sets your session pricing to NRI rates.
+            Select your region so we match you with therapists available in your timezone window at NRI rates.
           </p>
           {!state.profile.nriTimezonePool && (
-            <p className="mt-2 text-xs font-medium text-orange-600">Please select a timezone below to complete your NRI profile.</p>
+            <p className="mt-2 text-xs font-medium text-orange-600">Please select your timezone region to complete your NRI profile.</p>
           )}
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
             {NRI_TIMEZONE_ZONES.map((zone) => {
@@ -519,12 +477,12 @@ export default function SettingsPage() {
                   key={zone.id}
                   type="button"
                   onClick={() => setState((prev) => ({ ...prev, profile: { ...prev.profile, nriTimezonePool: zone.id } }))}
-                  className={`rounded-xl border px-3 py-2.5 text-center transition ${selected ? 'border-orange-400 bg-orange-100 ring-1 ring-orange-400 text-orange-900' : 'border-calm-sage/20 bg-white text-charcoal/70 hover:border-orange-200 hover:bg-orange-50'}`}
+                  className={`rounded-xl border px-3 py-3 text-center transition ${selected ? 'border-orange-400 bg-orange-100 ring-1 ring-orange-400' : 'border-calm-sage/20 bg-white hover:border-orange-200 hover:bg-orange-50'}`}
                 >
-                  <div className="text-lg">{zone.flag}</div>
-                  <div className="mt-0.5 text-xs font-semibold">{zone.label}</div>
+                  <div className={`text-[11px] font-bold tracking-widest ${selected ? 'text-orange-600' : 'text-charcoal/40'}`}>{zone.code}</div>
+                  <div className={`mt-0.5 text-xs font-semibold ${selected ? 'text-orange-900' : 'text-charcoal'}`}>{zone.label}</div>
                   <div className="text-[10px] text-charcoal/50">{zone.sub}</div>
-                  <div className={`mt-1 inline-block rounded px-1.5 text-[9px] font-bold ${selected ? 'bg-orange-300 text-orange-900' : 'bg-calm-sage/10 text-charcoal/50'}`}>Pool {zone.pool}</div>
+                  <div className={`mt-1.5 inline-block rounded px-1.5 py-0.5 text-[9px] font-bold ${selected ? 'bg-orange-400 text-white' : 'bg-calm-sage/10 text-charcoal/50'}`}>Pool {zone.pool}</div>
                 </button>
               );
             })}

@@ -810,5 +810,6 @@ export const patientApi = {
     };
     scheduledAt: string;
     appointmentType: 'video' | 'audio';
+    providerType?: string;
   }) => (await http.post('/v1/patient/book-session', payload)).data,
 };

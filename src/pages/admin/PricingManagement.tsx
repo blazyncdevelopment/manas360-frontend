@@ -12,161 +12,87 @@ import {
 } from '../../api/admin.api';
 import { isPlatformAdminUser, useAuth } from '../../context/AuthContext';
 
-type SessionEdit = {
-  providerType: string;
-  durationMinutes: number;
-  price: number;
-};
-
-type BundleEdit = {
-  bundleName: string;
-  minutes: number;
-  price: number;
-};
-
-type PlanEdit = {
-  planKey: string;
-  planName: string;
-  price: number;
-  billingCycle: string;
-  active: boolean;
-  description?: string | null;
-};
+type SessionEdit = { providerType: string; durationMinutes: number; price: number };
+type BundleEdit  = { bundleName: string; minutes: number; price: number };
+type PlanEdit    = { planKey: string; planName: string; price: number; billingCycle: string; active: boolean; description?: string | null };
 
 const labelForProviderType = (value: string): string => {
   const key = String(value || '').toLowerCase().replace(/_/g, '-');
-  if (key === 'clinical-psychologist') return 'Clinical Psychologist';
-  if (key === 'psychiatrist') return 'Psychiatrist (MD)';
-  if (key === 'nlp-coach') return 'NLP Coach';
-  if (key === 'executive-coach') return 'Executive Coach';
-  if (key === 'couple-therapist') return 'Couple Therapist';
-  if (key === 'sleep-therapist') return 'Sleep Therapist';
-  if (key === 'specialized-therapist') return 'Specialized Therapist';
-  if (key === 'psychologist') return 'Psychologist';
-  if (key === 'therapist') return 'Therapist';
-  if (key === 'nri-psychologist') return 'NRI Psychologist';
-  if (key === 'nri-psychiatrist') return 'NRI Psychiatrist (MD)';
-  if (key === 'nri-therapist') return 'NRI Therapist';
-  if (key === 'nri-coach') return 'NRI Coach';
-  return value;
+  const map: Record<string, string> = {
+    'clinical-psychologist': 'Clinical Psychologist',
+    'psychiatrist':          'Psychiatrist (MD)',
+    'nlp-coach':             'NLP Coach',
+    'executive-coach':       'Executive Coach',
+    'couple-therapist':      'Couple Therapist',
+    'sleep-therapist':       'Sleep Therapist',
+    'specialized-therapist': 'Specialized Therapist',
+    'psychologist':          'Psychologist',
+    'therapist':             'Therapist',
+    'nri-psychologist':      'NRI Psychologist',
+    'nri-psychiatrist':      'NRI Psychiatrist (MD)',
+    'nri-therapist':         'NRI Therapist',
+    'nri-coach':             'NRI Coach',
+  };
+  return map[key] ?? value;
 };
 
-const isNriProviderType = (value: string) => String(value || '').toLowerCase().startsWith('nri');
-const isSpecialtyProviderType = (value: string) => {
-  const k = String(value || '').toLowerCase();
-  return k === 'couple-therapist' || k === 'sleep-therapist';
-};
+const isNri      = (v: string) => String(v).toLowerCase().startsWith('nri');
+const isSpecialty = (v: string) => { const k = String(v).toLowerCase(); return k === 'couple-therapist' || k === 'sleep-therapist'; };
 
 export default function AdminPricingManagementPage() {
   const { user, loading: authLoading } = useAuth();
-  const canAccessPricing = isPlatformAdminUser(user);
-  const [config, setConfig] = useState<AdminPricingConfig | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const canAccess = isPlatformAdminUser(user);
 
-  const [platformFee, setPlatformFee] = useState('99');
-  const [surcharge, setSurcharge] = useState('20');
-  const [planRows, setPlanRows] = useState<PlanEdit[]>([]);
-  const [sessionRows, setSessionRows] = useState<SessionEdit[]>([]);
-  const [bundleRows, setBundleRows] = useState<BundleEdit[]>([]);
-  const [showChangedOnly, setShowChangedOnly] = useState(true);
+  // ── all state ──────────────────────────────────────────────────────────────
+  const [config,       setConfig]       = useState<AdminPricingConfig | null>(null);
+  const [loading,      setLoading]      = useState(true);
+  const [saving,       setSaving]       = useState(false);
+  const [error,        setError]        = useState<string | null>(null);
+  const [success,      setSuccess]      = useState<string | null>(null);
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await getAdminPricingConfig();
-      const data = response?.data;
-      setConfig(data);
-      setPlatformFee(String(data?.platformFee?.monthlyFee ?? 99));
-      setSurcharge(String(data?.surchargePercent ?? 20));
-      setPlanRows(
-        (data?.platformPlans || []).map((row: AdminPricingPlanItem) => ({
-          planKey: row.planKey,
-          planName: row.planName,
-          price: row.price,
-          billingCycle: row.billingCycle,
-          active: row.active,
-          description: row.description ?? null,
-        })),
-      );
-      setSessionRows(
-        (data?.sessionPricing || []).map((row: AdminPricingSessionItem) => ({
-          providerType: row.providerType,
-          durationMinutes: row.durationMinutes,
-          price: row.price,
-        })),
-      );
-      setBundleRows(
-        (data?.premiumBundles || []).map((row: AdminPricingBundleItem) => ({
-          bundleName: row.bundleName,
-          minutes: row.minutes,
-          price: row.price,
-        })),
-      );
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Unable to load pricing configuration.');
-      setConfig(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [platformFee,  setPlatformFee]  = useState('99');
+  const [surcharge,    setSurcharge]    = useState('20');
+  const [planRows,     setPlanRows]     = useState<PlanEdit[]>([]);
+  const [sessionRows,  setSessionRows]  = useState<SessionEdit[]>([]);
+  const [bundleRows,   setBundleRows]   = useState<BundleEdit[]>([]);
 
-  useEffect(() => {
-    if (!canAccessPricing) {
-      setLoading(false);
-      return;
-    }
-    void load();
-  }, [canAccessPricing]);
+  const [showChanged,  setShowChanged]  = useState(true);
+  const [addingRow,    setAddingRow]    = useState(false);
+  const [newRow,       setNewRow]       = useState<SessionEdit>({ providerType: '', durationMinutes: 50, price: 0 });
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editBuffer,   setEditBuffer]   = useState<SessionEdit | null>(null);
 
-  if (authLoading) {
-    return <div className="rounded-lg border border-ink-100 bg-white px-4 py-3 text-sm text-ink-600">Checking permissions...</div>;
-  }
+  const [freeDays,     setFreeDays]     = useState('30');
+  const [waiveForm,    setWaiveForm]    = useState({ userId: '', planKey: 'basic', durationDays: '30', reason: '' });
 
-  if (!canAccessPricing) {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
-  const groupedPreview = useMemo(() => {
-    const map = new Map<string, SessionEdit[]>();
-    for (const row of sessionRows) {
-      const key = row.providerType;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)?.push(row);
-    }
-    return Array.from(map.entries());
-  }, [sessionRows]);
-
-  const impact = config?.impactSummary;
+  // ── all memo (must be before early returns) ────────────────────────────────
+  const impact             = config?.impactSummary;
   const currentPlatformFee = Number(config?.platformFee?.monthlyFee ?? 0);
-  const nextPlatformFee = Number(platformFee || 0);
-  const platformFeeDelta = Number.isFinite(nextPlatformFee) ? nextPlatformFee - currentPlatformFee : 0;
-  const isFeeChangePending = Number.isFinite(nextPlatformFee) && nextPlatformFee !== currentPlatformFee;
+  const nextPlatformFee    = Number(platformFee || 0);
+  const platformFeeDelta   = Number.isFinite(nextPlatformFee) ? nextPlatformFee - currentPlatformFee : 0;
+  const feeChangePending   = Number.isFinite(nextPlatformFee) && nextPlatformFee !== currentPlatformFee;
+
   const lockedRatio = useMemo(() => {
     if (!impact || impact.activeSubscriptions <= 0) return 0;
     return Math.round((impact.lockedToPreviousPrice / impact.activeSubscriptions) * 100);
   }, [impact]);
+
   const alignedRatio = useMemo(() => {
     if (!impact || impact.activeSubscriptions <= 0) return 0;
     return Math.round((impact.alignedWithCurrentPrice / impact.activeSubscriptions) * 100);
   }, [impact]);
 
-  const projectedLockedImmediate = useMemo(() => {
+  const projectedLocked = useMemo(() => {
     if (!impact) return 0;
-    if (!isFeeChangePending) return impact.lockedToPreviousPrice;
-    return impact.activeSubscriptions;
-  }, [impact, isFeeChangePending]);
+    return feeChangePending ? impact.activeSubscriptions : impact.lockedToPreviousPrice;
+  }, [impact, feeChangePending]);
 
-  const projectedAlignedImmediate = useMemo(() => {
+  const projectedAligned = useMemo(() => {
     if (!impact) return 0;
-    if (!isFeeChangePending) return impact.alignedWithCurrentPrice;
-    return 0;
-  }, [impact, isFeeChangePending]);
+    return feeChangePending ? 0 : impact.alignedWithCurrentPrice;
+  }, [impact, feeChangePending]);
 
-  const projected30dRevenueDelta = useMemo(() => {
+  const projected30dDelta = useMemo(() => {
     if (!impact || !Number.isFinite(platformFeeDelta)) return 0;
     return platformFeeDelta * impact.renewalsNext30Days;
   }, [impact, platformFeeDelta]);
@@ -176,49 +102,103 @@ export default function AdminPricingManagementPage() {
     for (const row of config?.sessionPricing || []) {
       baseline.set(`${row.providerType}::${row.durationMinutes}`, Number(row.price) || 0);
     }
-
     return sessionRows
       .map((row) => {
         const key = `${row.providerType}::${row.durationMinutes}`;
         const oldPrice = baseline.get(key) ?? 0;
         const newPrice = Number(row.price) || 0;
-        return {
-          providerType: row.providerType,
-          durationMinutes: row.durationMinutes,
-          oldPrice,
-          newPrice,
-          delta: newPrice - oldPrice,
-        };
+        return { providerType: row.providerType, durationMinutes: row.durationMinutes, oldPrice, newPrice, delta: newPrice - oldPrice };
       })
-      .sort((a, b) => {
-        if (a.providerType === b.providerType) return a.durationMinutes - b.durationMinutes;
-        return a.providerType.localeCompare(b.providerType);
-      });
+      .sort((a, b) => a.providerType.localeCompare(b.providerType) || a.durationMinutes - b.durationMinutes);
   }, [config?.sessionPricing, sessionRows]);
 
-  const changedSessionRows = useMemo(() => {
-    return sessionDeltaRows.filter((row) => row.delta !== 0);
-  }, [sessionDeltaRows]);
+  const changedRows  = useMemo(() => sessionDeltaRows.filter((r) => r.delta !== 0), [sessionDeltaRows]);
+  const totalDelta   = useMemo(() => changedRows.reduce((s, r) => s + r.delta, 0), [changedRows]);
+  const visibleDelta = useMemo(() => (showChanged ? changedRows : sessionDeltaRows), [showChanged, changedRows, sessionDeltaRows]);
 
-  const totalSessionDelta = useMemo(() => {
-    return changedSessionRows.reduce((sum, row) => sum + row.delta, 0);
-  }, [changedSessionRows]);
+  const groupedPreview = useMemo(() => {
+    const map = new Map<string, SessionEdit[]>();
+    for (const row of sessionRows) {
+      if (!map.has(row.providerType)) map.set(row.providerType, []);
+      map.get(row.providerType)!.push(row);
+    }
+    return Array.from(map.entries());
+  }, [sessionRows]);
 
-  const visibleSessionDeltaRows = useMemo(() => {
-    return showChangedOnly ? changedSessionRows : sessionDeltaRows;
-  }, [showChangedOnly, changedSessionRows, sessionDeltaRows]);
-
-  const updateSessionPrice = (index: number, price: string) => {
-    const next = [...sessionRows];
-    const parsed = Number(price);
-    next[index] = { ...next[index], price: Number.isFinite(parsed) ? parsed : 0 };
-    setSessionRows(next);
+  // ── data loading ───────────────────────────────────────────────────────────
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res  = await getAdminPricingConfig();
+      const data = res?.data;
+      setConfig(data);
+      setPlatformFee(String(data?.platformFee?.monthlyFee ?? 99));
+      setSurcharge(String(data?.surchargePercent ?? 20));
+      setPlanRows((data?.platformPlans || []).map((r: AdminPricingPlanItem) => ({
+        planKey: r.planKey, planName: r.planName, price: r.price,
+        billingCycle: r.billingCycle, active: r.active, description: r.description ?? null,
+      })));
+      setSessionRows((data?.sessionPricing || []).map((r: AdminPricingSessionItem) => ({
+        providerType: r.providerType, durationMinutes: r.durationMinutes, price: r.price,
+      })));
+      setBundleRows((data?.premiumBundles || []).map((r: AdminPricingBundleItem) => ({
+        bundleName: r.bundleName, minutes: r.minutes, price: r.price,
+      })));
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Unable to load pricing configuration.');
+      setConfig(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateBundlePrice = (index: number, price: string) => {
+  useEffect(() => {
+    if (!canAccess) { setLoading(false); return; }
+    void load();
+  }, [canAccess]);
+
+  // ── early returns (after all hooks) ───────────────────────────────────────
+  if (authLoading) {
+    return <div className="rounded-lg border border-ink-100 bg-white px-4 py-3 text-sm text-ink-600">Checking permissions...</div>;
+  }
+  if (!canAccess) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  // ── handlers ──────────────────────────────────────────────────────────────
+  const removeSessionRow = (index: number) => {
+    if (editingIndex === index) { setEditingIndex(null); setEditBuffer(null); }
+    setSessionRows(sessionRows.filter((_, i) => i !== index));
+  };
+
+  const startEditRow = (index: number, row: SessionEdit) => {
+    setEditingIndex(index);
+    setEditBuffer({ ...row });
+  };
+
+  const saveEditRow = () => {
+    if (editingIndex === null || !editBuffer) return;
+    const trimmed = editBuffer.providerType.trim();
+    if (!trimmed) { setError('Provider type is required.'); return; }
+    const conflict = sessionRows.findIndex(
+      (r, i) => i !== editingIndex && r.providerType === trimmed && r.durationMinutes === editBuffer.durationMinutes
+    );
+    if (conflict !== -1) { setError(`Row for "${trimmed}" / ${editBuffer.durationMinutes} min already exists.`); return; }
+    const next = [...sessionRows];
+    next[editingIndex] = { providerType: trimmed, durationMinutes: editBuffer.durationMinutes, price: editBuffer.price };
+    setSessionRows(next);
+    setEditingIndex(null);
+    setEditBuffer(null);
+    setError(null);
+  };
+
+  const cancelEditRow = () => { setEditingIndex(null); setEditBuffer(null); setError(null); };
+
+  const updateBundlePrice = (index: number, val: string) => {
     const next = [...bundleRows];
-    const parsed = Number(price);
-    next[index] = { ...next[index], price: Number.isFinite(parsed) ? parsed : 0 };
+    const p = Number(val);
+    next[index] = { ...next[index], price: Number.isFinite(p) ? p : 0 };
     setBundleRows(next);
   };
 
@@ -228,92 +208,64 @@ export default function AdminPricingManagementPage() {
     setPlanRows(next);
   };
 
+  const addSessionRow = () => {
+    const pt = newRow.providerType.trim();
+    if (!pt) { setError('Provider type is required.'); return; }
+    if (sessionRows.some((r) => r.providerType === pt && r.durationMinutes === newRow.durationMinutes)) {
+      setError(`Row for "${pt}" / ${newRow.durationMinutes} min already exists.`);
+      return;
+    }
+    setSessionRows([...sessionRows, { ...newRow }]);
+    setNewRow({ providerType: '', durationMinutes: 50, price: 0 });
+    setAddingRow(false);
+    setError(null);
+  };
+
   const onSave = async () => {
     setError(null);
     setSuccess(null);
-
-    const nextPlatformFee = Number(platformFee);
-    const nextSurcharge = Number(surcharge);
-
-    if (!Number.isFinite(nextPlatformFee) || nextPlatformFee < 0) {
-      setError('Platform fee must be a valid non-negative number.');
-      return;
-    }
-    if (!Number.isFinite(nextSurcharge) || nextSurcharge < 0 || nextSurcharge > 100) {
-      setError('Preferred time surcharge must be between 0 and 100.');
-      return;
-    }
-
-    const invalidSession = sessionRows.some((row) => !Number.isFinite(row.price) || row.price < 0);
-    const invalidBundle = bundleRows.some((row) => !Number.isFinite(row.price) || row.price < 0);
-    const invalidPlan = planRows.some((row) => !row.planKey.trim() || !row.planName.trim() || !row.billingCycle.trim() || !Number.isFinite(row.price) || row.price < 0);
-    if (invalidSession || invalidBundle || invalidPlan) {
-      setError('All plan, session, and bundle prices must be valid non-negative numbers.');
-      return;
-    }
+    const fee       = Number(platformFee);
+    const surchPct  = Number(surcharge);
+    if (!Number.isFinite(fee) || fee < 0)                        { setError('Platform fee must be a valid non-negative number.'); return; }
+    if (!Number.isFinite(surchPct) || surchPct < 0 || surchPct > 100) { setError('Surcharge must be 0–100.'); return; }
+    if (sessionRows.some((r) => !Number.isFinite(r.price) || r.price < 0)) { setError('All session prices must be valid.'); return; }
+    if (bundleRows.some((r) => !Number.isFinite(r.price)  || r.price < 0)) { setError('All add-on prices must be valid.'); return; }
 
     setSaving(true);
     try {
       await updateAdminPricingConfig({
-        platform_fee: nextPlatformFee,
-        preferred_time_surcharge: nextSurcharge,
-        plans: planRows.map((row) => ({
-          planKey: row.planKey,
-          planName: row.planName,
-          price: row.price,
-          billingCycle: row.billingCycle,
-          description: row.description ?? null,
-          active: row.active,
+        platform_fee: fee,
+        preferred_time_surcharge: surchPct,
+        plans: planRows.map((r) => ({
+          planKey: r.planKey, planName: r.planName, price: r.price,
+          billingCycle: r.billingCycle, description: r.description ?? null, active: r.active,
         })),
-        session_pricing: sessionRows.map((row) => ({
-          providerType: row.providerType,
-          durationMinutes: row.durationMinutes,
-          price: row.price,
-          providerShare: Math.round(row.price * 0.6),
-          platformShare: row.price - Math.round(row.price * 0.6),
+        session_pricing: sessionRows.map((r) => ({
+          providerType: r.providerType,
+          durationMinutes: r.durationMinutes,
+          price: r.price,
+          providerShare: Math.round(r.price * 0.6),
+          platformShare: r.price - Math.round(r.price * 0.6),
           active: true,
         })),
-        premium_bundles: bundleRows.map((row) => ({
-          bundleName: row.bundleName,
-          minutes: row.minutes,
-          price: row.price,
-          active: true,
+        premium_bundles: bundleRows.map((r) => ({
+          bundleName: r.bundleName, minutes: r.minutes, price: r.price, active: true,
         })),
       });
-
       await load();
-      setSuccess('Pricing configuration updated successfully.');
+      setSuccess('Pricing saved successfully.');
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Unable to save pricing updates.');
+      setError(err?.response?.data?.message || 'Unable to save pricing.');
     } finally {
       setSaving(false);
     }
   };
 
-  const [newSessionRow, setNewSessionRow] = useState<SessionEdit>({ providerType: '', durationMinutes: 50, price: 0 });
-  const [addingSession, setAddingSession] = useState(false);
-
-  const addSessionRow = () => {
-    const pt = newSessionRow.providerType.trim();
-    if (!pt || newSessionRow.price < 0) return;
-    const exists = sessionRows.some((r) => r.providerType === pt && r.durationMinutes === newSessionRow.durationMinutes);
-    if (exists) {
-      setError(`Row for ${pt} / ${newSessionRow.durationMinutes} min already exists.`);
-      return;
-    }
-    setSessionRows([...sessionRows, { ...newSessionRow }]);
-    setNewSessionRow({ providerType: '', durationMinutes: 50, price: 0 });
-    setAddingSession(false);
-  };
-
-  const [freeDays, setFreeDays] = useState('30');
-  const [waiveForm, setWaiveForm] = useState({ userId: '', planKey: 'basic', durationDays: '30', reason: '' });
-
   const onToggleFree = async () => {
     setSaving(true);
     try {
       await toggleGlobalFreeSignups(Number(freeDays));
-      setSuccess(`Global offer activated: New sign-ups are now free for ${freeDays} days.`);
+      setSuccess(`Offer activated: new sign-ups are free for ${freeDays} days.`);
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Failed to update global offer.');
     } finally {
@@ -322,16 +274,14 @@ export default function AdminPricingManagementPage() {
   };
 
   const onWaive = async () => {
-    if (!waiveForm.userId) return;
+    if (!waiveForm.userId.trim()) return;
     setSaving(true);
     try {
-      const resp = await waiveUserSubscription({
-        userId: waiveForm.userId,
-        planKey: waiveForm.planKey,
-        durationDays: Number(waiveForm.durationDays),
-        reason: waiveForm.reason
+      const res = await waiveUserSubscription({
+        userId: waiveForm.userId, planKey: waiveForm.planKey,
+        durationDays: Number(waiveForm.durationDays), reason: waiveForm.reason,
       });
-      setSuccess(resp.message || 'Waiver granted successfully.');
+      setSuccess(res?.data?.message || 'Waiver granted.');
       setWaiveForm({ userId: '', planKey: 'basic', durationDays: '30', reason: '' });
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Failed to grant waiver.');
@@ -340,236 +290,175 @@ export default function AdminPricingManagementPage() {
     }
   };
 
+  // ── render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-24">
+
+      {/* Header */}
       <div className="rounded-xl border border-ink-100 bg-white p-5">
         <h2 className="font-display text-xl font-bold text-ink-800">Pricing Management</h2>
-        <p className="mt-1 text-sm text-ink-600">Update platform fee, session pricing, bundles, and preferred-time surcharge without redeploy.</p>
+        <p className="mt-1 text-sm text-ink-600">
+          Set session prices, subscription plans, and add-on tiers. Changes take effect immediately after saving.
+        </p>
       </div>
 
-      {loading ? <div className="rounded-lg border border-ink-100 bg-white px-4 py-3 text-sm text-ink-600">Loading pricing configuration...</div> : null}
-      {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
-      {success ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div> : null}
+      {/* Alerts */}
+      {loading  && <div className="rounded-lg border border-ink-100 bg-white px-4 py-3 text-sm text-ink-500">Loading pricing data...</div>}
+      {error    && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {success  && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div>}
 
-      {impact ? (
+      {/* Subscription impact cards */}
+      {impact && (
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-6">
-          <ImpactCard label="Total Subs" value={String(impact.totalSubscriptions)} />
-          <ImpactCard label="Active Subs" value={String(impact.activeSubscriptions)} />
-          <ImpactCard
-            label="Locked Prev Price"
-            value={String(impact.lockedToPreviousPrice)}
-            note={`${lockedRatio}% of active`}
-            tone={lockedRatio >= 60 ? 'warning' : lockedRatio >= 30 ? 'neutral' : 'good'}
-          />
-          <ImpactCard
-            label="Aligned Current"
-            value={String(impact.alignedWithCurrentPrice)}
-            note={`${alignedRatio}% of active`}
-            tone={alignedRatio >= 70 ? 'good' : alignedRatio >= 40 ? 'neutral' : 'warning'}
-          />
-          <ImpactCard
-            label="Renewals 7d"
-            value={String(impact.renewalsNext7Days)}
-            note="Immediate price-change window"
-            tone={impact.renewalsNext7Days >= 20 ? 'warning' : 'neutral'}
-          />
-          <ImpactCard
-            label="Renewals 30d"
-            value={String(impact.renewalsNext30Days)}
-            note="Near-term billing impact"
-            tone={impact.renewalsNext30Days >= 50 ? 'warning' : 'neutral'}
-          />
+          <ImpactCard label="Total Subs"     value={String(impact.totalSubscriptions)} />
+          <ImpactCard label="Active Subs"    value={String(impact.activeSubscriptions)} />
+          <ImpactCard label="Locked Prev"    value={String(impact.lockedToPreviousPrice)}  note={`${lockedRatio}% of active`}  tone={lockedRatio  >= 60 ? 'warning' : lockedRatio  >= 30 ? 'neutral' : 'good'} />
+          <ImpactCard label="Aligned Now"    value={String(impact.alignedWithCurrentPrice)} note={`${alignedRatio}% of active`} tone={alignedRatio >= 70 ? 'good'    : alignedRatio >= 40 ? 'neutral' : 'warning'} />
+          <ImpactCard label="Renewals 7d"    value={String(impact.renewalsNext7Days)}   note="Immediate window" tone={impact.renewalsNext7Days  >= 20 ? 'warning' : 'neutral'} />
+          <ImpactCard label="Renewals 30d"   value={String(impact.renewalsNext30Days)}  note="Near-term impact"  tone={impact.renewalsNext30Days >= 50 ? 'warning' : 'neutral'} />
         </div>
-      ) : null}
+      )}
 
-      {impact ? (
+      {/* Impact simulation */}
+      {impact && (
         <div className="rounded-xl border border-ink-100 bg-white p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-display text-base font-bold text-ink-800">Pre-Save Impact Simulation</h3>
-            <span
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                isFeeChangePending ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-              }`}
-            >
-              {isFeeChangePending ? 'Fee change pending' : 'No fee change pending'}
+            <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${feeChangePending ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+              {feeChangePending ? 'Fee change pending' : 'No fee change pending'}
             </span>
           </div>
-          <p className="mt-1 text-xs text-ink-600">Heuristic preview based on current active subscriptions and next 30-day renewals.</p>
-
+          <p className="mt-1 text-xs text-ink-500">Heuristic preview — based on active subscriptions and 30-day renewals.</p>
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="rounded-lg border border-ink-100 bg-ink-50 p-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Platform Fee Delta</p>
-              <p className="mt-1 text-sm font-semibold text-ink-800">
-                ₹{currentPlatformFee}{' -> '}₹{Number.isFinite(nextPlatformFee) ? nextPlatformFee : currentPlatformFee}
-              </p>
-              <p className={`mt-1 text-xs ${platformFeeDelta > 0 ? 'text-amber-700' : platformFeeDelta < 0 ? 'text-emerald-700' : 'text-ink-600'}`}>
+              <p className="mt-1 text-sm font-semibold text-ink-800">₹{currentPlatformFee} → ₹{Number.isFinite(nextPlatformFee) ? nextPlatformFee : currentPlatformFee}</p>
+              <p className={`mt-1 text-xs font-semibold ${platformFeeDelta > 0 ? 'text-amber-700' : platformFeeDelta < 0 ? 'text-emerald-700' : 'text-ink-500'}`}>
                 {platformFeeDelta > 0 ? '+' : ''}₹{platformFeeDelta}
               </p>
             </div>
-
             <div className="rounded-lg border border-ink-100 bg-ink-50 p-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Projected Immediate Mix</p>
-              <p className="mt-1 text-sm text-ink-700">Locked: <span className="font-semibold text-ink-800">{projectedLockedImmediate}</span></p>
-              <p className="text-sm text-ink-700">Aligned: <span className="font-semibold text-ink-800">{projectedAlignedImmediate}</span></p>
+              <p className="mt-1 text-sm text-ink-700">Locked: <span className="font-semibold">{projectedLocked}</span></p>
+              <p className="text-sm text-ink-700">Aligned: <span className="font-semibold">{projectedAligned}</span></p>
             </div>
-
             <div className="rounded-lg border border-ink-100 bg-ink-50 p-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Estimated 30d Renewal Delta</p>
-              <p className={`mt-1 text-sm font-semibold ${projected30dRevenueDelta >= 0 ? 'text-ink-800' : 'text-emerald-700'}`}>
-                {projected30dRevenueDelta >= 0 ? '+' : ''}₹{projected30dRevenueDelta}
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Est. 30d Revenue Delta</p>
+              <p className={`mt-1 text-sm font-semibold ${projected30dDelta >= 0 ? 'text-ink-800' : 'text-emerald-700'}`}>
+                {projected30dDelta >= 0 ? '+' : ''}₹{projected30dDelta}
               </p>
-              <p className="mt-1 text-xs text-ink-600">Assumes {impact.renewalsNext30Days} renewals use proposed fee.</p>
+              <p className="mt-1 text-xs text-ink-500">{impact.renewalsNext30Days} renewals × proposed fee</p>
             </div>
           </div>
 
+          {/* Session delta table */}
           <div className="mt-3 rounded-lg border border-ink-100 bg-ink-50 p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Session Pricing Delta Preview</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Session Pricing Delta</p>
               <div className="flex items-center gap-3">
-                <label className="flex items-center gap-1.5 text-xs text-ink-600">
-                  <input
-                    type="checkbox"
-                    checked={showChangedOnly}
-                    onChange={(event) => setShowChangedOnly(event.target.checked)}
-                    className="h-3.5 w-3.5 rounded border border-ink-200"
-                  />
-                  Show changed only
+                <label className="flex cursor-pointer items-center gap-1.5 text-xs text-ink-600">
+                  <input type="checkbox" checked={showChanged} onChange={(e) => setShowChanged(e.target.checked)} className="h-3.5 w-3.5 rounded border border-ink-200" />
+                  Changed only
                 </label>
                 <p className="text-xs text-ink-600">
-                  Changed rows: <span className="font-semibold text-ink-800">{changedSessionRows.length}</span>
-                  {' | '}Total delta: <span className={`font-semibold ${totalSessionDelta > 0 ? 'text-amber-700' : totalSessionDelta < 0 ? 'text-emerald-700' : 'text-ink-800'}`}>{totalSessionDelta > 0 ? '+' : ''}₹{totalSessionDelta}</span>
+                  {changedRows.length} changed · Total delta:{' '}
+                  <span className={`font-semibold ${totalDelta > 0 ? 'text-amber-700' : totalDelta < 0 ? 'text-emerald-700' : 'text-ink-800'}`}>
+                    {totalDelta > 0 ? '+' : ''}₹{totalDelta}
+                  </span>
                 </p>
               </div>
             </div>
-
             <div className="mt-2 overflow-x-auto">
               <table className="min-w-full divide-y divide-ink-100">
                 <thead>
                   <tr>
-                    <th className="px-2 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Provider</th>
-                    <th className="px-2 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Duration</th>
-                    <th className="px-2 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Old</th>
-                    <th className="px-2 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">New</th>
-                    <th className="px-2 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Delta</th>
+                    {['Provider','Duration','Old','New','Delta'].map((h) => (
+                      <th key={h} className="px-2 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-ink-100">
-                  {visibleSessionDeltaRows.map((row) => (
-                    <tr key={`${row.providerType}-${row.durationMinutes}`}>
-                      <td className="px-2 py-1.5 text-xs text-ink-700">{labelForProviderType(row.providerType)}</td>
-                      <td className="px-2 py-1.5 text-xs text-ink-700">{row.durationMinutes} min</td>
-                      <td className="px-2 py-1.5 text-xs text-ink-700">₹{row.oldPrice}</td>
-                      <td className="px-2 py-1.5 text-xs text-ink-700">₹{row.newPrice}</td>
-                      <td className={`px-2 py-1.5 text-xs font-semibold ${row.delta > 0 ? 'text-amber-700' : row.delta < 0 ? 'text-emerald-700' : 'text-ink-500'}`}>
-                        {row.delta > 0 ? '+' : ''}₹{row.delta}
-                      </td>
-                    </tr>
-                  ))}
-                  {visibleSessionDeltaRows.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-2 py-3 text-center text-xs text-ink-500">
-                        No changed session rows.
-                      </td>
-                    </tr>
-                  ) : null}
+                  {visibleDelta.length === 0
+                    ? <tr><td colSpan={5} className="px-2 py-3 text-center text-xs text-ink-400">No changed rows.</td></tr>
+                    : visibleDelta.map((r) => (
+                        <tr key={`${r.providerType}-${r.durationMinutes}`}>
+                          <td className="px-2 py-1.5 text-xs text-ink-700">{labelForProviderType(r.providerType)}</td>
+                          <td className="px-2 py-1.5 text-xs text-ink-600">{r.durationMinutes} min</td>
+                          <td className="px-2 py-1.5 text-xs text-ink-600">₹{r.oldPrice}</td>
+                          <td className="px-2 py-1.5 text-xs text-ink-600">₹{r.newPrice}</td>
+                          <td className={`px-2 py-1.5 text-xs font-semibold ${r.delta > 0 ? 'text-amber-700' : r.delta < 0 ? 'text-emerald-700' : 'text-ink-400'}`}>
+                            {r.delta > 0 ? '+' : ''}₹{r.delta}
+                          </td>
+                        </tr>
+                      ))
+                  }
                 </tbody>
               </table>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
 
+      {/* Platform fee + surcharge */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-xl border border-ink-100 bg-white p-4">
-          <h3 className="font-display text-base font-bold text-ink-800">Platform Fee</h3>
+          <h3 className="font-display text-base font-bold text-ink-800">Platform Monthly Fee</h3>
+          <p className="mt-0.5 text-xs text-ink-500">Base subscription fee charged to patients per month.</p>
           <label className="mt-3 block text-sm text-ink-700">
-            Monthly Fee (INR)
+            Amount (₹)
             <input
-              type="number"
-              min={0}
-              value={platformFee}
-              onChange={(event) => setPlatformFee(event.target.value)}
+              type="number" min={0} value={platformFee}
+              onChange={(e) => setPlatformFee(e.target.value)}
               className="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2"
             />
           </label>
         </div>
-
         <div className="rounded-xl border border-ink-100 bg-white p-4">
-          <h3 className="font-display text-base font-bold text-ink-800">Preferred Time Surcharge</h3>
+          <h3 className="font-display text-base font-bold text-ink-800">Preferred-Time Surcharge</h3>
+          <p className="mt-0.5 text-xs text-ink-500">Extra % charged for peak-hour appointment slots.</p>
           <label className="mt-3 block text-sm text-ink-700">
             Surcharge (%)
             <input
-              type="number"
-              min={0}
-              max={100}
-              value={surcharge}
-              onChange={(event) => setSurcharge(event.target.value)}
+              type="number" min={0} max={100} value={surcharge}
+              onChange={(e) => setSurcharge(e.target.value)}
               className="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2"
             />
           </label>
         </div>
       </div>
 
-      <div className="rounded-xl border border-ink-100 bg-white p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="font-display text-base font-bold text-ink-800">Subscription Plans</h3>
-          <p className="text-xs text-ink-500">Edit plan name, billing cycle, price, and active state.</p>
+      {/* Patient Platform Plans (read-only reference) */}
+      <div className="rounded-xl border border-blue-100 bg-white p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-display text-base font-bold text-ink-800">Patient Platform Plans</h3>
+            <p className="mt-0.5 text-xs text-ink-400">Subscription tiers available to patients. Configured in code; edit via platform config to override.</p>
+          </div>
+          <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-700">Read-only reference</span>
         </div>
-        <div className="mt-3 overflow-x-auto">
+        <div className="mt-3 overflow-x-auto rounded-lg border border-ink-100">
           <table className="min-w-full divide-y divide-ink-100">
-            <thead className="bg-ink-50">
+            <thead className="bg-blue-50">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Key</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Plan Name</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Billing Cycle</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Price</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Active</th>
+                {['Plan', 'Key', 'Price', 'Duration', 'Billing'].map((h) => (
+                  <th key={h} className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
-              {planRows.map((row, index) => (
-                <tr key={row.planKey}>
-                  <td className="px-3 py-2 text-sm text-ink-500">{row.planKey}</td>
-                  <td className="px-3 py-2">
-                    <input
-                      type="text"
-                      value={row.planName}
-                      onChange={(event) => updatePlanRow(index, { planName: event.target.value })}
-                      className="w-full rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2"
-                    />
-                  </td>
-                  <td className="px-3 py-2">
-                    <select
-                      value={row.billingCycle}
-                      onChange={(event) => updatePlanRow(index, { billingCycle: event.target.value })}
-                      className="w-full rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2"
-                    >
-                      <option value="none">None</option>
-                      <option value="monthly">Monthly</option>
-                      <option value="quarterly">Quarterly</option>
-                      <option value="yearly">Yearly</option>
-                    </select>
-                  </td>
-                  <td className="px-3 py-2">
-                    <input
-                      type="number"
-                      min={0}
-                      value={row.price}
-                      onChange={(event) => updatePlanRow(index, { price: Number(event.target.value) })}
-                      className="w-32 rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2"
-                    />
-                  </td>
-                  <td className="px-3 py-2">
-                    <label className="inline-flex items-center gap-2 text-sm text-ink-700">
-                      <input
-                        type="checkbox"
-                        checked={row.active}
-                        onChange={(event) => updatePlanRow(index, { active: event.target.checked })}
-                        className="h-4 w-4 rounded border border-ink-200"
-                      />
-                      Enabled
-                    </label>
-                  </td>
+              {[
+                { plan: 'Free', key: 'free', price: 0, duration: '-', billing: 'None' },
+                { plan: 'Basic Monthly', key: 'monthly', price: 99, duration: '30 days', billing: 'Monthly' },
+                { plan: 'Quarterly', key: 'quarterly', price: 299, duration: '90 days', billing: 'Quarterly' },
+                { plan: 'Premium Monthly', key: 'premium_monthly', price: 299, duration: '30 days', billing: 'Monthly' },
+                { plan: 'Premium Annual', key: 'premium_annual', price: 2999, duration: '365 days', billing: 'Annual' },
+              ].map((r) => (
+                <tr key={r.key} className="hover:bg-ink-50/40">
+                  <td className="px-3 py-2 text-sm font-medium text-ink-800">{r.plan}</td>
+                  <td className="px-3 py-2 text-xs font-mono text-ink-400">{r.key}</td>
+                  <td className="px-3 py-2 text-sm font-semibold text-blue-700">{r.price === 0 ? 'Free' : `₹${r.price.toLocaleString('en-IN')}`}</td>
+                  <td className="px-3 py-2 text-sm text-ink-500">{r.duration}</td>
+                  <td className="px-3 py-2 text-sm text-ink-500">{r.billing}</td>
                 </tr>
               ))}
             </tbody>
@@ -577,105 +466,230 @@ export default function AdminPricingManagementPage() {
         </div>
       </div>
 
+      {/* Provider Platform Plans (read-only reference) */}
+      <div className="rounded-xl border border-emerald-100 bg-white p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-display text-base font-bold text-ink-800">Provider Platform Plans</h3>
+            <p className="mt-0.5 text-xs text-ink-400">Subscription tiers for providers. Determines lead allocation, marketplace access, and lead discount.</p>
+          </div>
+          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">Read-only reference</span>
+        </div>
+        <div className="mt-3 overflow-x-auto rounded-lg border border-ink-100">
+          <table className="min-w-full divide-y divide-ink-100">
+            <thead className="bg-emerald-50">
+              <tr>
+                {['Plan', 'Monthly (₹)', 'Quarterly (₹)', 'Leads/Week', 'Lead Discount', 'Claim Window'].map((h) => (
+                  <th key={h} className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-100">
+              {[
+                { plan: 'Free',     monthly: 0,   quarterly: 0,    leads: 0,  discount: '0%',  claim: 'N/A' },
+                { plan: 'Basic',    monthly: 199,  quarterly: 549,  leads: 3,  discount: '0%',  claim: '48h' },
+                { plan: 'Standard', monthly: 299,  quarterly: 829,  leads: 6,  discount: '10%', claim: '36h' },
+                { plan: 'Premium',  monthly: 399,  quarterly: 1099, leads: 7,  discount: '20%', claim: '12h' },
+              ].map((r) => (
+                <tr key={r.plan} className="hover:bg-ink-50/40">
+                  <td className="px-3 py-2 text-sm font-medium text-ink-800">{r.plan}</td>
+                  <td className="px-3 py-2 text-sm font-semibold text-emerald-700">{r.monthly === 0 ? 'Free' : `₹${r.monthly}`}</td>
+                  <td className="px-3 py-2 text-sm text-ink-600">{r.quarterly === 0 ? 'Free' : `₹${r.quarterly}`}</td>
+                  <td className="px-3 py-2 text-sm text-ink-600">{r.leads === 0 ? '—' : r.leads}</td>
+                  <td className="px-3 py-2 text-sm text-ink-600">{r.discount}</td>
+                  <td className="px-3 py-2 text-sm text-ink-600">{r.claim}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2 text-[11px] text-ink-400">Lead marketplace prices: Hot ₹299 · Warm ₹199 · Cold ₹99 (before plan discount)</p>
+      </div>
+
+      {/* Subscription plans */}
+      {planRows.length > 0 && (
+        <div className="rounded-xl border border-ink-100 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-display text-base font-bold text-ink-800">Subscription Plans</h3>
+            <p className="text-xs text-ink-400">Edit name, billing cycle, price, and active state.</p>
+          </div>
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-full divide-y divide-ink-100">
+              <thead className="bg-ink-50">
+                <tr>
+                  {['Key','Plan Name','Billing','Price (₹)','Active'].map((h) => (
+                    <th key={h} className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ink-100">
+                {planRows.map((row, i) => (
+                  <tr key={row.planKey}>
+                    <td className="px-3 py-2 text-sm text-ink-400">{row.planKey}</td>
+                    <td className="px-3 py-2">
+                      <input type="text" value={row.planName} onChange={(e) => updatePlanRow(i, { planName: e.target.value })}
+                        className="w-full rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <select value={row.billingCycle} onChange={(e) => updatePlanRow(i, { billingCycle: e.target.value })}
+                        className="w-full rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2">
+                        <option value="none">None</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="yearly">Yearly</option>
+                      </select>
+                    </td>
+                    <td className="px-3 py-2">
+                      <input type="number" min={0} value={row.price} onChange={(e) => updatePlanRow(i, { price: Number(e.target.value) })}
+                        className="w-28 rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink-700">
+                        <input type="checkbox" checked={row.active} onChange={(e) => updatePlanRow(i, { active: e.target.checked })}
+                          className="h-4 w-4 rounded border border-ink-200" />
+                        On
+                      </label>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Session pricing */}
       <div className="rounded-xl border border-ink-100 bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 className="font-display text-base font-bold text-ink-800">Session Pricing</h3>
-            <p className="mt-0.5 text-xs text-ink-500">Revenue split: Provider 60% / Platform 40%. Video sessions auto-charge +10% at booking.</p>
+            <p className="mt-0.5 text-xs text-ink-400">Split: Provider 60% / Platform 40%. Video = standard +10% (applied at booking).</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setAddingSession((v) => !v)}
-            className="rounded-lg border border-sage-300 bg-sage-50 px-3 py-1.5 text-xs font-semibold text-sage-700 hover:bg-sage-100"
-          >
-            {addingSession ? 'Cancel' : '+ Add Row'}
+          <button type="button" onClick={() => { setAddingRow((v) => !v); setError(null); }}
+            className="rounded-lg border border-sage-300 bg-sage-50 px-3 py-1.5 text-xs font-semibold text-sage-700 hover:bg-sage-100">
+            {addingRow ? 'Cancel' : '+ Add Row'}
           </button>
         </div>
 
-        {addingSession && (
+        {/* Add row form */}
+        {addingRow && (
           <div className="mt-3 flex flex-wrap items-end gap-3 rounded-lg border border-sage-200 bg-sage-50 p-3">
             <label className="flex flex-col gap-1 text-xs text-ink-700">
-              Provider Type (e.g. clinical-psychologist)
-              <input
-                type="text"
-                value={newSessionRow.providerType}
-                onChange={(e) => setNewSessionRow({ ...newSessionRow, providerType: e.target.value })}
-                placeholder="clinical-psychologist"
-                className="w-52 rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2"
-              />
+              Provider Type
+              <input type="text" value={newRow.providerType} placeholder="e.g. nlp-coach"
+                onChange={(e) => setNewRow({ ...newRow, providerType: e.target.value })}
+                className="w-48 rounded-lg border border-ink-200 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2" />
             </label>
             <label className="flex flex-col gap-1 text-xs text-ink-700">
               Duration (min)
-              <input
-                type="number"
-                min={1}
-                value={newSessionRow.durationMinutes}
-                onChange={(e) => setNewSessionRow({ ...newSessionRow, durationMinutes: Number(e.target.value) })}
-                className="w-24 rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2"
-              />
+              <input type="number" min={1} value={newRow.durationMinutes}
+                onChange={(e) => setNewRow({ ...newRow, durationMinutes: Number(e.target.value) })}
+                className="w-24 rounded-lg border border-ink-200 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2" />
             </label>
             <label className="flex flex-col gap-1 text-xs text-ink-700">
               Price (₹)
-              <input
-                type="number"
-                min={0}
-                value={newSessionRow.price}
-                onChange={(e) => setNewSessionRow({ ...newSessionRow, price: Number(e.target.value) })}
-                className="w-32 rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2"
-              />
+              <input type="number" min={0} value={newRow.price}
+                onChange={(e) => setNewRow({ ...newRow, price: Number(e.target.value) })}
+                className="w-28 rounded-lg border border-ink-200 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2" />
             </label>
-            <button
-              type="button"
-              onClick={addSessionRow}
-              className="rounded-lg bg-sage-600 px-3 py-2 text-xs font-semibold text-white hover:bg-sage-700"
-            >
+            <button type="button" onClick={addSessionRow}
+              className="rounded-lg bg-sage-600 px-4 py-2 text-xs font-semibold text-white hover:bg-sage-700">
               Add
             </button>
           </div>
         )}
 
+        {/* Grouped tables */}
         {(['domestic', 'specialty', 'nri'] as const).map((group) => {
           const rows = sessionRows.map((row, index) => ({ row, index })).filter(({ row }) => {
-            if (group === 'nri') return isNriProviderType(row.providerType);
-            if (group === 'specialty') return !isNriProviderType(row.providerType) && isSpecialtyProviderType(row.providerType);
-            return !isNriProviderType(row.providerType) && !isSpecialtyProviderType(row.providerType);
+            if (group === 'nri')      return isNri(row.providerType);
+            if (group === 'specialty') return !isNri(row.providerType) && isSpecialty(row.providerType);
+            return !isNri(row.providerType) && !isSpecialty(row.providerType);
           });
           if (rows.length === 0) return null;
-          const groupLabel = group === 'nri' ? 'NRI Sessions' : group === 'specialty' ? 'Specialty Services' : 'Domestic Sessions';
-          const groupColor = group === 'nri' ? 'text-orange-600' : group === 'specialty' ? 'text-purple-600' : 'text-ink-600';
+          const labels: Record<string, string> = { domestic: 'Domestic Sessions', specialty: 'Specialty Services', nri: 'NRI Sessions' };
+          const colors: Record<string, string> = { domestic: 'text-sage-700', specialty: 'text-purple-600', nri: 'text-orange-600' };
+          const bgHd: Record<string, string>   = { domestic: 'bg-sage-50', specialty: 'bg-purple-50', nri: 'bg-orange-50' };
           return (
-            <div key={group} className="mt-4">
-              <p className={`mb-1.5 text-[11px] font-bold uppercase tracking-wider ${groupColor}`}>{groupLabel}</p>
-              <div className="overflow-x-auto">
+            <div key={group} className="mt-5">
+              <p className={`mb-2 text-[11px] font-bold uppercase tracking-widest ${colors[group]}`}>{labels[group]}</p>
+              <div className="overflow-x-auto rounded-lg border border-ink-100">
                 <table className="min-w-full divide-y divide-ink-100">
-                  <thead className="bg-ink-50">
+                  <thead className={bgHd[group]}>
                     <tr>
-                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Provider</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Provider Type</th>
                       <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Duration</th>
                       <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Price (₹)</th>
                       <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Provider 60%</th>
                       <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Platform 40%</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Video +10%</th>
+                      <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-ink-500">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-ink-100">
                     {rows.map(({ row, index }) => {
-                      const provShare = Math.round(row.price * 0.6);
-                      const platShare = row.price - provShare;
+                      const isEditing = editingIndex === index;
+                      const buf = isEditing ? editBuffer! : row;
+                      const provShare  = Math.round(buf.price * 0.6);
+                      const platShare  = buf.price - provShare;
+                      const videoPrice = Math.round(buf.price * 1.1);
                       return (
-                        <tr key={`${row.providerType}-${row.durationMinutes}`}>
-                          <td className="px-3 py-2 text-sm font-medium text-ink-800">{labelForProviderType(row.providerType)}</td>
-                          <td className="px-3 py-2 text-sm text-ink-600">{row.durationMinutes} min</td>
+                        <tr key={`${row.providerType}-${row.durationMinutes}-${index}`}
+                          className={isEditing ? 'bg-amber-50' : 'hover:bg-ink-50/40'}>
                           <td className="px-3 py-2">
-                            <input
-                              type="number"
-                              min={0}
-                              value={row.price}
-                              onChange={(event) => updateSessionPrice(index, event.target.value)}
-                              className="w-28 rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2"
-                            />
+                            {isEditing
+                              ? <input type="text" value={editBuffer!.providerType}
+                                  onChange={(e) => setEditBuffer({ ...editBuffer!, providerType: e.target.value })}
+                                  className="w-44 rounded-lg border border-amber-300 px-2 py-1.5 text-sm outline-none ring-amber-400 focus:ring-2" />
+                              : <span className="text-sm font-medium text-ink-800">{labelForProviderType(row.providerType)}<br /><span className="text-[11px] text-ink-400">{row.providerType}</span></span>
+                            }
                           </td>
-                          <td className="px-3 py-2 text-sm text-emerald-700">₹{provShare}</td>
-                          <td className="px-3 py-2 text-sm text-ink-500">₹{platShare}</td>
+                          <td className="px-3 py-2">
+                            {isEditing
+                              ? <input type="number" min={1} value={editBuffer!.durationMinutes}
+                                  onChange={(e) => setEditBuffer({ ...editBuffer!, durationMinutes: Number(e.target.value) })}
+                                  className="w-20 rounded-lg border border-amber-300 px-2 py-1.5 text-sm outline-none ring-amber-400 focus:ring-2" />
+                              : <span className="text-sm text-ink-500">{row.durationMinutes} min</span>
+                            }
+                          </td>
+                          <td className="px-3 py-2">
+                            {isEditing
+                              ? <input type="number" min={0} value={editBuffer!.price}
+                                  onChange={(e) => setEditBuffer({ ...editBuffer!, price: Number(e.target.value) || 0 })}
+                                  className="w-28 rounded-lg border border-amber-300 px-2 py-1.5 text-sm font-semibold outline-none ring-amber-400 focus:ring-2" />
+                              : <span className="text-sm font-semibold text-ink-800">₹{row.price.toLocaleString('en-IN')}</span>
+                            }
+                          </td>
+                          <td className="px-3 py-2 text-sm font-semibold text-emerald-700">₹{provShare.toLocaleString('en-IN')}</td>
+                          <td className="px-3 py-2 text-sm text-ink-400">₹{platShare.toLocaleString('en-IN')}</td>
+                          <td className="px-3 py-2 text-sm text-indigo-600">₹{videoPrice.toLocaleString('en-IN')}</td>
+                          <td className="px-3 py-2">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {isEditing ? (
+                                <>
+                                  <button type="button" onClick={saveEditRow}
+                                    className="rounded-lg bg-amber-500 px-2.5 py-1 text-xs font-semibold text-white hover:bg-amber-600">
+                                    Save
+                                  </button>
+                                  <button type="button" onClick={cancelEditRow}
+                                    className="rounded-lg border border-ink-200 px-2.5 py-1 text-xs text-ink-500 hover:bg-ink-50">
+                                    Cancel
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button type="button" onClick={() => startEditRow(index, row)}
+                                    className="rounded-lg border border-sage-200 bg-sage-50 px-2.5 py-1 text-xs font-medium text-sage-700 hover:bg-sage-100">
+                                    Edit
+                                  </button>
+                                  <button type="button" onClick={() => removeSessionRow(index)}
+                                    className="rounded-lg border border-red-100 px-2.5 py-1 text-xs text-red-400 hover:bg-red-50 hover:text-red-600">
+                                    Remove
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
@@ -687,10 +701,11 @@ export default function AdminPricingManagementPage() {
         })}
       </div>
 
+      {/* AnytimeBuddy add-ons */}
       <div className="rounded-xl border border-ink-100 bg-white p-4">
         <h3 className="font-display text-base font-bold text-ink-800">AnytimeBuddy Add-ons</h3>
-        <p className="mt-0.5 text-xs text-ink-500">Subscription tiers for the AI wellness companion. Basic / Standard / Premium.</p>
-        <div className="mt-3 overflow-x-auto">
+        <p className="mt-0.5 text-xs text-ink-400">Monthly subscription tiers for the AI wellness companion.</p>
+        <div className="mt-3 overflow-x-auto rounded-lg border border-ink-100">
           <table className="min-w-full divide-y divide-ink-100">
             <thead className="bg-ink-50">
               <tr>
@@ -699,141 +714,120 @@ export default function AdminPricingManagementPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
-              {bundleRows.map((row, index) => (
-                <tr key={`${row.bundleName}-${row.minutes}`}>
-                  <td className="px-3 py-2 text-sm font-medium text-ink-800">{row.bundleName}</td>
-                  <td className="px-3 py-2">
-                    <input
-                      type="number"
-                      min={0}
-                      value={row.price}
-                      onChange={(event) => updateBundlePrice(index, event.target.value)}
-                      className="w-32 rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2"
-                    />
-                  </td>
-                </tr>
-              ))}
+              {bundleRows.length === 0
+                ? <tr><td colSpan={2} className="px-3 py-3 text-center text-xs text-ink-400">No add-ons found. Save once to seed defaults.</td></tr>
+                : bundleRows.map((row, i) => (
+                    <tr key={`${row.bundleName}-${row.minutes}`}>
+                      <td className="px-3 py-2 text-sm font-medium text-ink-800">{row.bundleName}</td>
+                      <td className="px-3 py-2">
+                        <input type="number" min={0} value={row.price}
+                          onChange={(e) => updateBundlePrice(i, e.target.value)}
+                          className="w-32 rounded-lg border border-ink-100 px-2 py-1.5 text-sm outline-none ring-sage-500 focus:ring-2" />
+                      </td>
+                    </tr>
+                  ))
+              }
             </tbody>
           </table>
         </div>
       </div>
 
+      {/* Pricing preview cards */}
       <div className="rounded-xl border border-ink-100 bg-white p-4">
         <h3 className="font-display text-base font-bold text-ink-800">Pricing Preview</h3>
-        <p className="mt-0.5 text-xs text-ink-500">Standard price shown. Video = standard +10%.</p>
+        <p className="mt-0.5 text-xs text-ink-400">Standard price shown. Video = standard +10%.</p>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {groupedPreview.map(([providerType, rows]) => {
-            const mainRow = rows[0];
-            const videoPrice = mainRow ? Math.round(mainRow.price * 1.1) : null;
-            const isNri = isNriProviderType(providerType);
-            const isSpecialty = isSpecialtyProviderType(providerType);
-            const tagColor = isNri ? 'bg-orange-100 text-orange-700' : isSpecialty ? 'bg-purple-100 text-purple-700' : 'bg-sage-100 text-sage-700';
-            const tagLabel = isNri ? 'NRI' : isSpecialty ? 'Specialty' : 'Domestic';
+            const main = rows[0];
+            const nriTag      = isNri(providerType);
+            const specialtyTag = isSpecialty(providerType);
+            const tagCls = nriTag ? 'bg-orange-100 text-orange-700' : specialtyTag ? 'bg-purple-100 text-purple-700' : 'bg-sage-100 text-sage-700';
+            const tagText = nriTag ? 'NRI' : specialtyTag ? 'Specialty' : 'Domestic';
             return (
               <div key={providerType} className="rounded-lg border border-ink-100 bg-ink-50 px-3 py-2.5">
                 <div className="flex items-center justify-between gap-1">
-                  <p className="text-sm font-semibold text-ink-800 leading-tight">{labelForProviderType(providerType)}</p>
-                  <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${tagColor}`}>{tagLabel}</span>
+                  <p className="text-sm font-semibold leading-tight text-ink-800">{labelForProviderType(providerType)}</p>
+                  <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${tagCls}`}>{tagText}</span>
                 </div>
-                {mainRow && (
+                {main && (
                   <>
-                    <p className="mt-1 text-xs text-ink-600">{mainRow.durationMinutes} min · Standard: <span className="font-semibold text-ink-800">₹{mainRow.price}</span></p>
-                    <p className="text-xs text-ink-500">Video: ₹{videoPrice}</p>
+                    <p className="mt-1 text-xs text-ink-600">{main.durationMinutes} min</p>
+                    <p className="text-xs text-ink-700">Standard: <span className="font-semibold">₹{main.price}</span></p>
+                    <p className="text-xs text-indigo-600">Video: ₹{Math.round(main.price * 1.1)}</p>
                   </>
                 )}
               </div>
             );
           })}
+          {groupedPreview.length === 0 && (
+            <p className="col-span-4 text-xs text-ink-400">No session pricing loaded yet.</p>
+          )}
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={() => void onSave()}
-        disabled={saving || loading || !config}
-        className="rounded-lg bg-sage-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sage-700 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {saving ? 'Saving...' : 'Save Pricing Configuration'}
-      </button>
+      {/* Sticky save button */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-ink-100 bg-white px-6 py-3 flex items-center justify-between gap-4 shadow-lg">
+        <p className="text-xs text-ink-500">
+          {changedRows.length > 0
+            ? `${changedRows.length} session row(s) changed · delta ₹${totalDelta > 0 ? '+' : ''}${totalDelta}`
+            : 'No unsaved session changes.'}
+        </p>
+        <button type="button" onClick={() => void onSave()} disabled={saving || loading || !config}
+          className="rounded-lg bg-sage-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-sage-700 disabled:cursor-not-allowed disabled:opacity-50">
+          {saving ? 'Saving...' : 'Save Pricing'}
+        </button>
+      </div>
 
-      {/* PHASE 2: GLOBAL OFFERS & WAIVERS */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-12 pt-8 border-t border-ink-200">
-        <div className="rounded-2xl border-2 border-indigo-100 bg-white p-6 shadow-xl shadow-indigo-100/20">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="p-2 bg-indigo-600 rounded-lg">
-              <span className="text-white font-black text-xs uppercase tracking-tighter">OFFER</span>
-            </div>
-            <h3 className="font-black text-xl text-ink-900 tracking-tight">Make New Sign-ups Free</h3>
-          </div>
-          <p className="text-sm text-ink-600 mb-6 font-medium">Activate a limited-time offer where all new users get the platform free for the specified number of days.</p>
-          <div className="flex items-center gap-4">
+      {/* Divider */}
+      <div className="border-t border-ink-200 pt-8">
+        <h3 className="font-display text-base font-bold text-ink-800">Access Controls</h3>
+        <p className="mt-1 text-xs text-ink-400">Grant free access or waive subscription for specific users.</p>
+      </div>
+
+      {/* Global offer + waiver */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-indigo-100 bg-white p-5">
+          <h4 className="font-display text-base font-bold text-ink-800">Make New Sign-ups Free</h4>
+          <p className="mt-1 text-sm text-ink-500">All new users get the platform free for N days.</p>
+          <div className="mt-4 flex items-center gap-3">
             <div className="relative flex-1">
-               <input
-                type="number"
-                value={freeDays}
-                onChange={(e) => setFreeDays(e.target.value)}
-                className="w-full pl-4 pr-12 py-3 bg-ink-50 border-2 border-ink-100 rounded-xl focus:border-indigo-500 outline-none font-bold text-ink-900"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-ink-400 uppercase tracking-widest">Days</span>
+              <input type="number" value={freeDays} onChange={(e) => setFreeDays(e.target.value)}
+                className="w-full rounded-lg border border-ink-100 py-2.5 pl-4 pr-12 text-sm font-semibold outline-none ring-indigo-400 focus:ring-2" />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-ink-400">days</span>
             </div>
-            <button
-              onClick={onToggleFree}
-              disabled={saving}
-              className="px-6 py-3 bg-indigo-600 text-white font-black text-sm rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all active:scale-95 disabled:opacity-50"
-            >
-              ACTIVATE OFFER
+            <button onClick={onToggleFree} disabled={saving}
+              className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
+              Activate
             </button>
           </div>
         </div>
 
-        <div className="rounded-2xl border-2 border-emerald-100 bg-white p-6 shadow-xl shadow-emerald-100/20">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="p-2 bg-emerald-600 rounded-lg">
-              <span className="text-white font-black text-xs uppercase tracking-tighter">WAIVER</span>
-            </div>
-            <h3 className="font-black text-xl text-ink-900 tracking-tight">Manual Access Waiver</h3>
-          </div>
-          <div className="space-y-4">
-            <input
-              type="text"
-              placeholder="User ID (UUID)"
-              value={waiveForm.userId}
+        <div className="rounded-xl border border-emerald-100 bg-white p-5">
+          <h4 className="font-display text-base font-bold text-ink-800">Manual Access Waiver</h4>
+          <p className="mt-1 text-sm text-ink-500">Give a specific user free access for a duration.</p>
+          <div className="mt-4 space-y-3">
+            <input type="text" placeholder="User ID (UUID)" value={waiveForm.userId}
               onChange={(e) => setWaiveForm({ ...waiveForm, userId: e.target.value })}
-              className="w-full px-4 py-3 bg-ink-50 border-2 border-ink-100 rounded-xl focus:border-emerald-500 outline-none font-bold text-ink-900"
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <select
-                value={waiveForm.planKey}
-                onChange={(e) => setWaiveForm({ ...waiveForm, planKey: e.target.value })}
-                className="px-4 py-3 bg-ink-50 border-2 border-ink-100 rounded-xl focus:border-emerald-500 outline-none font-bold text-ink-900 appearance-none"
-              >
-                <option value="basic">Basic Plan</option>
-                <option value="premium">Premium Plan</option>
-                <option value="pro">Pro Plan</option>
+              className="w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none ring-emerald-400 focus:ring-2" />
+            <div className="grid grid-cols-2 gap-3">
+              <select value={waiveForm.planKey} onChange={(e) => setWaiveForm({ ...waiveForm, planKey: e.target.value })}
+                className="rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none ring-emerald-400 focus:ring-2">
+                <option value="basic">Basic</option>
+                <option value="premium">Premium</option>
+                <option value="pro">Pro</option>
               </select>
               <div className="relative">
-                <input
-                  type="number"
-                  value={waiveForm.durationDays}
-                  onChange={(e) => setWaiveForm({ ...waiveForm, durationDays: e.target.value })}
-                  className="w-full pl-4 pr-12 py-3 bg-ink-50 border-2 border-ink-100 rounded-xl focus:border-emerald-500 outline-none font-bold text-ink-900"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-ink-400 uppercase tracking-widest">Days</span>
+                <input type="number" value={waiveForm.durationDays} onChange={(e) => setWaiveForm({ ...waiveForm, durationDays: e.target.value })}
+                  className="w-full rounded-lg border border-ink-100 py-2.5 pl-3 pr-10 text-sm outline-none ring-emerald-400 focus:ring-2" />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-ink-400">days</span>
               </div>
             </div>
-            <input
-              type="text"
-              placeholder="Reason (e.g. Beta Tester, Partner)"
-              value={waiveForm.reason}
+            <input type="text" placeholder="Reason (e.g. Beta Tester)" value={waiveForm.reason}
               onChange={(e) => setWaiveForm({ ...waiveForm, reason: e.target.value })}
-              className="w-full px-4 py-3 bg-ink-50 border-2 border-ink-100 rounded-xl focus:border-emerald-500 outline-none font-bold text-ink-900"
-            />
-            <button
-              onClick={onWaive}
-              disabled={saving || !waiveForm.userId}
-              className="w-full py-4 bg-emerald-600 text-white font-black text-sm rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all active:scale-95 disabled:opacity-50"
-            >
-              GRANT FREE ACCESS
+              className="w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none ring-emerald-400 focus:ring-2" />
+            <button onClick={onWaive} disabled={saving || !waiveForm.userId.trim()}
+              className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+              Grant Free Access
             </button>
           </div>
         </div>
@@ -842,29 +836,13 @@ export default function AdminPricingManagementPage() {
   );
 }
 
-function ImpactCard({
-  label,
-  value,
-  note,
-  tone = 'neutral',
-}: {
-  label: string;
-  value: string;
-  note?: string;
-  tone?: 'good' | 'neutral' | 'warning';
-}) {
-  const toneClass =
-    tone === 'good'
-      ? 'border-emerald-200 bg-emerald-50'
-      : tone === 'warning'
-      ? 'border-amber-200 bg-amber-50'
-      : 'border-ink-100 bg-white';
-
+function ImpactCard({ label, value, note, tone = 'neutral' }: { label: string; value: string; note?: string; tone?: 'good' | 'neutral' | 'warning' }) {
+  const cls = tone === 'good' ? 'border-emerald-200 bg-emerald-50' : tone === 'warning' ? 'border-amber-200 bg-amber-50' : 'border-ink-100 bg-white';
   return (
-    <div className={`rounded-xl border p-3 ${toneClass}`}>
+    <div className={`rounded-xl border p-3 ${cls}`}>
       <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">{label}</p>
       <p className="mt-1 font-display text-lg font-bold text-ink-800">{value}</p>
-      {note ? <p className="mt-1 text-[11px] text-ink-600">{note}</p> : null}
+      {note && <p className="mt-0.5 text-[11px] text-ink-500">{note}</p>}
     </div>
   );
 }

@@ -4,6 +4,15 @@ import { patientApi } from '../../api/patient';
 import { useWallet } from '../../hooks/useWallet';
 import { useAssessmentFlow } from '../../hooks/useAssessmentFlow';
 import { FRONTEND_URL } from '../../lib/runtimeEnv';
+import { useAuth } from '../../context/AuthContext';
+
+const NRI_PROVIDER_MAP: Record<string, string> = {
+  coach: 'nri-coach',
+  psychologist: 'nri-psychologist',
+  psychiatrist: 'nri-psychiatrist',
+  therapist: 'nri-therapist',
+  'clinical-psychologist': 'nri-psychologist',
+};
 
 interface Provider {
   id: string;
@@ -47,6 +56,7 @@ export default function SlideOverBookingDrawer({
   onBookingSuccess,
   sourceFunnel,
 }: SlideOverBookingDrawerProps) {
+  const { user } = useAuth();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -57,9 +67,40 @@ export default function SlideOverBookingDrawer({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSubscriptionWarning, setShowSubscriptionWarning] = useState(false);
+  const [nriSessionPrice, setNriSessionPrice] = useState<number | null>(null);
+  const [sessionMode, setSessionMode] = useState<'video' | 'audio'>('video');
+  const [videoSurchargePercent, setVideoSurchargePercent] = useState<number>(10);
   const { balance, applyWalletToPayment } = useWallet();
   const { commitClinicAssessments } = useAssessmentFlow();
   const total = Number((balance as any)?.total_balance || 0);
+
+  const isNriUser = Boolean((user as any)?.nriTermsAccepted || (user as any)?.nriDeclared);
+  const baseSessionPrice = nriSessionPrice ?? provider?.sessionPrice ?? 1500;
+  const effectiveSessionPrice = sessionMode === 'video'
+    ? Math.round(baseSessionPrice * (1 + videoSurchargePercent / 100))
+    : baseSessionPrice;
+
+  // Fetch session price from admin pricing table (never from provider.consultationFee)
+  useEffect(() => {
+    if (!isOpen || !provider) return;
+    const providerRole = String(provider.role || '').toLowerCase();
+    const nriType = NRI_PROVIDER_MAP[providerRole] ?? 'nri-therapist';
+    const domesticType = providerRole.replace('clinical-psychologist', 'clinical-psychologist') || 'therapist';
+
+    patientApi.getPricing({ mode: isNriUser ? 'nri' : undefined }).then((res: any) => {
+      const data = res?.data ?? res;
+      const rows: any[] = data?.sessionPricing ?? [];
+      const targetType = isNriUser ? nriType : domesticType;
+      const match = rows.find((r: any) => String(r.providerType).toLowerCase() === targetType)
+        ?? rows.find((r: any) => String(r.providerType).toLowerCase().includes(providerRole))
+        ?? rows[0];
+      if (match && Number(match.price) > 0) {
+        setNriSessionPrice(Number(match.price));
+      }
+      const surcharge = Number(data?.videoSurchargePercent ?? 10);
+      if (surcharge > 0) setVideoSurchargePercent(surcharge);
+    }).catch(() => {});
+  }, [isOpen, provider, isNriUser]);
 
   // Reset state only when drawer is opened.
   useEffect(() => {
@@ -67,6 +108,8 @@ export default function SlideOverBookingDrawer({
       setStep(1);
       setSelectedDate(null);
       setSelectedTime(null);
+      setNriSessionPrice(null);
+      setSessionMode('video');
       setProviderTimeSlots(SLOT_VALUES.map((value) => ({ value, label: toDisplayTime(value), isAvailable: true })));
       setError(null);
     }
@@ -169,8 +212,8 @@ export default function SlideOverBookingDrawer({
       // 1b. Permanent commit of delayed clinical assessments (Save on Booking)
       await commitClinicAssessments();
 
-      const originalAmountRupees = provider.sessionPrice || 1500;
-      const amountMinor = Math.round(Number(originalAmountRupees) * 100); // base price in paise
+      const originalAmountRupees = effectiveSessionPrice;
+      const amountMinor = Math.round(Number(originalAmountRupees) * 100); // price in paise
       let finalAmountMinor = amountMinor;
 
       // 2. Apply wallet credits if available
@@ -348,6 +391,28 @@ export default function SlideOverBookingDrawer({
 
           {step === 2 && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+              {/* Session Mode Selector */}
+              <div className="rounded-xl border border-calm-sage/15 bg-white/50 p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-charcoal/50">Session Type</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSessionMode('video')}
+                    className={`flex-1 rounded-lg border py-2.5 text-sm font-semibold transition-all ${sessionMode === 'video' ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-calm-sage/20 text-charcoal/60 hover:bg-calm-sage/5'}`}
+                  >
+                    📹 Video
+                  </button>
+                  <button
+                    onClick={() => setSessionMode('audio')}
+                    className={`flex-1 rounded-lg border py-2.5 text-sm font-semibold transition-all ${sessionMode === 'audio' ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-calm-sage/20 text-charcoal/60 hover:bg-calm-sage/5'}`}
+                  >
+                    🎙️ Audio
+                  </button>
+                </div>
+                {sessionMode === 'video' && (
+                  <p className="mt-2 text-xs text-charcoal/50">Video sessions include a {videoSurchargePercent}% platform surcharge.</p>
+                )}
+              </div>
+
               <div className="rounded-xl border border-calm-sage/15 bg-white/50 p-5">
                 <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-charcoal/50">
                   <CreditCard className="mr-2 inline h-4 w-4" />
@@ -366,27 +431,31 @@ export default function SlideOverBookingDrawer({
                     <span className="text-charcoal/60">Time</span>
                     <span className="font-medium text-charcoal">{selectedTime ? toDisplayTime(selectedTime) : '-'}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-charcoal/60">Session Fee</span>
-                    <span className="font-medium text-charcoal">₹{provider.sessionPrice || 1500}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-charcoal/60 flex items-center gap-1">
+                      Session Fee
+                      {isNriUser && <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-600">NRI Rate</span>}
+                      {sessionMode === 'video' && <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-600">Video</span>}
+                    </span>
+                    <span className="font-medium text-charcoal">₹{effectiveSessionPrice.toLocaleString('en-IN')}</span>
                   </div>
-                  
+
                   {total > 0 && (
                     <div className="flex justify-between text-teal-600 animate-in fade-in duration-300">
                       <span className="flex items-center">
                         <CheckCircle2 className="mr-1 h-3 w-3" />
                         Wallet Credits Applied
                       </span>
-                      <span className="font-medium">-₹{Math.min(total, provider.sessionPrice || 1500)}</span>
+                      <span className="font-medium">-₹{Math.min(total, effectiveSessionPrice)}</span>
                     </div>
                   )}
-                  
+
                   <div className="my-4 border-t border-dashed border-calm-sage/30" />
-                  
+
                   <div className="flex justify-between font-semibold text-lg items-center">
                     <span className="text-charcoal">Total Due</span>
                     <span className="text-teal-600">
-                      ₹{Math.max(0, (provider.sessionPrice || 1500) - total)}
+                      ₹{Math.max(0, effectiveSessionPrice - total)}
                     </span>
                   </div>
                 </div>

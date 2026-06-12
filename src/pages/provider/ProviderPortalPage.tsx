@@ -217,19 +217,15 @@ export const ProviderPortalPage: React.FC = () => {
                     <span>{joined}/{capacity} joined</span>
                     <span>₹{Math.round(Number(row.priceMinor || 0) / 100)}/seat</span>
                   </div>
-                  {row.jitsiRoomName ? (
-                    <a
-                      href={`https://meet.jit.si/${row.jitsiRoomName}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 rounded-xl bg-teal-600 py-2 text-xs font-bold text-white transition hover:bg-teal-700"
-                    >
-                      <Video className="h-3.5 w-3.5" />
-                      {isLive ? 'Join Now' : 'Open Room'}
-                    </a>
-                  ) : (
-                    <p className="text-center text-[10px] text-white/30">Jitsi room pending admin setup</p>
-                  )}
+                  <a
+                    href={`https://meet.jit.si/${row.jitsiRoomName || `manas360-group-${row.id}`}#config.prejoinPageEnabled=false`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-teal-600 py-2 text-xs font-bold text-white transition hover:bg-teal-700"
+                  >
+                    <Video className="h-3.5 w-3.5" />
+                    {isLive ? 'Join Now' : 'Open Room'}
+                  </a>
                 </div>
               );
             })}
@@ -370,7 +366,6 @@ export const ProviderPortalPage: React.FC = () => {
               const mode = String(row.sessionMode || '').toUpperCase();
               const joined = Number(row.joinedCount || 0);
               const capacity = Number(row.maxMembers || 0);
-              const hasRoom = Boolean(row.jitsiRoomName);
               const isExpanded = expandedParticipants[row.id] !== undefined;
               const ptList = expandedParticipants[row.id];
               const isLoadingPt = loadingParticipants === row.id;
@@ -407,13 +402,11 @@ export const ProviderPortalPage: React.FC = () => {
 
                     {/* Actions */}
                     <div className="flex flex-wrap items-center gap-2">
-                      {hasRoom && (
-                        <a href={`https://meet.jit.si/${row.jitsiRoomName}`} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 rounded-xl bg-teal-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-teal-700">
-                          <Video className="h-3.5 w-3.5" />
-                          {state === 'LIVE' ? 'Join Now' : 'Open Room'}
-                        </a>
-                      )}
+                      <a href={`https://meet.jit.si/${row.jitsiRoomName || `manas360-group-${row.id}`}#config.prejoinPageEnabled=false`} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 rounded-xl bg-teal-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-teal-700">
+                        <Video className="h-3.5 w-3.5" />
+                        {state === 'LIVE' ? 'Join Now' : 'Open Room'}
+                      </a>
                       <button type="button" onClick={() => void toggleParticipants(row.id)} disabled={isLoadingPt}
                         className="flex items-center gap-1.5 rounded-xl border border-calm-sage/20 bg-white px-3 py-1.5 text-xs font-semibold text-charcoal/70 hover:bg-calm-sage/5 disabled:opacity-50">
                         <Users className="h-3.5 w-3.5" />

@@ -8,6 +8,8 @@ type VideoRoomProps = {
   jitsiJwt?: string | null;
   className?: string;
   onEndCall?: () => void;
+  onConferenceLeft?: () => void;
+  onParticipantJoined?: () => void;
   isTherapist?: boolean;
   aiEngineUrl?: string;
   onTranscriptUpdate?: (transcript: Record<string, unknown>) => void;
@@ -30,7 +32,7 @@ const loadJitsiScript = (domain: string): Promise<void> => {
   });
 };
 
-export default function VideoRoom({ sessionId, roomName, displayName, jitsiJwt, className, onEndCall, isTherapist, aiEngineUrl, onTranscriptUpdate, onGPSUpdate }: VideoRoomProps) {
+export default function VideoRoom({ sessionId, roomName, displayName, jitsiJwt, className, onEndCall, onConferenceLeft, onParticipantJoined, isTherapist, aiEngineUrl, onTranscriptUpdate, onGPSUpdate }: VideoRoomProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const managerRef = useRef<JitsiSessionManager | null>(null);
   const jitsiApiRef = useRef<{ dispose: () => void; addEventListeners?: (listeners: Record<string, () => void>) => void } | null>(null);
@@ -71,17 +73,25 @@ export default function VideoRoom({ sessionId, roomName, displayName, jitsiJwt, 
         if (!containerRef.current) throw new Error('Video container not mounted');
         if (jitsiApiRef.current) return;
 
+        // meet.jit.si is a public server — it does NOT support external JWTs.
+        // Passing a JWT to it activates "authenticated room" mode which shows
+        // a "no moderators" waiting screen. Only pass JWT for JaaS (8x8.vc)
+        // or a custom self-hosted Jitsi that has JWT auth enabled.
+        const isPublicMeetJitsi = domain === 'meet.jit.si';
+        const effectiveJwt = isPublicMeetJitsi ? undefined : (jitsiJwt || undefined);
+
         const manager = new JitsiSessionManager({
           domain,
           roomName,
           container: containerRef.current,
           displayName,
-          jitsiJwt: jitsiJwt || undefined,
+          jitsiJwt: effectiveJwt,
           isTherapist: !!isTherapist,
           sessionId,
           aiEngineUrl,
           onTranscriptUpdate,
           onGPSUpdate,
+          onConferenceLeft,
         });
 
         managerRef.current = manager;
@@ -101,6 +111,9 @@ export default function VideoRoom({ sessionId, roomName, displayName, jitsiJwt, 
             leftEventHandledRef.current = true;
             disposeActiveRoom();
             onEndCall?.();
+          },
+          participantJoined: () => {
+            onParticipantJoined?.();
           },
         });
       } catch (mountError: any) {

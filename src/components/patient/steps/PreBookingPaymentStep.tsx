@@ -1,8 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertCircle, Loader2, Lock } from 'lucide-react';
 import { patientApi } from '../../../api/patient';
+import { useAuth } from '../../../context/AuthContext';
 import { setMarketplaceBookingPending } from '../../../lib/marketplaceBookingPending';
 import type { MarketplaceBookingOptions } from '../CalendarSelection';
+
+const NRI_PROVIDER_MAP: Record<string, string> = {
+  therapist: 'nri-therapist',
+  psychologist: 'nri-psychologist',
+  psychiatrist: 'nri-psychiatrist',
+  coach: 'nri-coach',
+  'clinical-psychologist': 'nri-psychologist',
+};
 
 interface PreBookingPaymentStepProps {
   selectedProviders: Array<{
@@ -40,13 +49,6 @@ interface PreBookingPaymentStepProps {
   onCancel: () => void;
 }
 
-const getNriFixedFeeMinor = (entryType?: string): number | null => {
-  if (entryType === 'nri_psychologist') return 2999 * 100;
-  if (entryType === 'nri_psychiatrist') return 3499 * 100;
-  if (entryType === 'nri_therapist') return 3599 * 100;
-  return null;
-};
-
 const getTimeRange = (hour: number): string => {
   if (hour < 12) return 'morning';
   if (hour < 17) return 'afternoon';
@@ -63,12 +65,47 @@ export default function PreBookingPaymentStep({
   onBack,
   onCancel,
 }: PreBookingPaymentStepProps) {
+  const { user } = useAuth();
+  const isNriUser = Boolean((user as any)?.nriTermsAccepted || (user as any)?.nriDeclared);
+
+  const isVideoAppointment = String(bookingOptions.appointmentType || '').toLowerCase() === 'video';
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fee, setFee] = useState<number>(Math.max(...selectedProviders.map((p) => p.fee), 29900));
 
-  const nriFixedFeeMinor = getNriFixedFeeMinor(presetEntryType);
-  const defaultFee = nriFixedFeeMinor || Math.max(...selectedProviders.map((p) => p.fee), 29900);
-  const [fee, setFee] = useState(defaultFee);
+  useEffect(() => {
+    // Convert presetEntryType (underscore format) to pricing lookup format (hyphen)
+    const baseType = presetEntryType ? presetEntryType.replace(/_/g, '-') : null;
+    // If user is NRI, look up NRI variant of the provider type
+    let pricingType: string | null = null;
+    if (isNriUser && baseType) {
+      pricingType = baseType.startsWith('nri-') ? baseType : (NRI_PROVIDER_MAP[baseType] ?? `nri-${baseType}`);
+    } else {
+      pricingType = baseType;
+    }
+
+    patientApi.getPricing({ mode: isNriUser ? 'nri' : undefined }).then((res: any) => {
+      const data = res?.data ?? res;
+      const rows: any[] = data?.sessionPricing ?? [];
+      let match: any = null;
+      if (pricingType) {
+        match = rows.find((r: any) => String(r.providerType).toLowerCase() === pricingType)
+          ?? rows.find((r: any) => String(r.providerType).toLowerCase().includes(pricingType.replace('nri-', '')));
+      } else if (isNriUser) {
+        match = rows.find((r: any) => String(r.providerType).toLowerCase().startsWith('nri-')) ?? rows[0];
+      } else {
+        match = rows[0];
+      }
+      if (match && Number(match.price) > 0) {
+        const baseMinor = Number(match.price) * 100;
+        // Apply 10% video surcharge when appointment is video
+        const videoSurcharge = Number(data?.videoSurchargePercent ?? 10);
+        setFee(isVideoAppointment ? Math.round(baseMinor * (1 + videoSurcharge / 100)) : baseMinor);
+      }
+    }).catch(() => {});
+  }, [presetEntryType, isNriUser, isVideoAppointment]);
+
   const feeInRupees = fee / 100;
 
   const handlePhonePePayment = async () => {
@@ -95,6 +132,7 @@ export default function PreBookingPaymentStep({
         },
         scheduledAt,
         appointmentType: bookingOptions.appointmentType,
+        providerType: presetEntryType,
       });
 
       const payload = response?.data ?? response;
@@ -208,9 +246,9 @@ export default function PreBookingPaymentStep({
           <p className="text-xs text-charcoal/60 mt-2">
             After payment, your request goes to the marketplace. A provider will be matched and your session confirmed.
           </p>
-          {nriFixedFeeMinor ? (
+          {isNriUser ? (
             <p className="text-xs text-blue-700 mt-2">
-              Indian provider terms: fixed per-session price is applied for this consultation flow.
+              NRI Rate: fixed per-session price is applied for this consultation flow.
             </p>
           ) : null}
         </div>

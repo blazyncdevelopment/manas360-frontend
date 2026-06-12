@@ -890,6 +890,10 @@ export const purchaseProviderLead = async (leadId: string): Promise<ProviderLead
   };
 };
 
+export const scheduleLeadSession = async (leadId: string, scheduledAt: string): Promise<void> => {
+  await http.post(`/v1/leads/${encodeURIComponent(leadId)}/schedule-session`, { scheduledAt });
+};
+
 export interface ProviderCheckoutPayload {
   leadPlanKey: 'free' | 'basic' | 'standard' | 'premium';
   platformCycle: 'monthly' | 'quarterly';

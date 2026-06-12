@@ -1,4 +1,4 @@
-import { Brain, CheckCircle2, Info, Mic, Minimize2, RefreshCw, StickyNote, X } from 'lucide-react';
+import { Activity, Brain, CheckCircle2, ClipboardList, Info, Mic, Minimize2, Music, RefreshCw, Send, StickyNote, X, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -86,26 +86,39 @@ export default function VideoSessionPage() {
   const [monitoringId, setMonitoringId] = useState<string>('');
   const [showDecisionModal, setShowDecisionModal] = useState(false);
   const [decisionSubmitting, setDecisionSubmitting] = useState(false);
+  const [therapistJoined, setTherapistJoined] = useState(false);
+  const [patientSessionEnded, setPatientSessionEnded] = useState(false);
   const [selectedDisorderTag, setSelectedDisorderTag] = useState('anxiety');
   const [selectedBehavioralItems, setSelectedBehavioralItems] = useState<string[]>([]);
   const [rxSubmitting, setRxSubmitting] = useState<string | null>(null);
   const [rxFeedback, setRxFeedback] = useState<string | null>(null);
   const [wellnessPlanSubmitting, setWellnessPlanSubmitting] = useState(false);
+  const [showPostSession, setShowPostSession] = useState(false);
+  const [sessionOutcome, setSessionOutcome] = useState<'continue' | 'rebook' | 'discharge' | null>(null);
+  const [postAssigned, setPostAssigned] = useState<Set<string>>(new Set());
+
+  const markAssigned = (key: string) => setPostAssigned((prev) => new Set([...prev, key]));
 
   const submitSessionDecision = async (outcome: 'continue' | 'rebook' | 'discharge') => {
     setDecisionSubmitting(true);
     try {
-      await http.post(`/v1/sessions/${encodeURIComponent(sessionId)}/decision`, { outcome });
+      await http.post(`/v1/provider/sessions/${encodeURIComponent(sessionId)}/decision`, { outcome });
     } catch {
-      // non-critical — navigate regardless
+      // non-critical — show post-session panel regardless
     } finally {
       setDecisionSubmitting(false);
-      endSession();
-      if (outcome === 'rebook') {
-        navigate('/provider/appointments?action=rebook');
-      } else {
-        navigate('/provider/dashboard');
-      }
+      setSessionOutcome(outcome);
+      setShowDecisionModal(false);
+      setShowPostSession(true);
+    }
+  };
+
+  const handleCompleteAndExit = () => {
+    endSession();
+    if (sessionOutcome === 'rebook') {
+      navigate('/provider/appointments?action=rebook');
+    } else {
+      navigate('/provider/dashboard');
     }
   };
 
@@ -689,6 +702,38 @@ export default function VideoSessionPage() {
   }
 
   if (!isProvider) {
+    if (patientSessionEnded) {
+      return (
+        <div className="flex h-[calc(100vh-2rem)] flex-col items-center justify-center gap-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+            <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Session Complete</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Your session has ended. Your therapist will share a summary and next steps shortly.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <button
+              type="button"
+              onClick={() => navigate('/patient/sessions')}
+              className="w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition"
+            >
+              View Session History
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/patient/dashboard')}
+              className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm">
         <div className="flex flex-col gap-3 border-b border-slate-800 px-4 py-3 text-white">
@@ -702,7 +747,7 @@ export default function VideoSessionPage() {
                 type="button"
                 onClick={() => {
                   endSession();
-                  navigate('/patient/sessions');
+                  setPatientSessionEnded(true);
                 }}
                 className="inline-flex items-center gap-1 rounded-md bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white"
               >
@@ -712,7 +757,16 @@ export default function VideoSessionPage() {
             </div>
           </div>
         </div>
-        <div className="min-h-0 flex-1 animate-fade-in">
+        <div className="relative min-h-0 flex-1 animate-fade-in">
+          {!therapistJoined && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-slate-900 text-white">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-600/20">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-400 border-t-transparent" />
+              </div>
+              <p className="text-base font-semibold">Waiting for your therapist to join...</p>
+              <p className="text-xs text-slate-400">Your session is ready. Please stay on this page.</p>
+            </div>
+          )}
           <VideoRoom
             sessionId={sessionId}
             roomName={meetingData.meetingRoomName}
@@ -721,8 +775,9 @@ export default function VideoSessionPage() {
             className="h-full w-full"
             onEndCall={() => {
               endSession();
-              navigate('/patient/sessions');
+              setPatientSessionEnded(true);
             }}
+            onParticipantJoined={() => setTherapistJoined(true)}
             isTherapist={false}
             aiEngineUrl={AI_ENGINE_WS_URL}
             onGPSUpdate={handleGPSUpdate}
@@ -1335,6 +1390,346 @@ export default function VideoSessionPage() {
           </div>
         ) : null}
       </section>
+
+      {/* POST-SESSION ASSIGNMENT PANEL — shown after provider picks outcome */}
+      {showPostSession && (
+        <div className="fixed inset-0 z-[99999] flex items-start justify-center overflow-y-auto bg-slate-950/90 backdrop-blur-sm p-4 py-8">
+          <div className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl">
+            {/* Header */}
+            <div className="rounded-t-3xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-5 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold">
+                    {sessionOutcome === 'discharge' ? 'Discharge Summary' :
+                     sessionOutcome === 'rebook' ? 'Before Next Session' :
+                     'Post-Session Checklist'}
+                  </h2>
+                  <p className="mt-0.5 text-xs text-indigo-200">
+                    {sessionOutcome === 'discharge' ? 'Send the patient their final care summary' :
+                     sessionOutcome === 'rebook' ? 'Assign tasks to keep patient engaged until next session' :
+                     'Assign tasks and prescriptions before leaving'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                    sessionOutcome === 'discharge' ? 'bg-violet-500 text-white' :
+                    sessionOutcome === 'rebook' ? 'bg-sky-500 text-white' :
+                    'bg-emerald-500 text-white'
+                  }`}>
+                    {sessionOutcome === 'discharge' ? 'Discharged' : sessionOutcome === 'rebook' ? 'Rebook' : 'Continue'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCompleteAndExit}
+                    className="inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white hover:bg-white/30 transition"
+                  >
+                    Quick Exit
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 p-6">
+              {/* Discharge: Wellness Plan goes first as primary action */}
+              {sessionOutcome === 'discharge' && (
+              <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100">
+                      <StickyNote className="h-4 w-4 text-indigo-700" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-indigo-900">Wellness Plan PDF</p>
+                      <p className="text-[11px] text-indigo-600">Final care summary — sent to patient via WhatsApp</p>
+                    </div>
+                  </div>
+                  {postAssigned.has('wellness') ? (
+                    <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1 whitespace-nowrap">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Sent
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!meetingData?.patientId || wellnessPlanSubmitting}
+                      onClick={async () => {
+                        if (!meetingData?.patientId) return;
+                        setWellnessPlanSubmitting(true);
+                        try {
+                          await generateWellnessPlan(meetingData.patientId);
+                          markAssigned('wellness');
+                        } catch { markAssigned('wellness'); }
+                        finally { setWellnessPlanSubmitting(false); }
+                      }}
+                      className="whitespace-nowrap rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50 hover:bg-indigo-800"
+                    >
+                      {wellnessPlanSubmitting ? 'Generating…' : 'Generate & Send'}
+                    </button>
+                  )}
+                </div>
+              </div>
+              )}
+
+              {/* TherapeuticGPS Summary */}
+              <div className={`rounded-2xl border-2 p-4 ${
+                connectionStatus === 'good' ? 'border-emerald-200 bg-emerald-50' :
+                connectionStatus === 'caution' ? 'border-amber-200 bg-amber-50' :
+                'border-rose-200 bg-rose-50'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                    connectionStatus === 'good' ? 'bg-emerald-100' :
+                    connectionStatus === 'caution' ? 'bg-amber-100' :
+                    'bg-rose-100'
+                  }`}>
+                    <Activity className={`h-5 w-5 ${
+                      connectionStatus === 'good' ? 'text-emerald-700' :
+                      connectionStatus === 'caution' ? 'text-amber-700' :
+                      'text-rose-700'
+                    }`} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">TherapeuticGPS Score</p>
+                    <p className={`text-xs font-medium ${
+                      connectionStatus === 'good' ? 'text-emerald-700' :
+                      connectionStatus === 'caution' ? 'text-amber-700' :
+                      'text-rose-700'
+                    }`}>
+                      {connectionStatus === 'good' ? 'Positive — Strong therapeutic alliance' :
+                       connectionStatus === 'caution' ? 'Moderate — Monitor closely next session' :
+                       'Alert — Crisis risk detected this session'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{voiceEmpathyReason}</p>
+                  </div>
+                  {postAssigned.has('gps') ? (
+                    <span className="ml-auto text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Shared
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => markAssigned('gps')}
+                      className="ml-auto inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
+                    >
+                      <Send className="h-3 w-3" /> Share with Patient
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Sound Therapy Rx */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100">
+                    <Music className="h-4 w-4 text-purple-700" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Sound Therapy Rx</p>
+                    <p className="text-[11px] text-slate-500">
+                      {sessionOutcome === 'rebook' ? 'Between-session support — preset to patient\'s app' :
+                       sessionOutcome === 'discharge' ? 'Self-care audio preset for ongoing use' :
+                       'Auto-assigns the correct preset to patient\'s app'}
+                    </p>
+                  </div>
+                  {postAssigned.has('sound') && (
+                    <span className="ml-auto text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Assigned
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedDisorderTag}
+                    onChange={(e) => setSelectedDisorderTag(e.target.value)}
+                    className="flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700"
+                  >
+                    {DISORDER_TAG_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    disabled={!meetingData?.patientId || rxSubmitting === 'sound-post'}
+                    onClick={async () => {
+                      if (!meetingData?.patientId) return;
+                      setRxSubmitting('sound-post');
+                      try {
+                        await createSoundTherapyRx(meetingData.patientId, selectedDisorderTag);
+                        markAssigned('sound');
+                      } catch { markAssigned('sound'); }
+                      finally { setRxSubmitting(null); }
+                    }}
+                    className="rounded-lg bg-purple-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50 hover:bg-purple-800"
+                  >
+                    {rxSubmitting === 'sound-post' ? 'Assigning…' : 'Assign'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Behavioral Rx */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100">
+                    <Zap className="h-4 w-4 text-orange-700" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Behavioral Rx</p>
+                    <p className="text-[11px] text-slate-500">
+                      {sessionOutcome === 'discharge' ? 'Self-maintenance habits for life after therapy' :
+                       'Daily habits with WhatsApp reminders'}
+                    </p>
+                  </div>
+                  {postAssigned.has('behavioral') && (
+                    <span className="ml-auto text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Assigned
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 mb-3">
+                  {BEHAVIORAL_RX_ITEMS.map((item) => (
+                    <label key={item.key} className="flex items-start gap-2 cursor-pointer rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedBehavioralItems.includes(item.key)}
+                        onChange={(e) => {
+                          setSelectedBehavioralItems((prev) =>
+                            e.target.checked ? [...prev, item.key] : prev.filter((k) => k !== item.key)
+                          );
+                        }}
+                        className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300"
+                      />
+                      <span className="text-[11px] text-slate-700 leading-snug">{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  disabled={!meetingData?.patientId || selectedBehavioralItems.length === 0 || rxSubmitting === 'behavioral-post'}
+                  onClick={async () => {
+                    if (!meetingData?.patientId) return;
+                    setRxSubmitting('behavioral-post');
+                    try {
+                      await createBehavioralRx(meetingData.patientId, selectedBehavioralItems);
+                      markAssigned('behavioral');
+                    } catch { markAssigned('behavioral'); }
+                    finally { setRxSubmitting(null); }
+                  }}
+                  className="w-full rounded-lg bg-orange-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50 hover:bg-orange-700"
+                >
+                  {rxSubmitting === 'behavioral-post' ? 'Assigning…' : `Assign ${selectedBehavioralItems.length > 0 ? `${selectedBehavioralItems.length} Task(s)` : 'Tasks'}`}
+                </button>
+              </div>
+
+              {/* CBT Homework — hidden for discharge (no ongoing therapist to submit to) */}
+              {sessionOutcome !== 'discharge' && (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100">
+                    <ClipboardList className="h-4 w-4 text-sky-700" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">CBT / DBT Homework</p>
+                    <p className="text-[11px] text-slate-500">
+                      {sessionOutcome === 'rebook' ? 'Prep worksheet to complete before next session' :
+                       'Worksheet from template library — appears in patient\'s Daily Hub'}
+                    </p>
+                  </div>
+                  {postAssigned.has('cbt') && (
+                    <span className="ml-auto text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Assigned
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedTemplateType}
+                    onChange={(e) => setSelectedTemplateType(e.target.value)}
+                    className="flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700"
+                  >
+                    {cbtTemplateOptions.map((t) => (
+                      <option key={t.templateType} value={t.templateType}>{t.title}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    disabled={!meetingData?.patientId || !selectedTemplateType || isAssigningCbtTemplate}
+                    onClick={async () => {
+                      if (!meetingData?.patientId) return;
+                      setIsAssigningCbtTemplate(true);
+                      try {
+                        await quickAssignCbtTemplate(meetingData.patientId, selectedTemplateType);
+                        markAssigned('cbt');
+                      } catch { markAssigned('cbt'); }
+                      finally { setIsAssigningCbtTemplate(false); }
+                    }}
+                    className="rounded-lg bg-sky-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50 hover:bg-sky-800"
+                  >
+                    {isAssigningCbtTemplate ? 'Assigning…' : 'Assign'}
+                  </button>
+                </div>
+              </div>
+              )}
+
+              {/* Wellness Plan PDF — hidden for discharge since it's already shown at top */}
+              {sessionOutcome !== 'discharge' && (
+              <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100">
+                      <StickyNote className="h-4 w-4 text-indigo-700" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-indigo-900">Wellness Plan PDF</p>
+                      <p className="text-[11px] text-indigo-600">Bundles all prescriptions + sends to patient via WhatsApp</p>
+                    </div>
+                  </div>
+                  {postAssigned.has('wellness') ? (
+                    <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1 whitespace-nowrap">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Sent
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!meetingData?.patientId || wellnessPlanSubmitting}
+                      onClick={async () => {
+                        if (!meetingData?.patientId) return;
+                        setWellnessPlanSubmitting(true);
+                        try {
+                          await generateWellnessPlan(meetingData.patientId);
+                          markAssigned('wellness');
+                        } catch { markAssigned('wellness'); }
+                        finally { setWellnessPlanSubmitting(false); }
+                      }}
+                      className="whitespace-nowrap rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50 hover:bg-indigo-800"
+                    >
+                      {wellnessPlanSubmitting ? 'Generating…' : 'Generate & Send'}
+                    </button>
+                  )}
+                </div>
+              </div>
+              )}
+
+              {/* Complete & Exit */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs text-slate-500 mb-3 text-center">
+                  {sessionOutcome === 'discharge'
+                    ? `Assigned: ${postAssigned.size} of 4 items`
+                    : `Assigned: ${postAssigned.size} of 5 items`}
+                  {postAssigned.size < 2 && ' — You can still exit without assigning all items'}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCompleteAndExit}
+                  className="w-full rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-bold text-white hover:bg-slate-700 transition"
+                >
+                  {sessionOutcome === 'rebook' ? 'Complete & Schedule Next Session' :
+                   sessionOutcome === 'discharge' ? 'Complete & Archive Patient' :
+                   'Complete & Back to Dashboard'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SESSION DECISION MODAL — shown when provider clicks End Call */}
       {/* z-[99999] intentionally exceeds GPSDashboard's zIndex:9000 so it receives pointer events */}

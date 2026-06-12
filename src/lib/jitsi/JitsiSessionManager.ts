@@ -66,6 +66,7 @@ export interface JitsiSessionManagerOptions {
   onTranscriptUpdate?: (transcript: Record<string, unknown>) => void;
   onCrisisAlert?: (alert: Record<string, unknown>) => void;
   onConnectionState?: (connected: boolean) => void;
+  onConferenceLeft?: () => void;
 }
 
 export class JitsiSessionManager {
@@ -102,10 +103,17 @@ export class JitsiSessionManager {
       height: '100%',
       configOverwrite: {
         prejoinPageEnabled: false,
+        requireDisplayName: false,
         startWithAudioMuted: false,
         startWithVideoMuted: false,
         disableDeepLinking: true,
         disableAudioOutputSelect: true,
+        enableNoisyMicDetection: false,
+        disableThirdPartyRequests: false,
+        // Disable lobby / moderator-waiting screen for direct join
+        enableLobbyChat: false,
+        hideLobbyButton: true,
+        membersOnly: false,
       },
       interfaceConfigOverwrite: {
         SHOW_JITSI_WATERMARK: false,
@@ -120,7 +128,10 @@ export class JitsiSessionManager {
     }
 
     this.api.addEventListeners({
-      videoConferenceLeft: () => this.destroy(),
+      videoConferenceLeft: () => {
+        this.opts.onConferenceLeft?.();
+        this.destroy();
+      },
     });
   }
 
