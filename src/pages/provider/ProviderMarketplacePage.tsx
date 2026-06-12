@@ -551,63 +551,96 @@ export default function ProviderMarketplacePage() {
                 <p className="text-slate-400 text-sm">When new patients are matched to your profile, they appear here. Buy marketplace leads for additional volume.</p>
               </div>
             ) : (
-              purchasedLeads.map((lead: any) => {
-                const isScheduled = String(lead.status || '').toUpperCase() === 'ACCEPTED';
-                return (
-                  <div key={lead.id} className="bg-white rounded-2xl border border-slate-200 p-5 flex items-start justify-between gap-4">
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs font-black uppercase px-2 py-0.5 rounded-full ${isScheduled ? 'bg-green-100 text-green-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                          {isScheduled ? 'Scheduled' : 'Purchased'}
-                        </span>
-                        {lead.tier && <span className="text-xs text-slate-500 font-semibold">{lead.tier}</span>}
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                {/* Table header */}
+                <div className="hidden sm:grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-x-4 px-4 py-2 bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <span>Type</span>
+                  <span>Patient</span>
+                  <span>Scores</span>
+                  <span>Match</span>
+                  <span>Date</span>
+                  <span></span>
+                </div>
+                {purchasedLeads.map((lead: any, idx: number) => {
+                  const isScheduled = String(lead.status || '').toUpperCase() === 'ACCEPTED';
+                  const tierKey = String(lead.leadType || lead.tier || 'cold').toLowerCase();
+                  const tc = typeColors[tierKey] || typeColors.cold;
+                  const confirmedAt = confirmedSessions[lead.id];
+                  return (
+                    <div
+                      key={lead.id}
+                      className={`grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_auto_auto_auto] gap-x-4 gap-y-1 px-4 py-3 items-center ${idx !== 0 ? 'border-t border-slate-100' : ''}`}
+                    >
+                      {/* Type badge */}
+                      <span className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-black uppercase ${tc.bg} ${tc.text} whitespace-nowrap`}>
+                        {tc.emoji} {tc.label}
+                      </span>
+
+                      {/* Patient info — single line */}
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{lead.patientName || 'Patient'}</p>
+                        <div className="flex flex-wrap gap-x-2 mt-0.5">
+                          {(lead.issue || []).slice(0, 3).map((c: string) => (
+                            <span key={c} className="text-[10px] text-teal-700 bg-teal-50 rounded-full px-1.5 py-0 capitalize">{c.replace(/_/g, ' ')}</span>
+                          ))}
+                          {(lead.issue || []).length === 0 && <span className="text-[10px] text-slate-400">No concerns listed</span>}
+                        </div>
                       </div>
-                      <LeadPatientPreview lead={lead} />
-                      <p className="text-xs text-slate-400">Match Score: {lead.matchScore ?? '—'}</p>
-                      <p className="text-xs text-slate-400">Purchased: {new Date(lead.purchasedAt || lead.createdAt).toLocaleDateString('en-IN')}</p>
-                      {isScheduled && (
-                        <p className="text-xs font-semibold text-green-700 mt-1">
-                          {confirmedSessions[lead.id]
-                            ? `Scheduled: ${new Date(confirmedSessions[lead.id]).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
-                            : 'Session scheduled — check your calendar.'}
-                        </p>
+
+                      {/* PHQ / GAD scores */}
+                      <div className="flex gap-2 text-[11px] text-slate-500 whitespace-nowrap">
+                        <span>PHQ <strong className="text-slate-800">{lead.phq9Score ?? '—'}</strong></span>
+                        <span>GAD <strong className="text-slate-800">{lead.gad7Score ?? '—'}</strong></span>
+                        {lead.primaryLanguage && <span className="text-slate-400">{lead.primaryLanguage}</span>}
+                      </div>
+
+                      {/* Match score */}
+                      <span className="text-[11px] text-slate-500 whitespace-nowrap">
+                        {lead.matchScore != null ? <strong className="text-slate-800">{lead.matchScore}</strong> : '—'}
+                      </span>
+
+                      {/* Date + status */}
+                      <div className="text-[10px] text-slate-400 whitespace-nowrap">
+                        <p>{new Date(lead.purchasedAt || lead.createdAt).toLocaleDateString('en-IN')}</p>
+                        {isScheduled && (
+                          <p className="text-green-600 font-semibold">
+                            {confirmedAt
+                              ? new Date(confirmedAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                              : 'Scheduled ✓'}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Action */}
+                      {!isScheduled ? (
+                        <button
+                          onClick={() => {
+                            const preferred = lead.scheduledAt;
+                            if (preferred) {
+                              const dt = new Date(preferred);
+                              if (!Number.isNaN(dt.getTime()) && dt > new Date()) {
+                                setScheduleDate(dt.toISOString().slice(0, 10));
+                                setScheduleTime(`${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`);
+                              } else { setScheduleDate(''); setScheduleTime('10:00'); }
+                            } else { setScheduleDate(''); setScheduleTime('10:00'); }
+                            setScheduleModal({ lead });
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-teal-600 text-white text-[11px] font-black hover:bg-teal-700 transition whitespace-nowrap"
+                        >
+                          Schedule →
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => navigate(lead.patientId ? `/provider/patient/${lead.patientId}/overview` : '/provider/patients')}
+                          className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-[11px] font-black hover:bg-green-700 transition whitespace-nowrap"
+                        >
+                          View Patient →
+                        </button>
                       )}
                     </div>
-                    {!isScheduled ? (
-                      <button
-                        onClick={() => {
-                          // Pre-fill with patient's preferred time if available
-                          const preferred = lead.scheduledAt;
-                          if (preferred) {
-                            const dt = new Date(preferred);
-                            if (!Number.isNaN(dt.getTime()) && dt > new Date()) {
-                              setScheduleDate(dt.toISOString().slice(0, 10));
-                              setScheduleTime(`${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`);
-                            } else {
-                              setScheduleDate('');
-                              setScheduleTime('10:00');
-                            }
-                          } else {
-                            setScheduleDate('');
-                            setScheduleTime('10:00');
-                          }
-                          setScheduleModal({ lead });
-                        }}
-                        className="px-4 py-2 rounded-xl bg-teal-600 text-white text-xs font-black hover:bg-teal-700 transition whitespace-nowrap"
-                      >
-                        Schedule Session →
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => navigate(lead.patientId ? `/provider/patient/${lead.patientId}/overview` : '/provider/patients')}
-                        className="px-4 py-2 rounded-xl bg-green-600 text-white text-xs font-black hover:bg-green-700 transition whitespace-nowrap"
-                      >
-                        View Patient →
-                      </button>
-                    )}
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
             )}
           </div>
         )}

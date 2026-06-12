@@ -61,6 +61,12 @@ export interface JitsiSessionManagerOptions {
   monitoringId?: string;
   /** AI Engine WebSocket URL */
   aiEngineUrl?: string;
+  /**
+   * When true (group sessions): enables Jitsi Lobby.
+   * Provider (moderator) sees Admit/Deny for each patient.
+   * Patients wait in lobby until admitted.
+   */
+  lobbyEnabled?: boolean;
   /** Callbacks */
   onGPSUpdate?: (metrics: Record<string, unknown>) => void;
   onTranscriptUpdate?: (transcript: Record<string, unknown>) => void;
@@ -92,7 +98,7 @@ export class JitsiSessionManager {
       );
     }
 
-    const { domain, roomName, container, jitsiJwt, displayName, isTherapist } = this.opts;
+    const { domain, roomName, container, jitsiJwt, displayName, isTherapist, lobbyEnabled } = this.opts;
 
     this.api = new jitsiCtor(domain, {
       roomName,
@@ -110,9 +116,9 @@ export class JitsiSessionManager {
         disableAudioOutputSelect: true,
         enableNoisyMicDetection: false,
         disableThirdPartyRequests: false,
-        // Disable lobby / moderator-waiting screen for direct join
-        enableLobbyChat: false,
-        hideLobbyButton: true,
+        // Lobby is enabled for group sessions only; disabled for 1-1 sessions
+        enableLobbyChat: lobbyEnabled ?? false,
+        hideLobbyButton: !lobbyEnabled,
         membersOnly: false,
       },
       interfaceConfigOverwrite: {
@@ -131,6 +137,12 @@ export class JitsiSessionManager {
       videoConferenceLeft: () => {
         this.opts.onConferenceLeft?.();
         this.destroy();
+      },
+      // When the moderator (provider) joins a group session, activate the lobby
+      videoConferenceJoined: () => {
+        if (lobbyEnabled && isTherapist) {
+          this.api?.executeCommand('toggleLobby', true);
+        }
       },
     });
   }

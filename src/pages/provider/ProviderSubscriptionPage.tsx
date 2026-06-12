@@ -160,6 +160,39 @@ export default function ProviderSubscriptionPage() {
           )}
         </section>
 
+        {/* Marketplace Lead Pricing Reference */}
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900 mb-1">Marketplace Lead Pricing</h2>
+          <p className="text-xs text-slate-500 mb-4">Buy additional leads beyond your weekly plan allocation. First-come, first-served.</p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4">
+              <span className="text-2xl">🔥</span>
+              <div>
+                <p className="text-sm font-black text-red-700">Hot Lead</p>
+                <p className="text-xl font-black text-slate-900">₹299</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Score 90–100 · ~70% conversion</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50 p-4">
+              <span className="text-2xl">🌟</span>
+              <div>
+                <p className="text-sm font-black text-amber-700">Warm Lead</p>
+                <p className="text-xl font-black text-slate-900">₹199</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Score 70–89 · ~50% conversion</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-4">
+              <span className="text-2xl">❄️</span>
+              <div>
+                <p className="text-sm font-black text-blue-700">Cold Lead</p>
+                <p className="text-xl font-black text-slate-900">₹99</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Score 50–69 · ~25% conversion</p>
+              </div>
+            </div>
+          </div>
+          <p className="mt-3 text-[11px] text-slate-400">Standard plan gets 10% off · Premium plan gets 20% off on all marketplace purchases. Your weekly subscription leads are included at no extra charge.</p>
+        </section>
+
         {/* Step 2: Lead Growth Plans */}
         <section className={`space-y-8 ${!canChoosePlan ? 'opacity-50' : ''}`}>
           <div className="relative">

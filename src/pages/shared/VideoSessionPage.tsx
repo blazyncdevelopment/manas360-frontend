@@ -17,8 +17,7 @@ import {
 } from '../../api/provider';
 import { type AiClinicalSummary } from '../../api/therapist.api';
 import { generateMeetingLink, type MeetingLinkResponse } from '../../api/videoSession';
-import { AudioExtractor } from '../../lib/jitsi/AudioExtractor';
-import { AIEngineClient } from '../../lib/jitsi/AIEngineClient';
+import VideoRoom, { type VideoRoomHandle } from '../../components/jitsi/VideoRoom';
 import { StatusLight, type ConnectionStatus } from '../../components/shared/StatusLight';
 import GPSDashboard from '../../components/therapist/GPSDashboard';
 import useAuthToken from '../../hooks/useAuthToken';
@@ -87,8 +86,9 @@ export default function VideoSessionPage() {
   const [monitoringId, setMonitoringId] = useState<string>('');
   const [showDecisionModal, setShowDecisionModal] = useState(false);
   const [decisionSubmitting, setDecisionSubmitting] = useState(false);
-  const [therapistJoined, setTherapistJoined] = useState(false);
   const [patientSessionEnded, setPatientSessionEnded] = useState(false);
+  const [sessionStarted, setSessionStarted] = useState(false);
+  const [canStartSession, setCanStartSession] = useState(false);
   const [selectedDisorderTag, setSelectedDisorderTag] = useState('anxiety');
   const [selectedBehavioralItems, setSelectedBehavioralItems] = useState<string[]>([]);
   const [rxSubmitting, setRxSubmitting] = useState<string | null>(null);
@@ -102,11 +102,20 @@ export default function VideoSessionPage() {
 
   const submitSessionDecision = async (outcome: 'continue' | 'rebook' | 'discharge') => {
     setDecisionSubmitting(true);
+    // Calculate duration in seconds from when provider joined the conference
+    const durationSeconds = conferenceJoinedAtRef.current
+      ? Math.floor((Date.now() - conferenceJoinedAtRef.current) / 1000)
+      : null;
     try {
-      await http.post(`/v1/provider/sessions/${encodeURIComponent(sessionId)}/decision`, { outcome });
+      await http.post(`/v1/provider/sessions/${encodeURIComponent(sessionId)}/decision`, {
+        outcome,
+        ...(durationSeconds !== null ? { durationSeconds } : {}),
+      });
     } catch {
       // non-critical — show post-session panel regardless
     } finally {
+      // End the Jitsi conference for all participants (kicks patient out too)
+      videoRoomRef.current?.endConference();
       setDecisionSubmitting(false);
       setSessionOutcome(outcome);
       setShowDecisionModal(false);
@@ -125,7 +134,8 @@ export default function VideoSessionPage() {
 
   const { token: accessToken } = useAuthToken();
 
-  const localMicRef = useRef<{ extractor: AudioExtractor; client: AIEngineClient; stream: MediaStream } | null>(null);
+  const videoRoomRef = useRef<VideoRoomHandle>(null);
+  const conferenceJoinedAtRef = useRef<number | null>(null);
   const saveInFlightRef = useRef(false);
   const lastSavedPayloadRef = useRef('');
   const savedIndicatorTimerRef = useRef<number | null>(null);
@@ -335,36 +345,6 @@ export default function VideoSessionPage() {
     });
   }, []);
 
-  // Local mic GPS: captures provider's mic for TherapeuticGPS when using Google Meet
-  useEffect(() => {
-    if (!isProvider || !AI_ENGINE_WS_URL || !sessionId || !meetingData) return;
-
-    let cancelled = false;
-    const start = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
-        const track = stream.getAudioTracks()[0];
-        const client = new AIEngineClient({ url: AI_ENGINE_WS_URL, sessionId, userRole: 'therapist' });
-        client.onGPSUpdate(handleGPSUpdate);
-        client.onTranscriptUpdate(handleTranscriptUpdate);
-        client.connect();
-        const extractor = new AudioExtractor(track);
-        extractor.start((chunk) => client.sendAudioChunk(chunk));
-        localMicRef.current = { extractor, client, stream };
-      } catch {
-        // Mic denied — GPS won't work, session continues
-      }
-    };
-    void start();
-    return () => {
-      cancelled = true;
-      localMicRef.current?.extractor.stop();
-      localMicRef.current?.client.disconnect();
-      localMicRef.current?.stream.getTracks().forEach((t) => t.stop());
-      localMicRef.current = null;
-    };
-  }, [isProvider, sessionId, meetingData, handleGPSUpdate, handleTranscriptUpdate]);
 
   useEffect(() => {
     if (!voiceMessagesContainerRef.current) return;
@@ -790,33 +770,19 @@ export default function VideoSessionPage() {
             </div>
           </div>
         </div>
-        <div className="relative min-h-0 flex-1 animate-fade-in flex flex-col items-center justify-center gap-6 bg-slate-900 p-6">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center w-full max-w-sm">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#1a73e8]">
-              <Brain className="h-8 w-8 text-white" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-1">Your session room is ready</h3>
-            <p className="text-sm text-slate-400 mb-5">Click below to join the video call with your therapist.</p>
-            {meetingData.googleMeetLink ? (
-              <a
-                href={meetingData.googleMeetLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl bg-[#1a73e8] px-5 py-3 text-sm font-bold text-white hover:bg-[#1558b0] transition"
-              >
-                <Activity className="h-4 w-4" /> Join with Google Meet
-              </a>
-            ) : (
-              <p className="text-xs text-slate-500">Meeting link not ready yet — please refresh.</p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => { endSession(); setPatientSessionEnded(true); }}
-            className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700"
-          >
-            <X className="h-3.5 w-3.5" /> End Session
-          </button>
+        <div className="relative min-h-0 flex-1 animate-fade-in">
+          <VideoRoom
+            sessionId={sessionId}
+            roomName={meetingData.meetingRoomName}
+            displayName={displayName}
+            jitsiJwt={meetingData.jitsiJwt}
+            className="h-full w-full"
+            onEndCall={() => { endSession(); setPatientSessionEnded(true); }}
+            isTherapist={false}
+            aiEngineUrl={AI_ENGINE_WS_URL}
+            onGPSUpdate={handleGPSUpdate}
+            onTranscriptUpdate={handleTranscriptUpdate}
+          />
         </div>
 
         {connectionStatus === 'poor' && !crisisModalDismissed ? (
@@ -871,6 +837,25 @@ export default function VideoSessionPage() {
                 <Minimize2 className="h-3.5 w-3.5" />
                 Open Dashboard (PiP)
               </button>
+              {isProvider && canStartSession && !sessionStarted && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    conferenceJoinedAtRef.current = Date.now();
+                    setSessionStarted(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white shadow-lg shadow-emerald-900/40 animate-pulse"
+                >
+                  <Activity className="h-3.5 w-3.5" />
+                  Start Session
+                </button>
+              )}
+              {isProvider && sessionStarted && (
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600/30 border border-emerald-500/50 px-2.5 py-1.5 text-xs font-semibold text-emerald-300">
+                  <Activity className="h-3.5 w-3.5" />
+                  Session Active
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => setShowDecisionModal(true)}
@@ -882,32 +867,21 @@ export default function VideoSessionPage() {
             </div>
           </div>
         </div>
-        <div className="min-h-0 flex-1 flex flex-col items-center justify-center gap-5 bg-slate-900 p-6">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center w-full max-w-sm">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#1a73e8]">
-              <Activity className="h-8 w-8 text-white" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-1">Join Session Room</h3>
-            <p className="text-sm text-slate-400 mb-5">
-              Open Google Meet in a new tab. Your GPS dashboard here stays active while you're in the call.
-            </p>
-            {meetingData.googleMeetLink ? (
-              <a
-                href={meetingData.googleMeetLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl bg-[#1a73e8] px-5 py-3 text-sm font-bold text-white hover:bg-[#1558b0] transition"
-              >
-                <Brain className="h-4 w-4" /> Join with Google Meet
-              </a>
-            ) : (
-              <p className="text-xs text-slate-500">Meeting link not ready — please refresh.</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-4 py-2">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
-            <span className="text-xs text-green-300 font-medium">GPS analysis active via microphone</span>
-          </div>
+        <div className="min-h-0 flex-1">
+          <VideoRoom
+            ref={videoRoomRef}
+            sessionId={sessionId}
+            roomName={meetingData.meetingRoomName}
+            displayName={displayName}
+            jitsiJwt={meetingData.jitsiJwt}
+            className="h-full w-full"
+            onEndCall={() => setShowDecisionModal(true)}
+            onConferenceJoined={() => { if (!sessionStarted) setCanStartSession(true); }}
+            isTherapist={isProvider}
+            aiEngineUrl={AI_ENGINE_WS_URL}
+            onGPSUpdate={handleGPSUpdate}
+            onTranscriptUpdate={handleTranscriptUpdate}
+          />
         </div>
       </section>
 

@@ -4,7 +4,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { groupTherapyApi } from '../../api/groupTherapy';
 import { patientApi } from '../../api/patient';
 import { useAuth } from '../../context/AuthContext';
-import { Clock, Globe, Users, AlertCircle, ChevronRight } from 'lucide-react';
+import { Clock, Globe, Users, AlertCircle, ChevronRight, KeyRound, Copy } from 'lucide-react';
 
 type ComputedState = 'LIVE' | 'NEXT' | 'TODAY' | 'UPCOMING' | 'FULL' | 'EXPIRED';
 
@@ -136,9 +136,12 @@ export default function GroupTherapySessionsPage() {
   const isPublicPath = location.pathname === '/group-therapy';
   const [publicSessions, setPublicSessions] = useState<any[]>([]);
   const [privateInvites, setPrivateInvites] = useState<any[]>([]);
+  const [myEnrollments, setMyEnrollments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [nowTs, setNowTs] = useState<number>(Date.now());
+  const [joinCodeInput, setJoinCodeInput] = useState('');
+  const [joiningCode, setJoiningCode] = useState(false);
 
   const tryCompleteGroupTherapyTask = async () => {
     try {
@@ -157,12 +160,14 @@ export default function GroupTherapySessionsPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [sessions, invites] = await Promise.all([
+      const [sessions, invites, enrollments] = await Promise.all([
         groupTherapyApi.listPublicSessions(),
         isAuthenticated ? groupTherapyApi.listMyPrivateInvites() : Promise.resolve({ items: [] }),
+        isAuthenticated ? groupTherapyApi.listMyEnrollments() : Promise.resolve({ items: [] }),
       ]);
       setPublicSessions(Array.isArray(sessions.items) ? sessions.items : []);
       setPrivateInvites(Array.isArray(invites.items) ? invites.items : []);
+      setMyEnrollments(Array.isArray(enrollments.items) ? enrollments.items : []);
       if (isAuthenticated) void tryCompleteGroupTherapyTask();
     } catch {
       setPublicSessions([]);
@@ -191,6 +196,30 @@ export default function GroupTherapySessionsPage() {
       window.location.href = result.redirectUrl;
     } catch (error: any) {
       toast.error(error?.response?.data?.message || error?.message || 'Unable to start payment');
+    }
+  };
+
+  const handleJoinByCode = async () => {
+    const code = joinCodeInput.trim().toUpperCase();
+    if (!code) return;
+    setJoiningCode(true);
+    try {
+      const session = await groupTherapyApi.verifyJoinCode(code);
+      toast.success(`Joining: ${session.title}`);
+      const jitsiUrl = session.jitsiRoomName
+        ? `https://8x8.vc/vpaas-magic-cookie-dc9db3d3a14f4a24b9a5e20a9d0e7f8b/${session.jitsiRoomName}#config.prejoinPageEnabled=false`
+        : session.googleMeetLink || null;
+      if (jitsiUrl) {
+        window.open(jitsiUrl, '_blank');
+      } else {
+        toast('Session video link not set. Please contact support.');
+      }
+      setJoinCodeInput('');
+      void load();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || 'Invalid or already used code');
+    } finally {
+      setJoiningCode(false);
     }
   };
 
@@ -340,6 +369,73 @@ export default function GroupTherapySessionsPage() {
               </div>
             </div>
           ))}
+        </section>
+      )}
+
+      {/* Join by code + my enrollments */}
+      {isAuthenticated && (
+        <section className="space-y-4">
+          {/* Enter join code */}
+          <div className="flex items-center gap-2 rounded-2xl border border-teal-200 bg-teal-50/60 p-4">
+            <KeyRound className="h-5 w-5 text-teal-600 flex-shrink-0" />
+            <input
+              type="text"
+              value={joinCodeInput}
+              onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+              onKeyDown={(e) => e.key === 'Enter' && void handleJoinByCode()}
+              placeholder="Enter your join code (e.g. ABC12345)"
+              maxLength={8}
+              className="flex-1 min-w-0 bg-transparent text-sm font-mono font-bold text-teal-800 placeholder:font-normal placeholder:text-teal-400 outline-none tracking-widest"
+            />
+            <button
+              onClick={() => void handleJoinByCode()}
+              disabled={joiningCode || joinCodeInput.trim().length < 4}
+              className="rounded-xl bg-teal-600 px-4 py-2 text-xs font-black text-white hover:bg-teal-700 disabled:opacity-50 transition"
+            >
+              {joiningCode ? 'Joining...' : 'Join →'}
+            </button>
+          </div>
+
+          {/* My enrolled sessions with codes */}
+          {myEnrollments.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-black uppercase tracking-widest text-slate-400">My Enrolled Sessions</p>
+              {myEnrollments.map((e: any) => {
+                const isPaid = e.enrollmentStatus === 'PAID' || e.enrollmentStatus === 'JOINED';
+                const schedDate = e.scheduledAt
+                  ? new Date(e.scheduledAt).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                  : '—';
+                return (
+                  <div key={e.enrollmentId} className="flex flex-wrap items-center gap-3 rounded-2xl border border-calm-sage/20 bg-white p-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-charcoal truncate">{e.title || 'Group Session'}</p>
+                      <p className="text-xs text-charcoal/55 mt-0.5">{schedDate} · {e.hostName}</p>
+                    </div>
+                    {e.joinCode && isPaid && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-black text-teal-700 bg-teal-50 border border-teal-200 rounded-lg px-2.5 py-1 tracking-widest">
+                          {e.joinCodeUsed ? '••••••••' : e.joinCode}
+                        </span>
+                        {!e.joinCodeUsed && (
+                          <button
+                            onClick={() => { navigator.clipboard.writeText(e.joinCode); toast.success('Code copied!'); }}
+                            className="text-teal-500 hover:text-teal-700 transition"
+                            title="Copy code"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {e.joinCodeUsed && <span className="text-[10px] text-green-600 font-semibold">Used ✓</span>}
+                      </div>
+                    )}
+                    {!isPaid && (
+                      <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">Payment pending</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
       )}
 

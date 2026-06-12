@@ -1,13 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
 import { approveProvider, getAdminUsers, verifyAdminTherapist, type AdminUser, type AdminUserRole } from '../../api/admin.api';
 
-const therapistRoles: AdminUserRole[] = ['therapist', 'psychiatrist', 'coach'];
+const therapistRoles: AdminUserRole[] = ['therapist', 'psychiatrist', 'psychologist', 'coach'];
+
+const ROLE_LABELS: Record<string, string> = {
+	therapist: 'Therapist',
+	psychiatrist: 'Psychiatrist',
+	psychologist: 'Psychologist',
+	coach: 'Coach',
+};
 
 export default function AdminTherapistsPage() {
 	const [therapists, setTherapists] = useState<AdminUser[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [search, setSearch] = useState('');
+	const [roleFilter, setRoleFilter] = useState<string>('all');
 	const [actionId, setActionId] = useState<string | null>(null);
 
 	const load = async () => {
@@ -30,12 +38,13 @@ export default function AdminTherapistsPage() {
 
 	const filtered = useMemo(() => {
 		const query = search.trim().toLowerCase();
-		if (!query) return therapists;
 		return therapists.filter((user) => {
+			if (roleFilter !== 'all' && user.role !== roleFilter) return false;
+			if (!query) return true;
 			const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
 			return fullName.includes(query) || user.email.toLowerCase().includes(query) || user.id.toLowerCase().includes(query);
 		});
-	}, [search, therapists]);
+	}, [search, roleFilter, therapists]);
 
 	const handleVerify = async (userId: string, role: AdminUserRole) => {
 		setActionId(userId);
@@ -58,20 +67,33 @@ export default function AdminTherapistsPage() {
 			<div className="rounded-xl border border-ink-100 bg-white p-5">
 				<div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
 					<div>
-						<h2 className="font-display text-xl font-bold text-ink-800">Therapists</h2>
-						<p className="mt-1 text-sm text-ink-600">Manage provider verification and onboarding approvals.</p>
+						<h2 className="font-display text-xl font-bold text-ink-800">Providers</h2>
+						<p className="mt-1 text-sm text-ink-600">Manage provider verification and onboarding approvals across all specializations.</p>
 					</div>
 					<div className="flex items-center gap-2">
-						<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search therapists..." className="rounded-lg border border-ink-100 bg-white px-3 py-2 text-sm text-ink-700 outline-none focus:ring-2 focus:ring-sage-500" />
+						<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search providers..." className="rounded-lg border border-ink-100 bg-white px-3 py-2 text-sm text-ink-700 outline-none focus:ring-2 focus:ring-sage-500" />
 						<button onClick={() => void load()} className="rounded-lg bg-sage-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sage-700">Refresh</button>
 					</div>
 				</div>
+				{/* Role filter tabs */}
+				<div className="mt-4 flex flex-wrap gap-2">
+					{['all', ...therapistRoles].map((role) => (
+						<button
+							key={role}
+							onClick={() => setRoleFilter(role)}
+							className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${roleFilter === role ? 'bg-sage-600 text-white' : 'border border-ink-100 bg-ink-50 text-ink-600 hover:bg-ink-100'}`}
+						>
+							{role === 'all' ? `All (${therapists.length})` : `${ROLE_LABELS[role]} (${therapists.filter((u) => u.role === role).length})`}
+						</button>
+					))}
+				</div>
 			</div>
 
-			<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+			<div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
 				<StatCard label="Providers" value={String(therapists.length)} />
 				<StatCard label="Therapists" value={String(therapists.filter((user) => user.role === 'therapist').length)} />
 				<StatCard label="Psychiatrists" value={String(therapists.filter((user) => user.role === 'psychiatrist').length)} />
+				<StatCard label="Psychologists" value={String(therapists.filter((user) => user.role === 'psychologist').length)} />
 				<StatCard label="Coaches" value={String(therapists.filter((user) => user.role === 'coach').length)} />
 			</div>
 
@@ -82,7 +104,7 @@ export default function AdminTherapistsPage() {
 					<table className="min-w-full divide-y divide-ink-100">
 						<thead className="bg-ink-50">
 							<tr>
-								<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Therapist</th>
+								<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Provider</th>
 								<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Role</th>
 								<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Onboarding</th>
 								<th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">Joined</th>
@@ -91,9 +113,9 @@ export default function AdminTherapistsPage() {
 						</thead>
 						<tbody className="divide-y divide-ink-100 bg-white">
 							{loading ? (
-								<tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-ink-500">Loading therapists...</td></tr>
+								<tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-ink-500">Loading providers...</td></tr>
 							) : filtered.length === 0 ? (
-								<tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-ink-500">No therapists found.</td></tr>
+								<tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-ink-500">No providers found.</td></tr>
 							) : filtered.map((user) => {
 								const isVerified = Boolean(user.isTherapistVerified);
 								return (

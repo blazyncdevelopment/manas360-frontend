@@ -119,4 +119,14 @@ export const groupTherapyApi = {
     const res = await http.post(`/v1/group-therapy/private/invites/${encodeURIComponent(inviteId)}/payment-intent`);
     return unwrap<{ transactionId: string; redirectUrl: string; amountMinor: number }>(res.data);
   },
+
+  listMyEnrollments: async (): Promise<{ items: any[] }> => {
+    const res = await http.get('/v1/group-therapy/my-enrollments');
+    return unwrap<{ items: any[] }>(res.data);
+  },
+
+  verifyJoinCode: async (code: string) => {
+    const res = await http.post('/v1/group-therapy/join-by-code', { code });
+    return unwrap<{ sessionId: string; title: string; jitsiRoomName?: string; googleMeetLink?: string; scheduledAt: string; hostName: string }>(res.data);
+  },
 };

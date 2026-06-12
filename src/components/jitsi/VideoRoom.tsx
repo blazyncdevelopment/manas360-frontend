@@ -1,5 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { JitsiSessionManager } from '../../lib/jitsi/JitsiSessionManager';
+
+export type VideoRoomHandle = {
+  /** Ends the conference for all participants (moderator only). */
+  endConference: () => void;
+};
 
 type VideoRoomProps = {
   sessionId: string;
@@ -10,7 +15,11 @@ type VideoRoomProps = {
   onEndCall?: () => void;
   onConferenceLeft?: () => void;
   onParticipantJoined?: () => void;
+  /** Called when local user successfully joins the conference (for duration tracking). */
+  onConferenceJoined?: () => void;
   isTherapist?: boolean;
+  /** Enable Jitsi Lobby — provider sees Admit/Deny for each patient (group sessions) */
+  lobbyEnabled?: boolean;
   aiEngineUrl?: string;
   onTranscriptUpdate?: (transcript: Record<string, unknown>) => void;
   onGPSUpdate?: (metrics: Record<string, unknown>) => void;
@@ -32,7 +41,7 @@ const loadJitsiScript = (domain: string): Promise<void> => {
   });
 };
 
-export default function VideoRoom({ sessionId, roomName, displayName, jitsiJwt, className, onEndCall, onConferenceLeft, onParticipantJoined, isTherapist, aiEngineUrl, onTranscriptUpdate, onGPSUpdate }: VideoRoomProps) {
+const VideoRoom = forwardRef<VideoRoomHandle, VideoRoomProps>(function VideoRoom({ sessionId, roomName, displayName, jitsiJwt, className, onEndCall, onConferenceLeft, onParticipantJoined, onConferenceJoined, isTherapist, lobbyEnabled, aiEngineUrl, onTranscriptUpdate, onGPSUpdate }, ref) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const managerRef = useRef<JitsiSessionManager | null>(null);
   const jitsiApiRef = useRef<{ dispose: () => void; addEventListeners?: (listeners: Record<string, () => void>) => void } | null>(null);
@@ -87,6 +96,7 @@ export default function VideoRoom({ sessionId, roomName, displayName, jitsiJwt, 
           displayName,
           jitsiJwt: effectiveJwt,
           isTherapist: !!isTherapist,
+          lobbyEnabled: !!lobbyEnabled,
           sessionId,
           aiEngineUrl,
           onTranscriptUpdate,
@@ -112,6 +122,9 @@ export default function VideoRoom({ sessionId, roomName, displayName, jitsiJwt, 
             disposeActiveRoom();
             onEndCall?.();
           },
+          videoConferenceJoined: () => {
+            onConferenceJoined?.();
+          },
           participantJoined: () => {
             onParticipantJoined?.();
           },
@@ -131,6 +144,15 @@ export default function VideoRoom({ sessionId, roomName, displayName, jitsiJwt, 
     };
     // Do not include displayName: auth/user refresh can change it and force unnecessary iframe remounts.
   }, [jitsiJwt, roomName, sessionId]);
+
+  useImperativeHandle(ref, () => ({
+    endConference: () => {
+      const api = jitsiApiRef.current as any;
+      if (api?.executeCommand) {
+        api.executeCommand('endConference');
+      }
+    },
+  }));
 
   if (error) {
     return (
@@ -176,4 +198,6 @@ export default function VideoRoom({ sessionId, roomName, displayName, jitsiJwt, 
       ) : null}
     </div>
   );
-}
+});
+
+export default VideoRoom;
