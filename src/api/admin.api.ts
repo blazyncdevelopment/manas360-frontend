@@ -37,7 +37,7 @@ export type RangeParams = {
 	limit?: number;
 };
 
-export type AdminUserRole = 'patient' | 'therapist' | 'psychiatrist' | 'psychologist' | 'coach' | 'admin' | 'complianceofficer';
+export type AdminUserRole = 'patient' | 'therapist' | 'psychiatrist' | 'psychologist' | 'coach' | 'admin' | 'complianceofficer' | 'learner';
 export type PlatformAdminRole = 'admin' | 'clinicaldirector' | 'financemanager' | 'complianceofficer';
 
 export type AdminSubscriptionPlanType = 'basic' | 'premium' | 'pro';

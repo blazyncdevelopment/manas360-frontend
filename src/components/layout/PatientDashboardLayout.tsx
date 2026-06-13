@@ -18,6 +18,7 @@ import {
   Sparkles,
   User,
   X,
+  Award,
 } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { patientApi } from '../../api/patient';
@@ -48,6 +49,7 @@ const progressNavItems = [
   { to: '/patient/progress', label: 'My Progress', icon: BarChart3, feature: 'progress-tracking' },
   { to: '/patient/reports', label: 'My Reports', icon: ClipboardList },
   { to: '/patient/documents', label: 'My Documents', icon: ClipboardList },
+  { to: '/patient/certifications', label: 'Certifications', icon: Award },
 ];
 
 const supportNavItems = [
@@ -267,6 +269,7 @@ export default function PatientDashboardLayout() {
     '/patient/timeline': 'Patient Timeline',
     '/patient/assessment-reports': 'My Progress',
     '/patient/reports': 'Reports',
+    '/patient/certifications': 'Workspace',
 
     '/patient/support': 'Help Center',
     '/patient/settings': 'Settings',

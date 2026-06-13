@@ -31,8 +31,10 @@ const roleBadgeClass: Record<AdminUserRole, string> = {
 	complianceofficer: 'bg-sky-100 text-sky-700',
 	therapist: 'bg-blue-100 text-blue-700',
 	psychiatrist: 'bg-violet-100 text-violet-700',
+	psychologist: 'bg-indigo-100 text-indigo-700',
 	coach: 'bg-amber-100 text-amber-700',
 	patient: 'bg-emerald-100 text-emerald-700',
+	learner: 'bg-teal-100 text-teal-700',
 };
 
 const numberFormat = new Intl.NumberFormat('en-IN');
@@ -422,8 +424,10 @@ export default function AdminUsersPage() {
 						<option value="admin">Admin</option>
 						<option value="therapist">Therapist</option>
 						<option value="psychiatrist">Psychiatrist</option>
+						<option value="psychologist">Psychologist</option>
 						<option value="coach">Coach</option>
 						<option value="patient">Patient</option>
+						<option value="learner">Learner</option>
 					</select>
 					<select
 						value={statusFilter}

@@ -112,7 +112,7 @@ export default function CertificationsPage() {
 
 	const handlePrimaryCta = (item: Certification) => {
 		if (!item.enrollmentOpen || item.isInvitationOnly) return;
-		navigate(`/auth/signup?program=${encodeURIComponent(item.slug)}`);
+		navigate(`/auth/signup?program=${encodeURIComponent(item.slug)}&role=learner`);
 	};
 
 	const handleSecondaryCta = (item: Certification) => {

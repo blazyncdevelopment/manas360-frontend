@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { BookOpen, CheckCircle, Clock, ArrowRight, Loader2, RefreshCcw, Download, AlertCircle, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { BookOpen, CheckCircle, Clock, ArrowRight, Loader2, RefreshCcw, Download, AlertCircle } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { SEO } from '../components/CertificationSEO';
 import { useEnrollmentStore } from '../store/CertificationEnrollmentStore';
 import { CERTIFICATIONS } from '../CertificationConstants';
@@ -8,10 +8,12 @@ import { Enrollment } from '../CertificationTypes';
 import { useAuth } from '../context/AuthContext';
 
 export const MyCertificationsPage: React.FC = () => {
-    const { enrollments, payInstallment, clearEnrollments, syncEnrollments, loading } = useEnrollmentStore();
+    const { enrollments, payInstallment, syncEnrollments, loading } = useEnrollmentStore();
     const navigate = useNavigate();
+    const location = useLocation();
     const [processingId, setProcessingId] = useState<string | null>(null);
     const { user, becomeProvider } = useAuth();
+    const isNested = location.pathname.startsWith('/provider') || location.pathname.startsWith('/patient') || location.pathname.startsWith('/learner');
 
     React.useEffect(() => {
         void syncEnrollments();
@@ -31,13 +33,6 @@ export const MyCertificationsPage: React.FC = () => {
         payInstallment(enrollment.id);
         setProcessingId(null);
         alert("Payment Successful! Installment recorded.");
-    };
-
-    const handleReset = () => {
-        if (window.confirm("Are you sure you want to clear all certification data? This action cannot be undone.")) {
-            clearEnrollments();
-            alert("All certification data has been cleared.");
-        }
     };
 
     const getStatusBadge = (status: string) => {
@@ -63,41 +58,37 @@ export const MyCertificationsPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 py-8 px-4 md:py-12 md:px-8">
+        <div className={isNested ? "py-2 px-0 bg-transparent" : "min-h-screen bg-slate-50 py-8 px-4 md:py-12 md:px-8"}>
             <SEO title="My Certifications | MANAS360" />
             <div className="max-w-6xl mx-auto">
                 <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 mb-2">My Certifications</h1>
-                        <p className="text-slate-600 text-sm md:text-base">Track your progress, installments, and achievements.</p>
-                        
-                        {user?.role === 'learner' && (
-                            <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 mb-4 mt-6 w-full">
-                                <div className="flex-1 text-center md:text-left">
-                                    <h3 className="text-xl font-bold mb-1">Advance Your Career</h3>
-                                    <p className="text-emerald-50 opacity-90 text-sm">Ready to help others professionally? Join the MANAS360 provider network today.</p>
+                    {!isNested ? (
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 mb-2">My Certifications</h1>
+                            <p className="text-slate-600 text-sm md:text-base">Track your progress, installments, and achievements.</p>
+                            
+                            {user?.role === 'learner' && (
+                                <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 mb-4 mt-6 w-full">
+                                    <div className="flex-1 text-center md:text-left">
+                                        <h3 className="text-xl font-bold mb-1">Advance Your Career</h3>
+                                        <p className="text-emerald-50 opacity-90 text-sm">Ready to help others professionally? Join the MANAS360 provider network today.</p>
+                                    </div>
+                                    <button 
+                                        onClick={async () => {
+                                            if (window.confirm("Switch to Provider Role? You will be directed to the onboarding setup.")) {
+                                                await becomeProvider();
+                                                navigate('/onboarding/provider-setup');
+                                            }
+                                        }}
+                                        className="bg-white text-emerald-700 px-6 py-3 rounded-xl font-bold text-sm hover:bg-emerald-50 transition shadow-lg shrink-0"
+                                    >
+                                        Become a Full Provider →
+                                    </button>
                                 </div>
-                                <button 
-                                    onClick={async () => {
-                                        if (window.confirm("Switch to Provider Role? You will be directed to the onboarding setup.")) {
-                                            await becomeProvider();
-                                            navigate('/onboarding/provider-setup');
-                                        }
-                                    }}
-                                    className="bg-white text-emerald-700 px-6 py-3 rounded-xl font-bold text-sm hover:bg-emerald-50 transition shadow-lg shrink-0"
-                                >
-                                    Become a Full Provider →
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                    {enrollments.length > 0 && (
-                        <button
-                            onClick={handleReset}
-                            className="bg-white border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-50 transition flex items-center gap-2"
-                        >
-                            <Trash2 size={16} /> Reset All Data
-                        </button>
+                            )}
+                        </div>
+                    ) : (
+                        <div></div>
                     )}
                 </div>
 

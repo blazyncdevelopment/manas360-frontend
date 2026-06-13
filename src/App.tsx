@@ -202,6 +202,10 @@ const CertificationQuizPage = lazy(() => import('./pages/CertificationQuizPage')
 const CertificationCertificatePage = lazy(() => import('./pages/CertificationCertificatePage'));
 const CertificateVerificationPage = lazy(() => import('./pages/CertificateVerificationPage'));
 
+// Learner Pages
+const LearnerDashboardLayout = lazy(() => import('./components/layout/LearnerDashboardLayout'));
+const LearnerDashboard = lazy(() => import('./pages/learner/LearnerDashboard'));
+
 interface AssessmentData {
   symptoms?: string[];
   impact?: string;
@@ -278,6 +282,7 @@ function App() {
     location.pathname.startsWith('/patient/') || location.pathname === '/patient' ||
     location.pathname.startsWith('/provider/') || location.pathname === '/provider' ||
     location.pathname.startsWith('/admin/') || location.pathname === '/admin' ||
+    location.pathname.startsWith('/learner/') || location.pathname === '/learner' ||
     (location.pathname.startsWith('/corporate/') && !['/corporate/onboarding', '/corporate/landing'].includes(location.pathname));
 
   const showHeaderFooter =
@@ -558,6 +563,32 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
+                    {/* ── Learner Dashboard ── */}
+                    <Route
+                      path="/learner"
+                      element={
+                        <ProtectedRoute allowedRoles={['learner']}>
+                          <LearnerDashboardLayout />
+                        </ProtectedRoute>
+                      }
+                    >
+                      <Route index element={<Navigate to="dashboard" replace />} />
+                      <Route path="dashboard" element={<LearnerDashboard />} />
+                      <Route path="certificate" element={<LearnerDashboard />} />
+                      <Route path="enrollments" element={<LearnerDashboard />} />
+                      {/* ── Certification pages embedded inside Learner layout ── */}
+                      {/* More specific paths must come before :slug catch-all */}
+                      <Route path="certifications/modules/:enrollmentId" element={<CertificationModulesPage />} />
+                      <Route path="certifications/lessons/:lessonId" element={<CertificationLessonPage />} />
+                      <Route path="certifications/quiz/:enrollmentId" element={<CertificationQuizPage />} />
+                      <Route path="certifications/certificate/:enrollmentId" element={<CertificationCertificatePage />} />
+                      <Route path="certifications/:slug" element={<CertificationDetailsPage />} />
+                      <Route path="checkout/:slug" element={<CheckoutPage />} />
+                      <Route path="payment-success" element={<PaymentSuccessPage />} />
+                      <Route path="payment-failed" element={<PaymentFailedPage />} />
+                      <Route path="enrollment-confirmed" element={<EnrollmentConfirmedPage />} />
+                    </Route>
+
                     <Route path="/auth/login" element={<LoginPage />} />
                     <Route path="/therapist/*" element={<Navigate to="/provider/dashboard" replace />} />
                     <Route path="/psychiatrist/*" element={<Navigate to="/provider/dashboard" replace />} />
@@ -817,6 +848,18 @@ function App() {
                       <Route path="progress" element={<ProgressPage />} />
                       <Route path="reports" element={<ReportsPage />} />
                       <Route path="reports/shared/:id" element={<PatientReportDownloadPage />} />
+                      <Route path="certifications" element={<CertificationLandingPage />} />
+                      <Route path="certifications/:slug" element={<CertificationDetailsPage />} />
+                      <Route path="certification/enroll/:slug" element={<EnrollmentRegistrationPage />} />
+                      <Route path="checkout/:slug" element={<CheckoutPage />} />
+                      <Route path="my-certifications" element={<MyCertificationsPage />} />
+                      <Route path="certifications/modules/:enrollmentId" element={<CertificationModulesPage />} />
+                      <Route path="certifications/lessons/:lessonId" element={<CertificationLessonPage />} />
+                      <Route path="certifications/quiz/:enrollmentId" element={<CertificationQuizPage />} />
+                      <Route path="certifications/certificate/:enrollmentId" element={<CertificationCertificatePage />} />
+                      <Route path="payment-success" element={<PaymentSuccessPage />} />
+                      <Route path="payment-failed" element={<PaymentFailedPage />} />
+                      <Route path="enrollment-confirmed" element={<EnrollmentConfirmedPage />} />
                       <Route path="notifications" element={<NotificationsPage />} />
                       <Route path="plans/addons" element={<SubscriptionAddonsPage />} />
                       <Route path="checkout" element={<Navigate to="/checkout" replace />} />

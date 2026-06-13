@@ -127,7 +127,7 @@ export const useEnrollmentStore = create<EnrollmentState>(
                 userName: stateAny.displayName || stateAny.name || 'MANAS360 Practitioner',
                 nextInstallmentDue: e.nextInstallmentDue,
               } as Enrollment;
-            });
+            }).filter((e: Enrollment) => e.paymentStatus !== 'Pending');
 
             set({ enrollments: backendEnrollments });
           } catch (err) {

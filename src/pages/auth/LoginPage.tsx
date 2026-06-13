@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getApiErrorMessage, signupWithPhone, verifyPhoneSignupOtp } from '../../api/auth';
 import { resolveProviderIdForOnboarding } from '../../api/providerOnboarding';
@@ -90,7 +91,7 @@ export default function LoginPage() {
 		const effectiveUser = userOverride || user;
 		if (hasCorporateAccess(effectiveUser)) return '/corporate/dashboard';
 		const normalizedRole = String(role || '').toLowerCase();
-		if (normalizedRole === 'learner') return '/provider/dashboard';
+		if (normalizedRole === 'learner') return '/learner/dashboard';
 
 		if (normalizedRole === 'patient') {
 			if (effectiveUser?.patientSubscriptionActive) {
@@ -163,9 +164,7 @@ export default function LoginPage() {
 		try {
 			const guestGameToken = localStorage.getItem('guest_game_token') || undefined;
 			const cachedScreening = readCachedClinicalScreening();
-			const result = await verifyPhoneSignupOtp(phone.trim(), otp.trim(), {
-				acceptedTerms: true,
-			}, guestGameToken);
+			const result = await verifyPhoneSignupOtp(phone.trim(), otp.trim(), undefined, guestGameToken);
 			if (guestGameToken) localStorage.removeItem('guest_game_token');
 			if (cachedScreening) clearGuestClinicalScreening();
 
@@ -249,6 +248,9 @@ export default function LoginPage() {
 				const requestedUserType = new URLSearchParams(location.search).get('userType');
 				if (requestedUserType) searchParams.set('userType', requestedUserType);
 				if (signupRole) searchParams.set('role', signupRole);
+
+				toast.error('Please sign up first to create an account.', { duration: 5000 });
+
 				navigate(`/auth/signup?${searchParams.toString()}`, {
 					replace: true,
 					state: { from, afterLogin, role: signupRole },

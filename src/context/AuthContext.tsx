@@ -4,6 +4,7 @@ import {
   logout as logoutApi,
   me as meApi,
   becomeProvider as becomeProviderApi,
+  upgradeUserRole as upgradeUserRoleApi,
   type AuthUser,
 } from '../api/auth';
 import { clearAuthTokens, hasStoredAccessToken } from '../utils/authToken';
@@ -153,9 +154,9 @@ export const getPostLoginRoute = (user: AuthUser | null | undefined): string => 
   if (isProviderRole(user.role)) {
     const normalizedRole = normalizeRole(user.role);
 
-    // Learners only need dashboard access
+    // Learners have their own dedicated dashboard
     if (normalizedRole === 'learner') {
-      return '/provider/dashboard';
+      return '/learner/dashboard';
     }
 
     // Step 1: Platform fee not paid → subscription page
@@ -191,6 +192,7 @@ type AuthContextValue = {
   /** Apply OTP verify user immediately, then refresh from /auth/me when possible. */
   syncSessionAfterOtp: (otpUser: AuthUser) => Promise<AuthUser>;
   becomeProvider: () => Promise<void>;
+  upgradeUserRole: (newRole: string) => Promise<void>;
 };
 
 type AuthContextGlobal = typeof globalThis & {
@@ -369,6 +371,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(updatedUser);
   }, []);
 
+  const upgradeUserRole = useCallback(async (newRole: string) => {
+    const updatedUser = await upgradeUserRoleApi(newRole);
+    setUser(updatedUser);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -380,8 +387,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       checkAuth,
       syncSessionAfterOtp,
       becomeProvider,
+      upgradeUserRole,
     }),
-    [user, loading, login, logout, checkAuth, syncSessionAfterOtp, becomeProvider],
+    [user, loading, login, logout, checkAuth, syncSessionAfterOtp, becomeProvider, upgradeUserRole],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

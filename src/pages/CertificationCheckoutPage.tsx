@@ -24,7 +24,16 @@ export const CheckoutPage: React.FC = () => {
     });
     const [generalError, setGeneralError] = useState<string | null>(null);
     const [duplicateMessage] = useState<string | null>(null);
-    const myCertificationsPath = location.pathname.startsWith('/provider') ? '/provider/my-certifications' : '/my-certifications';
+    const inLearnerShell = location.pathname.startsWith('/learner');
+    const inPatientShell = location.pathname.startsWith('/patient');
+    const myCertificationsPath = location.pathname.startsWith('/provider')
+        ? '/provider/my-certifications'
+        : inPatientShell
+        ? '/patient/my-certifications'
+        : inLearnerShell
+        ? '/learner/enrollments'
+        : '/my-certifications';
+
 
     const cert = CERTIFICATIONS.find(c => c.slug === slug);
 
@@ -53,28 +62,6 @@ export const CheckoutPage: React.FC = () => {
         const handleTransaction = async () => {
             setProcessing(true);
             try {
-                const fullName = (location.state as any)?.fullName;
-                const email = (location.state as any)?.email;
-                const mobile = (location.state as any)?.mobile;
-                const city = (location.state as any)?.city;
-                const education = (location.state as any)?.education;
-                const motivation = (location.state as any)?.motivation;
-
-                await fetch('/api/v1/enrollment/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        fullName,
-                        email,
-                        mobile,
-                        city,
-                        education,
-                        motivation,
-                        certName: cert.name,
-                        certSlug: cert.slug,
-                        price: finalTotal,
-                    }),
-                });
 
                 if (cert.price_inr === 0) {
                     try {

@@ -37,7 +37,7 @@ export const AI_ENGINE_WS_URL =
 
 // Set USE_LOCAL_TUNNEL = true only when testing via devtunnel
 const LOCAL_TUNNEL_BASE = 'https://9lc0tr74-4000.inc1.devtunnels.ms';
-const USE_LOCAL_TUNNEL = false;
+const USE_LOCAL_TUNNEL = true;
 
 const getWindowCapacitor = (): any => {
   if (typeof window === 'undefined') return null;

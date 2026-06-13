@@ -20,7 +20,7 @@ import { hasActivePaidPatientSubscription } from '../../lib/patientSubscriptionF
 import NriPatch, { type NriConsentState } from '../legal/nri';
 
 
-type SignupRole = 'patient' | 'therapist' | 'psychiatrist' | 'psychologist' | 'coach';
+type SignupRole = 'patient' | 'therapist' | 'psychiatrist' | 'psychologist' | 'coach' | 'learner';
 type ProviderAgreementKey = 'THERAPIST_IC_AGREEMENT' | 'THERAPIST_NDA' | 'THERAPIST_DATA_PROCESSING_AGREEMENT';
 
 const PROVIDER_AGREEMENTS: Array<{ key: ProviderAgreementKey; label: string; sections: string[] }> = [
@@ -164,7 +164,7 @@ export default function SignupPage() {
 	const locationState = location.state as { role?: SignupRole } | null;
 	const initialRole = useMemo<SignupRole>(() => {
 		const candidateRole = locationState?.role || new URLSearchParams(location.search).get('role');
-		if (candidateRole === 'therapist' || candidateRole === 'psychiatrist' || candidateRole === 'psychologist' || candidateRole === 'coach') {
+		if (candidateRole === 'therapist' || candidateRole === 'psychiatrist' || candidateRole === 'psychologist' || candidateRole === 'coach' || candidateRole === 'learner') {
 			return candidateRole;
 		}
 
@@ -221,7 +221,7 @@ export default function SignupPage() {
 		);
 	}, [location.search]);
 
-	const isProviderFlow = !isCertificationContext && !isPatientLeadFlow && role !== 'patient';
+	const isProviderFlow = !isCertificationContext && !isPatientLeadFlow && role !== 'patient' && role !== 'learner';
 	const allProviderAgreementsAccepted = useMemo(
 		() => Object.values(providerAgreementsAccepted).every(Boolean),
 		[providerAgreementsAccepted],
@@ -409,7 +409,7 @@ export default function SignupPage() {
 
 		if ((locationState?.role || queryRole) && role === 'patient') {
 			const candidateRole = locationState?.role || queryRole;
-			if (candidateRole === 'therapist' || candidateRole === 'psychiatrist' || candidateRole === 'psychologist' || candidateRole === 'coach') {
+			if (candidateRole === 'therapist' || candidateRole === 'psychiatrist' || candidateRole === 'psychologist' || candidateRole === 'coach' || candidateRole === 'learner') {
 				setRole(candidateRole);
 			}
 		}
@@ -419,7 +419,7 @@ export default function SignupPage() {
 		}
 
 		if (!isPatientLeadFlow && !isCertificationContext && !otpSent) {
-			if (userType === 'therapist' || userType === 'psychiatrist' || userType === 'psychologist' || userType === 'coach' || userType === 'patient') {
+			if (userType === 'therapist' || userType === 'psychiatrist' || userType === 'psychologist' || userType === 'coach' || userType === 'patient' || userType === 'learner') {
 				setRole(userType as SignupRole);
 			}
 		}
@@ -637,6 +637,7 @@ export default function SignupPage() {
 									<option value="psychiatrist">Psychiatrist</option>
 									<option value="psychologist">Psychologist</option>
 									<option value="coach">Coach</option>
+									<option value="learner">Learner</option>
 								</select>
 							</div>
 						) : null}

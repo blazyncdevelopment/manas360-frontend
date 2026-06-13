@@ -30,8 +30,8 @@ export const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) =
         {/* <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12">
           <div className="flex justify-between h-14 md:h-20 items-center"> */}
 
-            {/* Left Side: Back Button (Always Visible) */}
-            {/* <div className="flex items-center">
+        {/* Left Side: Back Button (Always Visible) */}
+        {/* <div className="flex items-center">
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleBack}
@@ -51,8 +51,8 @@ export const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) =
               </div>
             </div> */}
 
-            {/* Desktop Nav */}
-            {/* <div className="hidden md:flex items-center space-x-6">
+        {/* Desktop Nav */}
+        {/* <div className="hidden md:flex items-center space-x-6">
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
@@ -79,7 +79,7 @@ export const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) =
                     Login
                   </Link>
                   <Link
-                    to="/auth/signup?next=/certifications"
+                    to="/auth/signup?next=/certifications&role=learner"
                     className="text-sm font-bold bg-slate-900 text-white px-4 py-2 rounded-full hover:bg-slate-800"
                   >
                     Register
@@ -96,16 +96,16 @@ export const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) =
               )}
             </div> */}
 
-            {/* Mobile menu button */}
-            <div className="flex items-center md:hidden">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="text-slate-500 hover:text-slate-900 focus:outline-none p-2"
-              >
-                {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
-            </div>
-          {/* </div>
+        {/* Mobile menu button */}
+        <div className="flex items-center md:hidden">
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="text-slate-500 hover:text-slate-900 focus:outline-none p-2"
+          >
+            {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+        {/* </div>
         </div> */}
 
         {/* Mobile Nav Dropdown */}
@@ -140,7 +140,7 @@ export const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) =
                     Login
                   </Link>
                   <Link
-                    to="/auth/signup?next=/certifications"
+                    to="/auth/signup?next=/certifications&role=learner"
                     onClick={() => setIsMenuOpen(false)}
                     className="block px-4 py-3 rounded-xl text-sm font-bold bg-slate-900 text-white"
                   >

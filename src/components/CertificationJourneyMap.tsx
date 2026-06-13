@@ -138,15 +138,24 @@ const CertificationCard: React.FC<{ cert: Certification }> = ({ cert }) => {
   const { addEnrollment, getEnrollmentBySlug } = useEnrollmentStore();
   const [processing, setProcessing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const isEnrolled = !!getEnrollmentBySlug(cert.slug);
   const inProviderShell = location.pathname.startsWith('/provider');
+  const inPatientShell = location.pathname.startsWith('/patient');
+  const inLearnerShell = location.pathname.startsWith('/learner');
   const forcePublicDetail = /therapist/i.test(cert.slug) || /therapist/i.test(cert.name);
-  const detailPath = forcePublicDetail ? `/certifications/${cert.slug}` : (inProviderShell ? `/provider/certifications/${cert.slug}` : `/certifications/${cert.slug}`);
+  const detailPath = forcePublicDetail ? `/certifications/${cert.slug}` : (inProviderShell ? `/provider/certifications/${cert.slug}` : (inPatientShell ? `/patient/certifications/${cert.slug}` : (inLearnerShell ? `/learner/certifications/${cert.slug}` : `/certifications/${cert.slug}`)));
   const enrollPath = forcePublicDetail
     ? `/certification/enroll/${cert.slug}`
-    : (inProviderShell ? `/provider/certification/enroll/${cert.slug}` : `/certification/enroll/${cert.slug}`);
-  const checkoutPath = forcePublicDetail ? `/checkout/${cert.slug}` : (inProviderShell ? `/provider/checkout/${cert.slug}` : `/checkout/${cert.slug}`);
-  const guestAuthPath = `/auth/signup?next=${encodeURIComponent(enrollPath)}`;
-  const myCertificationsPath = inProviderShell ? '/provider/my-certifications' : '/my-certifications';
+    : (inProviderShell ? `/provider/certification/enroll/${cert.slug}` : (inPatientShell ? `/patient/certification/enroll/${cert.slug}` : (inLearnerShell ? `/learner/certification/enroll/${cert.slug}` : `/certification/enroll/${cert.slug}`)));
+  const checkoutPath = forcePublicDetail ? `/checkout/${cert.slug}` : (inProviderShell ? `/provider/checkout/${cert.slug}` : (inPatientShell ? `/patient/checkout/${cert.slug}` : `/checkout/${cert.slug}`));
+  const guestAuthPath = `/auth/signup?next=${encodeURIComponent(enrollPath)}&role=learner`;
+  const myCertificationsPath = inProviderShell
+    ? '/provider/my-certifications'
+    : inPatientShell
+    ? '/patient/my-certifications'
+    : inLearnerShell
+    ? '/learner/enrollments'
+    : '/my-certifications';
 
   const startCertificationNow = async () => {
     if (!user) {
@@ -154,7 +163,7 @@ const CertificationCard: React.FC<{ cert: Certification }> = ({ cert }) => {
       return;
     }
 
-    if (getEnrollmentBySlug(cert.slug)) {
+    if (isEnrolled) {
       navigate(myCertificationsPath);
       return;
     }
@@ -286,7 +295,7 @@ const CertificationCard: React.FC<{ cert: Certification }> = ({ cert }) => {
         className="flex-1 bg-gradient-to-r from-teal-500 to-emerald-600 text-white py-3.5 md:py-4 rounded-xl font-bold text-sm md:text-base shadow-lg shadow-teal-200 hover:shadow-xl hover:shadow-teal-300 hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 flex items-center justify-center gap-2"
         disabled={processing}
         >
-          {processing ? 'Starting...' : (cert.price_inr === 0 ? 'Start Free' : 'Enroll Now')}
+          {isEnrolled ? 'View Course' : (processing ? 'Starting...' : (cert.price_inr === 0 ? 'Start Free' : 'Enroll Now'))}
           <span className="text-lg">→</span>
           </button>
         <button 
@@ -357,63 +366,70 @@ const ComparisonTable: React.FC = () => {
   };
 
 export const JourneyMap: React.FC<JourneyMapProps> = ({ certifications }) => {
+  const location = useLocation();
+  const isProviderRoute = location.pathname.startsWith('/provider') || location.pathname.startsWith('/patient') || location.pathname.startsWith('/learner');
+
   return (
     <div className="space-y-12 md:space-y-16">
       
       {/* 1. Journey Summary Box */}
-      <div className="max-w-[1200px] mx-auto">
-        <div className="text-center mb-8 md:mb-12">
-           <h2 className="font-serif text-3xl md:text-5xl font-black text-slate-900 mb-3 md:mb-4">Your Journey</h2>
-           <p className="text-slate-600 text-base md:text-xl max-w-3xl mx-auto leading-relaxed px-4">
-              Choose your entry point based on your background and aspirations.
-           </p>
-        </div>
+      {!isProviderRoute && (
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-8 md:mb-12">
+             <h2 className="font-serif text-3xl md:text-5xl font-black text-slate-900 mb-3 md:mb-4">Your Journey</h2>
+             <p className="text-slate-600 text-base md:text-xl max-w-3xl mx-auto leading-relaxed px-4">
+                Choose your entry point based on your background and aspirations.
+             </p>
+          </div>
 
-        <div className="bg-white rounded-2xl md:rounded-[30px] shadow-lg relative overflow-hidden mb-10 md:mb-16 mx-4 md:mx-0 border border-slate-100">
-            {/* Gradient Top Border */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-purple-500 to-pink-500"></div>
-            
-            <div className="p-5 md:p-10 flex flex-col gap-6 md:gap-8">
-                 <JourneyLevelItem 
-                   title="Entry Level"
-                   description="Start your mental wellness journey with patient psychoeducation."
-                   borderHex="#3B82F6"
-                   icon="🟦"
-                   tags={[
-                     { label: "Certified Practitioner", color: 'blue' },
-                     { label: "ASHA Champion", color: 'green' }
-                   ]}
-                 />
-                 <JourneyLevelItem 
-                   title="Professional Level"
-                   description="Build your professional practice with recognized clinical credentials."
-                   borderHex="#F59E0B"
-                   icon="🟨"
-                   tags={[
-                     { label: "NLP Therapist", color: 'yellow' },
-                     { label: "Certified Psychologist", color: 'orange' },
-                     { label: "Psychiatrist", color: 'red' }
-                   ]}
-                 />
-                 <JourneyLevelItem 
-                   title="Mastery Level"
-                   description="Integrate Western psychology with Eastern wisdom."
-                   borderHex="#8B5CF6"
-                   icon="🟪"
-                   isMastery
-                   tags={[
-                     { label: "Executive Therapist", color: 'purple' },
-                     { label: "Master Faculty", color: 'purple' }
-                   ]}
-                 />
-            </div>
+          <div className="bg-white rounded-2xl md:rounded-[30px] shadow-lg relative overflow-hidden mb-10 md:mb-16 mx-4 md:mx-0 border border-slate-100">
+              {/* Gradient Top Border */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-purple-500 to-pink-500"></div>
+              
+              <div className="p-5 md:p-10 flex flex-col gap-6 md:gap-8">
+                   <JourneyLevelItem 
+                     title="Entry Level"
+                     description="Start your mental wellness journey with patient psychoeducation."
+                     borderHex="#3B82F6"
+                     icon="🟦"
+                     tags={[
+                       { label: "Certified Practitioner", color: 'blue' },
+                       { label: "ASHA Champion", color: 'green' }
+                     ]}
+                   />
+                   <JourneyLevelItem 
+                     title="Professional Level"
+                     description="Build your professional practice with recognized clinical credentials."
+                     borderHex="#F59E0B"
+                     icon="🟨"
+                     tags={[
+                       { label: "NLP Therapist", color: 'yellow' },
+                       { label: "Certified Psychologist", color: 'orange' },
+                       { label: "Psychiatrist", color: 'red' }
+                     ]}
+                   />
+                   <JourneyLevelItem 
+                     title="Mastery Level"
+                     description="Integrate Western psychology with Eastern wisdom."
+                     borderHex="#8B5CF6"
+                     icon="🟪"
+                     isMastery
+                     tags={[
+                       { label: "Executive Therapist", color: 'purple' },
+                       { label: "Master Faculty", color: 'purple' }
+                     ]}
+                   />
+              </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 2. Incentives Banner */}
-      <div className="max-w-[1200px] mx-auto px-4 md:px-0">
-        <IncentivesBanner />
-      </div>
+      {!isProviderRoute && (
+        <div className="max-w-[1200px] mx-auto px-4 md:px-0">
+          <IncentivesBanner />
+        </div>
+      )}
 
       {/* 3. Certifications Grid */}
       <div className="max-w-[1400px] mx-auto" id="certifications-grid">
@@ -432,7 +448,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ certifications }) => {
       </div>
 
       {/* 4. Comparison Table */}
-      <ComparisonTable />
+      {!isProviderRoute && <ComparisonTable />}
       
     </div>
   );

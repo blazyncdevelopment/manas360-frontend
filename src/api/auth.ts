@@ -276,6 +276,11 @@ export const becomeProvider = async (): Promise<AuthUser> => {
 	return response.data.data;
 };
 
+export const upgradeUserRole = async (newRole: string): Promise<AuthUser> => {
+	const response = await http.post<ApiEnvelope<AuthUser>>('/v1/users/me/upgrade-role', { newRole });
+	return response.data.data;
+};
+
 const pickString = (...values: unknown[]): string => {
 	for (const value of values) {
 		if (typeof value === 'string' && value.trim()) {

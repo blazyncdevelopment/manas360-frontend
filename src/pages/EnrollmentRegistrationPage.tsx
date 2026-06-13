@@ -51,7 +51,12 @@ const EnrollmentRegistrationPage: React.FC = () => {
 
     const query = paymentPlan === 'installment' ? '?plan=installment' : '?plan=full';
     const inProviderShell = location.pathname.startsWith('/provider');
-    const checkoutPath = inProviderShell ? `/provider/checkout/${slug}${query}` : `/checkout/${slug}${query}`;
+    const inPatientShell = location.pathname.startsWith('/patient');
+    const checkoutPath = inProviderShell 
+      ? `/provider/checkout/${slug}${query}` 
+      : inPatientShell
+      ? `/patient/checkout/${slug}${query}`
+      : `/checkout/${slug}${query}`;
     navigate(checkoutPath, {
       state: {
         certName,

@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { CERTIFICATIONS } from '../CertificationConstants';
 import { Breadcrumbs } from '../components/CertificationBreadcrumbs';
 import { Skeleton, TextSkeleton } from '../components/CertificationSkeleton';
-import { Check, Clock, Calendar, DollarSign, Award, ChevronDown, ChevronUp, PlayCircle, FileText, Star, ShieldCheck } from 'lucide-react';
+import { Check, Clock, Calendar, DollarSign, Award, ChevronDown, ChevronUp, PlayCircle, Star, ShieldCheck } from 'lucide-react';
 import { SEO } from '../components/CertificationSEO';
 import { useAuth } from '../context/AuthContext';
 import { useEnrollmentStore } from '../store/CertificationEnrollmentStore';
@@ -64,14 +64,26 @@ export const CertificationDetailsPage: React.FC = () => {
 
     const handleEnroll = async () => {
         const inProviderShell = location.pathname.startsWith('/provider');
-        const myCertPath = inProviderShell ? '/provider/my-certifications' : '/my-certifications';
+        const inLearnerShell = location.pathname.startsWith('/learner');
+        const inPatientShell = location.pathname.startsWith('/patient');
+        const myCertPath = inProviderShell
+            ? '/provider/my-certifications'
+            : inLearnerShell
+            ? '/learner/enrollments'
+            : inPatientShell
+            ? '/patient/my-certifications'
+            : '/my-certifications';
         if (!cert) return;
 
         if (!user) {
             const next = inProviderShell
                 ? `/provider/certification/enroll/${cert.slug}`
+                : inLearnerShell
+                ? `/learner/certifications/${cert.slug}`
+                : inPatientShell
+                ? `/patient/certifications/${cert.slug}`
                 : `/certification/enroll/${cert.slug}`;
-            navigate(`/auth/signup?next=${encodeURIComponent(next)}`);
+            navigate(`/auth/signup?next=${encodeURIComponent(next)}&role=learner`);
             return;
         }
 
@@ -86,10 +98,16 @@ export const CertificationDetailsPage: React.FC = () => {
 
         // For paid certifications, redirect to checkout
         if (cert.price_inr > 0) {
-            navigate(`/checkout/${cert.slug}${inProviderShell ? '?shell=provider' : ''}`);
+            const checkoutPath = inLearnerShell
+                ? `/learner/checkout/${cert.slug}`
+                : inPatientShell
+                ? `/patient/checkout/${cert.slug}`
+                : `/checkout/${cert.slug}${inProviderShell ? '?shell=provider' : ''}`;
+            navigate(checkoutPath);
             setEnrolling(false);
             return;
         }
+
 
         try {
             await registerCertificationEnrollment({
@@ -305,12 +323,6 @@ export const CertificationDetailsPage: React.FC = () => {
                                     </li>
                                 )}
                             </ul>
-                            <div className="mt-6">
-                                <button onClick={() => window.open(cert!.syllabusPdfUrl, '_blank')} className="flex items-center text-purple-600 font-bold hover:text-purple-700 transition text-xs md:text-sm">
-                                    <FileText size={16} className="mr-2" />
-                                    Download Detailed Syllabus (PDF)
-                                </button>
-                            </div>
                         </div>
                     )}
 
