@@ -294,8 +294,18 @@ export default function CorporateOnboardingPage() {
                     <Field label="Company Size" icon={<Users className="h-4 w-4" />}>
                       <input className={inputClassName} value={companySize} onChange={(e) => setCompanySize(e.target.value)} placeholder="200" />
                     </Field>
-                    <Field label="Industry" icon={<BriefcaseBusiness className="h-4 w-4" />}>
-                      <input className={inputClassName} value={industry} onChange={(e) => setIndustry(e.target.value)} />
+                    <Field label="Category / Industry" icon={<BriefcaseBusiness className="h-4 w-4" />}>
+                      <select
+                        className={inputClassName}
+                        value={industry}
+                        onChange={(e) => setIndustry(e.target.value)}
+                        required
+                      >
+                        <option value="Corporate / EAP">Corporate / EAP</option>
+                        <option value="Education">Education</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Government Agency">Government Agency</option>
+                      </select>
                     </Field>
                   </div>
 

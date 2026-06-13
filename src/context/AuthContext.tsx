@@ -94,18 +94,6 @@ export const hasCorporateAccess = (user: AuthUser | null | undefined): boolean =
     toBoolean(raw.is_admin);
   if (adminFlag) return true;
 
-  // 3. Any non-empty company/entity key
-  const companyKey =
-    raw.companyKey ??
-    raw.company_key ??
-    raw.entityKey ??
-    raw.entity_key ??
-    raw.orgKey ??
-    raw.org_key ??
-    raw.organizationKey ??
-    raw.organization_key;
-  if (typeof companyKey === 'string' && companyKey.trim().length > 0) return true;
-
   return false;
 };
 

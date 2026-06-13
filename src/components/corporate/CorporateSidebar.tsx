@@ -43,9 +43,9 @@ export default function CorporateSidebar({ variant, isOpen = false, onClose }: C
       <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-ink-100 bg-surface-sidebar lg:flex lg:flex-col">
         <div className="flex h-16 items-center gap-3 border-b border-ink-100 px-5">
           <img src="/AppIcon.jpeg" alt="MANAS360 logo" className="h-8 w-8 rounded-lg object-cover" />
-          <div>
-            <p className="font-display text-sm font-bold text-sage-800">MANAS360 Enterprise</p>
-            <p className="text-[10px] text-ink-500">Corporate Member</p>
+          <div className="flex flex-col justify-center">
+            <p className="font-display text-sm font-bold leading-tight text-sage-800 m-0">MANAS360 Enterprise</p>
+            <p className="text-[10px] leading-tight text-ink-500 m-0 mt-0.5">Corporate Member</p>
           </div>
         </div>
 
@@ -90,9 +90,9 @@ export default function CorporateSidebar({ variant, isOpen = false, onClose }: C
       >
         <div className="flex h-16 items-center gap-3 border-b border-ink-100 px-5">
           <img src="/AppIcon.jpeg" alt="MANAS360 logo" className="h-8 w-8 rounded-lg object-cover" />
-          <div>
-            <p className="font-display text-sm font-bold text-sage-800">MANAS360 Enterprise</p>
-            <p className="text-[10px] text-ink-500">Corporate Member</p>
+          <div className="flex flex-col justify-center">
+            <p className="font-display text-sm font-bold leading-tight text-sage-800 m-0">MANAS360 Enterprise</p>
+            <p className="text-[10px] leading-tight text-ink-500 m-0 mt-0.5">Corporate Member</p>
           </div>
         </div>
 

@@ -103,7 +103,7 @@ export default function TherapistVerification() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Provider Verification</h1>
-          <p className="text-sm text-gray-500 mt-1 font-medium">Review and approve clinical credentials for all provider types (Therapist, Psychologist, Psychiatrist, Coach).</p>
+          <p className="text-sm text-gray-600 mt-1 font-semibold">Review and approve clinical credentials for all provider types (Therapist, Psychologist, Psychiatrist, Coach).</p>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -127,7 +127,7 @@ export default function TherapistVerification() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100 text-[11px] font-bold uppercase text-gray-400 tracking-wider">
+              <tr className="bg-gray-50/50 border-b border-gray-100 text-[11px] font-bold uppercase text-gray-600 tracking-wider">
                 <th className="px-6 py-4">Provider Name</th>
                 <th className="px-6 py-4">Contact Info</th>
                 <th className="px-6 py-4">Role</th>
@@ -152,11 +152,11 @@ export default function TherapistVerification() {
                   <tr key={v.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="font-bold text-gray-900">{v.firstName} {v.lastName}</div>
-                      <div className="font-mono font-black text-gray-300 text-[10px]">ID:{v.id.slice(-8).toUpperCase()}</div>
+                      <div className="font-mono font-black text-gray-500 text-[10px]">ID:{v.id.slice(-8).toUpperCase()}</div>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      <div>{v.email || '—'}</div>
-                      <div className="text-xs text-gray-400">{(v as AdminUser & { phone?: string }).phone || ''}</div>
+                    <td className="px-6 py-4 text-gray-800">
+                      <div className="font-medium">{v.email || '—'}</div>
+                      <div className="text-xs text-gray-600 font-medium">{(v as AdminUser & { phone?: string }).phone || ''}</div>
                     </td>
                     <td className="px-6 py-4">
                       {(() => {
@@ -166,40 +166,39 @@ export default function TherapistVerification() {
                       })()}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <Badge variant="soft" className={`text-[10px] font-black uppercase tracking-wider ${(v as AdminUser & { isTherapistVerified?: boolean }).isTherapistVerified ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
+                      <Badge variant={(v as AdminUser & { isTherapistVerified?: boolean }).isTherapistVerified ? 'success' : 'warning'} className="text-[10px] font-black uppercase tracking-wider">
                         {(v as AdminUser & { isTherapistVerified?: boolean }).isTherapistVerified ? 'VERIFIED' : v.onboardingStatus}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-gray-500 text-xs font-medium">
+                    <td className="px-6 py-4 text-gray-700 text-xs font-bold">
                       {new Date(v.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <Button
+                      <button
                         type="button"
-                        variant="secondary"
-                        size="sm"
                         onClick={() => void handleViewDocs(v)}
-                        className="text-[10px] font-black uppercase tracking-widest h-8 px-4 rounded-lg border-gray-100 text-blue-600 hover:bg-blue-50"
+                        className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50 transition-colors whitespace-nowrap"
                       >
                         Review Docs
-                      </Button>
+                      </button>
                     </td>
-                    <td className="px-6 py-4 text-center space-x-2">
-                      <Button
-                        type="button"
-                        onClick={() => void handleAction(v.id, 'approve')}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-widest h-8 px-4 rounded-lg shadow-md shadow-emerald-100"
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => void handleAction(v.id, 'reject')}
-                        variant="soft"
-                        className="text-[10px] font-black uppercase tracking-widest h-8 px-4 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border-red-100"
-                      >
-                        Reject
-                      </Button>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void handleAction(v.id, 'approve')}
+                          className="inline-flex items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white transition-colors whitespace-nowrap shadow-sm"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleAction(v.id, 'reject')}
+                          className="inline-flex items-center justify-center rounded-lg bg-red-50 hover:bg-red-100 border border-red-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-600 transition-colors whitespace-nowrap"
+                        >
+                          Reject
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -222,7 +221,7 @@ export default function TherapistVerification() {
         )}
       </Modal>
 
-      <p className="text-[10px] text-gray-400 mt-12 text-center uppercase font-bold tracking-widest font-mono">
+      <p className="text-[10px] text-gray-500 mt-12 text-center uppercase font-bold tracking-widest font-mono">
         Clinical Gatekeeper Protocol • API: Admin.v1 • HIPAA/DPDPA Governance Node
       </p>
     </div>

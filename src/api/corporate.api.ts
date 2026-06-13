@@ -135,6 +135,7 @@ export type BulkEmployeeRow = {
   employeeId?: string;
   name: string;
   email: string;
+  phone?: string;
   department: string;
   location?: string;
   manager?: string;
@@ -317,6 +318,10 @@ export const corporateApi = {
       return unwrap(response.data) as { message: string; proposalUrl: string };
     }
   },
+  updateDemoRequest: async (id: string, payload: Partial<DemoRequestRow>) => {
+    const response = await http.patch(`/v1/admin/b2b-leads/${id}`, payload);
+    return unwrap(response.data) as { message: string };
+  },
   rejectDemoRequest: async (id: string) => {
     try {
       const response = await http.post(`/v1/admin/b2b-leads/${id}/reject`, {});
@@ -474,7 +479,14 @@ export const corporateApi = {
         ...(params || {}),
       },
     });
-    return unwrap(response.data);
+    return response.data?.data || [];
+  },
+
+  createEmployeeAccount: async (employeeId: string, companyKey?: string) => {
+    const response = await http.post(`/v1/corporate/employees/${employeeId}/create-account`, undefined, {
+      params: companyKey ? { companyKey } : undefined,
+    });
+    return response.data;
   },
   getInvoices: async (companyKey?: string) => {
     const response = await http.get('/v1/corporate/invoices', { params: companyKey ? { companyKey } : undefined });

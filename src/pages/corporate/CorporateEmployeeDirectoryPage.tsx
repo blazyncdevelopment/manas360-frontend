@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { UserPlus } from 'lucide-react';
 import CorporateShellLayout from '../../components/corporate/CorporateShellLayout';
 import { corporateApi } from '../../api/corporate.api';
 import { useCorporateKey } from './useCorporateDashboardData';
@@ -21,6 +23,7 @@ export default function CorporateEmployeeDirectoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingEmployee, setEditingEmployee] = useState<EmployeeRow | null>(null);
+  const [creatingAccountFor, setCreatingAccountFor] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const fetchEmployees = async () => {
@@ -41,7 +44,7 @@ export default function CorporateEmployeeDirectoryPage() {
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingEmployee) return;
+    if (!editingEmployee || !companyKey) return;
     try {
       setIsSaving(true);
       await corporateApi.updateEmployee(editingEmployee.id, {
@@ -60,8 +63,30 @@ export default function CorporateEmployeeDirectoryPage() {
     }
   };
 
+  const handleCreateAccount = async (employeeId: string) => {
+    if (!companyKey) return;
+    setCreatingAccountFor(employeeId);
+    try {
+      await corporateApi.createEmployeeAccount(employeeId, companyKey);
+      alert('Account created! Welcome email and WhatsApp have been sent.');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to create account');
+    } finally {
+      setCreatingAccountFor(null);
+    }
+  };
+
   return (
     <CorporateShellLayout title="Employee Directory" subtitle="All enrolled employees for this company.">
+      <div className="mb-6 flex justify-end">
+        <Link
+          to="/corporate/employees/enrollment"
+          className="inline-flex items-center gap-2 rounded-lg bg-sage-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sage-700"
+        >
+          <UserPlus className="h-4 w-4" />
+          Add Employee
+        </Link>
+      </div>
       {loading ? <div className="text-sm text-ink-600">Loading employees...</div> : null}
       {error ? <div className="text-sm text-rose-600">{error}</div> : null}
       {!loading && !error ? (
@@ -69,6 +94,7 @@ export default function CorporateEmployeeDirectoryPage() {
           <table className="min-w-full divide-y divide-ink-100 text-sm">
             <thead className="bg-ink-50 text-left text-xs uppercase tracking-wider text-ink-500">
               <tr>
+                <th className="px-4 py-3">ID</th>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Phone</th>
@@ -81,13 +107,14 @@ export default function CorporateEmployeeDirectoryPage() {
             <tbody className="divide-y divide-ink-100">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-sm text-ink-500">
+                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-ink-500">
                     No employees found. Enroll employees to see them here.
                   </td>
                 </tr>
               ) : (
                 rows.map((r) => (
                   <tr key={r.id}>
+                    <td className="px-4 py-3 text-ink-600 font-mono text-xs">{r.employeeCode || '-'}</td>
                     <td className="px-4 py-3 font-medium text-ink-700">{r.name}</td>
                     <td className="px-4 py-3 text-ink-600">{r.email}</td>
                     <td className="px-4 py-3 text-ink-600">{r.phone || '-'}</td>
@@ -95,12 +122,21 @@ export default function CorporateEmployeeDirectoryPage() {
                     <td className="px-4 py-3 text-ink-600">{r.managerName || '-'}</td>
                     <td className="px-4 py-3 text-ink-600">{r.sessionsUsed}</td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => setEditingEmployee(r)}
-                        className="text-sm font-medium text-sage-600 hover:text-sage-700"
-                      >
-                        Edit
-                      </button>
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => handleCreateAccount(r.id)}
+                          disabled={creatingAccountFor === r.id}
+                          className="text-sm font-medium text-ink-600 hover:text-ink-800 disabled:opacity-50"
+                        >
+                          {creatingAccountFor === r.id ? 'Creating...' : 'Create Account'}
+                        </button>
+                        <button
+                          onClick={() => setEditingEmployee(r)}
+                          className="text-sm font-medium text-sage-600 hover:text-sage-700"
+                        >
+                          Edit
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

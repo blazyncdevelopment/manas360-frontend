@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
+import { useCorporateKey, useCorporateDashboardData } from '../../pages/corporate/useCorporateDashboardData';
 import { useLocation } from 'react-router-dom';
 import CorporateBottomNav from './CorporateBottomNav';
 import CorporateSidebar from './CorporateSidebar';
@@ -30,9 +31,12 @@ type CorporateLayoutProps = {
   children: ReactNode;
 };
 
-export default function CorporateLayout({ title, subtitle, companyName = 'TechCorp India', children }: CorporateLayoutProps) {
+export default function CorporateLayout({ title, subtitle, companyName: propCompanyName, children }: CorporateLayoutProps) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const companyKey = useCorporateKey();
+  const { dashboard } = useCorporateDashboardData(companyKey);
+  const companyName = propCompanyName || dashboard?.company?.name || 'TechCorp India';
 
   useEffect(() => {
     setSidebarOpen(false);

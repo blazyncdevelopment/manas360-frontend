@@ -46,6 +46,7 @@ export type AdminSubscriptionStatus = 'active' | 'expired' | 'cancelled' | 'paus
 export type AdminUser = {
 	id: string;
 	email: string;
+	phone?: string;
 	firstName: string;
 	lastName: string;
 	role: AdminUserRole;
@@ -73,6 +74,7 @@ export type AdminUsersResponse = {
 export type AdminUserDetail = {
 	id: string;
 	email: string;
+	phone?: string;
 	firstName: string;
 	lastName: string;
 	role: AdminUserRole;
