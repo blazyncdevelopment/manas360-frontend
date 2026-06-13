@@ -9,7 +9,6 @@ const defaultCounts: RoleCounts = {
   therapist: 0,
   psychologist: 0,
   psychiatrist: 0,
-  psychologist: 0,
   coach: 0,
   patient: 0,
   learner: 0,
@@ -41,14 +40,13 @@ export default function AdminRolesPage() {
       setError(null);
 
       try {
-        const [allUsers, admins, complianceOfficers, therapists, psychiatrists, coaches, patients] = await Promise.all([
+        const [allUsers, admins, complianceOfficers, therapists, psychologists, psychiatrists, coaches, patients, learners] = await Promise.all([
           getAdminUsers({ page: 1, limit: 1, status: 'active' }),
           getAdminUsers({ page: 1, limit: 1, role: 'admin', status: 'active' }),
           getAdminUsers({ page: 1, limit: 1, role: 'complianceofficer', status: 'active' }),
           getAdminUsers({ page: 1, limit: 1, role: 'therapist', status: 'active' }),
           getAdminUsers({ page: 1, limit: 1, role: 'psychologist', status: 'active' }),
           getAdminUsers({ page: 1, limit: 1, role: 'psychiatrist', status: 'active' }),
-          getAdminUsers({ page: 1, limit: 1, role: 'psychologist', status: 'active' }),
           getAdminUsers({ page: 1, limit: 1, role: 'coach', status: 'active' }),
           getAdminUsers({ page: 1, limit: 1, role: 'patient', status: 'active' }),
           getAdminUsers({ page: 1, limit: 1, role: 'learner', status: 'active' }),
@@ -61,7 +59,6 @@ export default function AdminRolesPage() {
           therapist: therapists.data.meta.totalItems,
           psychologist: psychologists.data.meta.totalItems,
           psychiatrist: psychiatrists.data.meta.totalItems,
-          psychologist: psychologists.data.meta.totalItems,
           coach: coaches.data.meta.totalItems,
           patient: patients.data.meta.totalItems,
           learner: learners.data.meta.totalItems,
@@ -107,7 +104,6 @@ export default function AdminRolesPage() {
         <RoleStat label="Therapists" value={String(counts.therapist)} />
         <RoleStat label="Psychologists" value={String(counts.psychologist)} />
         <RoleStat label="Psychiatrists" value={String(counts.psychiatrist)} />
-        <RoleStat label="Psychologists" value={String(counts.psychologist)} />
         <RoleStat label="Coaches" value={String(counts.coach)} />
         <RoleStat label="Patients" value={String(counts.patient)} />
         <RoleStat label="Learners" value={String(counts.learner)} />
@@ -153,7 +149,6 @@ export default function AdminRolesPage() {
             <AuditRow label="Therapist Coverage" value={`${counts.therapist} of ${totalUsers} users`} />
             <AuditRow label="Psychologist Coverage" value={`${counts.psychologist} of ${totalUsers} users`} />
             <AuditRow label="Psychiatrist Coverage" value={`${counts.psychiatrist} of ${totalUsers} users`} />
-            <AuditRow label="Psychologist Coverage" value={`${counts.psychologist} of ${totalUsers} users`} />
             <AuditRow label="Coach Coverage" value={`${counts.coach} of ${totalUsers} users`} />
             <AuditRow label="Patient Coverage" value={`${counts.patient} of ${totalUsers} users`} />
             <AuditRow label="Learner Coverage" value={`${counts.learner} of ${totalUsers} users`} />

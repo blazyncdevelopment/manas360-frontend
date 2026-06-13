@@ -281,7 +281,7 @@ const CertificationCertificatePage: React.FC = () => {
                 {/* BOTTOM RIGHT: Signature */}
                 <div
                     className="absolute flex justify-center"
-                    style={{ top: '75%', left: '56%', width: '25%' }}
+                    style={{ top: '75%', left: '65%', width: '25%' }}
                 >
                     <span style={{
                         fontFamily: "'Great Vibes', cursive",
@@ -296,7 +296,7 @@ const CertificationCertificatePage: React.FC = () => {
 
                 <div
                     className="absolute flex justify-center"
-                    style={{ top: '85%', left: '56%', width: '25%' }}
+                    style={{ top: '85%', left: '65%', width: '25%' }}
                 >
                     <span style={{
                         fontFamily: "'Cinzel', serif",
@@ -312,7 +312,7 @@ const CertificationCertificatePage: React.FC = () => {
 
                 <div
                     className="absolute flex justify-center"
-                    style={{ top: '90%', left: '56%', width: '25%' }}
+                    style={{ top: '90%', left: '65%', width: '25%' }}
                 >
                     <span style={{
                         fontFamily: "'Cinzel', serif",

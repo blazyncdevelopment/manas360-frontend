@@ -8,7 +8,6 @@ import {
   type AdminVerificationDocument,
 } from '../../api/admin.api';
 import ProviderOnboardingReviewPanel from '../../components/admin/ProviderOnboardingReviewPanel';
-import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import toast from 'react-hot-toast';

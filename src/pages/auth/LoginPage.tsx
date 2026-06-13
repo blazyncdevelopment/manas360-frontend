@@ -5,7 +5,6 @@ import { getApiErrorMessage, signupWithPhone, verifyPhoneSignupOtp } from '../..
 import { resolveProviderIdForOnboarding } from '../../api/providerOnboarding';
 import { clearGuestClinicalScreening, readCachedClinicalScreening } from '../../utils/guestScreeningCache';
 import { patientApi } from '../../api/patient';
-import { corporateApi } from '../../api/corporate.api';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { getPostLoginRoute, hasCorporateAccess, useAuth } from '../../context/AuthContext';
@@ -40,7 +39,7 @@ const isProviderAuthRole = (role: SignupRole | string | null): boolean => (
 );
 
 export default function LoginPage() {
-	const { user, isAuthenticated, syncSessionAfterOtp, checkAuth } = useAuth();
+	const { user, isAuthenticated, syncSessionAfterOtp } = useAuth();
 	const navigate = useNavigate();
 	const isCompletingLoginRef = useRef(false);
 	const location = useLocation();
