@@ -21,8 +21,8 @@ function generateCertId(enrollmentId: string): string {
     return result;
 }
 
-function calcFontVw(name: string): number {
-    return Math.min(56 / (name.length * 0.60), 1.75);
+function calcFontCqi(name: string): number {
+    return Math.min(60 / (name.length * 0.55), 2.2);
 }
 
 const CertificationCertificatePage: React.FC = () => {
@@ -47,7 +47,7 @@ const CertificationCertificatePage: React.FC = () => {
     }, [enrollment, certId, updateEnrollment]);
 
     const qrValue = `${window.location.origin}/verify/${certId}`;
-    const fontVw = enrollment ? calcFontVw(enrollment.certificationName) : 1.75;
+    const fontCqi = enrollment ? calcFontCqi(enrollment.certificationName) : 1.75;
 
     const handleDownloadPDF = async () => {
         if (!certificateRef.current) return;
@@ -120,8 +120,8 @@ const CertificationCertificatePage: React.FC = () => {
 
             <div
                 ref={certificateRef}
-                className="relative w-full max-w-[980px] shadow-[0_30px_80px_rgba(0,0,0,0.8)] overflow-hidden"
-                style={{ aspectRatio: '2340 / 1655' }}
+                className="relative w-full max-w-[980px] shadow-[0_30px_80px_rgba(0,0,0,0.8)] overflow-hidden bg-white"
+                style={{ aspectRatio: '2340 / 1655', containerType: 'inline-size' }}
             >
                 <img
                     src="/Certificate.png"
@@ -147,60 +147,182 @@ const CertificationCertificatePage: React.FC = () => {
                     />
                 </div>
 
+                {/* EXACT ABSOLUTE POSITIONING TO MATCH THE REFERENCE IMAGE */}
                 <div
-                    className="absolute flex items-center justify-center"
-                    style={{ top: '36%', left: '4%', width: '58%', height: '16%' }}
+                    className="absolute flex justify-center"
+                    style={{ top: '13.5%', left: '4%', width: '58%' }}
+                >
+                    <span style={{
+                        fontFamily: "'Cinzel', serif",
+                        color: '#c5a059',
+                        fontSize: '4.8cqi',
+                        lineHeight: 1,
+                        letterSpacing: '0.05em',
+                        textAlign: 'center',
+                    }}>
+                        CERTIFICATE
+                    </span>
+                </div>
+
+                <div
+                    className="absolute flex justify-center"
+                    style={{ top: '21.5%', left: '4%', width: '58%' }}
+                >
+                    <span style={{
+                        fontFamily: "'Cinzel', serif",
+                        color: '#c5a059',
+                        fontSize: '2.2cqi',
+                        lineHeight: 1,
+                        letterSpacing: '0.25em',
+                        textAlign: 'center',
+                    }}>
+                        OF COMPLETION
+                    </span>
+                </div>
+
+                <div
+                    className="absolute flex justify-center"
+                    style={{ top: '34%', left: '4%', width: '58%' }}
+                >
+                    <span style={{
+                        fontFamily: "'Cinzel', serif",
+                        color: '#c5a059',
+                        fontSize: '1.5cqi',
+                        textAlign: 'center',
+                        letterSpacing: '0.02em',
+                    }}>
+                        This is to certify that
+                    </span>
+                </div>
+
+                <div
+                    className="absolute flex justify-center"
+                    style={{ top: '41%', left: '4%', width: '58%' }}
                 >
                     <span style={{
                         fontFamily: "'Great Vibes', cursive",
                         color: '#c5a059',
-                        fontSize: `clamp(1rem, ${Math.min(5.4, 58 / ((enrollment.userName || 'Recipient Name').length * 0.55))}vw, 4.2rem)`,
-                        lineHeight: 1.1,
-                        whiteSpace: 'normal',
-                        wordBreak: 'break-word',
+                        fontSize: `${Math.min(9, 85 / ((enrollment.userName || 'Recipient Name').length * 0.5))}cqi`,
+                        lineHeight: 1,
+                        whiteSpace: 'nowrap',
                         textAlign: 'center',
-                        width: '100%',
                         display: 'block',
-                        textShadow: '0 2px 16px rgba(197,160,89,0.5)',
+                        textShadow: '0 1px 5px rgba(197,160,89,0.3)',
                     }}>
                         {enrollment.userName || 'Recipient Name'}
                     </span>
                 </div>
 
                 <div
-                    className="absolute flex items-center justify-center"
-                    style={{ top: '63.5%', left: '4%', width: '56%', height: '4.5%' }}
+                    className="absolute flex justify-center"
+                    style={{ top: '58%', left: '4%', width: '58%' }}
+                >
+                    <span style={{
+                        fontFamily: "'Cinzel', serif",
+                        color: '#c5a059',
+                        fontSize: '1.3cqi',
+                        textAlign: 'center',
+                        lineHeight: 1.5,
+                    }}>
+                        has successfully completed the course and awarded &nbsp;&nbsp;&nbsp;by Manas360 Mental<br />
+                        Wellness Pvt Ltd., as
+                    </span>
+                </div>
+
+                <div
+                    className="absolute flex justify-center"
+                    style={{ top: '69.5%', left: '4%', width: '58%' }}
                 >
                     <span style={{
                         fontFamily: "'Cinzel', serif",
                         fontWeight: 600,
-                        color: '#c9b87a',
-                        fontSize: `${fontVw}vw`,
+                        color: '#c5a059',
+                        fontSize: `${fontCqi}cqi`,
                         letterSpacing: '0.02em',
                         whiteSpace: 'nowrap',
                         display: 'block',
                         lineHeight: 1,
                         textAlign: 'center',
-                        width: '100%',
                     }}>
                         {enrollment.certificationName}
                     </span>
                 </div>
 
+                {/* BOTTOM LEFT: Certification ID */}
                 <div
-                    className="absolute flex items-center"
-                    style={{ top: '84.1%', left: '30.4%', height: '2.48%' }}
+                    className="absolute flex items-start"
+                    style={{ top: '85%', left: '10%', width: '42%' }}
                 >
                     <span style={{
                         fontFamily: "'Cinzel', serif",
                         color: '#c5a059',
-                        fontWeight: 600,
-                        fontSize: '1.26vw',
-                        letterSpacing: '0.18em',
+                        fontSize: '1.4cqi',
                         whiteSpace: 'nowrap',
-                        lineHeight: 1,
+                        lineHeight: 1.2,
+                        textTransform: 'uppercase',
                     }}>
-                        {' ' + certId}
+                        CERTIFICATION ID :
+                    </span>
+                    <span style={{
+                        fontFamily: "'Cinzel', serif",
+                        color: '#c5a059',
+                        fontWeight: 600,
+                        fontSize: '1.1cqi',
+                        letterSpacing: '0.05em',
+                        lineHeight: 1.5,
+                        marginLeft: '1cqi',
+                        whiteSpace: 'nowrap',
+                        textTransform: 'uppercase',
+                    }}>
+                        {certId}
+                    </span>
+                </div>
+
+                {/* BOTTOM RIGHT: Signature */}
+                <div
+                    className="absolute flex justify-center"
+                    style={{ top: '75%', left: '56%', width: '25%' }}
+                >
+                    <span style={{
+                        fontFamily: "'Great Vibes', cursive",
+                        color: '#c5a059',
+                        fontSize: '4.5cqi',
+                        transform: 'rotate(-5deg)',
+                        display: 'block',
+                    }}>
+                        Howard Ong
+                    </span>
+                </div>
+
+                <div
+                    className="absolute flex justify-center"
+                    style={{ top: '85%', left: '56%', width: '25%' }}
+                >
+                    <span style={{
+                        fontFamily: "'Cinzel', serif",
+                        color: '#c5a059',
+                        fontSize: '1.4cqi',
+                        textAlign: 'center',
+                        lineHeight: 1,
+                        textTransform: 'uppercase',
+                    }}>
+                        HOWARD ONG
+                    </span>
+                </div>
+
+                <div
+                    className="absolute flex justify-center"
+                    style={{ top: '90%', left: '56%', width: '25%' }}
+                >
+                    <span style={{
+                        fontFamily: "'Cinzel', serif",
+                        color: '#c5a059',
+                        fontSize: '1cqi',
+                        textAlign: 'center',
+                        lineHeight: 1,
+                        textTransform: 'uppercase',
+                    }}>
+                        CHAIR-CLINICAL ADVISORY BOARD
                     </span>
                 </div>
             </div>
@@ -218,3 +340,4 @@ const CertificationCertificatePage: React.FC = () => {
 };
 
 export default CertificationCertificatePage;
+;

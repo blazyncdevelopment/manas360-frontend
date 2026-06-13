@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEnrollmentStore } from "../store/CertificationEnrollmentStore";
 import { getModulesByCertification, ModuleData } from "../utils/certificationLessonUtils";
 import { useCertificationProgress } from "../store/useCertificationProgress";
@@ -10,6 +10,7 @@ type ModuleStatus = "complete" | "in_progress" | "locked" | "locked_by_payment";
 export const CertificationModulesPage: React.FC = () => {
   const { enrollmentId } = useParams<{ enrollmentId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { enrollments, syncEnrollments } = useEnrollmentStore();
   const { isModuleCompleted, isQuizUnlocked } = useCertificationProgress();
 
@@ -115,19 +116,21 @@ export const CertificationModulesPage: React.FC = () => {
   };
 
   const handleModuleClick = (status: ModuleStatus, moduleId: string) => {
+    const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
     if (status === "locked_by_payment") {
       alert("Please pay your next installment to unlock more modules.");
-      navigate('/my-certifications');
+      navigate(basePath ? `${basePath}/my-certifications` : '/my-certifications');
       return;
     }
     if (status !== "locked") {
-      navigate(`/certifications/lessons/${moduleId}`, { state: { enrollmentId } });
+      navigate(`${basePath}/certifications/lessons/${moduleId}`, { state: { enrollmentId } });
     }
   };
 
   const handleQuizClick = () => {
+    const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
     if (quizUnlocked) {
-      navigate(`/certifications/quiz/${enrollmentId}`);
+      navigate(`${basePath}/certifications/quiz/${enrollmentId}`);
     }
   };
 

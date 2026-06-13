@@ -23,6 +23,11 @@ export const CertificationLessonPage: React.FC = () => {
     void syncEnrollments();
   }, [syncEnrollments]);
 
+  // Scroll to top on lesson change
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [lessonId]);
+
   const enrollmentIdFromState = (location.state as { enrollmentId?: string } | null)?.enrollmentId;
 
   // Try to get enrollmentId from router location state (set by modules page)
@@ -63,8 +68,9 @@ export const CertificationLessonPage: React.FC = () => {
         : modules.length;
 
     if (currentIndex >= maxUnlockedByPayment) {
+      const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
       alert("This module is locked. Please pay your next installment to continue.");
-      navigate('/my-certifications');
+      navigate(basePath ? `${basePath}/my-certifications` : '/my-certifications');
     }
   }, [enrollment, lessonId, navigate]);
 
@@ -78,12 +84,24 @@ export const CertificationLessonPage: React.FC = () => {
   const handleVideoEnded = useCallback(() => {
     if (!enrollmentId || !lessonId) return;
     markModuleComplete(enrollmentId, lessonId, allModuleIds);
-  }, [enrollmentId, lessonId, allModuleIds, markModuleComplete]);
+    const currentIndex = allModuleIds.indexOf(lessonId);
+    if (currentIndex !== -1 && currentIndex < allModuleIds.length - 1) {
+      const nextLessonId = allModuleIds[currentIndex + 1];
+      const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
+      navigate(`${basePath}/certifications/lessons/${nextLessonId}`, { state: { enrollmentId } });
+    }
+  }, [enrollmentId, lessonId, allModuleIds, markModuleComplete, navigate, location.pathname]);
 
   const handleMarkComplete = useCallback(() => {
     if (!enrollmentId || !lessonId) return;
     markModuleComplete(enrollmentId, lessonId, allModuleIds);
-  }, [enrollmentId, lessonId, allModuleIds, markModuleComplete]);
+    const currentIndex = allModuleIds.indexOf(lessonId);
+    if (currentIndex !== -1 && currentIndex < allModuleIds.length - 1) {
+      const nextLessonId = allModuleIds[currentIndex + 1];
+      const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
+      navigate(`${basePath}/certifications/lessons/${nextLessonId}`, { state: { enrollmentId } });
+    }
+  }, [enrollmentId, lessonId, allModuleIds, markModuleComplete, navigate, location.pathname]);
 
   const isCompleted = enrollmentId && lessonId ? isModuleCompleted(enrollmentId, lessonId) : false;
 
@@ -419,7 +437,14 @@ export const CertificationLessonPage: React.FC = () => {
         {/* Top Navigation */}
         <div className="mb-6 flex items-center justify-between">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
+              if (enrollmentId) {
+                navigate(`${basePath}/certifications/modules/${enrollmentId}`);
+              } else {
+                navigate(-1);
+              }
+            }}
             className="text-slate-500 hover:text-slate-800 flex items-center gap-2 text-sm font-medium transition-colors"
           >
             ← Back to Modules
@@ -443,6 +468,7 @@ export const CertificationLessonPage: React.FC = () => {
               style={{ paddingTop: vimeoEmbed.paddingTop }}
             >
               <iframe
+                key={lessonId}
                 src={vimeoEmbed.src}
                 onError={() => setVimeoBlocked(true)}
                 frameBorder="0"
@@ -592,7 +618,10 @@ export const CertificationLessonPage: React.FC = () => {
           </button>
           {enrollmentId && isQuizUnlocked(enrollmentId) && (
             <button
-              onClick={() => navigate(`/certifications/quiz/${enrollmentId}`)}
+              onClick={() => {
+                const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
+                navigate(`${basePath}/certifications/quiz/${enrollmentId}`);
+              }}
               className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-full transition-all shadow-md transform hover:scale-105"
             >
               Attend Certification Quiz →

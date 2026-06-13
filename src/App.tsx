@@ -485,9 +485,17 @@ function App() {
                       <Route path="appointments" element={<AppointmentRequestsPage />} />
                       <Route path="leads" element={<ProviderMarketplacePage />} />
                       <Route path="certifications" element={<CertificationLandingPage />} />
+                      {/* More specific paths must come before :slug catch-all */}
+                      <Route path="certifications/modules/:enrollmentId" element={<CertificationModulesPage />} />
+                      <Route path="certifications/lessons/:lessonId" element={<CertificationLessonPage />} />
+                      <Route path="certifications/quiz/:enrollmentId" element={<CertificationQuizPage />} />
+                      <Route path="certifications/certificate/:enrollmentId" element={<CertificationCertificatePage />} />
                       <Route path="certifications/:slug" element={<CertificationDetailsPage />} />
                       <Route path="certification/enroll/:slug" element={<EnrollmentRegistrationPage />} />
                       <Route path="checkout/:slug" element={<CheckoutPage />} />
+                      <Route path="payment-success" element={<PaymentSuccessPage />} />
+                      <Route path="payment-failed" element={<PaymentFailedPage />} />
+                      <Route path="enrollment-confirmed" element={<EnrollmentConfirmedPage />} />
                       <Route path="my-certifications" element={<MyCertificationsPage />} />
                       <Route
                         path="subscription"
@@ -849,14 +857,15 @@ function App() {
                       <Route path="reports" element={<ReportsPage />} />
                       <Route path="reports/shared/:id" element={<PatientReportDownloadPage />} />
                       <Route path="certifications" element={<CertificationLandingPage />} />
-                      <Route path="certifications/:slug" element={<CertificationDetailsPage />} />
-                      <Route path="certification/enroll/:slug" element={<EnrollmentRegistrationPage />} />
-                      <Route path="checkout/:slug" element={<CheckoutPage />} />
-                      <Route path="my-certifications" element={<MyCertificationsPage />} />
+                      {/* More specific paths must come before :slug catch-all */}
                       <Route path="certifications/modules/:enrollmentId" element={<CertificationModulesPage />} />
                       <Route path="certifications/lessons/:lessonId" element={<CertificationLessonPage />} />
                       <Route path="certifications/quiz/:enrollmentId" element={<CertificationQuizPage />} />
                       <Route path="certifications/certificate/:enrollmentId" element={<CertificationCertificatePage />} />
+                      <Route path="certifications/:slug" element={<CertificationDetailsPage />} />
+                      <Route path="certification/enroll/:slug" element={<EnrollmentRegistrationPage />} />
+                      <Route path="checkout/:slug" element={<CheckoutPage />} />
+                      <Route path="my-certifications" element={<MyCertificationsPage />} />
                       <Route path="payment-success" element={<PaymentSuccessPage />} />
                       <Route path="payment-failed" element={<PaymentFailedPage />} />
                       <Route path="enrollment-confirmed" element={<EnrollmentConfirmedPage />} />

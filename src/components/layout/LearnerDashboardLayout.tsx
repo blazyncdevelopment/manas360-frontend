@@ -4,7 +4,6 @@ import {
   BookOpen,
   Award,
   LayoutDashboard,
-  Settings,
   LogOut,
   Menu,
 } from 'lucide-react';
@@ -112,7 +111,8 @@ export const LearnerDashboardLayout = () => {
 
       {/* Footer profile card — identical pattern to ProviderSidebar */}
       <div className="border-t border-gray-200 p-4 shrink-0 mt-auto bg-[#F5F3F0]">
-        <div className="flex items-center gap-3">
+
+        {/* <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-[#E8EFE6] flex items-center justify-center text-[#4A6741] font-bold text-sm">
             {user?.firstName ? user.firstName.charAt(0) : 'L'}
           </div>
@@ -122,8 +122,7 @@ export const LearnerDashboardLayout = () => {
             </p>
             <p className="text-[11px] text-gray-500">Learner</p>
           </div>
-        </div>
-
+        </div> */}
         {/* Book a Session */}
         <button
           type="button"
@@ -209,13 +208,13 @@ export const LearnerDashboardLayout = () => {
               <span className="w-2 h-2 bg-[#4A6741] rounded-full animate-pulse" />
               Online
             </div>
-            <NavLink
+            {/* <NavLink
               to="/provider/settings"
               className="relative p-2 rounded-lg hover:bg-gray-100 transition"
               title="Settings"
             >
               <Settings size={20} className="text-gray-600" />
-            </NavLink>
+            </NavLink> */}
             <button
               type="button"
               onClick={() => void handleLogout()}

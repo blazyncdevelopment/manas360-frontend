@@ -12,7 +12,19 @@ export const CertificationLandingPage: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
   const isProviderRoute = location.pathname.startsWith('/provider') || location.pathname.startsWith('/patient') || location.pathname.startsWith('/learner');
-  const [activeTab, setActiveTab] = useState<'my' | 'browse'>('my');
+  const [activeTab, setActiveTab] = useState<'my' | 'browse'>(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('tab') === 'browse' ? 'browse' : 'my';
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('tab') === 'browse') {
+      setActiveTab('browse');
+    } else if (params.get('tab') === 'my') {
+      setActiveTab('my');
+    }
+  }, [location.search]);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 800);

@@ -89,7 +89,10 @@ const EnrollmentConfirmedPage: React.FC = () => {
 
         {/* Buttons */}
         <button
-          onClick={() => navigate(`/certifications/modules/${enrollmentId}`)}
+          onClick={() => {
+            const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
+            navigate(`${basePath}/certifications/modules/${enrollmentId}`);
+          }}
           className="w-full bg-gradient-to-r from-teal-500 to-purple-600 text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg hover:scale-[1.02] transition-all text-sm mb-3"
         >
           Start Module 1 →
@@ -97,7 +100,10 @@ const EnrollmentConfirmedPage: React.FC = () => {
 
         {/* ── Fixed: use navigate() instead of window.location.hash ── */}
         <button
-          onClick={() => navigate('/my-certifications')}
+          onClick={() => {
+            const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
+            navigate(basePath ? `${basePath}/my-certifications` : '/my-certifications');
+          }}
           className="w-full border-2 border-slate-800 text-slate-800 bg-white font-bold py-3.5 rounded-xl shadow-md hover:bg-slate-800 hover:text-white hover:shadow-lg hover:scale-[1.02] active:scale-[0.97] transition-all duration-200 text-sm"
         >
           View My Certifications

@@ -235,7 +235,8 @@ export const CertificationQuizPage: React.FC = () => {
     try {
       await completeCertification(enrollment.slug);
       updateProgress(enrollmentId, 100);
-      navigate(`/certifications/certificate/${enrollmentId}`);
+      const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
+      navigate(`${basePath}/certifications/certificate/${enrollmentId}`);
     } catch {
       setClaimError("Unable to finalize certification right now. Please try again.");
     } finally {

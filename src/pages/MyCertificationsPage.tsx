@@ -14,6 +14,7 @@ export const MyCertificationsPage: React.FC = () => {
     const [processingId, setProcessingId] = useState<string | null>(null);
     const { user, becomeProvider } = useAuth();
     const isNested = location.pathname.startsWith('/provider') || location.pathname.startsWith('/patient') || location.pathname.startsWith('/learner');
+    const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
 
     React.useEffect(() => {
         void syncEnrollments();
@@ -66,14 +67,14 @@ export const MyCertificationsPage: React.FC = () => {
                         <div>
                             <h1 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 mb-2">My Certifications</h1>
                             <p className="text-slate-600 text-sm md:text-base">Track your progress, installments, and achievements.</p>
-                            
+
                             {user?.role === 'learner' && (
                                 <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 mb-4 mt-6 w-full">
                                     <div className="flex-1 text-center md:text-left">
                                         <h3 className="text-xl font-bold mb-1">Advance Your Career</h3>
                                         <p className="text-emerald-50 opacity-90 text-sm">Ready to help others professionally? Join the MANAS360 provider network today.</p>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={async () => {
                                             if (window.confirm("Switch to Provider Role? You will be directed to the onboarding setup.")) {
                                                 await becomeProvider();
@@ -102,7 +103,7 @@ export const MyCertificationsPage: React.FC = () => {
                             You haven't enrolled in any certifications yet. Start your journey to mastery today.
                         </p>
                         <button
-                            onClick={() => navigate('/certifications')}
+                            onClick={() => navigate(basePath ? `${basePath}/certifications?tab=browse` : '/certifications')}
                             className="w-full sm:w-auto bg-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-purple-700 transition inline-flex justify-center items-center gap-2 shadow-lg shadow-purple-200"
                         >
                             Explore Certifications <ArrowRight size={18} />
@@ -181,14 +182,20 @@ export const MyCertificationsPage: React.FC = () => {
                                     {/* Actions */}
                                     <div className="flex flex-col gap-2 md:gap-3 w-full lg:w-auto lg:min-w-[200px]">
                                         <button
-                                        onClick={() => navigate(`/certifications/modules/${enrollment.id}`)}
-                                        className="px-6 py-3 bg-purple-600 text-white rounded-xl font-medium text-sm hover:bg-purple-700 transition flex items-center justify-center gap-2 shadow-lg shadow-purple-200 w-full"
+                                            onClick={() => {
+                                                const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
+                                                navigate(`${basePath}/certifications/modules/${enrollment.id}`);
+                                            }}
+                                            className="px-6 py-3 bg-purple-600 text-white rounded-xl font-medium text-sm hover:bg-purple-700 transition flex items-center justify-center gap-2 shadow-lg shadow-purple-200 w-full"
                                         >
                                             <BookOpen size={16} /> Continue Learning
-                                            </button>
+                                        </button>
                                         {enrollment.paymentStatus === 'Pending' && (
                                             <button
-                                                onClick={() => navigate(`/checkout/${enrollment.slug}`)}
+                                                onClick={() => {
+                                                    const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
+                                                    navigate(`${basePath}/checkout/${enrollment.slug}`);
+                                                }}
                                                 className="px-6 py-3 bg-red-50 text-red-700 border border-red-200 rounded-xl font-medium text-sm hover:bg-red-100 transition flex items-center justify-center gap-2 w-full"
                                             >
                                                 <RefreshCcw size={16} /> Retry Payment
@@ -208,7 +215,10 @@ export const MyCertificationsPage: React.FC = () => {
 
                                         {enrollment.completionPercentage === 100 && (
                                             <button
-                                                onClick={() => navigate(`/certifications/certificate/${enrollment.id}`)}
+                                                onClick={() => {
+                                                    const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
+                                                    navigate(`${basePath}/certifications/certificate/${enrollment.id}`);
+                                                }}
                                                 className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-100 w-full"
                                             >
                                                 <Download size={16} /> View & Download Certificate

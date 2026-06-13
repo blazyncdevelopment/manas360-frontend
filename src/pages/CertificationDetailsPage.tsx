@@ -102,7 +102,9 @@ export const CertificationDetailsPage: React.FC = () => {
                 ? `/learner/checkout/${cert.slug}`
                 : inPatientShell
                 ? `/patient/checkout/${cert.slug}`
-                : `/checkout/${cert.slug}${inProviderShell ? '?shell=provider' : ''}`;
+                : inProviderShell
+                ? `/provider/checkout/${cert.slug}`
+                : `/checkout/${cert.slug}`;
             navigate(checkoutPath);
             setEnrolling(false);
             return;
