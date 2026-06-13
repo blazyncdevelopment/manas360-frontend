@@ -76,6 +76,9 @@ const GoldenPupPage = lazy(() => import('./pages/GoldenPupPage'));
 const VideoSessionPage = lazy(() => import('./pages/shared/VideoSessionPage'));
 const AdminPortalLoginPage = lazy(() => import('./pages/admin/AdminPortalLoginPage'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/Dashboard'));
+const AdminBlogManagementPage = lazy(() => import('./pages/admin/BlogManagement'));
+const BlogListPage = lazy(() => import('./pages/blog/BlogList'));
+const BlogDetailPage = lazy(() => import('./pages/blog/BlogDetail'));
 const AdminDataPrivacyHubPage = lazy(() => import('./pages/admin/AdminDataPrivacyHubPage'));
 const CentralizedLegalDocumentManagement = lazy(() => import('./pages/admin/CentralizedLegalDocumentManagement'));
 const ComplianceDashboard = lazy(() => import('./pages/admin/ComplianceDashboard'));
@@ -394,6 +397,9 @@ function App() {
                     <Route path="/how-it-works" element={<HowItWorksPage />} />
                     <Route path="/about" element={<AboutUsPage />} />
                     <Route path="/contact" element={<ContactUsPage />} />
+                    <Route path="/blog" element={<BlogListPage />} />
+                    <Route path="/blogs" element={<Navigate to="/blog" replace />} />
+                    <Route path="/blog/:slug" element={<BlogDetailPage />} />
                     <Route path="/specialized-care" element={<SpecializedCarePage />} />
                     <Route path="/my-digital-clinic" element={<MyDigitalClinicPricingPage />} />
                     <Route path="/my-digital-clinic/register" element={<RegisterClinicPage />} />
@@ -717,6 +723,7 @@ function App() {
                         <Route path="operations/agreements/:agreementId" element={<AgreementDetailPage />} />
                         <Route path="operations/agreements/:agreementId/client" element={<ClientAgreementPage />} />
                         <Route path="operations/retreat-requests" element={<AdminRetreatsPage />} />
+                        <Route path="operations/blogs" element={<AdminBlogManagementPage />} />
 
                         <Route path="intelligence/platform-analytics" element={<PlatformAnalytics />} />
                         <Route path="intelligence/user-growth" element={<UserGrowthAnalytics />} />

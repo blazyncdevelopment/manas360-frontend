@@ -30,6 +30,7 @@ const roleBadgeClass: Record<AdminUserRole, string> = {
 	admin: 'bg-red-100 text-red-700',
 	complianceofficer: 'bg-sky-100 text-sky-700',
 	therapist: 'bg-blue-100 text-blue-700',
+	psychologist: 'bg-indigo-100 text-indigo-700',
 	psychiatrist: 'bg-violet-100 text-violet-700',
 	psychologist: 'bg-indigo-100 text-indigo-700',
 	coach: 'bg-amber-100 text-amber-700',
@@ -331,6 +332,9 @@ export default function AdminUsersPage() {
 						<div>
 							<p className="text-sm font-semibold text-ink-800">{fullName || 'Unnamed user'}</p>
 							<p className="text-xs text-ink-500">{user.email}</p>
+							{user.phone && user.phone !== 'N/A' && (
+								<p className="text-xs text-ink-500">{user.phone}</p>
+							)}
 							<p className="mt-1 text-[11px] text-ink-400">ID: {user.id.slice(0, 8)}...</p>
 						</div>
 					);
@@ -367,7 +371,7 @@ export default function AdminUsersPage() {
 				key: 'actions',
 				head: 'Actions',
 				render: (user: AdminUser) => (
-					<div className="flex flex-wrap gap-2">
+					<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
 						<button
 							onClick={() => {
 								handleOpenUser(user.id);
@@ -423,6 +427,7 @@ export default function AdminUsersPage() {
 						<option value="">All roles</option>
 						<option value="admin">Admin</option>
 						<option value="therapist">Therapist</option>
+						<option value="psychologist">Psychologist</option>
 						<option value="psychiatrist">Psychiatrist</option>
 						<option value="psychologist">Psychologist</option>
 						<option value="coach">Coach</option>
@@ -569,6 +574,7 @@ export default function AdminUsersPage() {
 							<DetailRow label="User ID" value={selectedUser.id} />
 							<DetailRow label="Name" value={`${selectedUser.firstName} ${selectedUser.lastName}`.trim() || 'Unnamed user'} />
 							<DetailRow label="Email" value={selectedUser.email} />
+							<DetailRow label="Phone" value={selectedUser.phone || 'N/A'} />
 							<DetailRow label="Role" value={selectedUser.role} capitalize />
 							<DetailRow label="Created" value={formatDateTime(selectedUser.createdAt)} />
 							<DetailRow label="Updated" value={formatDateTime(selectedUser.updatedAt)} />

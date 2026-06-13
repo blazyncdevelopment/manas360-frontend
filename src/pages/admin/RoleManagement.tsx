@@ -199,108 +199,108 @@ export default function RoleManagement() {
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-3xl font-bold tracking-tight text-white mb-2">Role Management</h1>
-					<p className="text-muted-foreground">
+					<h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">Role Management</h1>
+					<p className="text-gray-600 font-medium">
 						Dynamically manage RBAC (Role-Based Access Control) across the platform.
 					</p>
 				</div>
-				<Badge variant="secondary" className="px-4 py-2 bg-primary/10 text-primary border-primary/20">
+				<Badge variant="secondary" className="px-4 py-2 bg-blue-50 text-blue-700 border-blue-200">
 					<ShieldCheck className="w-4 h-4 mr-2" /> Server Synced
 				</Badge>
 			</div>
 
-			<Card className="overflow-hidden bg-black/40 border-white/10 backdrop-blur-xl">
+			<Card className="overflow-hidden bg-white border-gray-200 shadow-sm">
 				<div className="p-6">
 					<div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 						<div>
-							<h2 className="text-xl font-bold text-white">Invite Platform Admin</h2>
-							<p className="text-sm text-muted-foreground">
+							<h2 className="text-xl font-bold text-gray-900">Invite Platform Admin</h2>
+							<p className="text-sm text-gray-500 font-medium">
 								Superadmin can invite admin, clinical director, finance manager, and compliance officer accounts.
 							</p>
 						</div>
-						<Badge variant="secondary" className="w-fit bg-white/10 text-white border-white/10">
+						<Badge variant="secondary" className="w-fit bg-gray-100 text-gray-800 border-gray-200">
 							{isSuperAdmin ? 'Superadmin access enabled' : 'Read only'}
 						</Badge>
 					</div>
 
 					{isSuperAdmin ? (
 						<form onSubmit={handleCreateAdmin} className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-							<label className="space-y-1">
-								<span className="text-xs font-semibold uppercase tracking-wide text-slate-300">Email</span>
+							<label className="space-y-1 block">
+								<span className="text-xs font-bold uppercase tracking-wide text-gray-700">Email</span>
 								<input
 									type="email"
 									value={adminForm.email}
 									onChange={(event) => setAdminForm((prev) => ({ ...prev, email: event.target.value }))}
-									className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-400 focus:border-sky-400"
+									className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
 									placeholder="admin@manas360.com"
 									required
 								/>
 							</label>
-							<label className="space-y-1">
-								<span className="text-xs font-semibold uppercase tracking-wide text-slate-300">First Name</span>
+							<label className="space-y-1 block">
+								<span className="text-xs font-bold uppercase tracking-wide text-gray-700">First Name</span>
 								<input
 									value={adminForm.firstName}
 									onChange={(event) => setAdminForm((prev) => ({ ...prev, firstName: event.target.value }))}
-									className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-400 focus:border-sky-400"
+									className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
 									placeholder="First name"
 								/>
 							</label>
-							<label className="space-y-1">
-								<span className="text-xs font-semibold uppercase tracking-wide text-slate-300">Last Name</span>
+							<label className="space-y-1 block">
+								<span className="text-xs font-bold uppercase tracking-wide text-gray-700">Last Name</span>
 								<input
 									value={adminForm.lastName}
 									onChange={(event) => setAdminForm((prev) => ({ ...prev, lastName: event.target.value }))}
-									className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-400 focus:border-sky-400"
+									className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
 									placeholder="Last name"
 								/>
 							</label>
-							<label className="space-y-1">
-								<span className="text-xs font-semibold uppercase tracking-wide text-slate-300">Role</span>
+							<label className="space-y-1 block">
+								<span className="text-xs font-bold uppercase tracking-wide text-gray-700">Role</span>
 								<select
 									value={adminForm.role}
 									onChange={(event) => setAdminForm((prev) => ({ ...prev, role: event.target.value as PlatformAdminRole }))}
-									className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-sky-400"
+									className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
 								>
 									{platformAdminRoles.map((role) => (
-										<option key={role} value={role} className="text-slate-900">
+										<option key={role} value={role} className="text-gray-900 bg-white">
 											{role}
 										</option>
 									))}
 								</select>
 							</label>
-							<label className="space-y-1">
-								<span className="text-xs font-semibold uppercase tracking-wide text-slate-300">Temporary Password</span>
+							<label className="space-y-1 block">
+								<span className="text-xs font-bold uppercase tracking-wide text-gray-700">Temporary Password</span>
 								<input
 									value={adminForm.password}
 									onChange={(event) => setAdminForm((prev) => ({ ...prev, password: event.target.value }))}
-									className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-400 focus:border-sky-400"
-									placeholder="Leave blank to auto-generate and email"
+									className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+									placeholder="Leave blank to auto-generate"
 								/>
 							</label>
 							<div className="md:col-span-2 xl:col-span-5 flex items-center justify-end gap-3">
 								<Button
 									type="submit"
 									disabled={creatingAdmin}
-									className="min-w-[180px]"
+									className="min-w-[180px] bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
 								>
 									{creatingAdmin ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send Invite'}
 								</Button>
 							</div>
 						</form>
 					) : (
-						<p className="mt-4 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+						<p className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
 							Only the superadmin account can send platform admin invites.
 						</p>
 					)}
 
 					{createResult ? (
-						<div className="mt-5 rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-							<p className="font-semibold text-emerald-50">Invite sent successfully</p>
+						<div className="mt-5 rounded-lg border border-emerald-400/20 bg-emerald-50 p-4 text-sm text-emerald-800">
+							<p className="font-semibold text-emerald-900">Invite sent successfully</p>
 							<p className="mt-2">Name: {createResult.name}</p>
 							<p>Email: {createResult.email}</p>
 							<p>Role: {createResult.role}</p>
 							<p>Account: {createResult.isNewAccount ? 'New account' : 'Updated existing account'}</p>
-							<p className="mt-2 rounded-md bg-black/20 px-3 py-2 font-mono text-xs text-white">Temporary password: {createResult.temporaryPassword}</p>
+							<p className="mt-2 rounded-md bg-white border border-emerald-200 px-3 py-2 font-mono text-xs text-emerald-900">Temporary password: {createResult.temporaryPassword}</p>
 						</div>
 					) : null}
 				</div>
@@ -319,34 +319,33 @@ export default function RoleManagement() {
 							transition={{ delay: idx * 0.1 }}
 							key={role.name}
 						>
-							<Card className="overflow-hidden bg-black/40 border-white/10 backdrop-blur-xl">
+							<Card className="overflow-hidden bg-white border-gray-200 shadow-sm">
 								<div className="p-6">
-									<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-white/5">
+									<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-100">
 										<div>
-											<h3 className="text-xl font-bold text-white capitalize flex items-center gap-3">
+											<h3 className="text-xl font-bold text-gray-900 capitalize flex items-center gap-3">
 												{role.name}
 												{role.name === 'superadmin' && (
-													<Badge variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20">
+													<Badge variant="destructive" className="bg-red-50 text-red-700 border-red-100">
 														<ShieldAlert className="w-3 h-3 mr-1" /> Core System Role
 													</Badge>
 												)}
 											</h3>
-											<p className="text-sm text-muted-foreground mt-1">
+											<p className="text-sm text-gray-500 mt-1 font-semibold">
 												{role.description || `Manage access levels for ${role.name} users.`}
 											</p>
 										</div>
 
 										<div className="flex items-center gap-3">
 											{isDirty && (
-												<span className="text-xs text-amber-500 animate-pulse font-medium">
+												<span className="text-xs text-amber-600 animate-pulse font-bold">
 													Unsaved changes
 												</span>
 											)}
 											<Button
 												onClick={() => handleSave(role.name)}
 												disabled={!canEditRoles || !isDirty || isSaving || role.name === 'superadmin'}
-												className="min-w-[100px]"
-												variant={isDirty ? 'primary' : 'secondary'}
+												className={`min-w-[100px] shadow-sm ${isDirty ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'}`}
 											>
 												{isSaving ? (
 													<Loader2 className="w-4 h-4 animate-spin" />
@@ -363,7 +362,7 @@ export default function RoleManagement() {
 											return (
 												<div
 													key={permission}
-													className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/5"
+													className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100 bg-gray-50/30"
 												>
 													<Switch
 														id={`${role.name}-${permission}`}
@@ -373,7 +372,7 @@ export default function RoleManagement() {
 													/>
 													<label
 														htmlFor={`${role.name}-${permission}`}
-														className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-slate-200"
+														className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-gray-800"
 													>
 														{permission.replace(/_/g, ' ')}
 													</label>
@@ -388,10 +387,10 @@ export default function RoleManagement() {
 				})}
 				
 				{roles.length === 0 && (
-					<Card className="p-12 text-center bg-black/40 border-white/10 backdrop-blur-xl">
-						<ShieldAlert className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-						<h3 className="text-lg font-medium text-white mb-2">No Roles Found</h3>
-						<p className="text-muted-foreground">
+					<Card className="p-12 text-center bg-white border-gray-200 shadow-sm">
+						<ShieldAlert className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+						<h3 className="text-lg font-bold text-gray-950 mb-2">No Roles Found</h3>
+						<p className="text-gray-600 font-semibold">
 							The roles mapping was not found in the database.
 						</p>
 					</Card>

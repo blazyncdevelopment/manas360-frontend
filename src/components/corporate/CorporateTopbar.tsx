@@ -12,7 +12,7 @@ type CorporateTopbarProps = {
 
 export default function CorporateTopbar({ title, companyName, locationLabel = 'Bengaluru, India', onMenuToggle }: CorporateTopbarProps) {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -26,9 +26,9 @@ export default function CorporateTopbar({ title, companyName, locationLabel = 'B
         <button type="button" className="mr-2 rounded-lg p-2 hover:bg-ink-50 md:hidden" onClick={onMenuToggle}>
           <Menu className="h-5 w-5 text-ink-700" />
         </button>
-        <div>
-          <p className="font-display text-sm font-bold text-ink-800">{companyName}</p>
-          <p className="text-xs text-ink-500">{title}</p>
+        <div className="flex flex-col justify-center">
+          <p className="font-display text-sm font-bold leading-tight text-ink-800 m-0">{companyName}</p>
+          <p className="text-xs leading-tight text-ink-500 m-0 mt-0.5">{title}</p>
         </div>
 
         <div className="ml-auto flex items-center gap-3">
@@ -43,13 +43,24 @@ export default function CorporateTopbar({ title, companyName, locationLabel = 'B
               onClick={() => setOpen((prev) => !prev)}
               className="flex items-center gap-2 rounded-lg border border-ink-100 bg-white px-2 py-1.5 hover:bg-ink-50"
             >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-sage-100 text-xs font-semibold text-sage-700">HR</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-sage-100 text-xs font-semibold text-sage-700">
+                {user?.firstName ? user.firstName[0].toUpperCase() : 'HR'}
+              </span>
+              <span className="hidden text-sm font-medium text-ink-800 md:block">
+                {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Corporate Admin'}
+              </span>
               <ChevronDown className="h-4 w-4 text-ink-500" />
             </button>
 
             {open ? (
-              <div className="absolute right-0 mt-2 w-48 rounded-xl border border-ink-100 bg-white p-1 shadow-soft-sm">
-                <Link to="/corporate/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-ink-50">
+              <div className="absolute right-0 mt-2 w-56 rounded-xl border border-ink-100 bg-white p-1 shadow-soft-sm">
+                <div className="border-b border-ink-100 px-3 py-2">
+                  <p className="text-sm font-semibold text-ink-900 truncate">
+                    {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Corporate Admin'}
+                  </p>
+                  <p className="text-xs text-ink-500 truncate">{user?.email || 'No email'}</p>
+                </div>
+                <Link to="/corporate/dashboard" onClick={() => setOpen(false)} className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-ink-50">
                   <User className="h-4 w-4" />
                   Profile
                 </Link>

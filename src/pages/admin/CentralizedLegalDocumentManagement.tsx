@@ -1,36 +1,39 @@
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Shield, UserRound } from 'lucide-react';
+import { FileText, Shield, UserRound, Landmark } from 'lucide-react';
 
 type LegalFeatureCardProps = {
   title: string;
   description: string;
   icon: ReactNode;
-  variant?: 'light' | 'danger' | 'dark';
-  isClickable?: boolean;
+  accentColor: string;
   onClick?: () => void;
 };
 
-function LegalFeatureCard({ title, description, icon, variant = 'light', isClickable, onClick }: LegalFeatureCardProps) {
-  const variantStyles =
-    variant === 'danger'
-      ? 'border-red-300 bg-[#ea252a] text-white shadow-red-200/80'
-      : variant === 'dark'
-        ? 'border-[#0f1a3d] bg-[#0b1636] text-white shadow-slate-300/70'
-        : 'border-slate-200 bg-white text-slate-900 shadow-slate-200/80';
-
-  const descriptionStyles = variant === 'light' ? 'text-slate-600' : 'text-white/85';
-
+function LegalFeatureCard({ title, description, icon, accentColor, onClick }: LegalFeatureCardProps) {
   return (
     <article
-      className={`relative min-h-[196px] rounded-2xl border p-6 shadow-xl transition-transform duration-200 ease-out ${isClickable ? 'cursor-pointer hover:scale-[1.05] hover:shadow-2xl' : 'hover:scale-[1.02]'} ${variantStyles}`}
+      className="relative min-h-[180px] rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 ease-out cursor-pointer hover:-translate-y-1 flex flex-col justify-between"
       onClick={onClick}
+      style={{ borderTop: `4px solid ${accentColor}` }}
     >
-      <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm">
-        {icon}
+      <div>
+        <div 
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm"
+          style={{ backgroundColor: accentColor }}
+        >
+          {icon}
+        </div>
+        <h3 className="mt-4 text-lg font-bold tracking-tight text-gray-900 leading-snug">
+          {title}
+        </h3>
+        <p className="mt-2 text-sm leading-relaxed text-gray-600">
+          {description}
+        </p>
       </div>
-      <h3 className="mt-5 text-[30px] font-display font-semibold leading-[1.08] tracking-tight">{title}</h3>
-      <p className={`mt-3 text-sm leading-relaxed ${descriptionStyles}`}>{description}</p>
+      <div className="mt-4 text-xs font-bold text-blue-600 flex items-center gap-1 hover:text-blue-700">
+        Access Portal &rarr;
+      </div>
     </article>
   );
 }
@@ -39,60 +42,52 @@ export default function CentralizedLegalDocumentManagement() {
   const navigate = useNavigate();
 
   return (
-    <>
-    <section className="mx-auto w-full max-w-[1240px] px-3 py-8 sm:px-5 lg:px-8">
-      <div className="overflow-hidden rounded-3xl border border-[#dce5f2] bg-[#f7faff] p-6 shadow-sm sm:p-10">
-        <header className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex rounded-full border border-[#deebff] bg-[#eef5ff] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#4079cf]">
+    <section className="mx-auto w-full max-w-[1240px] px-4 py-8">
+      <div className="overflow-hidden rounded-3xl border border-blue-100 bg-[#f8faff] p-8 shadow-sm sm:p-10">
+        <header className="mx-auto max-w-3xl text-center mb-10">
+          <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-600">
             Regulatory Hub v3.1
           </span>
-          <h1 className="mt-5 text-[40px] font-display font-bold leading-[1.06] tracking-tight text-[#0f172a] sm:text-[56px]">
-            Centralized Legal
-            <span className="block text-[#2d6cdf]">Document Management</span>
+          <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-gray-900 sm:text-4xl lg:text-5xl">
+            Centralized Legal{' '}
+            <span className="text-blue-600 block sm:inline">Document Management</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-[#66728a]">
+          <p className="mx-auto mt-4 max-w-xl text-sm sm:text-base leading-relaxed text-gray-500">
             The single source of truth for platform agreements, DPDPA 2023 privacy oversight, and automated risk mitigation.
           </p>
         </header>
 
-        <div className="relative mt-10">
-          <div className="pointer-events-none absolute left-0 right-0 top-8 hidden h-28 rounded-3xl bg-[#eaf2ff] lg:block" />
-          <div className="relative grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <LegalFeatureCard
             title="Patient Registration"
-            description="DPDPA-compliant consent and digital signature acceptance"
-            icon={<UserRound className="h-4 w-4" />}
-            isClickable
+            description="DPDPA-compliant consent and digital signature acceptance logs."
+            icon={<UserRound className="h-5 w-5" />}
+            accentColor="#3b82f6" // blue
             onClick={() => navigate('/admin/users')}
           />
           <LegalFeatureCard
             title="NRI Legal Protection"
-            description="Jurisdiction and liability waivers for international users"
-            icon={<FileText className="h-4 w-4" />}
-            variant="danger"
-            isClickable
+            description="Jurisdiction rules and liability waivers for international users."
+            icon={<Landmark className="h-5 w-5" />}
+            accentColor="#f43f5e" // rose/red
             onClick={() => navigate('/admin/data-privacy-hub')}
           />
           <LegalFeatureCard
             title="Governance Console"
-            description="Manage document versioning, repository, and governance tracking"
-            icon={<FileText className="h-4 w-4" />}
-            variant="dark"
-            isClickable
+            description="Manage document versioning, repository, and compliance tracking."
+            icon={<FileText className="h-5 w-5" />}
+            accentColor="#6366f1" // indigo
             onClick={() => navigate('/admin/compliance')}
           />
           <LegalFeatureCard
             title="Patient Rights Portal"
-            description="Access, correction, and data deletion under DPDPA"
-            icon={<Shield className="h-4 w-4" />}
-            isClickable
+            description="Access, correction, and data deletion requests under DPDPA."
+            icon={<Shield className="h-5 w-5" />}
+            accentColor="#10b981" // emerald
             onClick={() => navigate('/admin/data-requests')}
           />
-          </div>
         </div>
       </div>
     </section>
-
-    </>
   );
 }

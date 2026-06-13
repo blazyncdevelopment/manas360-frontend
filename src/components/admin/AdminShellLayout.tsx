@@ -57,6 +57,7 @@ const ADMIN_DOMAINS: AdminDomain[] = [
 			{ to: '/admin/operations/agreements', label: 'Agreements', shortLabel: 'Agr' },
 			{ to: '/admin/operations/retreat-requests', label: 'Retreat Requests', shortLabel: 'Ret' },
 			{ to: '/admin/audio-upload', label: 'Audio Upload', shortLabel: 'Aud' },
+			{ to: '/admin/operations/blogs', label: 'Blog Management', shortLabel: 'Blg' },
 		],
 	},
 	{
@@ -399,11 +400,11 @@ export default function AdminShellLayout() {
 								<p className="hidden text-[11px] text-ink-400 sm:block">{headerSubtitle}</p>
 							</div>
 							<div className="ml-auto flex items-center gap-2 sm:gap-4">
-								<div className="hidden items-center gap-2 rounded-lg bg-ink-50 px-3 py-2 md:flex">
+								<div className="hidden items-center gap-2 rounded-lg bg-ink-50 px-3 py-1.5 md:flex border border-transparent focus-within:border-sage-500 transition-all">
 									<Search className="h-4 w-4 text-ink-400" />
 									<input
-										placeholder="Search users, tickets... (Ctrl+K)"
-										className="w-44 bg-transparent text-sm outline-none placeholder:text-ink-400"
+										placeholder="Search... (Ctrl+K)"
+										className="w-56 bg-transparent text-sm outline-none border-none ring-0 focus:ring-0 placeholder:text-ink-400 text-gray-800"
 										onFocus={() => setIsCommandPaletteOpen(true)}
 									/>
 								</div>
@@ -592,9 +593,13 @@ function AdminNav({ sections, compact, initials, userName, userRole }: { section
 					</div>
 				) : null}
 
-				{sections.map(([section, items]) => (
+				{sections.map(([section, items], index) => (
 					<div key={section} className="mb-4">
-						{!compact ? <p className="mb-2 px-3 text-[10px] font-semibold tracking-[0.15em] text-ink-400">{section}</p> : null}
+						{!compact ? (
+							<div className={index > 0 ? "border-t border-white/10 pt-4 mt-5 mb-2" : "mb-2"}>
+								<p className="px-3 text-[11px] font-extrabold tracking-[0.18em] text-white/85 uppercase">{section}</p>
+							</div>
+						) : null}
 						<div className="space-y-1">
 							{items.map((item) => (
 								<NavLink

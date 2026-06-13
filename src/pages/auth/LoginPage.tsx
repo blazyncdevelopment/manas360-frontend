@@ -65,22 +65,11 @@ export default function LoginPage() {
 	const [otpSent, setOtpSent] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	// Corporate login state
-	const [corpPhone, setCorpPhone] = useState('');
-	const [corpCompanyName, setCorpCompanyName] = useState('');
-	const [corpOtp, setCorpOtp] = useState('');
-	const [corpOtpSent, setCorpOtpSent] = useState(false);
-	const [corpLoading, setCorpLoading] = useState(false);
-	const [corpError, setCorpError] = useState<string | null>(null);
-
 	const switchMode = (mode: LoginMode) => {
 		setLoginMode(mode);
 		setError(null);
-		setCorpError(null);
 		setOtpSent(false);
-		setCorpOtpSent(false);
 		setOtp('');
-		setCorpOtp('');
 	};
 
 	const resolvePostLoginRouteWithSubscription = async (
@@ -264,49 +253,8 @@ export default function LoginPage() {
 		}
 	};
 
-	// ── Corporate OTP request ────────────────────────────────────────────────
-	const requestCorpOtp = async () => {
-		if (!corpPhone.trim()) { setCorpError('Please enter your phone number.'); return; }
-		setCorpError(null);
-		setCorpLoading(true);
-		try {
-			await corporateApi.requestCorporateOtp({
-				companyName: corpCompanyName.trim() || 'My Company',
-				phone: corpPhone.trim(),
-			});
-			setCorpOtpSent(true);
-		} catch (err) {
-			setCorpError(getApiErrorMessage(err, 'Failed to send OTP'));
-		} finally {
-			setCorpLoading(false);
-		}
-	};
-
-	// ── Corporate OTP verification / login ───────────────────────────────────
-	const verifyCorpOtp = async () => {
-		setCorpError(null);
-		setCorpLoading(true);
-		isCompletingLoginRef.current = true;
-		try {
-			const result = await corporateApi.createCorporateAccount({
-				companyName: corpCompanyName.trim() || 'My Company',
-				phone: corpPhone.trim(),
-				otp: corpOtp.trim(),
-			});
-			const responseUser = (result as any)?.user;
-			if (responseUser?.id) {
-				await syncSessionAfterOtp(responseUser);
-			} else {
-				await checkAuth({ force: true });
-			}
-			navigate('/corporate/dashboard', { replace: true });
-		} catch (err) {
-			setCorpError(getApiErrorMessage(err, 'OTP verification failed'));
-		} finally {
-			isCompletingLoginRef.current = false;
-			setCorpLoading(false);
-		}
-	};
+	// Removed requestCorpOtp and verifyCorpOtp because standard login works perfectly
+	// and does not accidentally create a new company account on login.
 
 	return (
 		<div className="bg-clean min-h-screen">
@@ -442,7 +390,7 @@ export default function LoginPage() {
 								</p>
 
 								<div className="mt-6 space-y-4">
-									{!corpOtpSent ? (
+									{!otpSent ? (
 										<>
 											<Input
 												id="corp-login-phone"
@@ -450,26 +398,17 @@ export default function LoginPage() {
 												type="tel"
 												autoComplete="tel"
 												placeholder="+919876543210"
-												helperText="The phone number used when creating your corporate account"
-												value={corpPhone}
-												onChange={(e) => setCorpPhone(e.target.value)}
+												helperText="The phone number used for your corporate admin account"
+												value={phone}
+												onChange={(e) => setPhone(e.target.value)}
 												required
-											/>
-											<Input
-												id="corp-login-company"
-												label="Company Name (optional)"
-												type="text"
-												placeholder="TechCorp India"
-												helperText="Enter your company name if required"
-												value={corpCompanyName}
-												onChange={(e) => setCorpCompanyName(e.target.value)}
 											/>
 										</>
 									) : (
 										<>
 											<div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
 												<p className="text-xs font-medium text-blue-900">
-													OTP sent to <strong>{corpPhone}</strong>. Enter it below to sign in.
+													OTP sent to <strong>{phone}</strong>. Enter it below to sign in.
 												</p>
 											</div>
 											<Input
@@ -480,61 +419,42 @@ export default function LoginPage() {
 												maxLength={4}
 												autoComplete="one-time-code"
 												placeholder="4-digit OTP"
-												helperText="Enter the code sent to your WhatsApp"
-												value={corpOtp}
-												onChange={(e) => setCorpOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+												helperText="Enter the code sent to your WhatsApp / SMS"
+												value={otp}
+												onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
 												required
 											/>
-
-
-
-											<button
-												type="button"
-												onClick={() => { setCorpOtpSent(false); setCorpOtp(''); }}
-												className="text-xs text-sky underline hover:text-[var(--brand-sky-hover)]"
-											>
-												Change phone number
-											</button>
 										</>
-									)
-									}
+									)}
 
-									{
-										!corpOtpSent ? (
-											<Button
-												type="button"
-												fullWidth
-												loading={corpLoading}
-												className="btn btn-primary btn-lg w-full !rounded-lg !bg-[#1E6C61] hover:!bg-[#18574F]"
-												onClick={requestCorpOtp}
-											>
-												{corpLoading ? 'Sending OTP...' : 'Send OTP'}
-											</Button>
-										) : (
-											<Button
-												type="button"
-												fullWidth
-												loading={corpLoading}
-												className="btn btn-primary btn-lg w-full !rounded-lg !bg-[#1E6C61] hover:!bg-[#18574F]"
-												onClick={verifyCorpOtp}
-											>
-												{corpLoading ? 'Signing in...' : 'Sign in to Corporate Dashboard'}
-											</Button>
-										)
-									}
-								</div >
+									{!otpSent ? (
+										<Button
+											type="button"
+											fullWidth
+											loading={loading}
+											className="btn btn-primary btn-lg w-full !rounded-lg hover:!bg-[var(--brand-navy-hover)]"
+											onClick={requestOtp}
+										>
+											{loading ? 'Sending OTP...' : 'Send OTP'}
+										</Button>
+									) : (
+										<Button
+											type="button"
+											fullWidth
+											loading={loading}
+											className="btn btn-primary btn-lg w-full !rounded-lg hover:!bg-[var(--brand-navy-hover)]"
+											onClick={verifyOtp}
+										>
+											{loading ? 'Verifying...' : 'Sign In as Admin'}
+										</Button>
+									)}
+								</div>
 
-								<p className="callout callout-navy mt-3 text-xs font-medium">
-									🔒 Your data is secure and confidential.
-								</p>
-
-								{
-									corpError && (
-										<p role="alert" aria-live="polite" className="mt-3 text-sm text-error">
-											{corpError}
-										</p>
-									)
-								}
+								{error && (
+									<p role="alert" aria-live="polite" className="mt-3 text-sm text-error">
+										{error}
+									</p>
+								)}
 
 								<p className="mt-4 text-center text-sm text-muted">
 									New corporate account?{' '}
