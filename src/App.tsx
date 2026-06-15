@@ -208,6 +208,7 @@ const CertificateVerificationPage = lazy(() => import('./pages/CertificateVerifi
 // Learner Pages
 const LearnerDashboardLayout = lazy(() => import('./components/layout/LearnerDashboardLayout'));
 const LearnerDashboard = lazy(() => import('./pages/learner/LearnerDashboard'));
+const PaymentHistory = lazy(() => import('./pages/shared/PaymentHistory'));
 
 interface AssessmentData {
   symptoms?: string[];
@@ -488,6 +489,7 @@ function App() {
                       <Route path="labs" element={<Navigate to="/provider/patients" replace />} />
                       <Route path="goals" element={<Navigate to="/provider/patients" replace />} />
                       <Route path="earnings" element={<ProviderEarningsPage />} />
+                      <Route path="payments" element={<PaymentHistory />} />
                       <Route path="appointments" element={<AppointmentRequestsPage />} />
                       <Route path="leads" element={<ProviderMarketplacePage />} />
                       <Route path="certifications" element={<CertificationLandingPage />} />
@@ -590,6 +592,7 @@ function App() {
                       <Route path="dashboard" element={<LearnerDashboard />} />
                       <Route path="certificate" element={<LearnerDashboard />} />
                       <Route path="enrollments" element={<LearnerDashboard />} />
+                      <Route path="payments" element={<PaymentHistory />} />
                       {/* ── Certification pages embedded inside Learner layout ── */}
                       {/* More specific paths must come before :slug catch-all */}
                       <Route path="certifications/modules/:enrollmentId" element={<CertificationModulesPage />} />
@@ -856,6 +859,7 @@ function App() {
                       <Route path="assessments" element={<Navigate to="/patient/care-team" replace />} />
                       <Route path="assessment-reports" element={<Navigate to="/patient/progress?tab=clinical" replace />} />
                       <Route path="billing" element={<Navigate to="/patient/settings?section=billing" replace />} />
+                      <Route path="payments" element={<PaymentHistory />} />
                       <Route path="documents" element={<DocumentsPage />} />
                       <Route path="support" element={<SupportPage />} />
                       <Route path="timeline" element={<PatientTimelinePage />} />

@@ -19,6 +19,10 @@ import { useEnrollmentStore } from '../../store/CertificationEnrollmentStore';
 import { CERTIFICATIONS } from '../../CertificationConstants';
 import { useAuth } from '../../context/AuthContext';
 import { Enrollment } from '../../CertificationTypes';
+import { http } from '../../lib/http';
+
+import { getModulesByCertification } from '../../utils/certificationLessonUtils';
+import { useCertificationProgress } from '../../store/useCertificationProgress';
 
 // ─── Color helpers (badge → Tailwind class) ────────────────────────────────
 const BADGE_DOT: Record<string, string> = {
@@ -96,6 +100,10 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
   const dot = BADGE_DOT[enrollment.badgeColor] ?? BADGE_DOT.blue;
   const tag = BADGE_TAG[enrollment.badgeColor] ?? BADGE_TAG.blue;
 
+  const dynamicModules = getModulesByCertification(enrollment.certificationName, enrollment.slug);
+  const dynamicModulesCount = dynamicModules.length > 0 ? dynamicModules.length : (cert?.modulesCount ?? 0);
+  const displayModulesCompleted = isComplete ? dynamicModulesCount : (enrollment.modulesCompleted ?? 0);
+
   return (
     <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-lg border border-slate-200 bg-slate-50/60 px-4 py-3">
       {/* Avatar dot */}
@@ -114,7 +122,6 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
           </span>
           <PaymentBadge status={enrollment.paymentStatus} />
         </div>
-        {/* Progress bar */}
         <div className="flex items-center gap-2">
           <div className="h-1.5 flex-1 max-w-[160px] overflow-hidden rounded-full bg-slate-200">
             <div
@@ -123,7 +130,7 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
             />
           </div>
           <span className="text-[11px] font-medium text-slate-500">
-            {enrollment.completionPercentage}% · {enrollment.modulesCompleted}/{cert?.modulesCount ?? 0} modules
+            {enrollment.completionPercentage}% · {displayModulesCompleted}/{dynamicModulesCount} modules
           </span>
         </div>
       </div>
@@ -148,7 +155,21 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
           </button>
         ) : (
           <button
-            onClick={() => navigate(`/learner/certifications/modules/${enrollment.id}`)}
+            onClick={() => {
+              const certProgress = useCertificationProgress.getState();
+              let nextModuleId = dynamicModules[0]?.id;
+              for (const m of dynamicModules) {
+                if (!certProgress.isModuleCompleted(enrollment.id, m.id)) {
+                  nextModuleId = m.id;
+                  break;
+                }
+              }
+              if (nextModuleId) {
+                navigate(`/learner/certifications/lessons/${nextModuleId}`, { state: { enrollmentId: enrollment.id } });
+              } else {
+                navigate(`/learner/certifications/modules/${enrollment.id}`);
+              }
+            }}
             className="rounded-md bg-[#4A6741] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#3d5736] transition flex items-center gap-1"
           >
             <Play size={12} /> Continue
@@ -196,6 +217,7 @@ export const LearnerDashboard: React.FC = () => {
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showPatientModal, setShowPatientModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'THERAPIST' | 'PSYCHOLOGIST' | 'PSYCHIATRIST' | 'COACH'>('THERAPIST');
+  const [totalAmountPaid, setTotalAmountPaid] = useState<number>(0);
 
   React.useEffect(() => {
     setActiveTab(currentTab);
@@ -204,6 +226,26 @@ export const LearnerDashboard: React.FC = () => {
   React.useEffect(() => {
     void syncEnrollments();
   }, [syncEnrollments]);
+
+  React.useEffect(() => {
+    const fetchPayments = async () => {
+      try {
+        const response = await http.get('/v1/payments/history');
+        // Handle various response structures gracefully
+        const paymentsData = response.data?.data || response.data || [];
+        if (Array.isArray(paymentsData)) {
+          const total = paymentsData.reduce((sum: number, payment: any) => {
+            const amount = Number(payment.amount) || 0;
+            return sum + amount;
+          }, 0);
+          setTotalAmountPaid(total);
+        }
+      } catch (error) {
+        console.error("Error fetching payment history:", error);
+      }
+    };
+    fetchPayments();
+  }, []);
 
   // ── Stats ────────────────────────────────────────────────────────────────
   const totalEnrollments = enrollments.length;
@@ -221,7 +263,6 @@ export const LearnerDashboard: React.FC = () => {
         enrollments.reduce((acc: number, e: Enrollment) => acc + e.completionPercentage, 0) / totalEnrollments,
       )
       : 0;
-  const totalAmountPaid = enrollments.reduce((acc: number, e: Enrollment) => acc + (e.amountPaid ?? 0), 0);
 
   const availableCerts = CERTIFICATIONS.filter(
     (c) => !enrollments.find((e: Enrollment) => e.certificationId === c.id),
@@ -620,7 +661,7 @@ export const LearnerDashboard: React.FC = () => {
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg">
             <h3 className="mb-2 text-lg font-bold text-slate-900">Upgrade to Patient</h3>
             <p className="mb-6 text-sm text-slate-600">Are you sure you want to upgrade to a Patient account to book a session?</p>
-            
+
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowPatientModal(false)}
@@ -648,7 +689,7 @@ export const LearnerDashboard: React.FC = () => {
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg">
             <h3 className="mb-2 text-lg font-bold text-slate-900">Select Provider Role</h3>
             <p className="mb-4 text-sm text-slate-600">Choose the role that best matches your qualifications.</p>
-            
+
             <div className="space-y-3">
               {(['THERAPIST', 'PSYCHOLOGIST', 'PSYCHIATRIST', 'COACH'] as const).map((role) => (
                 <label key={role} className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${selectedRole === role ? 'border-amber-500 bg-amber-50' : 'border-slate-200 hover:bg-slate-50'}`}>

@@ -334,6 +334,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const themePref = window.localStorage.getItem('manas360_theme_preference');
           const cookieConsent = window.localStorage.getItem('manas360_cookie_consent');
           const cookieConsentTs = window.localStorage.getItem('manas360_cookie_consent_ts');
+          const certProgress = window.localStorage.getItem('certification-progress');
           window.localStorage.clear();
           if (themePref) {
             window.localStorage.setItem('manas360_theme_preference', themePref);
@@ -343,6 +344,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           if (cookieConsentTs) {
             window.localStorage.setItem('manas360_cookie_consent_ts', cookieConsentTs);
+          }
+          if (certProgress) {
+            window.localStorage.setItem('certification-progress', certProgress);
           }
         } catch (err) {
           console.warn('Failed to clear local storage:', err);

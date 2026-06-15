@@ -6,6 +6,7 @@ import { corporateApi } from '../../api/corporate.api';
 import { useCorporateKey } from './useCorporateDashboardData';
 
 type EmployeeRow = {
+  id: string;
   name: string;
   email: string;
   phone?: string;

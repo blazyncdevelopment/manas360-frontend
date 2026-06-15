@@ -157,6 +157,8 @@ export default function SessionsPage() {
   const [hasCompletedCheckin, setHasCompletedCheckin] = useState(false);
   const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistoryEntry[]>([]);
   const [assessmentHistoryLoading, setAssessmentHistoryLoading] = useState(true);
+  const [publicScreenings, setPublicScreenings] = useState<any[]>([]);
+  const [assessmentTab, setAssessmentTab] = useState<'clinical' | 'public'>('clinical');
   const [assessmentDraft, setAssessmentDraft] = useState<AssessmentDraft | null>(null);
   const [todaysAssessmentResults, setTodaysAssessmentResults] = useState<Array<{ type: string; score: number; severity: string }>>([]);
   const [pendingProviderAssessmentTitles, setPendingProviderAssessmentTitles] = useState<string[]>([]);
@@ -304,8 +306,15 @@ export default function SessionsPage() {
       setAssessmentHistoryLoading(true);
     }
     try {
-      const response = await patientApi.getPatientAssessmentHistory({ page: 1, limit: 50 }).catch(() => null);
-      const items = asArray((response as any)?.data?.items ?? (response as any)?.items ?? response);
+      const [clinicalRes, publicRes] = await Promise.all([
+        patientApi.getPatientAssessmentHistory({ page: 1, limit: 50 }).catch(() => null),
+        patientApi.getMyPublicResults().catch(() => null),
+      ]);
+      const items = asArray((clinicalRes as any)?.data?.items ?? (clinicalRes as any)?.items ?? clinicalRes);
+
+      const pubItems = asArray(publicRes);
+      setPublicScreenings(pubItems);
+
       const summary = getClinicalAssessmentSummary(
         items.map((entry: any) => ({
           type: entry.type,
@@ -1490,61 +1499,61 @@ export default function SessionsPage() {
             const matchedLead = unresolvedPendingRequests.find((r: any) => r.type === 'marketplace_lead' && r.providerAssigned);
             const providerName = matchedLead?.providerName;
             return (
-            <section className={`overflow-hidden rounded-2xl border shadow-sm p-6 ${matchedLead ? 'border-green-200 bg-green-50' : 'border-teal-200 bg-teal-50'}`}>
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className={`text-lg font-bold ${matchedLead ? 'text-green-900' : 'text-teal-900'}`}>
-                      {matchedLead ? (providerName ? `${providerName} has accepted your request!` : 'Provider matched! Scheduling your session...') : 'Finding your therapist...'}
-                    </h3>
-                    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${matchedLead ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${matchedLead ? 'bg-green-500' : 'bg-amber-500'}`} />
-                      {matchedLead ? 'Matched' : 'Matching'}
-                    </span>
+              <section className={`overflow-hidden rounded-2xl border shadow-sm p-6 ${matchedLead ? 'border-green-200 bg-green-50' : 'border-teal-200 bg-teal-50'}`}>
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className={`text-lg font-bold ${matchedLead ? 'text-green-900' : 'text-teal-900'}`}>
+                        {matchedLead ? (providerName ? `${providerName} has accepted your request!` : 'Provider matched! Scheduling your session...') : 'Finding your therapist...'}
+                      </h3>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${matchedLead ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${matchedLead ? 'bg-green-500' : 'bg-amber-500'}`} />
+                        {matchedLead ? 'Matched' : 'Matching'}
+                      </span>
+                    </div>
+                    <p className={`mt-1 max-w-2xl text-sm ${matchedLead ? 'text-green-800' : 'text-teal-800'}`}>
+                      {matchedLead
+                        ? `${providerName ? `${providerName} has purchased your request and` : 'Your provider'} will schedule your session shortly. You'll see the session time here once confirmed.`
+                        : 'Our TherapeuticGPS is reviewing language, specialization, availability, and match score. You\'ll be notified as soon as a provider accepts.'
+                      }
+                      <span className={`mt-1 block font-medium ${matchedLead ? 'text-green-700' : 'text-teal-700'}`}>
+                        {matchedLead ? 'Session time will appear here once your provider confirms it.' : '⏳ Usually matched within a few hours.'}
+                      </span>
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <span className="text-xs font-semibold text-teal-700 self-center">Explore while you wait:</span>
+                      <Link
+                        to="/patient/mood"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-white px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
+                      >
+                        😊 Mood Tracker
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => window.dispatchEvent(new CustomEvent('open-buddy'))}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-white px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
+                      >
+                        🤖 AnytimeBuddy AI
+                      </button>
+                      <Link
+                        to="/patient/sound-therapy"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-white px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
+                      >
+                        🎵 Sound Therapy
+                      </Link>
+                    </div>
                   </div>
-                  <p className={`mt-1 max-w-2xl text-sm ${matchedLead ? 'text-green-800' : 'text-teal-800'}`}>
-                    {matchedLead
-                      ? `${providerName ? `${providerName} has purchased your request and` : 'Your provider'} will schedule your session shortly. You'll see the session time here once confirmed.`
-                      : 'Our TherapeuticGPS is reviewing language, specialization, availability, and match score. You\'ll be notified as soon as a provider accepts.'
-                    }
-                    <span className={`mt-1 block font-medium ${matchedLead ? 'text-green-700' : 'text-teal-700'}`}>
-                      {matchedLead ? 'Session time will appear here once your provider confirms it.' : '⏳ Usually matched within a few hours.'}
-                    </span>
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="text-xs font-semibold text-teal-700 self-center">Explore while you wait:</span>
-                    <Link
-                      to="/patient/mood"
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-white px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
-                    >
-                      😊 Mood Tracker
-                    </Link>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
                     <button
                       type="button"
-                      onClick={() => window.dispatchEvent(new CustomEvent('open-buddy'))}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-white px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
+                      onClick={() => navigate('/crisis')}
+                      className="inline-flex rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
                     >
-                      🤖 AnytimeBuddy AI
+                      🚨 Urgent Care
                     </button>
-                    <Link
-                      to="/patient/sound-therapy"
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-white px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
-                    >
-                      🎵 Sound Therapy
-                    </Link>
                   </div>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/crisis')}
-                    className="inline-flex rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
-                  >
-                    🚨 Urgent Care
-                  </button>
-                </div>
-              </div>
-            </section>
+              </section>
             );
           })()}
 
@@ -1803,8 +1812,23 @@ export default function SessionsPage() {
           )}
 
           <section className="space-y-4 pt-6">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-lg font-bold text-charcoal">Assessment History</h3>
+              <div className="flex gap-1 rounded-xl border border-calm-sage/20 bg-calm-sage/5 p-1">
+                {(['clinical', 'public'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setAssessmentTab(tab)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition ${assessmentTab === tab
+                      ? 'bg-white text-charcoal shadow-sm'
+                      : 'text-charcoal/60 hover:text-charcoal'
+                      }`}
+                  >
+                    {tab === 'clinical' ? 'Clinical Assessments' : 'Free Screening'}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {assessmentHistoryLoading ? (
@@ -1816,47 +1840,99 @@ export default function SessionsPage() {
                   ))}
                 </div>
               </div>
-            ) : assessmentHistory.length > 0 ? (
-              <div className="overflow-hidden rounded-2xl border border-calm-sage/15 bg-white shadow-soft-sm">
-                <div className="divide-y divide-calm-sage/10">
-                  {assessmentHistory.map((entry, index) => {
-                    const level = String(entry.level || 'mild').toLowerCase();
-                    const levelClass = level.includes('severe')
-                      ? 'bg-red-50 text-red-600'
-                      : level.includes('moderate')
-                        ? 'bg-amber-50 text-amber-600'
-                        : 'bg-green-50 text-green-600';
+            ) : assessmentTab === 'clinical' ? (
+              assessmentHistory.length > 0 ? (
+                <div className="overflow-hidden rounded-2xl border border-calm-sage/15 bg-white shadow-soft-sm">
+                  <div className="divide-y divide-calm-sage/10">
+                    {assessmentHistory.map((entry, index) => {
+                      const level = String(entry.level || 'mild').toLowerCase();
+                      const levelClass = level.includes('severe')
+                        ? 'bg-red-50 text-red-600'
+                        : level.includes('moderate')
+                          ? 'bg-amber-50 text-amber-600'
+                          : 'bg-green-50 text-green-600';
 
-                    return (
-                      <div key={entry.id || `assessment-${index}`} className="flex items-center justify-between gap-4 p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-                            <TrendingUp className="h-4 w-4" />
+                      return (
+                        <div key={entry.id || `assessment-${index}`} className="flex items-center justify-between gap-4 p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                              <TrendingUp className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-charcoal">{entry.type || 'Assessment'}</p>
+                              <p className="text-xs text-charcoal/60">
+                                {entry.createdAt
+                                  ? new Date(entry.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                                  : 'Unknown date'}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-semibold text-charcoal">{entry.type || 'Assessment'}</p>
-                            <p className="text-xs text-charcoal/60">
-                              {entry.createdAt
-                                ? new Date(entry.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                                : 'Unknown date'}
-                            </p>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-charcoal">
+                              {Number(entry.score || 0)}{entry.maxScore ? `/${entry.maxScore}` : ''}
+                            </span>
+                            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${levelClass}`}>
+                              {level}
+                            </span>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-charcoal">
-                            {Number(entry.score || 0)}{entry.maxScore ? `/${entry.maxScore}` : ''}
-                          </span>
-                          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${levelClass}`}>
-                            {level}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ) : null}
+              ) : (
+                <div className="rounded-2xl border border-calm-sage/15 bg-white/50 p-6 text-center text-sm text-charcoal/60">
+                  No clinical assessments found.
+                </div>
+              )
+            ) : (
+              publicScreenings.length > 0 ? (
+                <div className="overflow-hidden rounded-2xl border border-calm-sage/15 bg-white shadow-soft-sm">
+                  <div className="divide-y divide-calm-sage/10">
+                    {publicScreenings.map((entry, index) => {
+                      const level = String(entry.severityLevel || 'mild').toLowerCase();
+                      const levelClass = level.includes('severe')
+                        ? 'bg-red-50 text-red-600'
+                        : level.includes('moderate')
+                          ? 'bg-amber-50 text-amber-600'
+                          : 'bg-green-50 text-green-600';
+
+                      return (
+                        <div key={entry.id || `public-${index}`} className="flex items-center justify-between gap-4 p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                              <Activity className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-charcoal">{entry.templateKey || 'Public Screening'}</p>
+                              <p className="text-xs text-charcoal/60">
+                                {entry.createdAt
+                                  ? new Date(entry.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                                  : 'Unknown date'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-charcoal">
+                              {Number(entry.totalScore || 0)}
+                            </span>
+                            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${levelClass}`}>
+                              {level}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-calm-sage/15 bg-white/50 p-6 text-center text-sm text-charcoal/60">
+                  No past public screenings found.
+                </div>
+              )
+            )}
           </section>
 
           <section className="space-y-4 pt-6">
@@ -1868,11 +1944,10 @@ export default function SessionsPage() {
                     key={tab}
                     type="button"
                     onClick={() => setSessionTab(tab)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition ${
-                      sessionTab === tab
-                        ? 'bg-white text-charcoal shadow-sm'
-                        : 'text-charcoal/60 hover:text-charcoal'
-                    }`}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition ${sessionTab === tab
+                      ? 'bg-white text-charcoal shadow-sm'
+                      : 'text-charcoal/60 hover:text-charcoal'
+                      }`}
                   >
                     {tab}
                   </button>

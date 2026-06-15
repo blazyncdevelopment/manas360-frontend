@@ -19,6 +19,7 @@ import {
   User,
   X,
   Award,
+  CreditCard,
 } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { patientApi } from '../../api/patient';
@@ -50,6 +51,7 @@ const progressNavItems = [
   { to: '/patient/reports', label: 'My Reports', icon: ClipboardList },
   { to: '/patient/documents', label: 'My Documents', icon: ClipboardList },
   { to: '/patient/certifications', label: 'Certifications', icon: Award },
+  { to: '/patient/payments', label: 'Payment History', icon: CreditCard },
 ];
 
 const supportNavItems = [
@@ -437,20 +439,20 @@ export default function PatientDashboardLayout() {
             {renderNavSection('Support', supportNavItems)}
           </nav>
 
-          <div className="border-t border-white/70 p-4">
-            <div className="wellness-panel-muted flex items-center gap-3 p-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-warm-terracotta/25 text-xs font-semibold text-warm-terracotta">
+          <div className="border-t border-white/70 p-5 shrink-0 mt-auto">
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f6ecea] text-[13px] font-bold tracking-wide text-[#b97a6d]">
                 {initials}
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-charcoal">{userName}</p>
-                <p className="text-[11px] text-charcoal/55">Patient Account</p>
+              <div className="min-w-0 flex-1 flex flex-col justify-center">
+                <p className="truncate text-[15px] font-bold text-gray-800 leading-none mb-1">{userName}</p>
+                <p className="truncate text-xs font-medium text-gray-400 leading-none">Patient Account</p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => void handleLogout()}
-              className="mt-3 inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-2xl border border-white/80 bg-white/90 px-3 text-sm font-medium text-charcoal/80 transition hover:bg-wellness-aqua"
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/80 bg-white/90 px-3 py-2 text-xs font-semibold text-charcoal/80 transition hover:bg-wellness-aqua disabled:cursor-not-allowed disabled:opacity-60"
             >
               <LogOut className="h-4 w-4" />
               Logout

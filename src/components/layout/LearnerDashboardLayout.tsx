@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -13,6 +14,7 @@ const NAV_ITEMS = [
   { id: 'overview', to: '/learner/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { id: 'courses', to: '/learner/certificate', icon: BookOpen, label: 'Browse Certifications' },
   { id: 'achievements', to: '/learner/enrollments', icon: Award, label: 'My Enrollments' },
+  { id: 'payments', to: '/learner/payments', icon: CreditCard, label: 'Payments' },
 ];
 
 export const LearnerDashboardLayout = () => {

@@ -6,6 +6,7 @@ import { useEnrollmentStore } from '../store/CertificationEnrollmentStore';
 import { CERTIFICATIONS } from '../CertificationConstants';
 import { Enrollment } from '../CertificationTypes';
 import { useAuth } from '../context/AuthContext';
+import { getModulesByCertification } from '../utils/certificationLessonUtils';
 
 export const MyCertificationsPage: React.FC = () => {
     const { enrollments, payInstallment, syncEnrollments, loading } = useEnrollmentStore();
@@ -116,6 +117,10 @@ export const MyCertificationsPage: React.FC = () => {
                             const isProcessing = processingId === enrollment.id;
                             const isFullyPaid = enrollment.paymentStatus === 'Paid';
 
+                            const dynamicModules = getModulesByCertification(enrollment.certificationName, enrollment.slug);
+                            const dynamicModulesCount = dynamicModules.length > 0 ? dynamicModules.length : (certDetails?.modulesCount ?? 0);
+                            const displayModulesCompleted = enrollment.completionPercentage === 100 ? dynamicModulesCount : (enrollment.modulesCompleted ?? 0);
+
                             return (
                                 <div key={enrollment.id} className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-100 flex flex-col lg:flex-row gap-6 md:gap-8 items-start animate-fade-in-up">
                                     {/* Icon & Basic Info */}
@@ -152,7 +157,7 @@ export const MyCertificationsPage: React.FC = () => {
                                                 />
                                             </div>
                                             <p className="text-xs text-slate-400 mt-2">
-                                                {enrollment.modulesCompleted} / {certDetails?.modulesCount || 0} Modules Completed
+                                                {displayModulesCompleted} / {dynamicModulesCount} Modules Completed
                                             </p>
                                         </div>
 
@@ -184,7 +189,22 @@ export const MyCertificationsPage: React.FC = () => {
                                         <button
                                             onClick={() => {
                                                 const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
-                                                navigate(`${basePath}/certifications/modules/${enrollment.id}`);
+                                                
+                                                import('../store/useCertificationProgress').then(({ useCertificationProgress }) => {
+                                                    const certProgress = useCertificationProgress.getState();
+                                                    let nextModuleId = dynamicModules[0]?.id;
+                                                    for (const m of dynamicModules) {
+                                                        if (!certProgress.isModuleCompleted(enrollment.id, m.id)) {
+                                                            nextModuleId = m.id;
+                                                            break;
+                                                        }
+                                                    }
+                                                    if (nextModuleId) {
+                                                        navigate(`${basePath}/certifications/lessons/${nextModuleId}`, { state: { enrollmentId: enrollment.id } });
+                                                    } else {
+                                                        navigate(`${basePath}/certifications/modules/${enrollment.id}`);
+                                                    }
+                                                });
                                             }}
                                             className="px-6 py-3 bg-purple-600 text-white rounded-xl font-medium text-sm hover:bg-purple-700 transition flex items-center justify-center gap-2 shadow-lg shadow-purple-200 w-full"
                                         >

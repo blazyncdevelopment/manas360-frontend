@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Users, Calendar, Settings, CreditCard, LogOut, ClipboardCheck, Star, Radio, Award, Zap } from 'lucide-react';
+import { Home, Users, Calendar, Settings, CreditCard, LogOut, ClipboardCheck, Star, Radio, Award, Zap, FileText } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const ProviderSidebar = () => {
@@ -59,6 +59,7 @@ export const ProviderSidebar = () => {
         category: 'PRACTICE & SUPPORT',
         items: [
           { label: 'Earnings', path: '/provider/earnings', icon: <CreditCard size={18} /> },
+          { label: 'Payment History', path: '/provider/payments', icon: <FileText size={18} /> },
           { label: 'Premium Plan', path: '/provider/subscription', icon: <Star size={18} /> },
           { label: 'Certifications', path: '/provider/certifications', icon: <Award size={18} /> },
           { label: 'Settings', path: '/provider/settings', icon: <Settings size={18} /> },
@@ -112,14 +113,14 @@ export const ProviderSidebar = () => {
       </nav>
 
       {/* Sidebar Footer — Profile Card */}
-      <div className="border-t border-gray-200 p-4 shrink-0 mt-auto bg-[#F5F3F0]">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 shrink-0 rounded-full bg-[#E8EFE6] flex items-center justify-center text-[#4A6741] font-bold text-sm">
+      <div className="border-t border-gray-200 p-5 shrink-0 mt-auto bg-[#F5F3F0]">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E8EFE6] text-[13px] font-bold tracking-wide text-[#4A6741]">
             {user?.firstName ? user.firstName.charAt(0) : 'P'}
           </div>
-          <div className="flex-1 min-w-0 text-left">
-            <p className="text-sm font-semibold text-gray-800 truncate">Dr. {user?.firstName || 'Provider'}</p>
-            <p className="text-[11px] text-gray-500 capitalize">{role.toLowerCase()}</p>
+          <div className="min-w-0 flex-1 flex flex-col justify-center">
+            <p className="truncate text-[15px] font-bold text-gray-800 leading-none mb-1">Dr. {user?.firstName || 'Provider'}</p>
+            <p className="truncate text-xs font-medium text-gray-500 capitalize leading-none">{role.toLowerCase()}</p>
           </div>
         </div>
         <button

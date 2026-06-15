@@ -652,6 +652,7 @@ export const HeaderPage: React.FC = () => {
     "Free Screening": "/assessment",
     "Find a Therapist": "/helping-hand",
     "See a Psychiatrist": "/helping-hand",
+    "See a Coach": "/helping-hand",
     "Specialized Care": "/specialized-care",
     "Group Sessions": "/group-therapy",
     "Crisis Support": "/crisis",
@@ -763,7 +764,8 @@ export const HeaderPage: React.FC = () => {
           { icon: "\u2695\uFE0F", title: "See a Psychiatrist", subtitle: "Medication & diagnosis" },
           { icon: "\uD83C\uDFAF", title: "Specialized Care", subtitle: "OCD, PTSD, addiction, child" },
           { icon: "\uD83D\uDC65", title: "Group Sessions", subtitle: "Peer support from \u20B999", badge: "\u20B999" },
-          { icon: "\uD83D\uDEA8", title: "Crisis Support", subtitle: "Immediate 24/7 help", badge: "SOS" }
+          { icon: "\uD83D\uDEA8", title: "Crisis Support", subtitle: "Immediate 24/7 help", badge: "SOS" },
+          { icon: "🧭", title: "See a Coach", subtitle: "Life & career coaching" }
         ]
       },
       "AI Power Hub": {

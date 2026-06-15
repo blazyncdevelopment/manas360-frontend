@@ -34,6 +34,15 @@ export const useCertificationProgress = create<CertificationProgressState>(
                         completedModules: { ...state.completedModules, [enrollmentId]: updated },
                         quizUnlocked: { ...state.quizUnlocked, [enrollmentId]: quizShouldUnlock },
                     }));
+
+                    // Sync with enrollment store
+                    import('./CertificationEnrollmentStore').then(({ useEnrollmentStore }) => {
+                        const completionPercentage = allModuleIds.length > 0 ? Math.round((updated.length / allModuleIds.length) * 100) : 0;
+                        useEnrollmentStore.getState().updateEnrollment(enrollmentId, {
+                            modulesCompleted: updated.length,
+                            completionPercentage,
+                        });
+                    }).catch(console.error);
                 },
 
                 isModuleCompleted: (enrollmentId: string, moduleId: string): boolean => {

@@ -346,6 +346,10 @@ export const patientApi = {
         })),
     };
   },
+  getMyPublicResults: async () => {
+    const response = await http.get('/v1/free-screening/my-public-results');
+    return response.data?.data ?? response.data;
+  },
   getPatientAssessmentHistory: async (params?: { page?: number; limit?: number; type?: string }) =>
     (await http.get('/v1/patient/me/assessments', { params })).data,
   getPatientAssessmentStatus: async (): Promise<{ phq9Complete: boolean; gad7Complete: boolean }> => {
