@@ -36,7 +36,7 @@ export const AI_ENGINE_WS_URL =
   `${toWebsocketOrigin(stripTrailingApiSegment(FRONTEND_URL))}/ai-engine`;
 
 // Set USE_LOCAL_TUNNEL = true only when testing via devtunnel
-const LOCAL_TUNNEL_BASE = 'https://9lc0tr74-4000.inc1.devtunnels.ms';
+const LOCAL_TUNNEL_BASE = 'http://localhost:4502';
 const USE_LOCAL_TUNNEL = true;
 
 const getWindowCapacitor = (): any => {

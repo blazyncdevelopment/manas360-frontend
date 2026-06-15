@@ -21,20 +21,16 @@ export default function CorporateEnrollmentPage() {
   const [rowsText, setRowsText] = useState('');
   const [lastResult, setLastResult] = useState<BulkUploadResult | null>(null);
   const [singleEmployee, setSingleEmployee] = useState({
-    employeeId: '',
     name: '',
-    email: '',
     phone: '',
-    department: '',
     location: '',
-    manager: '',
   });
 
   const sampleCsv = useMemo(
     () => [
-      'employee_id,name,email,phone,department,location,manager',
-      'EMP9001,New Employee 1,new.employee1@techcorp.com,+919876543210,Engineering,Bengaluru,Manager 1',
-      'EMP9002,New Employee 2,new.employee2@techcorp.com,+919876543211,Operations,Hyderabad,Manager 2',
+      'name,phone,location',
+      'New Employee 1,+919876543210,Bengaluru',
+      'New Employee 2,+919876543211,Hyderabad',
     ].join('\n'),
     [],
   );
@@ -84,19 +80,22 @@ export default function CorporateEnrollmentPage() {
 
     const rows = lines
       .map((line) => line.split(',').map((part) => part.trim()))
-      .filter((parts) => parts.length >= 5)
-      .map((parts) => ({
-        employeeId: parts[0],
-        name: parts[1],
-        email: parts[2],
-        phone: parts[3],
-        department: parts[4],
-        location: parts[5] || 'Bengaluru',
-        manager: parts[6] || 'Unassigned',
-      }));
+      .filter((parts) => parts.length >= 2)
+      .map((parts) => {
+        const phone = parts[1] || '';
+        return {
+          employeeId: `${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          name: parts[0] || '',
+          email: phone ? `${phone.replace(/\D/g, '')}@noemail.manas360.com` : `user_${Date.now()}@noemail.manas360.com`,
+          phone: phone,
+          department: 'General',
+          location: parts[2] || 'Bengaluru',
+          manager: 'Unassigned',
+        };
+      });
 
     if (!rows.length) {
-      setError('Invalid manual format. Use: employeeId,name,email,phone,department[,location,manager]');
+      setError('Invalid manual format. Use: name,phone,location');
       return;
     }
 
@@ -117,8 +116,8 @@ export default function CorporateEnrollmentPage() {
   };
 
   const handleSingleUpload = async () => {
-    if (!singleEmployee.employeeId || !singleEmployee.name || !singleEmployee.email || !singleEmployee.department) {
-      setError('Please fill in at least the required fields: Employee ID, Name, Email, and Department.');
+    if (!singleEmployee.name || !singleEmployee.phone) {
+      setError('Please fill in at least the required fields: Name and Phone.');
       return;
     }
 
@@ -128,19 +127,20 @@ export default function CorporateEnrollmentPage() {
     setLastResult(null);
     
     try {
+      const phoneClean = singleEmployee.phone.replace(/\D/g, '');
       const result = (await corporateApi.bulkUploadEmployees([{
-        employeeId: singleEmployee.employeeId,
+        employeeId: `${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         name: singleEmployee.name,
-        email: singleEmployee.email,
+        email: phoneClean ? `${phoneClean}@noemail.manas360.com` : `user_${Date.now()}@noemail.manas360.com`,
         phone: singleEmployee.phone,
-        department: singleEmployee.department,
+        department: 'General',
         location: singleEmployee.location || 'Bengaluru',
-        manager: singleEmployee.manager || 'Unassigned',
+        manager: 'Unassigned',
       }], companyKey)) as BulkUploadResult;
       
       setStatus(result?.message || 'Employee uploaded successfully.');
       setLastResult(result);
-      setSingleEmployee({ employeeId: '', name: '', email: '', phone: '', department: '', location: '', manager: '' });
+      setSingleEmployee({ name: '', phone: '', location: '' });
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Upload failed');
     } finally {
@@ -152,7 +152,7 @@ export default function CorporateEnrollmentPage() {
     <CorporateShellLayout title="Enrollment" subtitle="Add and onboard employees into the wellness program.">
       <div className="rounded-xl border border-ink-100 bg-white p-5">
         <h2 className="font-display text-lg font-bold text-ink-800">Bulk Enrollment</h2>
-        <p className="mt-2 text-sm text-ink-600">Upload CSV/XLSX files or paste employees manually. Template format: employee_id,name,email,phone,department,location,manager.</p>
+        <p className="mt-2 text-sm text-ink-600">Upload CSV/XLSX files or paste employees manually. Template format: name,phone,location.</p>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <input
@@ -184,7 +184,7 @@ export default function CorporateEnrollmentPage() {
             value={rowsText}
             onChange={(event) => setRowsText(event.target.value)}
             rows={6}
-            placeholder="EMP9001,New Employee 1,new.employee1@techcorp.com,+919876543210,Engineering,Bengaluru,Manager 1"
+            placeholder="Jane Doe,+919876543210,Bengaluru"
             className="w-full rounded-lg border border-ink-200 p-3 text-sm text-ink-700"
           />
           <button
@@ -204,16 +204,6 @@ export default function CorporateEnrollmentPage() {
         
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <label className="mb-1 block text-sm font-medium text-ink-700">Employee ID *</label>
-            <input
-              type="text"
-              value={singleEmployee.employeeId}
-              onChange={(e) => setSingleEmployee({ ...singleEmployee, employeeId: e.target.value })}
-              className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm text-ink-800 focus:border-sage-500 focus:ring-1 focus:ring-sage-500"
-              placeholder="e.g. EMP9001"
-            />
-          </div>
-          <div>
             <label className="mb-1 block text-sm font-medium text-ink-700">Name *</label>
             <input
               type="text"
@@ -224,33 +214,13 @@ export default function CorporateEnrollmentPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-ink-700">Email *</label>
-            <input
-              type="email"
-              value={singleEmployee.email}
-              onChange={(e) => setSingleEmployee({ ...singleEmployee, email: e.target.value })}
-              className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm text-ink-800 focus:border-sage-500 focus:ring-1 focus:ring-sage-500"
-              placeholder="e.g. jane@techcorp.com"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-ink-700">Phone</label>
+            <label className="mb-1 block text-sm font-medium text-ink-700">Phone *</label>
             <input
               type="tel"
               value={singleEmployee.phone}
               onChange={(e) => setSingleEmployee({ ...singleEmployee, phone: e.target.value })}
               className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm text-ink-800 focus:border-sage-500 focus:ring-1 focus:ring-sage-500"
               placeholder="e.g. +919876543210"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-ink-700">Department *</label>
-            <input
-              type="text"
-              value={singleEmployee.department}
-              onChange={(e) => setSingleEmployee({ ...singleEmployee, department: e.target.value })}
-              className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm text-ink-800 focus:border-sage-500 focus:ring-1 focus:ring-sage-500"
-              placeholder="e.g. Engineering"
             />
           </div>
           <div>
@@ -261,16 +231,6 @@ export default function CorporateEnrollmentPage() {
               onChange={(e) => setSingleEmployee({ ...singleEmployee, location: e.target.value })}
               className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm text-ink-800 focus:border-sage-500 focus:ring-1 focus:ring-sage-500"
               placeholder="e.g. Bengaluru"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-ink-700">Manager</label>
-            <input
-              type="text"
-              value={singleEmployee.manager}
-              onChange={(e) => setSingleEmployee({ ...singleEmployee, manager: e.target.value })}
-              className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm text-ink-800 focus:border-sage-500 focus:ring-1 focus:ring-sage-500"
-              placeholder="e.g. Manager 1"
             />
           </div>
         </div>

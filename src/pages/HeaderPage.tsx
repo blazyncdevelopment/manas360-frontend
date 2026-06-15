@@ -566,6 +566,8 @@ export const HeaderPage: React.FC = () => {
   const loginRoutes: Record<string, string> = useMemo(
     () => ({
       patient: "/auth/login?userType=patient",
+      psychiatrist: "/auth/login?role=psychiatrist",
+      psychologist: "/auth/login?role=psychologist",
       therapist: "/auth/login?role=therapist",
       corporate: "/auth/login?next=/corporate/dashboard",
       clinic: "/auth/login?role=therapist",
@@ -716,10 +718,12 @@ export const HeaderPage: React.FC = () => {
 
   const loginOptions: LoginOption[] = useMemo(
     () => [
-      { type: "patient", label: "Patient", icon: "\uD83E\uDDD1", desc: "Find therapy & healing" },
-      { type: "therapist", label: "Therapist", icon: "\u2695\uFE0F", desc: "Join & earn" },
-      { type: "corporate", label: "Corporate", icon: "\uD83C\uDFE2", desc: "Wellness programs" },
-      { type: "clinic", label: "Clinic", icon: "\uD83C\uDFE5", desc: "Manage practice" }
+      { type: "patient", label: "Patient", icon: "🧑", desc: "Find therapy & healing" },
+      { type: "psychiatrist", label: "Psychiatrist", icon: "⚕️", desc: "Medication & diagnosis" },
+      { type: "psychologist", label: "Psychologist", icon: "🧠", desc: "Clinical therapy" },
+      { type: "therapist", label: "Therapist", icon: "🛋️", desc: "Counseling & support" },
+      { type: "corporate", label: "Corporate", icon: "🏢", desc: "Wellness programs" },
+      { type: "clinic", label: "Clinic", icon: "🏥", desc: "Manage practice" }
     ],
     []
   );

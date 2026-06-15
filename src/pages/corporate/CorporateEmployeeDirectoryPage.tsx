@@ -6,15 +6,10 @@ import { corporateApi } from '../../api/corporate.api';
 import { useCorporateKey } from './useCorporateDashboardData';
 
 type EmployeeRow = {
-  id: string;
-  employeeCode?: string;
   name: string;
   email: string;
   phone?: string;
-  department?: string;
-  managerName?: string;
   location?: string;
-  sessionsUsed: number;
 };
 
 export default function CorporateEmployeeDirectoryPage() {
@@ -49,10 +44,8 @@ export default function CorporateEmployeeDirectoryPage() {
       setIsSaving(true);
       await corporateApi.updateEmployee(editingEmployee.id, {
         name: editingEmployee.name,
-        email: editingEmployee.email,
         phone: editingEmployee.phone || '',
-        department: editingEmployee.department || '',
-        manager: editingEmployee.managerName || '',
+        location: editingEmployee.location || '',
       }, companyKey);
       setEditingEmployee(null);
       await fetchEmployees();
@@ -94,45 +87,37 @@ export default function CorporateEmployeeDirectoryPage() {
           <table className="min-w-full divide-y divide-ink-100 text-sm">
             <thead className="bg-ink-50 text-left text-xs uppercase tracking-wider text-ink-500">
               <tr>
-                <th className="px-4 py-3">ID</th>
                 <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Phone</th>
-                <th className="px-4 py-3">Department</th>
-                <th className="px-4 py-3">Manager</th>
-                <th className="px-4 py-3">Sessions</th>
+                <th className="px-4 py-3">Location</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-ink-500">
+                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-ink-500">
                     No employees found. Enroll employees to see them here.
                   </td>
                 </tr>
               ) : (
                 rows.map((r) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-ink-600 font-mono text-xs">{r.employeeCode || '-'}</td>
                     <td className="px-4 py-3 font-medium text-ink-700">{r.name}</td>
-                    <td className="px-4 py-3 text-ink-600">{r.email}</td>
                     <td className="px-4 py-3 text-ink-600">{r.phone || '-'}</td>
-                    <td className="px-4 py-3 text-ink-600">{r.department || '-'}</td>
-                    <td className="px-4 py-3 text-ink-600">{r.managerName || '-'}</td>
-                    <td className="px-4 py-3 text-ink-600">{r.sessionsUsed}</td>
+                    <td className="px-4 py-3 text-ink-600">{r.location || '-'}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-3">
                         <button
                           onClick={() => handleCreateAccount(r.id)}
                           disabled={creatingAccountFor === r.id}
-                          className="text-sm font-medium text-ink-600 hover:text-ink-800 disabled:opacity-50"
+                          className="rounded-lg border border-sage-600 px-3 py-1.5 text-xs font-semibold text-sage-600 hover:bg-sage-50 disabled:opacity-50"
                         >
                           {creatingAccountFor === r.id ? 'Creating...' : 'Create Account'}
                         </button>
                         <button
                           onClick={() => setEditingEmployee(r)}
-                          className="text-sm font-medium text-sage-600 hover:text-sage-700"
+                          className="rounded-lg bg-sage-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-sage-700 disabled:opacity-50"
                         >
                           Edit
                         </button>
@@ -162,39 +147,21 @@ export default function CorporateEmployeeDirectoryPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-ink-700">Email</label>
-                <input
-                  required
-                  type="email"
-                  value={editingEmployee.email}
-                  onChange={(e) => setEditingEmployee({ ...editingEmployee, email: e.target.value })}
-                  className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm text-ink-800 focus:border-sage-500 focus:ring-1 focus:ring-sage-500"
-                />
-              </div>
-              <div>
                 <label className="mb-1 block text-sm font-medium text-ink-700">Phone</label>
                 <input
                   type="tel"
+                  required
                   value={editingEmployee.phone || ''}
                   onChange={(e) => setEditingEmployee({ ...editingEmployee, phone: e.target.value })}
                   className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm text-ink-800 focus:border-sage-500 focus:ring-1 focus:ring-sage-500"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-ink-700">Department</label>
+                <label className="mb-1 block text-sm font-medium text-ink-700">Location</label>
                 <input
                   type="text"
-                  value={editingEmployee.department || ''}
-                  onChange={(e) => setEditingEmployee({ ...editingEmployee, department: e.target.value })}
-                  className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm text-ink-800 focus:border-sage-500 focus:ring-1 focus:ring-sage-500"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-ink-700">Manager</label>
-                <input
-                  type="text"
-                  value={editingEmployee.managerName || ''}
-                  onChange={(e) => setEditingEmployee({ ...editingEmployee, managerName: e.target.value })}
+                  value={editingEmployee.location || ''}
+                  onChange={(e) => setEditingEmployee({ ...editingEmployee, location: e.target.value })}
                   className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm text-ink-800 focus:border-sage-500 focus:ring-1 focus:ring-sage-500"
                 />
               </div>

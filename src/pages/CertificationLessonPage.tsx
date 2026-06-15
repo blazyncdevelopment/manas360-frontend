@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useMemo, useState } from "react";
+import React, { useRef, useCallback, useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEnrollmentStore } from "../store/CertificationEnrollmentStore";
 import { getModulesByCertification } from "../utils/certificationLessonUtils";
@@ -10,6 +10,7 @@ export const CertificationLessonPage: React.FC = () => {
   const location = useLocation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [vimeoBlocked, setVimeoBlocked] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   // ── Resolve enrollmentId from URL state or store ──────────────────────────
   // The modules page navigates here as: navigate(`/certifications/lessons/${moduleId}`)
@@ -78,14 +79,41 @@ export const CertificationLessonPage: React.FC = () => {
   const handleVideoEnded = useCallback(() => {
     if (!enrollmentId || !lessonId) return;
     markModuleComplete(enrollmentId, lessonId, allModuleIds);
-  }, [enrollmentId, lessonId, allModuleIds, markModuleComplete]);
+    if (countdown === null) {
+      setCountdown(4);
+    }
+  }, [enrollmentId, lessonId, allModuleIds, markModuleComplete, countdown]);
 
   const handleMarkComplete = useCallback(() => {
     if (!enrollmentId || !lessonId) return;
     markModuleComplete(enrollmentId, lessonId, allModuleIds);
-  }, [enrollmentId, lessonId, allModuleIds, markModuleComplete]);
+    if (countdown === null) {
+      setCountdown(4);
+    }
+  }, [enrollmentId, lessonId, allModuleIds, markModuleComplete, countdown]);
 
   const isCompleted = enrollmentId && lessonId ? isModuleCompleted(enrollmentId, lessonId) : false;
+
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      const currentIndex = allModuleIds.indexOf(lessonId || '');
+      const nextLessonId = allModuleIds[currentIndex + 1];
+      if (nextLessonId) {
+        navigate(`/certifications/lessons/${nextLessonId}`, { state: { enrollmentId } });
+      } else {
+        if (enrollmentId && isQuizUnlocked(enrollmentId)) {
+          navigate(`/certifications/quiz/${enrollmentId}`);
+        } else {
+          navigate('/my-certifications');
+        }
+      }
+      setCountdown(null);
+    }
+  }, [countdown, allModuleIds, lessonId, navigate, enrollmentId, isQuizUnlocked]);
 
   // ── Helpers (unchanged from original) ────────────────────────────────────
   const isOpeningSession = lessonId === "ATMT-OPENING";
@@ -460,7 +488,9 @@ export const CertificationLessonPage: React.FC = () => {
                   : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
                   }`}
               >
-                {isCompleted ? (
+                {countdown !== null ? (
+                  `Redirecting to next... ${countdown}s`
+                ) : isCompleted ? (
                   <>
                     <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -502,7 +532,9 @@ export const CertificationLessonPage: React.FC = () => {
                   : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
                   }`}
               >
-                {isCompleted ? (
+                {countdown !== null ? (
+                  `Redirecting to next... ${countdown}s`
+                ) : isCompleted ? (
                   <>
                     <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
