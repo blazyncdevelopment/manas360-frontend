@@ -10,6 +10,7 @@ import {
 } from '../../components/therapist/dashboard/TherapistDataState';
 import TherapistPageShell from '../../components/therapist/dashboard/TherapistPageShell';
 import TherapistTable from '../../components/therapist/dashboard/TherapistTable';
+import PostSessionRiskBadge from '../../components/therapist/PostSessionRiskBadge';
 
 type TherapistSessionRow = {
   sessionId: string;
@@ -121,6 +122,20 @@ export default function TherapistSessionsPage() {
                         />
                       ),
                     },
+                    ...(tab === 'past'
+                      ? [
+                          {
+                            key: 'risk',
+                            header: 'Patient Risk',
+                            render: (row: TherapistSessionRow) =>
+                              row.status === 'completed' ? (
+                                <PostSessionRiskBadge sessionId={row.sessionId} />
+                              ) : (
+                                <span className="text-xs text-ink-400">—</span>
+                              ),
+                          },
+                        ]
+                      : []),
                     {
                       key: 'action',
                       header: '',

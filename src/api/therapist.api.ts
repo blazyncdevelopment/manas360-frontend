@@ -237,6 +237,16 @@ export const therapistApi = {
 		const res = await http.get('/v1/therapists/me/sessions', { params });
 		return unwrap<any>(res.data);
 	},
+	getSessionRiskSignal: async (sessionId: string): Promise<{
+		signal: 'blue' | 'amber' | 'green';
+		detail: Record<string, any> | null;
+		avgEmpathyScore: number | null;
+		adjustedEmpathyScore: number | null;
+		crisisCount: number;
+	}> => {
+		const res = await http.get(`/v1/gps/sessions/${encodeURIComponent(sessionId)}/risk-signal`);
+		return res.data;
+	},
 	getSessionNotes: async (): Promise<{ items: TherapistSessionNoteItem[] }> => {
 		const res = await http.get('/v1/therapists/me/notes');
 		return unwrap<{ items: TherapistSessionNoteItem[] }>(res.data);
