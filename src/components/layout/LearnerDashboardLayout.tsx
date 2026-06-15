@@ -111,12 +111,11 @@ export const LearnerDashboardLayout = () => {
 
       {/* Footer profile card — identical pattern to ProviderSidebar */}
       <div className="border-t border-gray-200 p-4 shrink-0 mt-auto bg-[#F5F3F0]">
-
         {/* <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#E8EFE6] flex items-center justify-center text-[#4A6741] font-bold text-sm">
+          <div className="w-9 h-9 shrink-0 rounded-full bg-[#E8EFE6] flex items-center justify-center text-[#4A6741] font-bold text-sm">
             {user?.firstName ? user.firstName.charAt(0) : 'L'}
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 text-left">
             <p className="text-sm font-semibold text-gray-800 truncate">
               {user?.firstName} {user?.lastName}
             </p>

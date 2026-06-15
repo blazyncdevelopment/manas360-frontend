@@ -119,6 +119,21 @@ const detectBreathingCard = (text: string): BreathingCard | null => {
   return null;
 };
 
+const renderMessageContent = (text: string) => {
+  // Strip out [WIDGET:...] placeholders
+  let cleanText = text.replace(/\[WIDGET:[A-Z]+\]/gi, '');
+  
+  // Split by bold markdown **text**
+  const parts = cleanText.split(/(\*\*.*?\*\*)/g);
+  
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
+    }
+    return <span key={i}>{part}</span>;
+  });
+};
+
 export default function PatientDashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -635,7 +650,7 @@ export default function PatientDashboardLayout() {
             </div>
 
             {/* Messages */}
-            <div className="h-[360px] overflow-y-auto px-4 py-4 space-y-4">
+            <div className="h-[280px] overflow-y-auto px-4 py-4 space-y-4">
               {buddyMessages.map((msg, i) => {
                 const card = msg.role === 'assistant' ? detectBreathingCard(msg.content) : null;
                 return (
@@ -651,7 +666,7 @@ export default function PatientDashboardLayout() {
                           ? 'bg-charcoal text-white rounded-br-sm'
                           : 'border border-calm-sage/15 bg-white text-charcoal shadow-sm rounded-bl-sm'
                       }`}>
-                        {msg.content}
+                        {renderMessageContent(msg.content)}
                       </div>
                       {card && (
                         <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-4 text-center">

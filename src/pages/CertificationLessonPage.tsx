@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useMemo, useState } from "react";
+import React, { useRef, useCallback, useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEnrollmentStore } from "../store/CertificationEnrollmentStore";
 import { getModulesByCertification } from "../utils/certificationLessonUtils";
@@ -10,6 +10,7 @@ export const CertificationLessonPage: React.FC = () => {
   const location = useLocation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [vimeoBlocked, setVimeoBlocked] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   // ── Resolve enrollmentId from URL state or store ──────────────────────────
   // The modules page navigates here as: navigate(`/certifications/lessons/${moduleId}`)
@@ -84,26 +85,42 @@ export const CertificationLessonPage: React.FC = () => {
   const handleVideoEnded = useCallback(() => {
     if (!enrollmentId || !lessonId) return;
     markModuleComplete(enrollmentId, lessonId, allModuleIds);
-    const currentIndex = allModuleIds.indexOf(lessonId);
-    if (currentIndex !== -1 && currentIndex < allModuleIds.length - 1) {
-      const nextLessonId = allModuleIds[currentIndex + 1];
-      const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
-      navigate(`${basePath}/certifications/lessons/${nextLessonId}`, { state: { enrollmentId } });
+    if (countdown === null) {
+      setCountdown(4);
     }
-  }, [enrollmentId, lessonId, allModuleIds, markModuleComplete, navigate, location.pathname]);
+  }, [enrollmentId, lessonId, allModuleIds, markModuleComplete, countdown]);
 
   const handleMarkComplete = useCallback(() => {
     if (!enrollmentId || !lessonId) return;
     markModuleComplete(enrollmentId, lessonId, allModuleIds);
-    const currentIndex = allModuleIds.indexOf(lessonId);
-    if (currentIndex !== -1 && currentIndex < allModuleIds.length - 1) {
-      const nextLessonId = allModuleIds[currentIndex + 1];
-      const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
-      navigate(`${basePath}/certifications/lessons/${nextLessonId}`, { state: { enrollmentId } });
+    if (countdown === null) {
+      setCountdown(4);
     }
-  }, [enrollmentId, lessonId, allModuleIds, markModuleComplete, navigate, location.pathname]);
+  }, [enrollmentId, lessonId, allModuleIds, markModuleComplete, countdown]);
 
   const isCompleted = enrollmentId && lessonId ? isModuleCompleted(enrollmentId, lessonId) : false;
+
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
+      const currentIndex = allModuleIds.indexOf(lessonId || '');
+      const nextLessonId = allModuleIds[currentIndex + 1];
+      if (nextLessonId) {
+        navigate(`${basePath}/certifications/lessons/${nextLessonId}`, { state: { enrollmentId } });
+      } else {
+        if (enrollmentId && isQuizUnlocked(enrollmentId)) {
+          navigate(`${basePath}/certifications/quiz/${enrollmentId}`);
+        } else {
+          navigate(`${basePath}/my-certifications`);
+        }
+      }
+      setCountdown(null);
+    }
+  }, [countdown, allModuleIds, lessonId, navigate, enrollmentId, isQuizUnlocked, location.pathname]);
 
   // ── Helpers (unchanged from original) ────────────────────────────────────
   const isOpeningSession = lessonId === "ATMT-OPENING";
@@ -486,7 +503,9 @@ export const CertificationLessonPage: React.FC = () => {
                   : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
                   }`}
               >
-                {isCompleted ? (
+                {countdown !== null ? (
+                  `Redirecting to next... ${countdown}s`
+                ) : isCompleted ? (
                   <>
                     <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -528,7 +547,9 @@ export const CertificationLessonPage: React.FC = () => {
                   : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
                   }`}
               >
-                {isCompleted ? (
+                {countdown !== null ? (
+                  `Redirecting to next... ${countdown}s`
+                ) : isCompleted ? (
                   <>
                     <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
