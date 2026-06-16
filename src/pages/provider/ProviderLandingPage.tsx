@@ -1,31 +1,29 @@
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
 import './ProviderLandingPage.css';
 
 type SocialProofNotification = {
-	name: string;
-	action: string;
-	time: string;
-	city: string;
+    name: string;
+    action: string;
+    time: string;
+    city: string;
 };
 
 type ProviderProfileFormData = {
-	name: string;
-	phone: string;
-	qualification: string;
-	registration: string;
+    name: string;
+    phone: string;
+    qualification: string;
+    registration: string;
 };
 
 type ProviderProfileFormErrors = Partial<Record<keyof ProviderProfileFormData, string>>;
 
 const ProviderLandingPage: React.FC = () => {
     const navigate = useNavigate();
-    const [hours, setHours] = useState('23');
-    const [minutes, setMinutes] = useState('47');
-    const [seconds, setSeconds] = useState('32');
     const [notification, setNotification] = useState<SocialProofNotification>({ name: 'Dr. Rajesh K.', action: 'Just completed NLP Certification', time: '2 minutes ago', city: 'Mumbai' });
     const [showNotification, setShowNotification] = useState(true);
-    const [isFomoCollapsed, setIsFomoCollapsed] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState<ProviderProfileFormData>({
@@ -34,34 +32,21 @@ const ProviderLandingPage: React.FC = () => {
         qualification: '',
         registration: ''
     });
-	const [formErrors, setFormErrors] = useState<ProviderProfileFormErrors>({});
-	const [isRegistering, setIsRegistering] = useState(false);
-	const deadlineRef = useRef<number>(Date.now() + 24 * 60 * 60 * 1000);
+    const [formErrors, setFormErrors] = useState<ProviderProfileFormErrors>({});
+    const [isRegistering, setIsRegistering] = useState(false);
 
-	const notifications = useMemo<SocialProofNotification[]>(
-		() => [
-			{ name: 'Dr. Rajesh K.', action: 'Just completed NLP Certification', time: '2 minutes ago', city: 'Mumbai' },
-			{ name: 'Dr. Priya S.', action: 'Earned ₹32,000 in first month', time: '5 minutes ago', city: 'Delhi' },
-			{ name: 'Dr. Amit R.', action: 'Just landed ₹2L corporate retainer', time: '8 minutes ago', city: 'Bangalore' },
-			{ name: 'Dr. Meera J.', action: 'Became Master Mentor', time: '12 minutes ago', city: 'Pune' },
-			{ name: 'Dr. Karthik V.', action: 'Started group therapy sessions', time: '15 minutes ago', city: 'Chennai' },
-		],
-		[],
-	);
+    const notifications = useMemo<SocialProofNotification[]>(
+        () => [
+            { name: 'Dr. Rajesh K.', action: 'Just completed NLP Certification', time: '2 minutes ago', city: 'Mumbai' },
+            { name: 'Dr. Priya S.', action: 'Earned ₹32,000 in first month', time: '5 minutes ago', city: 'Delhi' },
+            { name: 'Dr. Amit R.', action: 'Just landed ₹2L corporate retainer', time: '8 minutes ago', city: 'Bangalore' },
+            { name: 'Dr. Meera J.', action: 'Became Master Mentor', time: '12 minutes ago', city: 'Pune' },
+            { name: 'Dr. Karthik V.', action: 'Started group therapy sessions', time: '15 minutes ago', city: 'Chennai' },
+        ],
+        [],
+    );
 
     useEffect(() => {
-        const timerInterval = setInterval(() => {
-            const total = Math.max(0, deadlineRef.current - Date.now());
-
-            const h = Math.floor((total / (1000 * 60 * 60)) % 24);
-            const m = Math.floor((total / 1000 / 60) % 60);
-            const s = Math.floor((total / 1000) % 60);
-
-            setHours(h.toString().padStart(2, '0'));
-            setMinutes(m.toString().padStart(2, '0'));
-            setSeconds(s.toString().padStart(2, '0'));
-        }, 1000);
-
         let notifIndex = 0;
         const notifInterval = setInterval(() => {
             setShowNotification(false);
@@ -73,68 +58,67 @@ const ProviderLandingPage: React.FC = () => {
         }, 8000);
 
         return () => {
-            clearInterval(timerInterval);
             clearInterval(notifInterval);
         };
     }, []);
 
-	const normalizePhone = (value: string): string => value.replace(/[^\d+]/g, '');
-	const isValidIndianMobile = (value: string): boolean => {
-		const digits = value.replace(/\D/g, '');
-		return digits.length === 10 || (digits.length === 12 && digits.startsWith('91'));
-	};
+    const normalizePhone = (value: string): string => value.replace(/[^\d+]/g, '');
+    const isValidIndianMobile = (value: string): boolean => {
+        const digits = value.replace(/\D/g, '');
+        return digits.length === 10 || (digits.length === 12 && digits.startsWith('91'));
+    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-		const nextValue = name === 'phone' ? normalizePhone(value) : value;
+        const nextValue = name === 'phone' ? normalizePhone(value) : value;
         setFormData(prev => ({ ...prev, [name]: nextValue }));
-		setFormErrors((prev) => (prev[name as keyof ProviderProfileFormData] ? { ...prev, [name]: undefined } : prev));
+        setFormErrors((prev) => (prev[name as keyof ProviderProfileFormData] ? { ...prev, [name]: undefined } : prev));
     };
 
-	const validateStep1 = (): ProviderProfileFormErrors => {
-		const errors: ProviderProfileFormErrors = {};
-		if (!formData.name.trim()) errors.name = 'Please enter your full name.';
-		if (!formData.phone.trim()) errors.phone = 'Please enter your mobile number.';
-		if (formData.phone.trim() && !isValidIndianMobile(formData.phone)) errors.phone = 'Please enter a valid mobile number.';
-		if (!formData.qualification.trim()) errors.qualification = 'Please enter your qualification.';
-		return errors;
-	};
+    const validateStep1 = (): ProviderProfileFormErrors => {
+        const errors: ProviderProfileFormErrors = {};
+        if (!formData.name.trim()) errors.name = 'Please enter your full name.';
+        if (!formData.phone.trim()) errors.phone = 'Please enter your mobile number.';
+        if (formData.phone.trim() && !isValidIndianMobile(formData.phone)) errors.phone = 'Please enter a valid mobile number.';
+        if (!formData.qualification.trim()) errors.qualification = 'Please enter your qualification.';
+        return errors;
+    };
 
-	const scrollToForm = () => {
-		document.getElementById('step1')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-	};
+    const scrollToForm = () => {
+        document.getElementById('step1')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
 
-	const redirectToProviderSignup = () => {
-		const phoneDigits = formData.phone.replace(/\D/g, '');
-		const qp = new URLSearchParams();
-		qp.set('role', 'therapist');
-		if (formData.name.trim()) qp.set('name', formData.name.trim());
-		if (phoneDigits) qp.set('phone', phoneDigits.startsWith('91') ? `+${phoneDigits}` : `+91${phoneDigits}`);
-		if (formData.qualification.trim()) qp.set('qualification', formData.qualification.trim());
-		if (formData.registration.trim()) qp.set('rciNumber', formData.registration.trim());
-		navigate(`/auth/signup?${qp.toString()}`);
-	};
+    const redirectToProviderSignup = () => {
+        const phoneDigits = formData.phone.replace(/\D/g, '');
+        const qp = new URLSearchParams();
+        qp.set('role', 'therapist');
+        if (formData.name.trim()) qp.set('name', formData.name.trim());
+        if (phoneDigits) qp.set('phone', phoneDigits.startsWith('91') ? `+${phoneDigits}` : `+91${phoneDigits}`);
+        if (formData.qualification.trim()) qp.set('qualification', formData.qualification.trim());
+        if (formData.registration.trim()) qp.set('rciNumber', formData.registration.trim());
+        navigate(`/auth/signup?${qp.toString()}`);
+    };
 
-	const handleSubmit = async () => {
-		if (isRegistering) return;
-		const errors = validateStep1();
-		setFormErrors(errors);
-		if (Object.keys(errors).length > 0) {
-			const firstField = (Object.keys(errors)[0] as keyof ProviderProfileFormData) || null;
-			if (firstField) {
-				const el = document.querySelector<HTMLInputElement>(`[name="${firstField}"]`);
-				el?.focus();
-			}
-			return;
-		}
+    const handleSubmit = async () => {
+        if (isRegistering) return;
+        const errors = validateStep1();
+        setFormErrors(errors);
+        if (Object.keys(errors).length > 0) {
+            const firstField = (Object.keys(errors)[0] as keyof ProviderProfileFormData) || null;
+            if (firstField) {
+                const el = document.querySelector<HTMLInputElement>(`[name="${firstField}"]`);
+                el?.focus();
+            }
+            return;
+        }
 
-		setIsRegistering(true);
-		try {
-			redirectToProviderSignup();
-		} finally {
-			setIsRegistering(false);
-		}
-	};
+        setIsRegistering(true);
+        try {
+            redirectToProviderSignup();
+        } finally {
+            setIsRegistering(false);
+        }
+    };
 
     return (
         <div className="provider-landing">
@@ -147,59 +131,7 @@ const ProviderLandingPage: React.FC = () => {
                 </div>
             </div> */}
 
-            {/* FOMO Timer Banner */}
-            {isFomoCollapsed ? (
-                <div 
-                    className="fomo-banner" 
-                    onClick={() => setIsFomoCollapsed(false)}
-                    style={{ cursor: 'pointer', padding: '8px 16px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    title="Click to expand"
-                >
-                    <span style={{ fontSize: '14px', fontWeight: 'bold' }}>⚡ Early Bird</span>
-                </div>
-            ) : (
-                <div className="fomo-banner">
-                    <button 
-                        onClick={() => setIsFomoCollapsed(true)}
-                        style={{
-                            position: 'absolute',
-                            top: '10px',
-                            right: '10px',
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'white',
-                            cursor: 'pointer',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            opacity: 0.8
-                        }}
-                        aria-label="Collapse"
-                    >
-                        ✕
-                    </button>
-                    <div className="fomo-title">⚡ Limited Time: Early Bird Discount</div>
-                    <p style={{ fontSize: '13px', margin: '8px 0' }}>Join in the next 24 hours & get:</p>
-                    <ul style={{ fontSize: '12px', marginLeft: '18px', lineHeight: '1.4' }}>
-                        <li>₹5,000 lead credits FREE</li>
-                        <li>First certification 50% off</li>
-                        <li>Priority profile verification</li>
-                    </ul>
-                    <div className="timer">
-                        <div className="timer-block">
-                            <span className="timer-number">{hours}</span>
-                            <span className="timer-label">HOURS</span>
-                        </div>
-                        <div className="timer-block">
-                            <span className="timer-number">{minutes}</span>
-                            <span className="timer-label">MINS</span>
-                        </div>
-                        <div className="timer-block">
-                            <span className="timer-number">{seconds}</span>
-                            <span className="timer-label">SECS</span>
-                        </div>
-                    </div>
-                </div>
-            )}
+
 
             {/* Social Proof Notifications */}
             <div className={`social-proof ${!showNotification ? 'hidden-proof' : ''}`}>
@@ -241,30 +173,60 @@ const ProviderLandingPage: React.FC = () => {
                             <div className="signup-title">Register Your Profile</div>
                             <div className="signup-sub">Takes 60 seconds. This creates your provider identity on MANAS360.</div>
 
-                            <div className="s-input-group">
-                                <label>Full Name</label>
-                                <input className="s-input" id="sName" name="name" type="text" placeholder="Dr. Priya Sharma" value={formData.name} onChange={handleInputChange} aria-invalid={Boolean(formErrors.name)} />
-                                {formErrors.name ? <div className="s-error">{formErrors.name}</div> : null}
-                            </div>
-                            <div className="s-input-group">
-                                <label>Mobile Number</label>
-                                <input className="s-input" id="sPhone" name="phone" type="tel" placeholder="+91 98765 43210" value={formData.phone} onChange={handleInputChange} aria-invalid={Boolean(formErrors.phone)} />
-                                {formErrors.phone ? <div className="s-error">{formErrors.phone}</div> : null}
-                            </div>
-                            <div className="s-input-group">
-                                <label>Qualification</label>
-                                <input className="s-input" id="sQual" name="qualification" type="text" placeholder="e.g. M.Phil Clinical Psychology" value={formData.qualification} onChange={handleInputChange} aria-invalid={Boolean(formErrors.qualification)} />
-                                {formErrors.qualification ? <div className="s-error">{formErrors.qualification}</div> : null}
-                            </div>
-                            <div className="s-input-group">
-                                <label>RCI Number</label>
-                                <input className="s-input" id="sReg" name="registration" type="text" placeholder="Your RCI registration number" value={formData.registration} onChange={handleInputChange} />
-                            </div>
+                            <div className="mt-4 space-y-3 text-left">
+                                <Input
+                                    id="sName"
+                                    name="name"
+                                    label="Full Name"
+                                    type="text"
+                                    placeholder="Dr. Priya Sharma"
+                                    value={formData.name}
+                                    onChange={handleInputChange}
+                                    error={formErrors.name}
+                                />
+                                <Input
+                                    id="sPhone"
+                                    name="phone"
+                                    label="Mobile Number"
+                                    type="tel"
+                                    placeholder="+91 98765 43210"
+                                    value={formData.phone}
+                                    onChange={handleInputChange}
+                                    error={formErrors.phone}
+                                />
+                                <Input
+                                    id="sQual"
+                                    name="qualification"
+                                    label="Qualification"
+                                    type="text"
+                                    placeholder="e.g. M.Phil Clinical Psychology"
+                                    value={formData.qualification}
+                                    onChange={handleInputChange}
+                                    error={formErrors.qualification}
+                                />
+                                <Input
+                                    id="sReg"
+                                    name="registration"
+                                    label="RCI Number (Optional)"
+                                    type="text"
+                                    placeholder="Your RCI registration number"
+                                    value={formData.registration}
+                                    onChange={handleInputChange}
+                                />
 
-                            <button className="s-btn s-btn-primary" onClick={handleSubmit} disabled={isRegistering}>
-                                {isRegistering ? 'Redirecting…' : 'Register →'}
-                            </button>
-                            <div className="s-footer-note">✅ No payment at this step. Your data is encrypted.</div>
+                                <div className="pt-2">
+                                    <Button
+                                        type="button"
+                                        fullWidth
+                                        loading={isRegistering}
+                                        className="btn btn-primary btn-lg w-full !rounded-lg hover:!bg-[var(--brand-navy-hover)]"
+                                        onClick={handleSubmit}
+                                    >
+                                        {isRegistering ? 'Redirecting...' : 'Register →'}
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="s-footer-note mt-4 text-center text-sm text-gray-500">✅ No payment at this step. Your data is encrypted.</div>
                         </div>
                     </div>
                 </div>
@@ -300,8 +262,8 @@ const ProviderLandingPage: React.FC = () => {
                     {/* Milestone 2: 5 Whys Certification */}
                     <div className="milestone right" style={{ top: '250px' }}>
                         <div className="milestone-content">
-                            <div className="milestone-badge">FREE CERTIFICATION</div>
-                            <div className="milestone-title">🧠 Week 3: Master 5 Whys</div>
+                            <div className="milestone-badge">FREE ONBOARDING</div>
+                            <div className="milestone-title">🧠 Week 3: Free Onboarding</div>
                             <div className="milestone-timeline">📅 Week 3-4 • ⏱️ 6 hours</div>
                             <div className="milestone-desc">
                                 Learn root cause analysis, empathy framework, and projecting questions.
@@ -322,7 +284,7 @@ const ProviderLandingPage: React.FC = () => {
                     <div className="milestone left" style={{ top: '450px' }}>
                         <div className="milestone-content">
                             <div className="milestone-badge">💰 REVENUE STARTS</div>
-                            <div className="milestone-title">💵 Month 2: First Earnings</div>
+                            <div className="milestone-title">💵 Week 2: First Earnings</div>
                             <div className="milestone-timeline">📅 Week 5+ • 15 sessions/month</div>
                             <div className="milestone-desc">
                                 Buy lead package (₹2,500), convert patients, start earning.

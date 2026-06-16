@@ -5,6 +5,7 @@ import { useWallet } from '../../hooks/useWallet';
 import { useAssessmentFlow } from '../../hooks/useAssessmentFlow';
 import { FRONTEND_URL } from '../../lib/runtimeEnv';
 import { useAuth } from '../../context/AuthContext';
+import { toDisplayTimeParts, getEquivalentIstTime } from '../../utils/timezoneUtils';
 
 const NRI_PROVIDER_MAP: Record<string, string> = {
   coach: 'nri-coach',
@@ -42,12 +43,14 @@ const toMinuteOfDay = (value: string): number => {
   return (h * 60) + (m || 0);
 };
 
-const toDisplayTime = (value: string): string => {
-  const [h, m] = value.split(':').map(Number);
-  const period = h >= 12 ? 'PM' : 'AM';
-  const normalizedHour = h % 12 === 0 ? 12 : h % 12;
-  return `${String(normalizedHour).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
-};
+const TIMEZONES = [
+  { value: 'Asia/Kolkata', label: 'IST (Asia/Kolkata)' },
+  { value: 'America/New_York', label: 'EST/EDT (America/New_York)' },
+  { value: 'America/Los_Angeles', label: 'PST/PDT (America/Los_Angeles)' },
+  { value: 'Europe/London', label: 'GMT/BST (Europe/London)' },
+  { value: 'Australia/Sydney', label: 'AEST/AEDT (Australia/Sydney)' },
+  { value: 'Asia/Dubai', label: 'GST (Asia/Dubai)' }
+];
 
 export default function SlideOverBookingDrawer({
   isOpen,
@@ -60,8 +63,9 @@ export default function SlideOverBookingDrawer({
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [patientTimezone, setPatientTimezone] = useState<string>('Asia/Kolkata');
   const [providerTimeSlots, setProviderTimeSlots] = useState<ProviderTimeSlot[]>(
-    SLOT_VALUES.map((value) => ({ value, label: toDisplayTime(value), isAvailable: true })),
+    SLOT_VALUES.map((value) => ({ value, label: '', isAvailable: true })),
   );
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -99,7 +103,7 @@ export default function SlideOverBookingDrawer({
       }
       const surcharge = Number(data?.videoSurchargePercent ?? 10);
       if (surcharge > 0) setVideoSurchargePercent(surcharge);
-    }).catch(() => {});
+    }).catch(() => { });
   }, [isOpen, provider, isNriUser]);
 
   // Reset state only when drawer is opened.
@@ -110,7 +114,7 @@ export default function SlideOverBookingDrawer({
       setSelectedTime(null);
       setNriSessionPrice(null);
       setSessionMode('video');
-      setProviderTimeSlots(SLOT_VALUES.map((value) => ({ value, label: toDisplayTime(value), isAvailable: true })));
+      setProviderTimeSlots(SLOT_VALUES.map((value) => ({ value, label: '', isAvailable: true })));
       setError(null);
     }
   }, [isOpen]);
@@ -142,7 +146,7 @@ export default function SlideOverBookingDrawer({
             const matched = providers.some((entry: any) => String(entry?.id) === String(provider.id));
             return {
               value,
-              label: toDisplayTime(value),
+              label: '',
               isAvailable: matched,
             };
           }),
@@ -155,7 +159,7 @@ export default function SlideOverBookingDrawer({
           return stillAvailable ? prev : null;
         });
       } catch {
-        setProviderTimeSlots(SLOT_VALUES.map((value) => ({ value, label: toDisplayTime(value), isAvailable: true })));
+        setProviderTimeSlots(SLOT_VALUES.map((value) => ({ value, label: '', isAvailable: true })));
       } finally {
         setAvailabilityLoading(false);
       }
@@ -196,12 +200,12 @@ export default function SlideOverBookingDrawer({
       const scheduledAt = new Date(selectedDate);
       scheduledAt.setHours(hours, minutes, 0, 0);
 
-      // 1. Create the therapy booking record
       const bookingResp = await patientApi.bookSession({
         providerId: provider.id,
         scheduledAt: scheduledAt.toISOString(),
         durationMinutes: 50,
         sourceFunnel,
+        patientTimezone,
       });
 
       const bookingId = bookingResp?.sessionId || bookingResp?.data?.sessionId;
@@ -234,11 +238,11 @@ export default function SlideOverBookingDrawer({
       // 3. Initiate payment for the remainder (if any)
       if (finalAmountMinor > 0) {
         try {
-          const paymentPayload: any = await patientApi.createSessionPayment({ 
-            providerId: provider.id, 
-            amountMinor: finalAmountMinor 
+          const paymentPayload: any = await patientApi.createSessionPayment({
+            providerId: provider.id,
+            amountMinor: finalAmountMinor
           });
-          
+
           const redirectUrl = paymentPayload?.redirectUrl || paymentPayload?.data?.redirectUrl;
           if (redirectUrl) {
             window.location.href = redirectUrl;
@@ -271,14 +275,14 @@ export default function SlideOverBookingDrawer({
   return (
     <>
       {/* Backdrop */}
-      <div 
+      <div
         className={`fixed inset-0 z-50 bg-charcoal/30 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Drawer */}
-      <div 
+      <div
         className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Header */}
@@ -322,6 +326,25 @@ export default function SlideOverBookingDrawer({
           {step === 1 && (
             <div className="space-y-6">
               <div>
+                <label className="block mb-2 text-sm font-semibold uppercase tracking-wider text-charcoal/50">
+                  <Clock className="mr-2 inline h-4 w-4" />
+                  Your Timezone
+                </label>
+                <select
+                  value={patientTimezone}
+                  onChange={(e) => setPatientTimezone(e.target.value)}
+                  className="w-full rounded-lg border border-calm-sage/30 bg-white px-3 py-2 text-sm text-charcoal focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                >
+                  {TIMEZONES.map((tz) => (
+                    <option key={tz.value} value={tz.value}>
+                      {tz.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-charcoal/50">Session times will be displayed in this timezone</p>
+              </div>
+
+              <div>
                 <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-charcoal/50">
                   <CalendarIcon className="mr-2 inline h-4 w-4" />
                   Select a Date
@@ -333,11 +356,10 @@ export default function SlideOverBookingDrawer({
                       <button
                         key={i}
                         onClick={() => setSelectedDate(date)}
-                        className={`flex flex-col items-center justify-center rounded-xl border p-3 transition-colors ${
-                          isSelected
+                        className={`flex flex-col items-center justify-center rounded-xl border p-3 transition-colors ${isSelected
                             ? 'border-teal-500 bg-teal-50 text-teal-700'
                             : 'border-calm-sage/20 text-charcoal/70 hover:border-teal-300 hover:bg-teal-50/50'
-                        }`}
+                          }`}
                       >
                         <span className="text-[10px] font-bold uppercase">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
                         <span className={`text-lg font-bold ${isSelected ? 'text-teal-700' : 'text-charcoal'}`}>
@@ -359,26 +381,36 @@ export default function SlideOverBookingDrawer({
                     <p className="mb-3 text-xs text-charcoal/60">Checking live availability for this provider...</p>
                   ) : null}
                   <div className="grid grid-cols-3 gap-2">
-                    {providerTimeSlots.map((slot) => (
-                      <button
-                        key={slot.value}
-                        onClick={() => {
-                          if (!slot.isAvailable || availabilityLoading) return;
-                          setSelectedTime(slot.value);
-                        }}
-                        disabled={!slot.isAvailable || availabilityLoading}
-                        className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                          selectedTime === slot.value
-                            ? 'border-teal-500 bg-teal-50 text-teal-700'
-                            : !slot.isAvailable
-                              ? 'border-calm-sage/15 bg-calm-sage/5 text-charcoal/35 cursor-not-allowed'
-                              : 'border-calm-sage/20 text-charcoal/70 hover:border-teal-300 hover:bg-teal-50/50'
-                        }`}
-                      >
-                        {slot.label}
-                      </button>
-                    ))}
+                    {providerTimeSlots.map((slot) => {
+                      const { time, abbr } = toDisplayTimeParts(slot.value, patientTimezone, selectedDate || new Date());
+                      return (
+                        <button
+                          key={slot.value}
+                          onClick={() => {
+                            if (!slot.isAvailable || availabilityLoading) return;
+                            setSelectedTime(slot.value);
+                          }}
+                          disabled={!slot.isAvailable || availabilityLoading}
+                          className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors flex flex-col items-center ${selectedTime === slot.value
+                              ? 'border-teal-500 bg-teal-50 text-teal-700'
+                              : !slot.isAvailable
+                                ? 'border-calm-sage/15 bg-calm-sage/5 text-charcoal/35 cursor-not-allowed'
+                                : 'border-calm-sage/20 text-charcoal/70 hover:border-teal-300 hover:bg-teal-50/50'
+                            }`}
+                        >
+                          <span className="font-bold">{time}</span>
+                          {abbr && <span className="text-[10px] opacity-75">({abbr})</span>}
+                        </button>
+                      );
+                    })}
                   </div>
+                  
+                  {selectedTime && patientTimezone !== 'Asia/Kolkata' && (
+                    <p className="mt-3 text-center text-xs font-medium text-charcoal/60">
+                      Equivalent to {getEquivalentIstTime(selectedTime, patientTimezone, selectedDate || new Date())} (IST)
+                    </p>
+                  )}
+
                   {!availabilityLoading && providerTimeSlots.every((slot) => !slot.isAvailable) ? (
                     <p className="mt-3 rounded-lg border border-calm-sage/20 bg-calm-sage/5 px-3 py-2 text-xs text-charcoal/65">
                       This provider has no available slots for the selected date. Please choose another date.
@@ -429,7 +461,7 @@ export default function SlideOverBookingDrawer({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-charcoal/60">Time</span>
-                    <span className="font-medium text-charcoal">{selectedTime ? toDisplayTime(selectedTime) : '-'}</span>
+                    <span className="font-medium text-charcoal">{selectedTime ? toDisplayTimeParts(selectedTime, patientTimezone, selectedDate || new Date()).time : '-'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-charcoal/60 flex items-center gap-1">
@@ -492,7 +524,7 @@ export default function SlideOverBookingDrawer({
                   Back
                 </button>
               )}
-              
+
               {step === 1 ? (
                 <button
                   onClick={() => setStep(2)}

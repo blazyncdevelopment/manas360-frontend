@@ -673,7 +673,7 @@ const LandingPage: React.FC = () => {
                 </div>
                 <div style={{ marginTop: "14px", fontSize: "13px", fontWeight: 800, color: "#1A1A2E" }}>Psychologist</div>
                 <div style={{ marginTop: "6px", fontSize: "10px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>Clinical &amp; counseling psychology. RCI registered. Earn ₹60K&ndash;₹2L/mo</div>
-                <button type="button" onClick={() => navigate("/auth/signup?role=psychologist")} style={{ marginTop: "14px", border: "1.5px solid rgba(124,58,237,0.7)", background: "rgba(255,255,255,0.95)", color: "#6D28D9", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
+                <button type="button" onClick={() => navigate("/provider-landing")} style={{ marginTop: "14px", border: "1.5px solid rgba(124,58,237,0.7)", background: "rgba(255,255,255,0.95)", color: "#6D28D9", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
                   &#10022; Join Now
                 </button>
                 <div style={{ marginTop: "10px", fontSize: "8.5px", fontWeight: 600, color: "#666680" }}>Discover &mdash; Plans &mdash; Profile</div>
@@ -690,7 +690,7 @@ const LandingPage: React.FC = () => {
                 </div>
                 <div style={{ marginTop: "14px", fontSize: "13px", fontWeight: 800, color: "#1A1A2E" }}>Psychiatrist</div>
                 <div style={{ marginTop: "6px", fontSize: "10px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>Diagnosis, medication, e-prescriptions. NMC registered MDs</div>
-                <button type="button" onClick={() => navigate("/auth/signup?role=psychiatrist")} style={{ marginTop: "14px", border: "1.5px solid rgba(14,165,166,0.7)", background: "rgba(255,255,255,0.95)", color: "#0F766E", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
+                <button type="button" onClick={() => navigate("/provider-landing")} style={{ marginTop: "14px", border: "1.5px solid rgba(14,165,166,0.7)", background: "rgba(255,255,255,0.95)", color: "#0F766E", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
                   &#10022; Join Now
                 </button>
                 <div style={{ marginTop: "10px", fontSize: "8.5px", fontWeight: 600, color: "#666680" }}>Discover &mdash; Plans &mdash; Profile</div>
@@ -707,7 +707,7 @@ const LandingPage: React.FC = () => {
                 </div>
                 <div style={{ marginTop: "14px", fontSize: "13px", fontWeight: 800, color: "#1A1A2E" }}>Therapist</div>
                 <div style={{ marginTop: "6px", fontSize: "10px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>CBT, DBT, REBT, integrative. Build your practice on your terms</div>
-                <button type="button" onClick={() => navigate("/auth/signup?role=therapist")} style={{ marginTop: "14px", border: "1.5px solid rgba(34,197,94,0.7)", background: "rgba(255,255,255,0.95)", color: "#15803D", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
+                <button type="button" onClick={() => navigate("/provider-landing")} style={{ marginTop: "14px", border: "1.5px solid rgba(34,197,94,0.7)", background: "rgba(255,255,255,0.95)", color: "#15803D", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
                   &#10022; Join Now
                 </button>
                 <div style={{ marginTop: "10px", fontSize: "8.5px", fontWeight: 600, color: "#666680" }}>Discover &mdash; Plans &mdash; Profile</div>
@@ -724,7 +724,7 @@ const LandingPage: React.FC = () => {
                 </div>
                 <div style={{ marginTop: "14px", fontSize: "13px", fontWeight: 800, color: "#1A1A2E" }}>NLP Coach</div>
                 <div style={{ marginTop: "6px", fontSize: "10px", fontWeight: 400, color: "#666680", lineHeight: 1.45 }}>Neuro-linguistic programming. Life coaching. Transformation specialists</div>
-                <button type="button" onClick={() => navigate("/auth/signup?role=coach")} style={{ marginTop: "14px", border: "1.5px solid rgba(245,158,11,0.75)", background: "rgba(255,255,255,0.95)", color: "#B45309", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
+                <button type="button" onClick={() => navigate("/provider-landing")} style={{ marginTop: "14px", border: "1.5px solid rgba(245,158,11,0.75)", background: "rgba(255,255,255,0.95)", color: "#B45309", fontWeight: 900, fontSize: "12px", padding: "10px 14px", borderRadius: "999px", cursor: "pointer" }}>
                   &#10022; Join Now
                 </button>
                 <div style={{ marginTop: "10px", fontSize: "8.5px", fontWeight: 600, color: "#666680" }}>Discover &mdash; Plans &mdash; Profile</div>

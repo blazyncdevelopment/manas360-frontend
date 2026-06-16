@@ -1570,11 +1570,20 @@ export default function SessionsPage() {
                     <p className="text-[11px] font-semibold uppercase tracking-widest text-teal-400">Next Appointment</p>
                     <p className="mt-0.5 truncate text-xl font-bold text-white">{nextSession.provider?.name || 'Assigned Therapist'}</p>
                     {nextSession.dateTime && (
-                      <p className="text-xs text-white/50 mt-0.5">
-                        {new Date(nextSession.dateTime).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
-                        {' · '}
-                        {new Date(nextSession.dateTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                      <div className="text-xs text-white/50 mt-0.5 space-y-0.5">
+                        <p>
+                          {new Date(nextSession.dateTime).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: nextSession.patientTimezone || undefined })}
+                          {' · '}
+                          {new Date(nextSession.dateTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: nextSession.patientTimezone || undefined })}
+                          {nextSession.patientTimezone ? ` (${nextSession.patientTimezone})` : ' (Local)'}
+                        </p>
+                        <p>
+                          {new Date(nextSession.dateTime).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })}
+                          {' · '}
+                          {new Date(nextSession.dateTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
+                          {' (IST)'}
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1993,14 +2002,32 @@ export default function SessionsPage() {
                             </div>
                             <div>
                               <p className="font-semibold text-charcoal">{session.provider?.name || 'Assigned Therapist'}</p>
-                              <p className="mt-0.5 text-xs text-charcoal/60">
-                                {scheduledDate.toLocaleString('en-US', {
-                                  weekday: 'short',
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric',
-                                })}
-                              </p>
+                              <div className="mt-0.5 text-xs text-charcoal/60 space-y-0.5">
+                                <p>
+                                  {scheduledDate.toLocaleString('en-US', {
+                                    weekday: 'short',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    timeZone: session.patientTimezone || undefined
+                                  })}
+                                  {' · '}
+                                  {scheduledDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: session.patientTimezone || undefined })}
+                                  {session.patientTimezone ? ` (${session.patientTimezone})` : ' (Local)'}
+                                </p>
+                                <p>
+                                  {scheduledDate.toLocaleString('en-US', {
+                                    weekday: 'short',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    timeZone: 'Asia/Kolkata'
+                                  })}
+                                  {' · '}
+                                  {scheduledDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
+                                  {' (IST)'}
+                                </p>
+                              </div>
                               <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusClass}`}>
                                 {statusLabel}
                               </span>

@@ -37,6 +37,7 @@ interface MarketplaceLead {
   gad7Severity?: string | null;
   primaryLanguage?: string | null;
   languages?: string[];
+  patientTimezone?: string | null;
 }
 
 const LANGUAGE_CODE_MAP: Record<string, string> = {
@@ -206,6 +207,7 @@ const normalizeMarketplaceLead = (lead: any): MarketplaceLead => {
     gad7Severity,
     primaryLanguage: languages[0] ?? null,
     languages,
+    patientTimezone: preview.patientTimezone ?? lead.patientTimezone ?? patient.timezone ?? patient.patientTimezone ?? null,
   };
 };
 
@@ -760,23 +762,40 @@ export default function ProviderMarketplacePage() {
                         <LeadPatientPreview lead={lead} />
 
                         {(lead.scheduledAt || lead.appointmentType) && (
-                          <div className="mb-4 flex flex-wrap gap-2 text-[10px] text-slate-500">
-                            {lead.scheduledAt ? (
-                              <span className="rounded-lg bg-slate-50 px-2 py-1 font-medium">
-                                {new Date(lead.scheduledAt).toLocaleString('en-IN', {
-                                  weekday: 'short',
-                                  day: 'numeric',
-                                  month: 'short',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </span>
-                            ) : null}
-                            {lead.appointmentType ? (
-                              <span className="rounded-lg bg-slate-50 px-2 py-1 font-medium capitalize">
-                                {lead.appointmentType}
-                              </span>
-                            ) : null}
+                          <div className="mb-4 flex flex-col gap-2 text-[10px] text-slate-500">
+                            <div className="flex flex-wrap gap-2">
+                              {lead.scheduledAt ? (
+                                <div className="flex flex-col gap-1">
+                                  <span className="rounded-lg bg-slate-50 px-2 py-1 font-medium w-fit">
+                                    {new Date(lead.scheduledAt).toLocaleString('en-IN', {
+                                      weekday: 'short',
+                                      day: 'numeric',
+                                      month: 'short',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                      timeZone: 'Asia/Kolkata',
+                                    })} IST
+                                  </span>
+                                  {lead.patientTimezone && (
+                                    <span className="rounded-lg bg-slate-50 px-2 py-1 font-medium w-fit">
+                                      {new Date(lead.scheduledAt).toLocaleString('en-IN', {
+                                        weekday: 'short',
+                                        day: 'numeric',
+                                        month: 'short',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        timeZone: lead.patientTimezone,
+                                      })} ({lead.patientTimezone})
+                                    </span>
+                                  )}
+                                </div>
+                              ) : null}
+                              {lead.appointmentType ? (
+                                <span className="rounded-lg bg-slate-50 px-2 py-1 font-medium capitalize h-fit">
+                                  {lead.appointmentType}
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
                         )}
 

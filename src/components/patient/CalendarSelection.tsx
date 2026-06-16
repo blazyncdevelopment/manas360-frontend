@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Clock, Loader2 } from 'lucide-react';
 import { patientApi } from '../../api/patient';
 import { FRONTEND_URL } from '../../lib/runtimeEnv';
+import { toDisplayTimeParts, getEquivalentIstTime } from '../../utils/timezoneUtils';
 
 export type MarketplaceBookingOptions = {
   concerns: string[];
   appointmentType: 'video' | 'audio';
+  patientTimezone?: string;
 };
 
 interface CalendarSelectionProps {
@@ -34,6 +36,15 @@ const toMinuteOfDay = (time: string): number => {
   return (h * 60) + (m || 0);
 };
 
+const TIMEZONES = [
+  { value: 'Asia/Kolkata', label: 'IST (Asia/Kolkata)' },
+  { value: 'America/New_York', label: 'EST/EDT (America/New_York)' },
+  { value: 'America/Los_Angeles', label: 'PST/PDT (America/Los_Angeles)' },
+  { value: 'Europe/London', label: 'GMT/BST (Europe/London)' },
+  { value: 'Australia/Sydney', label: 'AEST/AEDT (Australia/Sydney)' },
+  { value: 'Asia/Dubai', label: 'GST (Asia/Dubai)' }
+];
+
 export default function CalendarSelection({ onDateTimeSelect, onCancel }: CalendarSelectionProps) {
   const [step, setStep] = useState<SelectionStep>('calendar');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -46,6 +57,7 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
   const [timeSlotsError, setTimeSlotsError] = useState<string | null>(null);
   const [concernsInput, setConcernsInput] = useState('');
   const [appointmentType, setAppointmentType] = useState<'video' | 'audio'>('video');
+  const [patientTimezone, setPatientTimezone] = useState<string>('Asia/Kolkata');
 
   useEffect(() => {
     if (!selectedDate || step !== 'time-slots') return;
@@ -140,6 +152,25 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
       {/* Calendar Step */}
       {step === 'calendar' && (
         <div className="space-y-4">
+          <div>
+            <label className="block mb-2 text-sm font-semibold uppercase tracking-wider text-charcoal/50">
+              <Clock className="mr-2 inline h-4 w-4" />
+              Your Timezone
+            </label>
+            <select
+              value={patientTimezone}
+              onChange={(e) => setPatientTimezone(e.target.value)}
+              className="w-full rounded-lg border border-calm-sage/30 bg-white px-3 py-2 text-sm text-charcoal focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              {TIMEZONES.map((tz) => (
+                <option key={tz.value} value={tz.value}>
+                  {tz.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-charcoal/50">Session times will be displayed in this timezone</p>
+          </div>
+
           {/* Month/Year Header */}
           <div className="flex items-center justify-between">
             <button
@@ -182,13 +213,12 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
                   key={day}
                   onClick={() => handleDateSelect(day)}
                   disabled={!available}
-                  className={`relative rounded-lg py-2 text-sm font-medium transition-all ${
-                    selected
+                  className={`relative rounded-lg py-2 text-sm font-medium transition-all ${selected
                       ? 'bg-teal-500 text-white shadow-md'
                       : available
-                      ? 'bg-calm-sage/10 text-charcoal hover:bg-teal-50 hover:border-teal-300'
-                      : 'text-charcoal/30 cursor-not-allowed'
-                  } border border-transparent hover:border-teal-300`}
+                        ? 'bg-calm-sage/10 text-charcoal hover:bg-teal-50 hover:border-teal-300'
+                        : 'text-charcoal/30 cursor-not-allowed'
+                    } border border-transparent hover:border-teal-300`}
                 >
                   {day}
                 </button>
@@ -241,39 +271,34 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
                 </div>
               ) : null}
 
-              {timeSlots.map((slot) => (
-                <button
-                  key={slot.startTime}
-                  onClick={() => {
-                    if (timeSlotsLoading) return;
-                    setSelectedTime(slot.startTime);
-                  }}
-                  disabled={timeSlotsLoading}
-                  className={`w-full rounded-lg border px-4 py-3 text-left transition-all ${
-                    selectedTime === slot.startTime
-                      ? 'border-teal-500 bg-teal-50'
-                      : 'border-calm-sage/20 hover:border-teal-300 hover:bg-teal-50/30'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-teal-600" />
-                      <span className="font-semibold text-charcoal">
-                        {slot.startTime} - {slot.endTime}
-                      </span>
-                    </div>
-                    <span className="text-xs text-charcoal/60">
-                      {timeSlotsLoading
-                        ? 'Checking...'
-                        : slot.availableCount == null
-                          ? 'Select slot'
-                          : slot.availableCount === 0
-                            ? 'Limited availability'
-                            : `${slot.availableCount} provider${slot.availableCount !== 1 ? 's' : ''} available`}
-                    </span>
-                  </div>
-                </button>
-              ))}
+              <div className="grid grid-cols-3 gap-2">
+                {timeSlots.map((slot) => {
+                  const { time, abbr } = toDisplayTimeParts(slot.startTime, patientTimezone, selectedDate || new Date());
+                  return (
+                    <button
+                      key={slot.startTime}
+                      onClick={() => {
+                        if (timeSlotsLoading) return;
+                        setSelectedTime(slot.startTime);
+                      }}
+                      disabled={timeSlotsLoading}
+                      className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors flex flex-col items-center ${selectedTime === slot.startTime
+                          ? 'border-teal-500 bg-teal-50 text-teal-700'
+                          : 'border-calm-sage/20 text-charcoal/70 hover:border-teal-300 hover:bg-teal-50/50'
+                        }`}
+                    >
+                      <span className="font-bold">{time}</span>
+                      {abbr && <span className="text-[10px] opacity-75">({abbr})</span>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {selectedTime && patientTimezone !== 'Asia/Kolkata' && (
+                <p className="mt-3 text-center text-xs font-medium text-charcoal/60">
+                  Equivalent to {getEquivalentIstTime(selectedTime, patientTimezone, selectedDate || new Date())} (IST)
+                </p>
+              )}
 
               {!timeSlotsLoading && timeSlots.every((s) => s.availableCount === 0) && (
                 <p className="rounded-lg border border-calm-sage/20 bg-calm-sage/5 px-4 py-3 text-sm text-charcoal/70">
@@ -331,7 +356,7 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
                     .split(',')
                     .map((c) => c.trim())
                     .filter(Boolean);
-                  onDateTimeSelect(selectedDate, selectedTime, { concerns, appointmentType });
+                  onDateTimeSelect(selectedDate, selectedTime, { concerns, appointmentType, patientTimezone });
                 }}
                 className="w-full rounded-lg bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-700"
               >

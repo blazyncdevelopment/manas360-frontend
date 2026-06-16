@@ -30,6 +30,7 @@ export type TherapistDashboardResponse = {
 		durationMinutes: number;
 		status: string;
 		noteSubmitted: boolean;
+		patientTimezone?: string;
 	}>;
 	earningsChart: {
 		labels: string[];

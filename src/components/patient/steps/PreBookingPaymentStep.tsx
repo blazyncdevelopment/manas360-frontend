@@ -59,6 +59,7 @@ export default function PreBookingPaymentStep({
   selectedProviders,
   selectedDateTime,
   presetEntryType,
+  timezoneRegion,
   matchPreferences,
   bookingOptions,
   onSuccess,
@@ -103,7 +104,7 @@ export default function PreBookingPaymentStep({
         const videoSurcharge = Number(data?.videoSurchargePercent ?? 10);
         setFee(isVideoAppointment ? Math.round(baseMinor * (1 + videoSurcharge / 100)) : baseMinor);
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }, [presetEntryType, isNriUser, isVideoAppointment]);
 
   const feeInRupees = fee / 100;
@@ -133,6 +134,7 @@ export default function PreBookingPaymentStep({
         scheduledAt,
         appointmentType: bookingOptions.appointmentType,
         providerType: presetEntryType,
+        patientTimezone: bookingOptions.patientTimezone || timezoneRegion,
       });
 
       const payload = response?.data ?? response;

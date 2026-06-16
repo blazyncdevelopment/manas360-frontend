@@ -63,9 +63,13 @@ function megaItemHoverHandlers(accent: string) {
   return {
     onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
       e.currentTarget.style.background = hoverBg;
+      e.currentTarget.style.transform = "translateY(-2px)";
+      e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.08)";
     },
     onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
       e.currentTarget.style.background = MEGA_ITEM_DEFAULT_BG;
+      e.currentTarget.style.transform = "translateY(0)";
+      e.currentTarget.style.boxShadow = "none";
     },
   };
 }
@@ -147,10 +151,9 @@ export const landingHeaderStyles = `
           overflow: visible;
         }
         .landing-top-shortcut-btn > span:last-child {
-          overflow: hidden;
-          text-overflow: ellipsis;
+          overflow: visible;
           white-space: nowrap;
-          max-width: 88px;
+          max-width: none;
         }
         .brand-bar > div {
           padding-left: 216px;
@@ -655,6 +658,7 @@ export const HeaderPage: React.FC = () => {
     "See a Coach": "/helping-hand",
     "Specialized Care": "/specialized-care",
     "Group Sessions": "/group-therapy",
+    "Join Group Session": "/group-therapy",
     "Crisis Support": "/crisis",
     "Anytime Buddy AI": "/ai-power-hub",
     "AnytimeBuddy Chat": "/ai-power-hub",
@@ -687,9 +691,11 @@ export const HeaderPage: React.FC = () => {
     "Progress Tracking": "/my-digital-clinic",
     "3 days": "/my-digital-clinic",
     "NRI Landing": "/nri-landing",
+    "How it Works?": "/how-it-works",
   };
 
   const menuFallbackRoutes: Record<string, string> = {
+    "How It Works": "/how-it-works",
     "I Need a Helping Hand": "/helping-hand",
     "A I Power Hub": "/ai-power-hub",
     "Find a Spark Again": "/find-spark",
@@ -731,6 +737,7 @@ export const HeaderPage: React.FC = () => {
 
   const quickNavItems: Array<{ icon: string; label: string }> = useMemo(
     () => [
+      { icon: "\uD83D\uDCA1", label: "How It Works" },
       { icon: "\uD83E\uDD1D", label: "I Need a Helping Hand" },
       { icon: "\uD83D\uDC3E", label: "Digital Pets4Happy Hormones" },
       { icon: "\uD83E\uDDF0", label: "Self-Help Tools" },
@@ -747,12 +754,56 @@ export const HeaderPage: React.FC = () => {
     () => [
       { icon: "\uD83D\uDC8E", label: "Premium Therapy Hub", route: "/premium-theraphy" },
       { icon: "\u26A1", label: "AI Power Hub", route: "/ai-power-hub" },
+      { icon: "\uD83D\uDC65", label: "Group Sessions", route: "/group-therapy" },
+      { icon: "\uD83C\uDFAF", label: "Specialized Care", route: "/specialized-care" },
     ],
     []
   );
 
   const quickNavMegaMenus: Record<string, QuickNavMegaMenu> = useMemo(
     () => ({
+      "How It Works": {
+        accent: "#F59E0B",
+        title: "How It Works",
+        subtitle: "Explore MANAS360 user journeys",
+        columns: 1,
+        items: [
+          {
+            icon: "\uD83D\uDCA1",
+            title: "How it Works?",
+            subtitle: "Experience complete user pathways with fees, flows, and outcomes",
+            badge: "Free"
+          }
+        ]
+      },
+      "Group Sessions": {
+        accent: "#10B981",
+        title: "Group Sessions",
+        subtitle: "Peer support from \u20B999",
+        columns: 1,
+        items: [
+          {
+            icon: "\uD83D\uDC65",
+            title: "Join Group Session",
+            subtitle: "Connect with peers and share experiences",
+            badge: "\u20B999"
+          }
+        ]
+      },
+      "Specialized Care": {
+        accent: "#3B82F6",
+        title: "Specialized Care",
+        subtitle: "Targeted support for specific needs",
+        columns: 1,
+        items: [
+          {
+            icon: "\uD83C\uDFAF",
+            title: "Specialized Care",
+            subtitle: "OCD, PTSD, addiction, child psychology",
+            badge: "Expert"
+          }
+        ]
+      },
       "I Need a Helping Hand": {
         accent: "#16A34A",
         title: "I Need a Helping Hand",
@@ -762,8 +813,6 @@ export const HeaderPage: React.FC = () => {
           { icon: "\uD83E\uDE7A", title: "Free Screening", subtitle: "2-min PHQ-9 mood assessment", badge: "Free" },
           { icon: "\uD83E\uDDE0", title: "Find a Therapist", subtitle: "Psychologists & counselors" },
           { icon: "\u2695\uFE0F", title: "See a Psychiatrist", subtitle: "Medication & diagnosis" },
-          { icon: "\uD83C\uDFAF", title: "Specialized Care", subtitle: "OCD, PTSD, addiction, child" },
-          { icon: "\uD83D\uDC65", title: "Group Sessions", subtitle: "Peer support from \u20B999", badge: "\u20B999" },
           { icon: "\uD83D\uDEA8", title: "Crisis Support", subtitle: "Immediate 24/7 help", badge: "SOS" },
           { icon: "🧭", title: "See a Coach", subtitle: "Life & career coaching" }
         ]
@@ -1474,7 +1523,7 @@ export const HeaderPage: React.FC = () => {
 
               {/* Top shortcuts mega menu (full width like the one below) */}
               {activeQuickNav &&
-                (activeQuickNav === "Premium Therapy Hub" || activeQuickNav === "AI Power Hub") &&
+                (activeQuickNav === "Premium Therapy Hub" || activeQuickNav === "AI Power Hub" || activeQuickNav === "Group Sessions" || activeQuickNav === "Specialized Care") &&
                 quickNavMegaMenus[activeQuickNav] && (
                   <div
                     style={{ position: "relative" }}
@@ -1525,7 +1574,7 @@ export const HeaderPage: React.FC = () => {
                                   borderRadius: "14px",
                                   background: MEGA_ITEM_DEFAULT_BG,
                                   cursor: "pointer",
-                                  transition: "background 0.15s ease"
+                                  transition: "all 0.2s ease"
                                 }}
                                 role="button"
                                 tabIndex={0}
@@ -1732,7 +1781,7 @@ export const HeaderPage: React.FC = () => {
                                     textAlign: "left",
                                     fontFamily: "inherit",
                                     touchAction: "manipulation",
-                                    transition: "background 0.15s ease"
+                                    transition: "all 0.2s ease"
                                   }}
                                   {...megaItemHoverHandlers(quickNavMegaMenus[activeQuickNav].accent)}
                                 >

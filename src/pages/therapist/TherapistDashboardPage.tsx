@@ -52,8 +52,8 @@ import {
 const formatInr = (minor: number): string =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(minor / 100);
 
-const formatTime = (value: string): string =>
-  new Date(value).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+const formatTime = (value: string, timeZone?: string): string =>
+  new Date(value).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', timeZone });
 
 const formatDate = (value: string): string =>
   new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -196,20 +196,20 @@ export default function TherapistDashboardPage() {
 
     const fromMoodLogs = Array.isArray(moodHistory.mood_logs)
       ? moodHistory.mood_logs
-          .map((item) => ({
-            date: String(item.loggedAt || item.createdAt || ''),
-            value: Number(item.moodValue || 0),
-          }))
-          .filter((item) => item.date && Number.isFinite(item.value) && item.value > 0)
+        .map((item) => ({
+          date: String(item.loggedAt || item.createdAt || ''),
+          value: Number(item.moodValue || 0),
+        }))
+        .filter((item) => item.date && Number.isFinite(item.value) && item.value > 0)
       : [];
 
     const fromLegacy = Array.isArray(moodHistory.legacy_mood_entries)
       ? moodHistory.legacy_mood_entries
-          .map((item) => ({
-            date: String(item.date || item.createdAt || ''),
-            value: Number(item.moodScore || 0),
-          }))
-          .filter((item) => item.date && Number.isFinite(item.value) && item.value > 0)
+        .map((item) => ({
+          date: String(item.date || item.createdAt || ''),
+          value: Number(item.moodScore || 0),
+        }))
+        .filter((item) => item.date && Number.isFinite(item.value) && item.value > 0)
       : [];
 
     const merged = [...fromMoodLogs, ...fromLegacy]
@@ -523,9 +523,16 @@ export default function TherapistDashboardPage() {
                       {data.todaySessions.map((session) => (
                         <tr key={session.id} className="border-b border-ink-100/70 text-sm text-ink-800 hover:bg-surface-bg">
                           <td className="px-5 py-3">
-                            <div className="inline-flex items-center gap-2 text-ink-500">
-                              <Clock3 className="h-4 w-4" />
-                              {formatTime(session.time)}
+                            <div className="flex flex-col gap-1">
+                              <div className="inline-flex items-center gap-2 text-ink-800 font-medium">
+                                <Clock3 className="h-4 w-4 text-ink-500" />
+                                {formatTime(session.time, 'Asia/Kolkata')} IST
+                              </div>
+                              {session.patientTimezone && (
+                                <div className="inline-flex items-center gap-2 text-xs text-ink-500 ml-6">
+                                  {formatTime(session.time, session.patientTimezone)} ({session.patientTimezone})
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="px-5 py-3">

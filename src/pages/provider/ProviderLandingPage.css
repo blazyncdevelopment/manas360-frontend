@@ -72,7 +72,7 @@
 .top-register:focus-visible, .top-login:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.6); }
 
 .hero {
-    max-width: 1200px;
+    max-width: 1300px;
     margin: 0 auto;
     padding: 60px 20px;
     display: flex;
@@ -84,12 +84,14 @@
 }
 
 .hero-left {
-    flex: 1.2;
+    flex: 1.4;
 }
 
 .hero-right {
-    flex: 0.8;
-    min-width: 320px;
+    flex: 0.9;
+    min-width: 480px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .hero h1 {
@@ -714,9 +716,9 @@
 .cross { color: rgba(15, 23, 42, 0.40); }
 
 .signup-flow {
-    max-width: 520px;
-    margin: 0 auto;
-    padding: 0 20px;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 0 0 auto;
 }
 
 .signup-flow.hidden { display: none; }
@@ -725,11 +727,11 @@
     background: #ffffff;
     backdrop-filter: none;
     border: 1px solid rgba(15, 23, 42, 0.10);
-    border-radius: var(--pl-radius-md);
-    padding: 20px 18px;
+    border-radius: var(--pl-radius-lg);
+    padding: 24px 24px;
     margin-bottom: 16px;
     color: var(--pl-text);
-	box-shadow: 0 14px 45px rgba(2, 6, 23, 0.10);
+	box-shadow: 0 20px 60px rgba(2, 6, 23, 0.15);
 }
 
 .signup-step-indicator {

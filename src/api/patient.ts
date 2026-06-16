@@ -243,6 +243,7 @@ export const patientApi = {
     preferredTime?: boolean;
     preferredWindow?: string;
     sourceFunnel?: string;
+    patientTimezone?: string;
   }) =>
     (await http.post('/v1/sessions/book', payload)).data,
   verifyPayment: async (payload: { merchantTransactionId: string; transactionId: string; signature: string }) =>
@@ -681,6 +682,7 @@ export const patientApi = {
     carePath?: string;
     urgency?: string;
     note?: string;
+    patientTimezone?: string;
   }) =>
     (await http.post('/v1/patient/appointments/smart-match', {
       availabilityPrefs: DEFAULT_SMART_MATCH_AVAILABILITY,
@@ -689,6 +691,7 @@ export const patientApi = {
       context: payload.carePath,
       languages: payload.preferredLanguage ? [payload.preferredLanguage] : undefined,
       note: payload.note,
+      patientTimezone: payload.patientTimezone,
     })).data,
   confirmProposedAppointmentSlot: async (payload: {
     requestRef: string;
@@ -798,6 +801,7 @@ export const patientApi = {
       night: boolean;
       crisis: boolean;
     };
+    patientTimezone?: string;
   }) => (await http.post('/v1/patient/appointments/smart-match', payload)).data,
 
   getPendingAppointmentRequests: async () =>
@@ -815,5 +819,6 @@ export const patientApi = {
     scheduledAt: string;
     appointmentType: 'video' | 'audio';
     providerType?: string;
+    patientTimezone?: string;
   }) => (await http.post('/v1/patient/book-session', payload)).data,
 };

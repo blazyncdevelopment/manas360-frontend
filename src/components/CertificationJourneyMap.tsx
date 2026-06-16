@@ -230,27 +230,27 @@ const CertificationCard: React.FC<{ cert: Certification }> = ({ cert }) => {
     <div 
       onClick={() => navigate(detailPath)}
       className={`
-        group relative bg-white rounded-2xl p-5 md:p-7 shadow-[0_4px_12px_rgba(0,0,0,0.05)] 
-        hover:shadow-[0_15px_40px_rgba(0,0,0,0.1)] transition-all duration-400 
-        hover:-translate-y-1 cursor-pointer border-t-[4px] md:border-t-[6px] flex flex-col h-full
+        group relative bg-white rounded-2xl p-5 md:p-7 shadow-[0_4px_20px_rgba(0,0,0,0.04)] 
+        hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)] transition-all duration-500 
+        hover:-translate-y-2 cursor-pointer border-t-[4px] md:border-t-[6px] flex flex-col h-full
         ${styles.border}
       `}
     >
       {/* Badge */}
       <div className={`
-        w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-2xl md:text-3xl mb-4 md:mb-6 shadow-md text-white
+        w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-2xl md:text-3xl mb-4 md:mb-6 shadow-md text-white transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3
         ${cert.tier === 'Mastery' ? 'bg-gradient-to-br from-purple-500 to-pink-500' : styles.badgeBg}
       `}>
         {cert.name.charAt(0)}
       </div>
 
-      <h3 className="font-serif text-lg md:text-2xl leading-tight font-bold text-slate-900 mb-2">
+      <h3 className="font-serif text-lg md:text-2xl leading-tight font-bold text-slate-900 mb-2 group-hover:text-teal-700 transition-colors duration-300">
         {cert.name}
       </h3>
       <p className="text-slate-600 text-sm mb-5 md:mb-6 min-h-[40px] leading-relaxed line-clamp-2">{cert.description}</p>
 
       {/* Details Grid */}
-      <div className="grid grid-cols-2 gap-3 md:gap-4 p-3 md:p-5 rounded-xl mb-5 md:mb-6 bg-slate-50 border border-slate-100">
+      <div className="grid grid-cols-2 gap-3 md:gap-4 p-3 md:p-5 rounded-xl mb-5 md:mb-6 bg-slate-50 border border-slate-100 group-hover:bg-white group-hover:border-teal-100 transition-colors duration-300">
         <div className="flex flex-col">
            <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-400 mb-0.5">Duration</span>
            <span className="font-serif font-bold text-sm md:text-lg text-slate-900">{cert.duration_weeks} Weeks</span>
@@ -282,7 +282,7 @@ const CertificationCard: React.FC<{ cert: Certification }> = ({ cert }) => {
       </div>
 
       {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-3 mt-auto">
+      <div className="flex flex-col sm:flex-row gap-3 mt-auto w-full">
         <button 
         onClick={(e) => {
           e.stopPropagation();
@@ -292,18 +292,18 @@ const CertificationCard: React.FC<{ cert: Certification }> = ({ cert }) => {
           }
           startCertificationNow();
         }}
-        className="flex-1 bg-gradient-to-r from-teal-500 to-emerald-600 text-white py-3.5 md:py-4 rounded-xl font-bold text-sm md:text-base shadow-lg shadow-teal-200 hover:shadow-xl hover:shadow-teal-300 hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 flex items-center justify-center gap-2"
+        className="flex-[3] whitespace-nowrap bg-gradient-to-r from-teal-500 to-emerald-600 text-white py-3.5 md:py-4 rounded-xl font-bold text-sm md:text-base shadow-lg shadow-teal-200 hover:shadow-xl hover:shadow-teal-300 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-1 sm:gap-2 px-2"
         disabled={processing}
         >
-          {isEnrolled ? 'View Course' : (processing ? 'Starting...' : (cert.price_inr === 0 ? 'Start Free' : 'Enroll Now'))}
-          <span className="text-lg">→</span>
+          <span>{isEnrolled ? 'View Course' : (processing ? 'Starting...' : (cert.price_inr === 0 ? 'Start Free' : 'Enroll Now'))}</span>
+          <span className="text-lg leading-none transition-transform duration-300 group-hover:translate-x-1">→</span>
           </button>
         <button 
           onClick={(e) => {
             e.stopPropagation();
             navigate(detailPath);
           }}
-          className="w-full sm:w-auto px-6 md:px-8 py-3.5 md:py-4 rounded-xl font-bold text-sm md:text-base border-2 border-slate-800 text-slate-800 bg-white shadow-md hover:bg-slate-800 hover:text-white hover:shadow-lg hover:scale-[1.03] active:scale-[0.97] transition-all duration-200"
+          className="flex-[2] whitespace-nowrap px-4 md:px-6 py-3.5 md:py-4 rounded-xl font-bold text-sm md:text-base border-2 border-slate-800 text-slate-800 bg-white shadow-md hover:!bg-teal-600 hover:!border-teal-600 hover:!text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center"
         >
           Details
         </button>

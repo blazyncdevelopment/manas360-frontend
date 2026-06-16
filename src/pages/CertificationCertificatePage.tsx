@@ -48,6 +48,7 @@ const CertificationCertificatePage: React.FC = () => {
 
     const qrValue = `${window.location.origin}/verify/${certId}`;
     const fontCqi = enrollment ? calcFontCqi(enrollment.certificationName) : 1.75;
+    const displayCertId = certId.includes('_') ? certId.split('_').pop() : certId;
 
     const handleDownloadPDF = async () => {
         if (!certificateRef.current) return;
@@ -274,14 +275,14 @@ const CertificationCertificatePage: React.FC = () => {
                         whiteSpace: 'nowrap',
                         textTransform: 'uppercase',
                     }}>
-                        {certId}
+                        {displayCertId}
                     </span>
                 </div>
 
                 {/* BOTTOM RIGHT: Signature */}
                 <div
                     className="absolute flex justify-center"
-                    style={{ top: '75%', left: '65%', width: '25%' }}
+                    style={{ top: '75%', left: '46%', width: '25%' }}
                 >
                     <span style={{
                         fontFamily: "'Great Vibes', cursive",
@@ -296,7 +297,7 @@ const CertificationCertificatePage: React.FC = () => {
 
                 <div
                     className="absolute flex justify-center"
-                    style={{ top: '85%', left: '65%', width: '25%' }}
+                    style={{ top: '85%', left: '46%', width: '25%' }}
                 >
                     <span style={{
                         fontFamily: "'Cinzel', serif",
@@ -304,15 +305,14 @@ const CertificationCertificatePage: React.FC = () => {
                         fontSize: '1.4cqi',
                         textAlign: 'center',
                         lineHeight: 1,
-                        textTransform: 'uppercase',
                     }}>
-                        HOWARD ONG
+                        Howard Ong
                     </span>
                 </div>
 
                 <div
                     className="absolute flex justify-center"
-                    style={{ top: '90%', left: '65%', width: '25%' }}
+                    style={{ top: '90%', left: '46%', width: '25%' }}
                 >
                     <span style={{
                         fontFamily: "'Cinzel', serif",
@@ -320,16 +320,15 @@ const CertificationCertificatePage: React.FC = () => {
                         fontSize: '1cqi',
                         textAlign: 'center',
                         lineHeight: 1,
-                        textTransform: 'uppercase',
                     }}>
-                        CHAIR-CLINICAL ADVISORY BOARD
+                        Chair-Clinical Advisory Board
                     </span>
                 </div>
             </div>
 
             <p className="no-print mt-4 text-slate-500 text-xs text-center">
                 Certificate ID:{' '}
-                <span className="text-amber-400 font-mono font-bold tracking-widest">{certId}</span>
+                <span className="text-amber-400 font-mono font-bold tracking-widest">{displayCertId}</span>
                 {' · '}Verify at{' '}
                 <a href={qrValue} className="text-amber-400 underline underline-offset-2" target="_blank" rel="noreferrer">
                     {window.location.hostname}/verify/{certId}
