@@ -6,7 +6,8 @@ import { resolveProviderIdForOnboarding } from '../../api/providerOnboarding';
 import { clearGuestClinicalScreening, readCachedClinicalScreening } from '../../utils/guestScreeningCache';
 import { patientApi } from '../../api/patient';
 import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
+
+import PhoneInput from '../../components/ui/PhoneInput';
 import OtpInput from '../../components/ui/OtpInput';
 import { getPostLoginRoute, hasCorporateAccess, useAuth } from '../../context/AuthContext';
 import { hasActivePaidPatientSubscription } from '../../lib/patientSubscriptionFlow';
@@ -136,7 +137,7 @@ export default function LoginPage() {
 		setError(null);
 		setLoading(true);
 		try {
-			await signupWithPhone(phone.trim());
+			await signupWithPhone(phone.trim(), undefined, true);
 			setOtpSent(true);
 		} catch (err) {
 			setError(getApiErrorMessage(err, 'Failed to send OTP'));
@@ -303,15 +304,12 @@ export default function LoginPage() {
 
 								<div className="mt-6 space-y-4">
 									{!otpSent && (
-										<Input
+										<PhoneInput
 											id="login-phone"
 											label="Phone Number"
-											type="tel"
-											autoComplete="tel"
-											placeholder="+919876543210"
 											helperText={isProviderLogin ? 'OTP will be sent to your registered number' : 'Use your phone number to continue'}
 											value={phone}
-											onChange={(event) => setPhone(event.target.value)}
+											onChange={(value) => setPhone(value)}
 											required
 										/>
 									)}
@@ -386,15 +384,12 @@ export default function LoginPage() {
 								<div className="mt-6 space-y-4">
 									{!otpSent ? (
 										<>
-											<Input
+											<PhoneInput
 												id="corp-login-phone"
 												label="Registered Phone Number"
-												type="tel"
-												autoComplete="tel"
-												placeholder="+919876543210"
 												helperText="The phone number used for your corporate admin account"
 												value={phone}
-												onChange={(e) => setPhone(e.target.value)}
+												onChange={(value) => setPhone(value)}
 												required
 											/>
 										</>

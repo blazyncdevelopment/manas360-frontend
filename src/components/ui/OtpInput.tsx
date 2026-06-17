@@ -85,7 +85,7 @@ export const OtpInput: React.FC<OtpInputProps> = ({
         </label>
       )}
       
-      <div className="flex gap-2 sm:gap-3 justify-center">
+      <div className="flex gap-2 sm:gap-3 justify-start">
         {Array.from({ length }, (_, index) => {
           const char = value[index] || '';
           return (

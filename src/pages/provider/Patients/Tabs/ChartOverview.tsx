@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Activity, ClipboardList, FileSignature, Loader2, Pill, Stethoscope, Video } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { assignPatientItem, scheduleNextSession, type AssignPatientItemPayload } from '../../../../api/provider';
 import { useAuth } from '../../../../context/AuthContext';
 import { usePatientOverview } from '../../../../hooks/usePatientOverview';
@@ -130,9 +130,10 @@ export default function ChartOverview() {
   const { patientId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(() => searchParams.get('action') === 'rebook');
   const [bookingDate, setBookingDate] = useState('');
   const [bookingTime, setBookingTime] = useState('');
   const [bookingDuration, setBookingDuration] = useState(50);
@@ -140,6 +141,16 @@ export default function ChartOverview() {
 
   const providerRole = useMemo(() => normalizeRole(user?.role), [user?.role]);
   const { data: overview, isLoading, isError } = usePatientOverview(patientId);
+
+  // Clear the action query param if we auto-opened the modal so it doesn't reopen on refresh
+  useState(() => {
+    if (searchParams.get('action') === 'rebook') {
+      setTimeout(() => {
+        searchParams.delete('action');
+        setSearchParams(searchParams, { replace: true });
+      }, 0);
+    }
+  });
 
   const { mutateAsync: assignAssessment, isPending: isAssigning } = useMutation({
     mutationFn: async (payload: AssignPatientItemPayload) => {

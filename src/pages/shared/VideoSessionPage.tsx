@@ -84,6 +84,7 @@ export default function VideoSessionPage() {
   const [speechError, setSpeechError] = useState<string | null>(null);
   const [speechStatus, setSpeechStatus] = useState<string | null>(null);
   const [monitoringId, setMonitoringId] = useState<string>('');
+  const [isAnalyzingGPS, setIsAnalyzingGPS] = useState(false);
   const [showDecisionModal, setShowDecisionModal] = useState(false);
   const [decisionSubmitting, setDecisionSubmitting] = useState(false);
   const [patientSessionEnded, setPatientSessionEnded] = useState(false);
@@ -125,8 +126,8 @@ export default function VideoSessionPage() {
 
   const handleCompleteAndExit = () => {
     endSession();
-    if (sessionOutcome === 'rebook') {
-      navigate('/provider/appointments?action=rebook');
+    if (sessionOutcome === 'rebook' && meetingData?.patientId) {
+      navigate(`/provider/patients/${meetingData.patientId}/overview?action=rebook`);
     } else {
       navigate('/provider/dashboard');
     }
@@ -276,6 +277,26 @@ export default function VideoSessionPage() {
     };
   }, [sessionId, isProvider]);
 
+  // Voice-driven empathy traffic light (Real-time AI Engine integration)
+  const handleGPSUpdate = useCallback((metrics: Record<string, any>) => {
+    const empathyScore = Number(metrics.empathyScore || 0);
+    const crisisRisk = String(metrics.crisisRisk || 'low').toLowerCase();
+    const sentiment = String(metrics.sentiment || 'neutral').toLowerCase();
+    const suggestion = String(metrics.aiSuggestion || '');
+
+    let status: ConnectionStatus = 'good';
+    if (crisisRisk === 'high' || empathyScore < 40) {
+      status = 'poor';
+    } else if (empathyScore < 70 || sentiment === 'negative') {
+      status = 'caution';
+    }
+
+    setConnectionStatus(status);
+    setVoiceEmpathyScore(empathyScore);
+    setVoiceEmpathyReason(suggestion || `Empathy: ${empathyScore}% | ${sentiment.toUpperCase()}`);
+    setCrisisDetected(crisisRisk === 'high');
+  }, []);
+
   // Periodic GPS AI Analysis
   useEffect(() => {
     if (!sessionId) return; // Allow both provider and patient to send transcripts
@@ -286,16 +307,23 @@ export default function VideoSessionPage() {
         const textToAnalyze = fullTranscript.trim();
         if (!textToAnalyze) return;
 
-        await http.post(`/v1/gps/sessions/${sessionId}/analyze`, {
-          transcript: textToAnalyze.slice(-3000) // Send up to last ~3000 chars (approx last 60-90s)
+        setIsAnalyzingGPS(true);
+        const res = await http.post(`/v1/gps/sessions/${sessionId}/analyze`, {
+          transcript: textToAnalyze.slice(-3000) // Send up to last ~3000 chars
         });
+
+        if (res.data?.metrics) {
+          handleGPSUpdate(res.data.metrics);
+        }
       } catch (err) {
         console.warn('[VideoSessionPage] GPS Analyze error:', err);
+      } finally {
+        setTimeout(() => setIsAnalyzingGPS(false), 2000);
       }
-    }, 30_000); // Every 30 seconds
+    }, 10_000); // Every 10 seconds
 
     return () => window.clearInterval(interval);
-  }, [sessionId, voiceMessages]);
+  }, [sessionId, voiceMessages, handleGPSUpdate]);
 
   useEffect(() => {
     return () => {
@@ -334,29 +362,24 @@ export default function VideoSessionPage() {
     };
   }, [hasAuthError, isProvider]);
 
-  // Voice-driven empathy traffic light (Real-time AI Engine integration)
-  const handleGPSUpdate = useCallback((metrics: Record<string, any>) => {
-    const empathyScore = Number(metrics.empathyScore || 0);
-    const crisisRisk = String(metrics.crisisRisk || 'low').toLowerCase();
-    const sentiment = String(metrics.sentiment || 'neutral').toLowerCase();
-    const suggestion = String(metrics.aiSuggestion || '');
-
-    let status: ConnectionStatus = 'good';
-    if (crisisRisk === 'high' || empathyScore < 40) {
-      status = 'poor';
-    } else if (empathyScore < 70 || sentiment === 'negative') {
-      status = 'caution';
-    }
-
-    setConnectionStatus(status);
-    setVoiceEmpathyScore(empathyScore);
-    setVoiceEmpathyReason(suggestion || `Empathy: ${empathyScore}% | ${sentiment.toUpperCase()}`);
-    setCrisisDetected(crisisRisk === 'high');
-  }, []);
-
   const handleTranscriptUpdate = useCallback((transcript: Record<string, any>) => {
     const text = String(transcript.text || '').trim();
     if (!text) return;
+
+    // Quick keyword-based sentiment for immediate UI feedback
+    const lowerText = text.toLowerCase();
+    const cautionKeywords = ['depressed', 'sad', 'anxious', 'stress', 'worried', 'hopeless', 'lonely', 'overwhelmed'];
+    const crisisKeywords = ['suicide', 'kill myself', 'want to die', 'end it all', 'harm myself'];
+
+    if (crisisKeywords.some(kw => lowerText.includes(kw))) {
+      setConnectionStatus('poor');
+      setCrisisDetected(true);
+      setVoiceEmpathyReason('CRISIS KEYWORD DETECTED FROM AUDIO');
+    } else if (cautionKeywords.some(kw => lowerText.includes(kw))) {
+      setConnectionStatus('caution');
+      const detectedWord = cautionKeywords.find(kw => lowerText.includes(kw));
+      setVoiceEmpathyReason(`Detected negative sentiment: "${detectedWord}"`);
+    }
 
     setVoiceMessages((prev) => {
       const timestamp = new Date()
@@ -1388,6 +1411,7 @@ export default function VideoSessionPage() {
             monitoringId={monitoringId}
             accessToken={accessToken}
             socketUrl={getApiBaseUrl().replace(/\/api\/?$/, '')}
+            isUpdating={isAnalyzingGPS}
           />
         )}
 

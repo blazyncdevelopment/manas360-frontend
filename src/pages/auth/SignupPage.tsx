@@ -16,6 +16,7 @@ import { clearGuestClinicalScreening, readCachedClinicalScreening } from '../../
 import { patientApi } from '../../api/patient';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import PhoneInput from '../../components/ui/PhoneInput';
 import OtpInput from '../../components/ui/OtpInput';
 import { useAuth, getPostLoginRoute } from '../../context/AuthContext';
 import { hasActivePaidPatientSubscription } from '../../lib/patientSubscriptionFlow';
@@ -679,14 +680,11 @@ export default function SignupPage() {
 							</div>
 						) : null}
 
-						<Input
+						<PhoneInput
 							id="signup-phone"
 							label="Phone Number"
-							type="tel"
-							autoComplete="tel"
-							placeholder="+919876543210"
 							value={phone}
-							onChange={(event) => setPhone(event.target.value)}
+							onChange={(value) => setPhone(value)}
 							required
 						/>
 

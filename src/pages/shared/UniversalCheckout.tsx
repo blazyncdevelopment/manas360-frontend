@@ -79,9 +79,9 @@ export default function UniversalCheckout() {
   const [promoCode, setPromoCode] = useState('');
 
   const typePlanId = searchParams.get('planId');
-  const trialAuthRequested = searchParams.get('trialAuth') === '1';
-  const trialDaysRaw = Number(searchParams.get('trialDays') || 21);
-  const trialDays = Number.isFinite(trialDaysRaw) && trialDaysRaw > 0 ? Math.round(trialDaysRaw) : 21;
+  const trialAuthRequested = searchParams.get('trialAuth') === '1' || searchParams.get('isTrial') === 'true';
+  const trialDaysRaw = Number(searchParams.get('trialDays') || (mode === 'provider' ? 21 : 6));
+  const trialDays = Number.isFinite(trialDaysRaw) && trialDaysRaw > 0 ? Math.round(trialDaysRaw) : (mode === 'provider' ? 21 : 6);
   const postTrialCycle = (searchParams.get('postTrialCycle') || 'monthly').toLowerCase() === 'quarterly' ? 'quarterly' : 'monthly';
   const queryPlanId = typePlanId || '';
   const checkoutCart = mode === 'provider' ? providerCart : patientCart;
@@ -148,14 +148,16 @@ export default function UniversalCheckout() {
     : (patientCart ? PATIENT_GATEWAY_PLAN_MAP[patientCart.planId] : typePlanId || '');
 
   const isProviderTrialAuthFlow = mode === 'provider' && resolvedPlanId === 'lead-free' && trialAuthRequested;
-  const trialAuthMinor = isProviderTrialAuthFlow ? 100 : 0;
+  const isPatientTrialAuthFlow = mode === 'patient' && (trialAuthRequested || patientCart?.isTrial);
+  const isAnyTrialAuthFlow = isProviderTrialAuthFlow || isPatientTrialAuthFlow;
+  const trialAuthMinor = 100;
 
   const walletMinor = Math.max(0, Math.round(Number((balance as any)?.total_balance || 0) * 100));
-  const totalMinor = isProviderTrialAuthFlow
+  const totalMinor = isAnyTrialAuthFlow
     ? trialAuthMinor
     : (summary?.totalMinor || Math.round((sharedPlan?.baseAmount || 0) * 100));
-  const applicableWalletMinor = isProviderTrialAuthFlow ? 0 : Math.min(walletMinor, totalMinor);
-  const finalAmountMinor = isProviderTrialAuthFlow
+  const applicableWalletMinor = isAnyTrialAuthFlow ? 0 : Math.min(walletMinor, totalMinor);
+  const finalAmountMinor = isAnyTrialAuthFlow
     ? trialAuthMinor
     : Math.max(0, totalMinor - applicableWalletMinor);
 
@@ -164,11 +166,9 @@ export default function UniversalCheckout() {
     : '/plans/addons';
 
   const title = mode === 'provider' ? 'Provider Checkout' : 'Checkout';
-  const subtitle = mode === "provider"
-    ? (isProviderTrialAuthFlow
+  const subtitle = isAnyTrialAuthFlow
       ? "Start your " + trialDays + "-day trial with Rs.1 authorization. Post-trial billing cycle: " + postTrialCycle + "."
-      : "Platform access, lead plan, and marketplace add-ons.")
-    : "GST 18% is charged extra on top of the selected plan and add-ons.";
+      : (mode === "provider" ? "Platform access, lead plan, and marketplace add-ons." : "GST 18% is charged extra on top of the selected plan and add-ons.");
 
   const handleTermsScroll = (event: React.UIEvent<HTMLDivElement>) => {
     const element = event.currentTarget;
@@ -218,15 +218,16 @@ export default function UniversalCheckout() {
         : {
           type: 'patient',
           planId: resolvedPlanId,
-          baseAmountMinor: summary ? summary.subtotalMinor : totalMinor,
-          gstMinor: summary ? summary.gstMinor : 0,
-          totalAmountMinor: summary ? summary.totalMinor : totalMinor,
+          baseAmountMinor: isPatientTrialAuthFlow ? trialAuthMinor : (summary ? summary.subtotalMinor : totalMinor),
+          gstMinor: isPatientTrialAuthFlow ? 0 : (summary ? summary.gstMinor : 0),
+          totalAmountMinor: isPatientTrialAuthFlow ? trialAuthMinor : (summary ? summary.totalMinor : totalMinor),
           walletUsedMinor: applicableWalletMinor,
           finalAmountMinor,
           acceptedTerms: true,
           promoCode: promoCode || undefined,
           idempotencyKey,
           addons: patientCart?.addons,
+          isTrial: isPatientTrialAuthFlow,
           redirectUrl: buildPatientSubscriptionSuccessRedirect(FRONTEND_URL),
           successRedirectUrl: buildUniversalPatientPaymentSuccessUrl(FRONTEND_URL, resolvedPlanId),
           successReturnUrl: buildUniversalPatientPaymentSuccessUrl(FRONTEND_URL, resolvedPlanId),
@@ -317,8 +318,8 @@ export default function UniversalCheckout() {
             {mode === 'patient' && patientCart && (
               <div className="flex items-center justify-between"><span>Add-ons</span><strong>{formatInr(patientSummary?.addonsMinor || 0)}</strong></div>
             )}
-            <div className="flex items-center justify-between"><span>Subtotal (before GST)</span><strong>{formatInr(isProviderTrialAuthFlow ? trialAuthMinor : (patientSummary ? patientSummary.subtotalMinor : providerSummary ? providerSummary.subtotalMinor : totalMinor))}</strong></div>
-            <div className="flex items-center justify-between"><span>GST (18%)</span><span>{formatInr(isProviderTrialAuthFlow ? 0 : (patientSummary ? patientSummary.gstMinor : providerSummary ? providerSummary.gstMinor : 0))}</span></div>
+            <div className="flex items-center justify-between"><span>Subtotal (before GST)</span><strong>{formatInr(isAnyTrialAuthFlow ? trialAuthMinor : (patientSummary ? patientSummary.subtotalMinor : providerSummary ? providerSummary.subtotalMinor : totalMinor))}</strong></div>
+            <div className="flex items-center justify-between"><span>GST (18%)</span><span>{formatInr(isAnyTrialAuthFlow ? 0 : (patientSummary ? patientSummary.gstMinor : providerSummary ? providerSummary.gstMinor : 0))}</span></div>
             {applicableWalletMinor > 0 && (
               <div className="flex items-center justify-between font-medium text-teal-600">
                 <span>Wallet Credits Applied</span>

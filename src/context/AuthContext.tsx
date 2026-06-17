@@ -252,12 +252,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         window.sessionStorage.removeItem(authProbeBlockKey);
       }
     } catch (error: any) {
-      setUser(null);
-      clearSessionHint();
-      if (error?.response?.status === 401) {
-        clearAuthTokens();
-        if (typeof window !== 'undefined') {
-          window.sessionStorage.setItem(authProbeBlockKey, '1');
+      const status = error?.response?.status;
+      
+      // Do not clear session hints or log out on network errors (server down) or 5xx server errors.
+      if (!error.response || status >= 500) {
+        setUser((prev) => prev ? prev : null);
+      } else {
+        setUser(null);
+        clearSessionHint();
+        if (status === 401 || status === 403) {
+          clearAuthTokens();
+          if (typeof window !== 'undefined') {
+            window.sessionStorage.setItem(authProbeBlockKey, '1');
+          }
         }
       }
     } finally {

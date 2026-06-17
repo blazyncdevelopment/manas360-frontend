@@ -10,6 +10,7 @@ export interface PatientSubscriptionCart {
   addons: PatientAddonSelection;
   updatedAt: string;
   isAddonOnly?: boolean;
+  isTrial?: boolean;
 }
 
 export const PATIENT_CART_KEY = 'manas360.patient.subscription.cart.v1';
@@ -45,8 +46,8 @@ export const PATIENT_PLANS: Array<{
       name: 'Monthly',
       displayPrice: 'INR 99 / month',
       gatewayPlanKey: 'monthly',
-      trialDays: 21,
-      cta: 'Start 21-Day Trial',
+      trialDays: 6,
+      cta: 'Start 6-Day Trial',
       amountMinor: 9900,
       features: [
         'Full platform access',
@@ -60,8 +61,8 @@ export const PATIENT_PLANS: Array<{
       name: 'Quarterly',
       displayPrice: 'INR 279 / quarter',
       gatewayPlanKey: 'quarterly',
-      trialDays: 21,
-      cta: 'Start 21-Day Trial',
+      trialDays: 6,
+      cta: 'Start 6-Day Trial',
       badge: 'Most Chosen',
       amountMinor: 27900,
       features: [
@@ -76,8 +77,8 @@ export const PATIENT_PLANS: Array<{
       name: 'Premium Library',
       displayPrice: 'INR 299 / month',
       gatewayPlanKey: 'premium_monthly',
-      trialDays: 21,
-      cta: 'Start 21-Day Trial',
+      trialDays: 6,
+      cta: 'Start 6-Day Trial',
       amountMinor: 29900,
       features: [
         'Everything in Quarterly',
@@ -162,6 +163,7 @@ export const loadCart = (): PatientSubscriptionCart | null => {
       },
       updatedAt: String(parsed.updatedAt || new Date().toISOString()),
       isAddonOnly: Boolean(parsed.isAddonOnly),
+      isTrial: Boolean(parsed.isTrial),
     };
   } catch {
     return null;

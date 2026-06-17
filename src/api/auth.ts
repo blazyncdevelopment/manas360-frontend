@@ -41,6 +41,7 @@ export interface AuthUser {
 	platformAccessActive?: boolean;
 	requiresSubscription?: boolean;
 	patientSubscriptionActive?: boolean;
+	patientSubscriptionTrialUsed?: boolean;
 	patientSubscriptionPlan?: string | null;
 	legalAcceptanceRequired?: boolean;
 	nriTermsAccepted?: boolean;
@@ -180,10 +181,12 @@ export const googleLogin = async (idToken: string): Promise<AuthUser> => {
 export const signupWithPhone = async (
 	phone: string,
 	profile?: { name?: string; role?: 'patient' | 'learner' | 'therapist' | 'psychiatrist' | 'psychologist' | 'coach' },
+	isLogin?: boolean
 ): Promise<{ userId: string; phone: string; message: string; devOtp?: string }> => {
 	const normalizedPhone = normalizePhoneForAuth(phone);
 	const response = await http.post<ApiEnvelope<{ userId: string; phone: string; message: string; devOtp?: string }>>('/v1/auth/signup/phone', {
 		phone: normalizedPhone,
+		isLogin,
 		...(profile || {}),
 	});
 	const data = response.data.data;

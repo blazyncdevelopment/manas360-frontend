@@ -231,6 +231,9 @@ export const patientApi = {
   getSupportCenter: async () => (await http.get('/v1/patient/support')).data,
   createSupportTicket: async (payload: { subject: string; message: string; category?: string; priority?: string }) =>
     (await http.post('/v1/patient/support/tickets', payload)).data,
+  getSupportTicket: async (id: string) => (await http.get(`/v1/patient/support/tickets/${encodeURIComponent(id)}`)).data,
+  replySupportTicket: async (id: string, payload: { message: string }) =>
+    (await http.post(`/v1/patient/support/tickets/${encodeURIComponent(id)}/comment`, payload)).data,
   listProviders: async (params?: { specialization?: string; language?: string; minPrice?: number; maxPrice?: number; page?: number; limit?: number }) =>
     (await http.get('/v1/providers', { params })).data,
   getProvider: async (id: string) => (await http.get(`/v1/providers/${encodeURIComponent(id)}`)).data,

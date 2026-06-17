@@ -215,7 +215,12 @@ export default function PricingPage() {
       return { disabled: true, label: 'Included in paid plan', isCurrentPlan };
     }
 
-    return { disabled: false, label: plan.cta.replace('21-Day', '6-Day'), isCurrentPlan };
+    const baseCta = plan.cta;
+    const label = (user as any)?.patientSubscriptionTrialUsed 
+      ? baseCta.replace('6-Day Trial', 'Plan') 
+      : baseCta;
+
+    return { disabled: false, label, isCurrentPlan };
   };
 
   const onStartSubscription = async (planId: PatientPlanId) => {
@@ -243,6 +248,7 @@ export default function PricingPage() {
         planId: selectedPlan.id,
         addons: DEFAULT_ADDONS,
         updatedAt: new Date().toISOString(),
+        isTrial: !(user as any)?.patientSubscriptionTrialUsed,
       });
       navigate('/plans/addons');
       return;

@@ -3,6 +3,8 @@ import type { FormEvent, ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Building2, BriefcaseBusiness, Globe2, Mail, ShieldCheck, User2, Users } from 'lucide-react';
 import { corporateApi } from '../../api/corporate.api';
+import PhoneInput from '../../components/ui/PhoneInput';
+
 import { getApiErrorMessage } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 
@@ -33,7 +35,7 @@ export default function CorporateOnboardingPage() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [organizationType, setOrganizationType] = useState('CORP');
-  const [utmSource, setUtmSource] = useState('linkedin');
+  const [utmSource, setUtmSource] = useState('website');
   const [utmMedium, setUtmMedium] = useState('social');
   const [utmCampaign, setUtmCampaign] = useState('q3_wellness_promo');
 
@@ -160,7 +162,7 @@ export default function CorporateOnboardingPage() {
         setContactName('');
         setPhone('');
         setOrganizationType('CORP');
-        setUtmSource('linkedin');
+        setUtmSource('website');
         setUtmMedium('social');
         setUtmCampaign('q3_wellness_promo');
         return;
@@ -321,12 +323,10 @@ export default function CorporateOnboardingPage() {
                   </div>
 
                   <Field label="Phone Number" icon={<User2 className="h-4 w-4" />}>
-                    <input
-                      className={inputClassName}
-                      type="tel"
-                      placeholder="+919876543210"
+                    <PhoneInput
+                      className="border-none !bg-transparent !p-0 focus-within:ring-0"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(value) => setPhone(value)}
                       required
                     />
                   </Field>
@@ -335,7 +335,11 @@ export default function CorporateOnboardingPage() {
                     <>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <Field label="Organization Type" icon={<Building2 className="h-4 w-4" />}>
-                          <input className={inputClassName} value={organizationType} onChange={(e) => setOrganizationType(e.target.value)} />
+                          <select className={inputClassName} value={organizationType} onChange={(e) => setOrganizationType(e.target.value)}>
+                            <option value="CORP">Corporate (CORP)</option>
+                            <option value="EDU">Education (EDU)</option>
+                            <option value="HEALTH">Healthcare (HEALTH)</option>
+                          </select>
                         </Field>
                         <Field label="UTM Source" icon={<Globe2 className="h-4 w-4" />}>
                           <input className={inputClassName} value={utmSource} onChange={(e) => setUtmSource(e.target.value)} />

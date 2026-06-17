@@ -536,6 +536,22 @@ export default function SettingsPage() {
     </div>
   );
 
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Are you sure you want to delete your account? This action is permanent and cannot be undone.')) {
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await http.delete('/v1/users/me');
+      await logout();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Failed to delete account.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const renderPrivacy = () => (
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -545,7 +561,9 @@ export default function SettingsPage() {
       </div>
       <div className="flex flex-wrap gap-2 pt-1">
         <button type="button" className="rounded-lg border border-calm-sage/20 bg-white px-3 py-2 text-sm text-charcoal/80">Export Personal Data</button>
-        <button type="button" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">Delete Account</button>
+        <button type="button" onClick={handleDeleteAccount} disabled={saving} className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 disabled:opacity-50">
+          {saving ? 'Deleting...' : 'Delete Account'}
+        </button>
       </div>
     </div>
   );

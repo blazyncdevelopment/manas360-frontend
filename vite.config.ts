@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config'
 import path from 'path'
 import react from '@vitejs/plugin-react'
+import Sitemap from 'vite-plugin-sitemap'
 
 const hmrProtocol = (process.env.VITE_HMR_PROTOCOL as 'ws' | 'wss' | undefined) || 'ws'
 const hmrHost = process.env.VITE_HMR_HOST || undefined
@@ -14,7 +15,25 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
-  plugins: [react()],
+  plugins: [
+    react(),
+    Sitemap({
+      hostname: 'https://manas360.com',
+      robots: [{ userAgent: '*', allow: '/' }],
+      dynamicRoutes: [
+        '/',
+        '/about',
+        '/contact',
+        '/how-it-works',
+        '/intro',
+        '/landing',
+        '/plans',
+        '/crisis',
+        '/specialized-care',
+        '/blogs'
+      ]
+    })
+  ],
   test: {
     globals: true,
     environment: 'jsdom',

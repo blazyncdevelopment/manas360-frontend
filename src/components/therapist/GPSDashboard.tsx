@@ -56,6 +56,8 @@ interface GPSDashboardProps {
   accessToken: string;
   /** Socket.io server URL (defaults to window.origin) */
   socketUrl?: string;
+  /** Whether the AI is currently analyzing */
+  isUpdating?: boolean;
 }
 
 // ─── Colour helpers ───────────────────────────────────────────────────────────
@@ -108,13 +110,32 @@ export default function GPSDashboard({
   monitoringId,
   accessToken,
   socketUrl,
+  isUpdating,
 }: GPSDashboardProps) {
   const [connected, setConnected] = useState(false);
   const [metrics, setMetrics] = useState<GPSMetrics>(DEFAULT_METRICS);
   const [sentimentHistory, setSentimentHistory] = useState<number[]>([]);
   const [crisisAlert, setCrisisAlert] = useState<CrisisAlert | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [statusText, setStatusText] = useState('Waiting for data...');
   const socketRef = useRef<Socket | null>(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!connected) {
+        setStatusText('Disconnected');
+        return;
+      }
+      if (!lastUpdate) return;
+      const diff = Math.floor((Date.now() - lastUpdate.getTime()) / 1000);
+      if (isUpdating) setStatusText('Analyzing Transcript...');
+      else if (diff < 2) setStatusText('Updating now...');
+      else if (diff < 15) setStatusText('Listening & Analyzing...');
+      else setStatusText(`Last updated ${diff}s ago`);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lastUpdate, connected, isUpdating]);
 
   // Connect to socket and join GPS room
   useEffect(() => {
@@ -138,6 +159,7 @@ export default function GPSDashboard({
       if (payload.type === 'gps_update') {
         const m: GPSMetrics = payload.data;
         setMetrics(m);
+        setLastUpdate(new Date());
         setSentimentHistory((prev) => {
           const next = [...prev, m.sentimentScore ?? 0];
           return next.slice(-HISTORY_LIMIT);
@@ -212,6 +234,13 @@ export default function GPSDashboard({
 
   const suggPriority = suggestionPriority(metrics.aiSuggestion);
 
+  const containerBorderColor =
+    metrics.crisisRisk === 'high'
+      ? priorityBorder.critical
+      : metrics.sentiment === 'negative'
+      ? priorityBorder.warning
+      : 'rgba(255,255,255,0.08)';
+
   return (
     <>
       {/* ── GPS Dashboard Panel ── */}
@@ -224,13 +253,20 @@ export default function GPSDashboard({
           background: 'rgba(15,23,42,0.96)',
           borderRadius: 12,
           padding: 14,
-          boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+          boxShadow: `0 10px 40px rgba(0,0,0,0.4), 0 0 15px ${
+            metrics.crisisRisk === 'high'
+              ? 'rgba(239,68,68,0.2)'
+              : metrics.sentiment === 'negative'
+              ? 'rgba(245,158,11,0.2)'
+              : 'transparent'
+          }`,
           backdropFilter: 'blur(12px)',
           zIndex: 9000,
           color: '#f1f5f9',
           fontFamily: 'Inter, system-ui, sans-serif',
           fontSize: 13,
-          border: '1px solid rgba(255,255,255,0.08)',
+          border: `1px solid ${containerBorderColor}`,
+          transition: 'all 0.5s ease',
         }}
       >
         {/* Header */}
@@ -367,6 +403,18 @@ export default function GPSDashboard({
             <div style={{ color: '#e2e8f0', lineHeight: 1.5 }}>{metrics.aiSuggestion}</div>
           </div>
         )}
+
+        {/* Status Indicator */}
+        <div style={{ marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 10, textAlign: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 11, color: statusText.includes('Disconnected') ? '#ef4444' : statusText.includes('Waiting') || statusText.includes('ago') ? '#94a3b8' : '#10b981' }}>
+            {!statusText.includes('Disconnected') && !statusText.includes('ago') && !statusText.includes('Waiting') && (
+              <span className="animate-pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
+            )}
+            <span style={{ fontWeight: 500, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+              {isUpdating ? 'Analyzing Transcript...' : statusText}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* ── Crisis Alert Modal ── */}

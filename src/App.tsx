@@ -37,6 +37,18 @@ const LegalAcceptancePage = lazy(() => import('./pages/auth/LegalAcceptancePage'
 import ProtectedRoute from './components/ProtectedRoute'
 import PlatformAdminRoute from './components/PlatformAdminRoute'
 import CorporateRoute from './components/CorporateRoute'
+
+import TagManager from 'react-gtm-module';
+
+const tagManagerArgs = {
+
+  gtmId: 'GTM-TZGVFS2D'
+
+};
+
+TagManager.initialize(tagManagerArgs);
+
+
 const PatientDashboardLayout = lazy(() => import('./components/layout/PatientDashboardLayout'));
 const DashboardPage = lazy(() => import('./pages/patient/DashboardPage'));
 const BookSessionPage = lazy(() => import('./pages/patient/BookSessionPage'));

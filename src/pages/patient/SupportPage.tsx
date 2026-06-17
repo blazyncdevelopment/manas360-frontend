@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Bot,
   Camera,
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
   CreditCard,
@@ -12,6 +13,8 @@ import {
   Search,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Modal from '../../components/ui/Modal';
+import SupportChatModal from '../../components/patient/SupportChatModal';
 import { patientApi } from '../../api/patient';
 import { useAuth } from '../../context/AuthContext';
 
@@ -168,7 +171,8 @@ export default function SupportPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<HelpCategory | 'all'>('all');
@@ -240,7 +244,7 @@ export default function SupportPage() {
 
     setSubmitting(true);
     setError(null);
-    setSuccess(null);
+    setShowSuccessModal(false);
 
     try {
       await patientApi.createSupportTicket({
@@ -249,7 +253,7 @@ export default function SupportPage() {
         category: ticketCategory,
         priority: 'medium',
       });
-      setSuccess('Support request submitted. Our tech team typically replies within 24 hours.');
+      setShowSuccessModal(true);
       setTicketDescription('');
       await loadSupportCenter();
     } catch (err: any) {
@@ -472,19 +476,24 @@ export default function SupportPage() {
       </section>
 
       {error && <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-      {success && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{success}</div>}
 
       <section className="rounded-2xl border border-calm-sage/20 bg-white p-4">
         <p className="text-sm font-semibold text-charcoal">Recent Support Requests</p>
         {tickets.length === 0 ? (
           <p className="mt-2 text-sm text-charcoal/65">No support requests yet.</p>
         ) : (
-          <div className="mt-2 space-y-2">
-            {tickets.slice(0, 5).map((ticket) => (
-              <div key={ticket.id} className="flex items-start justify-between gap-3 rounded-lg border border-calm-sage/15 bg-[#FAFAF8] px-3 py-2">
+          <div className="mt-4 space-y-3">
+            {tickets.map((ticket) => (
+              <div
+                key={ticket.id}
+                onClick={() => setSelectedTicketId(ticket.id)}
+                className="flex cursor-pointer items-center justify-between rounded-xl border border-calm-sage/10 bg-gray-50/50 p-4 transition-colors hover:bg-calm-sage/5"
+              >
                 <div>
-                  <p className="text-sm font-medium text-charcoal">{ticket.title}</p>
-                  <p className="text-xs text-charcoal/65">{ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : 'N/A'}</p>
+                  <h4 className="font-medium text-charcoal">{ticket.title}</h4>
+                  <p className="mt-1 text-xs text-charcoal/50">
+                    {ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : 'N/A'}
+                  </p>
                 </div>
                 <span className="rounded-full bg-calm-sage/15 px-2 py-0.5 text-[11px] font-semibold text-calm-sage">
                   {String(ticket.status || 'OPEN').toUpperCase()}
@@ -494,6 +503,31 @@ export default function SupportPage() {
           </div>
         )}
       </section>
+
+      <Modal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} size="sm">
+        <div className="flex flex-col items-center justify-center py-4 text-center">
+          <div className="mb-4 rounded-full bg-emerald-100 p-3">
+            <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+          </div>
+          <h3 className="mb-2 text-xl font-semibold text-charcoal">Request Submitted!</h3>
+          <p className="text-sm text-charcoal/70">
+            Your support request has been successfully submitted. Our technical team typically replies within 24 hours.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowSuccessModal(false)}
+            className="mt-6 w-full rounded-lg bg-calm-sage px-4 py-2.5 font-semibold text-white transition-colors hover:bg-calm-sage/90"
+          >
+            Okay
+          </button>
+        </div>
+      </Modal>
+
+      <SupportChatModal 
+        isOpen={!!selectedTicketId} 
+        onClose={() => setSelectedTicketId(null)} 
+        ticketId={selectedTicketId} 
+      />
     </div>
   );
 }
