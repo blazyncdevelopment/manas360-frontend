@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { groupTherapyApi } from '../../api/groupTherapy';
 import { patientApi } from '../../api/patient';
 import { useAuth } from '../../context/AuthContext';
-import { Clock, Globe, Users, AlertCircle, ChevronRight, KeyRound, Copy } from 'lucide-react';
+import { Clock, Globe, Users, AlertCircle, KeyRound, Copy } from 'lucide-react';
 
 type ComputedState = 'LIVE' | 'NEXT' | 'TODAY' | 'UPCOMING' | 'FULL' | 'EXPIRED';
 
@@ -275,15 +275,12 @@ export default function GroupTherapySessionsPage() {
       {/* Public landing hero + breadcrumb */}
       {isPublicPath && (
         <>
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-xs text-charcoal/55">
-            <Link to="/" className="hover:text-teal-600">Home</Link>
-            <ChevronRight className="h-3 w-3 text-charcoal/30" />
-            <span className="font-semibold text-charcoal">Group Therapy</span>
-          </nav>
 
           {/* Hero banner */}
-          <section className="-mx-4 bg-gradient-to-br from-teal-700 via-teal-600 to-emerald-600 px-6 py-10 text-center md:-mx-6 md:rounded-2xl md:py-14">
+          <section 
+            className="bg-gradient-to-br from-teal-700 via-teal-600 to-emerald-600 px-6 py-10 text-center md:py-14"
+            style={{ width: '100vw', marginLeft: 'calc(-50vw + 50%)' }}
+          >
             <div className="mx-auto max-w-2xl">
               <div className="mb-3 text-4xl">👥</div>
               <h1 className="text-3xl font-extrabold text-white md:text-4xl">Heal in Community</h1>

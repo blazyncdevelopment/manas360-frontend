@@ -263,7 +263,7 @@ const ProviderLandingPage: React.FC = () => {
                     <div className="milestone right" style={{ top: '250px' }}>
                         <div className="milestone-content">
                             <div className="milestone-badge">FREE ONBOARDING</div>
-                            <div className="milestone-title">🧠 Week 3: Free Onboarding</div>
+                            <div className="milestone-title">🧠 Week 1: Free Onboarding</div>
                             <div className="milestone-timeline">📅 Week 3-4 • ⏱️ 6 hours</div>
                             <div className="milestone-desc">
                                 Learn root cause analysis, empathy framework, and projecting questions.

@@ -30,6 +30,23 @@
   overflow: hidden;
 }
 
+.sound-therapy-workspace.landing .st-hero {
+  border-radius: 0;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-top: -2rem;
+}
+
+.sound-therapy-workspace.landing .st-hero-content {
+  margin: 0 auto;
+  text-align: center;
+}
+
+.sound-therapy-workspace.landing .st-hero-stats,
+.sound-therapy-workspace.landing .st-neuro-row {
+  justify-content: center;
+}
+
 .st-hero::before {
   content: "";
   position: absolute;

@@ -48,7 +48,7 @@
 }
 
 .contact-us-page .hero-inner {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   position: relative;
   z-index: 1;
@@ -69,11 +69,12 @@
   font-weight: 800;
   line-height: 1.2;
   margin-bottom: 14px;
+  color: var(--white);
 }
 
 .contact-us-page .hero h1 em {
   font-style: normal;
-  color: var(--clay);
+  color: var(--white);
 }
 
 .contact-us-page .hero-sub {
@@ -84,7 +85,7 @@
 
 /* ===== MAIN ===== */
 .contact-us-page .main {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 48px 40px 60px;
 }

@@ -77,7 +77,7 @@ export const Header: React.FC = () => {
 
           <div className="flex items-center gap-2 lg:gap-3">
             <a
-              href="https://wa.me/919876543210"
+              href="https://wa.me/918951927280"
               target="_blank"
               rel="noreferrer"
               className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 bg-charcoal/[0.03] text-charcoal/70 transition-all duration-300 hover:bg-charcoal/5 hover:text-charcoal"

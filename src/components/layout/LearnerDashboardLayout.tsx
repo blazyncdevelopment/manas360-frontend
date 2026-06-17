@@ -65,15 +65,19 @@ export const LearnerDashboardLayout = () => {
     }
   };
 
-  const SidebarContent = () => (
-    <aside className="w-64 h-screen bg-[#F5F3F0] border-r border-gray-200 flex flex-col fixed left-0 top-0">
+  const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => (
+    <aside className={`w-64 h-screen bg-[#F5F3F0] border-r border-gray-200 flex flex-col fixed left-0 top-0 z-50 transition-transform duration-300 ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : ''} lg:translate-x-0`}>
       {/* Logo — identical to ProviderSidebar */}
-      <div className="h-16 px-5 flex items-center gap-3 border-b border-gray-200 shrink-0">
-        <img src="/AppIcon.jpeg" alt="MANAS360 logo" className="w-8 h-8 rounded-lg object-cover" />
-        <span className="font-bold text-lg text-[#2D4128]">MANAS360</span>
-        <span className="ml-auto text-[10px] font-medium bg-[#E8EFE6] text-[#4A6741] px-2 py-0.5 rounded-full">
-          Learner
-        </span>
+      <div className="h-16 px-5 flex items-center justify-between border-b border-gray-200 shrink-0">
+        <div className="flex items-center gap-3">
+          <img src="/AppIcon.jpeg" alt="MANAS360 logo" className="w-8 h-8 rounded-lg object-cover" />
+          <span className="font-bold text-lg text-[#2D4128]">MANAS360</span>
+        </div>
+        {isMobile && (
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-500 hover:text-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+          </button>
+        )}
       </div>
 
       {/* Nav — identical pattern to ProviderSidebar */}
@@ -113,17 +117,6 @@ export const LearnerDashboardLayout = () => {
 
       {/* Footer profile card — identical pattern to ProviderSidebar */}
       <div className="border-t border-gray-200 p-4 shrink-0 mt-auto bg-[#F5F3F0]">
-        {/* <div className="flex items-center gap-3">
-          <div className="w-9 h-9 shrink-0 rounded-full bg-[#E8EFE6] flex items-center justify-center text-[#4A6741] font-bold text-sm">
-            {user?.firstName ? user.firstName.charAt(0) : 'L'}
-          </div>
-          <div className="flex-1 min-w-0 text-left">
-            <p className="text-sm font-semibold text-gray-800 truncate">
-              {user?.firstName} {user?.lastName}
-            </p>
-            <p className="text-[11px] text-gray-500">Learner</p>
-          </div>
-        </div> */}
         {/* Book a Session */}
         <button
           type="button"
@@ -173,11 +166,8 @@ export const LearnerDashboardLayout = () => {
       )}
 
       {/* Mobile drawer */}
-      <div
-        className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:hidden ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
-      >
-        <SidebarContent />
+      <div className="lg:hidden">
+        <SidebarContent isMobile={true} />
       </div>
 
       {/* Main content */}

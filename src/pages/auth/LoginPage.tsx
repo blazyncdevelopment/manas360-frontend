@@ -7,6 +7,7 @@ import { clearGuestClinicalScreening, readCachedClinicalScreening } from '../../
 import { patientApi } from '../../api/patient';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import OtpInput from '../../components/ui/OtpInput';
 import { getPostLoginRoute, hasCorporateAccess, useAuth } from '../../context/AuthContext';
 import { hasActivePaidPatientSubscription } from '../../lib/patientSubscriptionFlow';
 import type { AuthUser } from '../../api/auth';
@@ -317,18 +318,12 @@ export default function LoginPage() {
 
 									{otpSent && (
 										<>
-											<Input
-												id="login-otp"
+											<OtpInput
 												label="One-Time Code"
-												inputMode="numeric"
-												pattern="\d{4}"
-												maxLength={4}
-												autoComplete="one-time-code"
-												placeholder="4-digit OTP"
+												length={4}
 												helperText="Enter the code sent to your WhatsApp / SMS"
 												value={otp}
-												onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))}
-												required
+												onChange={setOtp}
 											/>
 
 
@@ -410,18 +405,12 @@ export default function LoginPage() {
 													OTP sent to <strong>{phone}</strong>. Enter it below to sign in.
 												</p>
 											</div>
-											<Input
-												id="corp-login-otp"
+											<OtpInput
 												label="One-Time Code"
-												inputMode="numeric"
-												pattern="\d{4}"
-												maxLength={4}
-												autoComplete="one-time-code"
-												placeholder="4-digit OTP"
+												length={4}
 												helperText="Enter the code sent to your WhatsApp / SMS"
 												value={otp}
-												onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
-												required
+												onChange={setOtp}
 											/>
 										</>
 									)}

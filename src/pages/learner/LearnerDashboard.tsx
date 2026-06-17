@@ -306,7 +306,7 @@ export const LearnerDashboard: React.FC = () => {
 
   if (loading && enrollments.length === 0) {
     return (
-      <div className="space-y-6">
+      <div className="mx-auto w-full max-w-[1400px] space-y-6 pb-20 lg:pb-6">
         <div className="mb-8 h-14 w-80 animate-pulse rounded-lg bg-gray-200" />
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, idx) => (
@@ -319,7 +319,7 @@ export const LearnerDashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-[1400px] space-y-6 pb-6">
       {/* ── Greeting & Stats (Only on Overview) ───────────────────────────── */}
       {activeTab === 'overview' && (
         <>

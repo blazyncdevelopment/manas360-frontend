@@ -13,6 +13,12 @@ type GtSession = {
   spots: { total: number; taken: number };
   startsInMs: number;
   durationMin: number;
+  price?: number;
+  wasPrice?: number;
+  perLabel?: string;
+  therapistCred?: string;
+  avatar?: string;
+  socialProof?: string;
 };
 
 type GroupGlowSession = {
@@ -73,8 +79,7 @@ const LandingPage: React.FC = () => {
       bot: "/ai-power-hub",
       pets: "/pet",
       sound: "/sound-therapy",
-      schedule: "/patient/sessions",
-      "chat-mid": "/ai-chat",
+      "chat-mid": "https://wa.me/918951927280",
       notes: "/assessment",
       brain: "/self-help"
     }),
@@ -84,7 +89,11 @@ const LandingPage: React.FC = () => {
   const handleSideRailNavigate = (id: string) => {
     const to = sideRailRoutes[id];
     if (!to) return;
-    navigate(to);
+    if (to.startsWith("http")) {
+      window.open(to, "_blank", "noopener,noreferrer");
+    } else {
+      navigate(to);
+    }
   };
 
   useEffect(() => {
@@ -128,7 +137,13 @@ const LandingPage: React.FC = () => {
               lang: item.language || "English",
               spots: { total: item.maxMembers || 15, taken: item.joinedCount || 0 },
               startsInMs: startsInMs,
-              durationMin: item.durationMinutes || 60
+              durationMin: item.durationMinutes || 60,
+              price: item.priceMinor !== undefined ? item.priceMinor / 100 : item.price,
+              wasPrice: item.wasPrice || item.originalPrice,
+              perLabel: item.perLabel,
+              therapistCred: item.topic || item.hostTitle || item.therapistCred,
+              avatar: item.hostAvatar || item.avatar,
+              socialProof: item.socialProof
             };
           });
           setGtSessions(fetchedSessions);
@@ -167,8 +182,8 @@ const LandingPage: React.FC = () => {
           isLive: isLive,
           upcomingLabel: isUpcoming ? `📅 In ${formatCountdown(countdown)}` : undefined,
           therapistName: session.host,
-          therapistCred: "Mental Health Professional",
-          avatar: "👩‍⚕️",
+          therapistCred: session.therapistCred || "Mental Health Professional",
+          avatar: session.avatar || "👩‍⚕️",
           details: [
             isLive ? `⏱️ Now` : `⏱️ ${session.durationMin} min`,
             `🗣️ ${session.lang}`,
@@ -177,11 +192,12 @@ const LandingPage: React.FC = () => {
           seatsLeft: Math.max(0, seatsLeft),
           seatsMax: session.spots.total,
           seatsFillPct: seatsFillPct,
-          price: 149,
-          perLabel: "/session",
+          price: session.price ?? 149,
+          wasPrice: session.wasPrice,
+          perLabel: session.perLabel || "/session",
           buttonText: isLive ? "⚡ JOIN NOW" : "📅 RESERVE SPOT",
           isUpcoming: isUpcoming,
-          socialProof: "🔥 Join our supportive community"
+          socialProof: session.socialProof || "🔥 Join our supportive community"
         };
       }),
     [visibleGtSessions, now]
@@ -251,13 +267,7 @@ const LandingPage: React.FC = () => {
             },
             { id: "divider-1", divider: true },
             { id: "whatsapp-label", label: "WHATSAPP" },
-            {
-              id: "schedule",
-              icon: "🗓️",
-              title: "WA Book Session",
-              subtitle: "Book therapist via WhatsApp · 2 min",
-              bg: "linear-gradient(180deg, #DDF3EC, #E3F0FF)"
-            },
+
             {
               id: "chat-mid",
               icon: "💬",
@@ -484,115 +494,7 @@ const LandingPage: React.FC = () => {
       </div>
 
       <main className="landing-main">
-        {visibleGtSessions.length > 0 && (
-          <section className="landing-gt-strip" aria-label="Live and next 2 hours">
-            <div className="landing-gt-strip-inner">
-              <div className="landing-gt-strip-header">
-                <div className="landing-gt-strip-left">
-                  <span style={{ fontSize: "13px" }} aria-hidden="true">
-                    &#128308;
-                  </span>
-                  <span className="landing-gt-strip-title">Live &amp; Next 2 Hours</span>
-                  <span className="landing-gt-strip-badge">FREE</span>
-                </div>
-                <button
-                  type="button"
-                  className="landing-gt-strip-link"
-                  onClick={() => navigate("/group-therapy")}
-                >
-                  View full schedule &rarr;
-                </button>
-              </div>
-              <div
-                className="landing-gt-boxes"
-                style={{
-                  gridTemplateColumns: "repeat(3, 1fr)"
-                  // gridTemplateColumns:
-                  //   visibleGtSessions.length === 1
-                  //     ? "1fr"
-                  //     : visibleGtSessions.length === 2
-                  //       ? "1fr 1fr"
-                  //       : "repeat(3, 1fr)"
-                }}
-              >
-                {visibleGtSessions.length === 0 ? (
-                  <div className="landing-gt-box-empty">
-                    No sessions in the next 2 hours.{" "}
-                    <button type="button" onClick={() => navigate("/group-therapy")}>
-                      See full schedule &rarr;
-                    </button>
-                  </div>
-                ) : (
-                  visibleGtSessions.map((session) => {
-                    const status = getGtStatus(session, now, pageEpoch.current);
-                    const countdown = getGtCountdown(session, now, pageEpoch.current);
-                    const seatsLeft = session.spots.total - session.spots.taken;
-                    const seatPct = (session.spots.taken / session.spots.total) * 100;
-                    const boxClass =
-                      status === "live" ? "landing-gt-box-live" : status === "soon" ? "landing-gt-box-soon" : "landing-gt-box-upcoming";
-                    const barColor = status === "live" ? "#FF9933" : status === "soon" ? "#3B82F6" : "#EAB308";
 
-                    return (
-                      <div key={session.theme} className={`landing-gt-box ${boxClass}`}>
-                        <div className="landing-gt-box-top">
-                          <span className="landing-gt-box-theme">
-                            <span className="landing-gt-emoji">{session.emoji}</span> {session.theme}
-                          </span>
-                          {status === "live" ? (
-                            <span className="landing-gt-status landing-gt-status-live">
-                              <span className="landing-gt-dot" />
-                              LIVE
-                            </span>
-                          ) : status === "soon" ? (
-                            <span className="landing-gt-status landing-gt-status-soon">
-                              &#128293; {formatCountdown(countdown)}
-                            </span>
-                          ) : (
-                            <span className="landing-gt-status landing-gt-status-upcoming">
-                              &#9200; {formatCountdown(countdown)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="landing-gt-box-meta">
-                          <span>&#128104;&#8205;&#9877;&#65039; {session.host}</span>
-                          <span>&#127760; {session.lang}</span>
-                        </div>
-                        {seatsLeft <= 3 && seatsLeft > 0 ? (
-                          <div className="landing-gt-box-seats landing-gt-box-seats-hot">
-                            &#128293; Only {seatsLeft} seat{seatsLeft > 1 ? "s" : ""} left!
-                            <span className="landing-gt-seats-bar">
-                              <span className="landing-gt-seats-fill" style={{ width: `${seatPct}%`, background: barColor }} />
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="landing-gt-box-seats-muted">
-                            &#128101; {session.spots.taken}/{session.spots.total} joined
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          className={`landing-gt-box-btn ${status === "live"
-                            ? "landing-gt-box-btn-live"
-                            : status === "soon"
-                              ? "landing-gt-box-btn-soon"
-                              : "landing-gt-box-btn-upcoming"
-                            }`}
-                          onClick={() => navigate("/group-therapy")}
-                        >
-                          {status === "live"
-                            ? "\u26A1 JOIN NOW \u2014 FREE"
-                            : status === "soon"
-                              ? "\uD83D\uDD25 JOIN \u2014 Starting Soon"
-                              : "\uD83D\uDD14 Remind Me"}
-                        </button>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </section>
-        )}
 
         <div className="landing-hero-section" style={{ textAlign: "center", padding: "50px 24px 30px", maxWidth: "980px", margin: "0 auto", width: "100%" }}>
           <h1 className="landing-hero-title">
@@ -852,7 +754,7 @@ const LandingPage: React.FC = () => {
                       justifyContent: "space-between",
                       gap: "14px"
                     }}
-                    onClick={() => window.open("https://wa.me/919876543210", "_blank")}
+                    onClick={() => window.open("https://wa.me/918951927280", "_blank")}
                     role="button"
                     tabIndex={0}
                   >

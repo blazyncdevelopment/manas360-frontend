@@ -127,6 +127,7 @@ const CertificationsPage = lazy(() => import('./pages/CertificationsPage'));
 const CertificationLandingPage = lazy(() => import('./pages/CertificationLandingPage'));
 const TermsOfService = lazy(() => import('./pages/legal/TermsOfService'));
 const PrivacyPolicy = lazy(() => import('./pages/legal/PrivacyPolicy'));
+const DPDPACompliancePage = lazy(() => import('./pages/legal/DPDPACompliance'));
 const CookieAndTrackingPolicy = lazy(() => import('./pages/legal/CookieAndTrackingPolicy'));
 // AcceptableUsePolicy lazy import removed (not used in routing)
 // const AcceptableUsePolicy = lazy(() => import('./pages/legal/AcceptableUsePolicy'));
@@ -159,6 +160,7 @@ const MyDigitalClinicDashboard = lazy(() => import('./pages/clinic/ClinicDashboa
 const HowItWorksPage = lazy(() => import('./pages/how-it-works/HowItWorksPage'));
 const AboutUsPage = lazy(() => import('./pages/AboutUs'));
 const ContactUsPage = lazy(() => import('./pages/ContactUs'));
+const HelpCenterTicket = lazy(() => import('./pages/HelpCenterTicket'));
 const SpecializedCarePage = lazy(() => import('./pages/SpecializedCarePage'));
 const ProviderCalendarPage = lazy(() => import('./pages/provider/Calendar'));
 const ProviderInboxPage = lazy(() => import('./pages/provider/Messages'));
@@ -400,9 +402,11 @@ function App() {
                     <Route path="/how-it-works" element={<HowItWorksPage />} />
                     <Route path="/about" element={<AboutUsPage />} />
                     <Route path="/contact" element={<ContactUsPage />} />
-                    <Route path="/blog" element={<BlogListPage />} />
-                    <Route path="/blogs" element={<Navigate to="/blog" replace />} />
-                    <Route path="/blog/:slug" element={<BlogDetailPage />} />
+                    <Route path="/sleep-therapy" element={<SleepTherapyPage />} />
+                    <Route path="/help-center" element={<HelpCenterTicket />} />
+                    <Route path="/blogs" element={<BlogListPage />} />
+                    <Route path="/blog" element={<Navigate to="/blogs" replace />} />
+                    <Route path="/blogs/:slug" element={<BlogDetailPage />} />
                     <Route path="/specialized-care" element={<SpecializedCarePage />} />
                     <Route path="/my-digital-clinic" element={<MyDigitalClinicPricingPage />} />
                     <Route path="/my-digital-clinic/register" element={<RegisterClinicPage />} />
@@ -626,13 +630,7 @@ function App() {
                     <Route path="/hit-a-sixer" element={<HitASixerGamePage />} />
                     <Route
                       path="/plans"
-                      element={
-                        <ProtectedRoute
-                          allowedRoles={['patient', 'therapist', 'psychiatrist', 'psychologist', 'coach']}
-                        >
-                          <PricingPage />
-                        </ProtectedRoute>
-                      }
+                      element={<PricingPage />}
                     />
                     <Route
                       path="/plans/addons"
@@ -900,6 +898,7 @@ function App() {
                     <Route path="/settings" element={<Navigate to="/patient/settings" replace />} />
                     <Route path="/terms" element={<TermsOfService />} />
                     <Route path="/privacy" element={<PrivacyPolicy />} />
+                    <Route path="/dpdpa-compliance" element={<DPDPACompliancePage />} />
                     <Route path="/cookie-policy" element={<CookieAndTrackingPolicy />} />
                     <Route path="/refunds" element={<RefundAndCancellationPolicy />} />
                     <Route path="/legal/community-guidelines" element={<CommunityGuidelines />} />

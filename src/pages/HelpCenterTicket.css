@@ -1,0 +1,328 @@
+.help-center-page {
+    min-height: 100vh;
+    background-color: #F8FCFA;
+    padding-bottom: 80px;
+    font-family: 'Inter', sans-serif;
+}
+
+.help-breadcrumb-container {
+    width: 100%;
+    padding: 24px 48px 0;
+}
+
+.help-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #64748B;
+}
+
+.help-breadcrumb a {
+    color: #2F7A5F;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.help-breadcrumb a:hover {
+    color: #1a4f3b;
+    text-decoration: underline;
+}
+
+.help-hero {
+    background: linear-gradient(135deg, #2F7A5F 0%, #1a4f3b 100%);
+    color: white;
+    padding: 60px 24px;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+.help-hero-inner h1 {
+    font-size: 40px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+    color: #ffffff;
+}
+
+.help-hero-inner p {
+    font-size: 18px;
+    opacity: 0.9;
+    margin-bottom: 40px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.help-action-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.help-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 32px;
+    border-radius: 16px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 180px;
+}
+
+.help-action-btn.primary {
+    background-color: white;
+    color: #2F7A5F;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.help-action-btn.primary:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.help-action-btn.secondary {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.help-action-btn.secondary:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-4px);
+}
+
+.help-action-btn.accent {
+    background-color: #D36A4F;
+    color: white;
+}
+
+.help-action-btn.accent:hover {
+    background-color: #b9583f;
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(211, 106, 79, 0.2);
+}
+
+.help-main {
+    max-width: 800px;
+    margin: 60px auto 0;
+    padding: 0 24px;
+}
+
+.help-section-title {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.help-section-title h2 {
+    font-size: 32px;
+    color: #172736;
+    margin-bottom: 8px;
+}
+
+.help-section-title p {
+    color: #64748B;
+    font-size: 16px;
+}
+
+.help-faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 60px;
+}
+
+.help-faq-item {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #E2E8F0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.help-faq-item:hover {
+    border-color: #CBD5E1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.help-faq-item.active {
+    border-color: #2F7A5F;
+    box-shadow: 0 8px 24px rgba(47, 122, 95, 0.08);
+}
+
+.help-faq-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+}
+
+.help-faq-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #172736;
+    margin: 0;
+}
+
+.help-faq-icon {
+    color: #64748B;
+    transition: transform 0.3s ease;
+}
+
+.help-faq-icon.rotated {
+    transform: rotate(180deg);
+    color: #2F7A5F;
+}
+
+.help-faq-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.help-faq-item.active .help-faq-content {
+    max-height: 200px;
+}
+
+.help-faq-inner {
+    padding: 0 24px 24px;
+}
+
+.help-faq-inner p {
+    color: #475569;
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+
+.help-btn-outline {
+    background: none;
+    border: 1px solid #2F7A5F;
+    color: #2F7A5F;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.help-btn-outline:hover {
+    background: #F0F7F4;
+}
+
+.help-extended-form {
+    background: white;
+    padding: 40px;
+    border-radius: 24px;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.03);
+}
+
+.help-form-header {
+    margin-bottom: 32px;
+}
+
+.help-form-header h2 {
+    font-size: 24px;
+    color: #172736;
+    margin-bottom: 8px;
+}
+
+.help-form-header p {
+    color: #64748B;
+}
+
+.help-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #172736;
+}
+
+.form-group select,
+.form-group textarea {
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    background-color: #F8FAFC;
+    font-family: inherit;
+    font-size: 15px;
+    color: #172736;
+    transition: all 0.2s ease;
+    resize: vertical;
+}
+
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #2F7A5F;
+    box-shadow: 0 0 0 3px rgba(47, 122, 95, 0.1);
+    background-color: white;
+}
+
+.help-submit-btn {
+    background-color: #2F7A5F;
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 8px;
+}
+
+.help-submit-btn:hover {
+    background-color: #1a4f3b;
+}
+
+@media (max-width: 768px) {
+    .help-hero {
+        padding: 40px 20px;
+        border-radius: 16px;
+    }
+    
+    .help-action-btn {
+        width: 100%;
+    }
+    
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .help-extended-form {
+        padding: 24px;
+    }
+}

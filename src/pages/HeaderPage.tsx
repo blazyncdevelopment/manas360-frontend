@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Instagram, Youtube, Linkedin, User } from "lucide-react";
+import { Instagram, Youtube, Linkedin, User } from "lucide-react";
 import {
   applyTheme,
   getStoredThemePreference,
@@ -450,6 +450,39 @@ function getUserInitial(user: AuthUser | null | undefined): string {
   return "";
 }
 
+function fuzzyIncludes(query: string, keyword: string): boolean {
+  if (query.includes(keyword)) return true;
+  if (query.length < 4 || keyword.length < 4) return false;
+
+  const words = query.split(/\s+/);
+  for (const word of words) {
+    if (word.length >= 4) {
+      let a = word;
+      let b = keyword;
+      const matrix = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+      for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+      for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+
+      for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+          if (a[i - 1] === b[j - 1]) {
+            matrix[i][j] = matrix[i - 1][j - 1];
+          } else {
+            matrix[i][j] = Math.min(
+              matrix[i - 1][j - 1] + 1,
+              matrix[i][j - 1] + 1,
+              matrix[i - 1][j] + 1
+            );
+          }
+        }
+      }
+      const maxDistance = Math.floor(keyword.length / 3);
+      if (matrix[a.length][b.length] <= Math.max(1, maxDistance)) return true;
+    }
+  }
+  return false;
+}
+
 export const HeaderPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -650,6 +683,7 @@ export const HeaderPage: React.FC = () => {
     "Couples Therapy": "/find-spark",
     "Group Therapy": "/group-therapy",
     "Sound Therapy": "/sound-therapy",
+    "Sleep Therapy": "/sleep-therapy",
     "Executive Coaching": "/premium-theraphy",
     "Wellness Retreats": "/retreats",
     "Free Screening": "/assessment",
@@ -853,6 +887,7 @@ export const HeaderPage: React.FC = () => {
           { icon: "💑", title: "Couples Therapy", subtitle: "Rebuild your relationship", badge: "₹1,499" },
           { icon: "👥", title: "Group Therapy", subtitle: "Peer circles from ₹149", badge: "₹149" },
           { icon: "🎵", title: "Sound Therapy", subtitle: "Raga healing + sleep tracks", badge: "20 Free" },
+          { icon: "🌙", title: "Sleep Therapy", subtitle: "Guided sleep hygiene program", badge: "New" },
           { icon: "💼", title: "Executive Coaching", subtitle: "High-performance wellness", badge: "Pro" },
           { icon: "🏕️", title: "Wellness Retreats", subtitle: "Rishikesh, Coorg, Goa" },
           { icon: "🛒", title: "Wellness Shop", subtitle: "Journals, tools, merch", badge: "Soon" }
@@ -1072,15 +1107,32 @@ export const HeaderPage: React.FC = () => {
   } as const;
 
   const searchTermRoutes: Array<{ match: (q: string) => boolean; route: string }> = [
-    { match: (q) => q.includes("anxious") || q.includes("anxiety"), route: "/helping-hand" },
-    { match: (q) => q.includes("couple"), route: "/find-spark" },
-    { match: (q) => q.includes("psychiatr"), route: "/helping-hand" },
-    { match: (q) => q.includes("group"), route: "/group-therapy" },
-    { match: (q) => q.includes("screen") || q.includes("assessment"), route: "/assessment" },
-    { match: (q) => q.includes("therapy") || q.includes("therapist"), route: "/premium-theraphy" },
-    { match: (q) => q.includes("ai") || q.includes("buddy"), route: "/ai-power-hub" },
-    { match: (q) => q.includes("pet"), route: "/pet" },
-    { match: (q) => q.includes("crisis") || q.includes("sos"), route: "/crisis" },
+    { match: (q) => fuzzyIncludes(q, "anxious") || fuzzyIncludes(q, "anxiety"), route: "/helping-hand" },
+    { match: (q) => fuzzyIncludes(q, "couple"), route: "/find-spark" },
+    { match: (q) => fuzzyIncludes(q, "psychiatr"), route: "/helping-hand" },
+    { match: (q) => fuzzyIncludes(q, "group"), route: "/group-therapy" },
+    { match: (q) => fuzzyIncludes(q, "screen") || fuzzyIncludes(q, "assessment"), route: "/assessment" },
+    { match: (q) => fuzzyIncludes(q, "therapy") || fuzzyIncludes(q, "therapist"), route: "/premium-theraphy" },
+    { match: (q) => fuzzyIncludes(q, "ai") || fuzzyIncludes(q, "buddy"), route: "/ai-power-hub" },
+    { match: (q) => fuzzyIncludes(q, "pet"), route: "/pet" },
+    { match: (q) => fuzzyIncludes(q, "crisis") || fuzzyIncludes(q, "sos"), route: "/crisis" },
+    { match: (q) => fuzzyIncludes(q, "provide"), route: "/provider-landing" },
+    { match: (q) => fuzzyIncludes(q, "clinic") || fuzzyIncludes(q, "practice"), route: "/my-digital-clinic" },
+    { match: (q) => fuzzyIncludes(q, "patient"), route: "/patient/sessions" },
+    { match: (q) => fuzzyIncludes(q, "corporate") || fuzzyIncludes(q, "school") || fuzzyIncludes(q, "hospital"), route: "/corporate-landing" },
+    { match: (q) => fuzzyIncludes(q, "certify") || fuzzyIncludes(q, "certification"), route: "/certifications" },
+    { match: (q) => fuzzyIncludes(q, "nri") || fuzzyIncludes(q, "global"), route: "/nri-landing" },
+    { match: (q) => fuzzyIncludes(q, "how it works"), route: "/how-it-works" },
+    { match: (q) => fuzzyIncludes(q, "about") || fuzzyIncludes(q, "who we are"), route: "/about" },
+    { match: (q) => fuzzyIncludes(q, "contact") || fuzzyIncludes(q, "touch"), route: "/contact" },
+    { match: (q) => fuzzyIncludes(q, "blog") || fuzzyIncludes(q, "article"), route: "/blogs" },
+    { match: (q) => fuzzyIncludes(q, "retreat"), route: "/retreats" },
+    { match: (q) => fuzzyIncludes(q, "sound") || fuzzyIncludes(q, "music"), route: "/sound-therapy" },
+    { match: (q) => fuzzyIncludes(q, "plan") || fuzzyIncludes(q, "pricing") || fuzzyIncludes(q, "subscribe"), route: "/plans" },
+    { match: (q) => fuzzyIncludes(q, "login") || fuzzyIncludes(q, "sign in"), route: "/auth/login" },
+    { match: (q) => fuzzyIncludes(q, "signup") || fuzzyIncludes(q, "register") || fuzzyIncludes(q, "sign up"), route: "/auth/signup" },
+    { match: (q) => fuzzyIncludes(q, "help") || fuzzyIncludes(q, "support") || fuzzyIncludes(q, "ticket"), route: "/help-center" },
+    { match: (q) => fuzzyIncludes(q, "specialized") || fuzzyIncludes(q, "special"), route: "/specialized-care" },
   ];
 
   const runSearch = (query: string) => {
@@ -1090,7 +1142,7 @@ export const HeaderPage: React.FC = () => {
     const matched = searchTermRoutes.find(({ match }) => match(normalized));
     setShowSearch(false);
     setSearchQuery("");
-    navigate(matched?.route ?? "/helping-hand");
+    navigate(matched?.route ?? "/help-center");
   };
 
   const handleSearchSubmit = () => runSearch(searchQuery);
@@ -1370,7 +1422,10 @@ export const HeaderPage: React.FC = () => {
                       className="landing-profile-btn"
                       aria-label="Go to dashboard"
                       title="Dashboard"
-                      onClick={() => navigate(getPostLoginRoute(user))}
+                      onClick={() => {
+                        const route = getPostLoginRoute(user);
+                        navigate(route === '/plans' ? '/patient/sessions' : route);
+                      }}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -1398,7 +1453,7 @@ export const HeaderPage: React.FC = () => {
                       <button
                         type="button"
                         className="landing-subscribe-btn"
-                        onClick={() => navigate("/auth/signup")}
+                        onClick={() => navigate("/plans")}
                         style={{
                           background: "#0B2D5E",
                           color: "white",
@@ -1489,7 +1544,6 @@ export const HeaderPage: React.FC = () => {
 
                   <div className="landing-brand-socials" style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "6px" }}>
                     {[
-                      { key: "wa", label: <MessageCircle className="h-4 w-4" />, href: "https://wa.me/919876543210" },
                       { key: "ig", label: <Instagram className="h-4 w-4" />, href: "https://instagram.com/manas360" },
                       { key: "yt", label: <Youtube className="h-4 w-4" />, href: "https://youtube.com/@manas360" },
                       { key: "in", label: <Linkedin className="h-4 w-4" />, href: "https://linkedin.com/company/manas360" }

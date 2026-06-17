@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import Pt06HeroVideoFrame from '../../components/common/Pt06HeroVideoFrame';
 
 interface DigitalPetHubPageProps {
@@ -667,12 +668,44 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
   void returnTo;
   const navigate = useNavigate();
   const [showTembo, setShowTembo] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const routeTo = (path: string) => navigate(path);
+
+  const { isAuthenticated } = useAuth();
+
+  const handleTier2Click = (e: React.MouseEvent, route: string) => {
+    e.preventDefault();
+    if (isAuthenticated) {
+      navigate(route);
+    } else {
+      setShowAuthModal(true);
+      setTimeout(() => {
+        navigate('/auth/login');
+      }, 2000);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
       {/* Tembo Modal */}
       {showTembo && <TemboModal onClose={() => setShowTembo(false)} />}
+
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl text-center">
+            <div className="text-5xl mb-4">🔒</div>
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">Login Required</h3>
+            <p className="text-slate-600 mb-6">
+              You need to register or login to interact with Tier 2 companions and unlock their therapeutic benefits.
+            </p>
+            <div className="flex justify-center items-center gap-2 text-sm text-violet-600 font-semibold">
+              <span className="w-5 h-5 rounded-full border-2 border-violet-600 border-t-transparent animate-spin"></span>
+              Redirecting to login...
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Navigation */}
       {/* <nav className="sticky top-0 z-40 border-b border-slate-200 bg-white">
@@ -804,7 +837,7 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
                 { vimeoId: '1184033994', title: 'Bholu — Clown Fish', desc: 'Ocean rhythm ambient — stillness and calm', aspect: '56.25%' },
                 { vimeoId: '1184033993', title: 'Navil — Cheerful Peacock', desc: 'Colourful, cheerful ambient — mood lift', aspect: '177.78%' },
               ].map((pet, i) => (
-                <div key={i} className="bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all">
+                <div key={i} className={`bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all ${i === 1 ? 'self-center' : 'h-full'}`}>
                   <div style={{ padding: `${pet.aspect} 0 0 0`, position: 'relative' }}>
                     <iframe
                       src={`https://player.vimeo.com/video/${pet.vimeoId}?autoplay=1&muted=1&controls=1&playsinline=1&title=0&byline=0&portrait=0&badge=0&autopause=0&player_id=0&app_id=58479`}
@@ -839,10 +872,10 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
                 { emoji: '🐘', name: 'Healing Elephant', env: '🌴 Sacred Grove', tags: ['Reward', 'Memory'], bg: 'from-green-50', hormone: 'Dopamine', hormoneDesc: 'Dopamine — achievements, games, milestones', route: '/patient/elephant' },
                 { emoji: '🦊', name: 'Chintu Fox', env: '🌾 Playfield', tags: ['Energy', 'Play'], bg: 'from-orange-50', hormone: 'Endorphins', hormoneDesc: 'Endorphins — breathwork, play, laughter', route: '/patient/chintu' },
               ].map((pet, i) => (
-                <Link
+                <div
                   key={i}
-                  to={pet.route}
-                  className={`bg-gradient-to-br ${pet.bg} to-white border-2 rounded-2xl overflow-hidden transition-all block border-slate-200 hover:shadow-xl hover:-translate-y-2 hover:border-violet-500 ring-1 ring-transparent hover:ring-violet-200`}
+                  onClick={(e) => handleTier2Click(e, pet.route)}
+                  className={`cursor-pointer bg-gradient-to-br ${pet.bg} to-white border-2 rounded-2xl overflow-hidden transition-all block border-slate-200 hover:shadow-xl hover:-translate-y-2 hover:border-violet-500 ring-1 ring-transparent hover:ring-violet-200`}
                 >
                   <div className="h-28 flex items-center justify-center text-5xl relative">
                     {pet.emoji}
@@ -865,7 +898,7 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
                       <span>{pet.emoji}</span> Click to experience →
                     </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           </div>

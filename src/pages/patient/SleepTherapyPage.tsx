@@ -221,19 +221,26 @@ export default function SleepTherapyPage() {
         }
       `}</style>
 
-      <div className="w-full max-w-full mx-auto px-4 pb-10 pt-8 lg:px-8">
-        {/* HEADER */}
-        <div className="text-center mb-6">
-          <div className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-1">
+      {/* HEADER */}
+      <div
+        className="w-full text-center py-12 px-4 shadow-sm mb-8"
+        style={{ background: 'linear-gradient(135deg, #1a1a2e, #16213e)' }}
+      >
+        <div className="max-w-6xl mx-auto">
+          <div className="text-xs font-bold uppercase tracking-wider text-purple-300 mb-2">
             MANAS360 Sleep Therapy
           </div>
-          <h1 className="text-4xl font-black text-slate-900 mb-2" style={{ fontFamily: "'Baloo 2', cursive" }}>
+          <h1 className="text-4xl font-black text-white mb-3" style={{ fontFamily: "'Baloo 2', cursive" }}>
             🌙 Nidra — Sleep Well
           </h1>
-          <p className="text-sm text-slate-600 leading-relaxed max-w-2xl mx-auto">
+          <p className="text-sm text-white/80 leading-relaxed max-w-2xl mx-auto font-medium">
             A guided sleep hygiene program that helps you wind down, disconnect, and fall into deep restorative sleep.
           </p>
         </div>
+      </div>
+
+      <div className="w-full max-w-6xl mx-auto px-4 pb-10 lg:px-8">
+
 
         {/* MODE TOGGLE */}
         <div className="flex bg-slate-100 rounded-2xl p-1 mb-6">

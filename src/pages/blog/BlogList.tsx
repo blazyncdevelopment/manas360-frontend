@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Calendar, User, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { Search, Calendar, User, ArrowRight, Image as ImageIcon, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getPublicPosts, getPublicCategories, getPublicTags, BlogPost, BlogCategory, BlogTag } from '../../api/blog.api';
 
@@ -14,8 +14,19 @@ export default function BlogList() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>(''); // Category slug
   const [selectedTag, setSelectedTag] = useState<string>(''); // Tag slug
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      if (searchTerm !== debouncedSearchTerm) {
+        setPage(1);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm, debouncedSearchTerm]);
 
   useEffect(() => {
     // Scroll to top on load
@@ -26,11 +37,11 @@ export default function BlogList() {
 
   useEffect(() => {
     loadPosts();
-  }, [page, searchTerm, selectedCategory, selectedTag]);
+  }, [page, debouncedSearchTerm, selectedCategory, selectedTag]);
 
   const loadMetaTags = () => {
     document.title = 'Manas360 Blog | Mental Health & Mindfulness Tips';
-    
+
     // Add default meta description for SEO
     let descMeta = document.querySelector('meta[name="description"]');
     if (!descMeta) {
@@ -59,7 +70,7 @@ export default function BlogList() {
       const res = await getPublicPosts({
         page,
         limit: 9,
-        search: searchTerm,
+        search: debouncedSearchTerm,
         categorySlug: selectedCategory,
         tagSlug: selectedTag,
       });
@@ -88,35 +99,47 @@ export default function BlogList() {
     setSelectedCategory('');
     setSelectedTag('');
     setSearchTerm('');
+    setDebouncedSearchTerm('');
     setPage(1);
   };
 
   return (
     <div className="min-h-screen bg-[#FDFDFB] text-[#23313A] font-sans">
       {/* HERO SECTION */}
-      <section className="relative overflow-hidden bg-[#F4FAF6] py-16 lg:py-24 border-b border-[#D8EAE1]">
+      <section className="relative overflow-hidden bg-[#F4FAF6] py-6 lg:py-10 border-b border-[#D8EAE1]">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-          <span className="inline-block rounded-full bg-[#EBF6F0] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#2F7A5F]">
+          <span className="inline-block rounded-full bg-[#EBF6F0] px-3 py-0 text-[9px] font-bold uppercase tracking-widest text-[#2F7A5F] leading-none">
             Insights & Guides
           </span>
-          <h1 className="mt-4 font-display text-4xl font-black tracking-tight text-[#172736] sm:text-5xl lg:text-6xl">
+          <h1 className="mt-3 font-display text-4xl font-black tracking-tight text-[#172736] sm:text-5xl lg:text-6xl">
             The Manas360 Blog
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-base text-[#4E5D6A] sm:text-lg">
+          <p className="mx-auto mt-3 max-w-2xl text-base text-[#4E5D6A] sm:text-lg">
             Empowering your wellness journey with professional perspectives, research-backed mindfulness exercises, and therapy advice.
           </p>
-          
+
           {/* SEARCH BAR */}
-          <div className="mx-auto mt-10 max-w-md">
-            <div className="relative flex items-center rounded-2xl border border-[#D8EAE1] bg-white p-1.5 shadow-md">
-              <Search className="ml-3 h-5 w-5 text-gray-400" />
+          <div className="mx-auto mt-8 max-w-xl">
+            <div className="group relative flex items-center rounded-full border border-[#D8EAE1] bg-white p-1.5 shadow-sm transition-all focus-within:border-[#2F7A5F] focus-within:shadow-md">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 text-gray-400 transition-colors group-focus-within:bg-[#EBF6F0] group-focus-within:text-[#2F7A5F] ml-1">
+                <Search className="h-5 w-5" />
+              </div>
               <input
                 type="text"
-                placeholder="Search resources, tips, topics..."
+                placeholder="Search articles, guides, and tips..."
                 value={searchTerm}
-                onChange={e => { setSearchTerm(e.target.value); setPage(1); }}
-                className="w-full bg-transparent px-3 py-2 text-sm outline-none placeholder:text-gray-400"
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full border-none bg-transparent px-4 py-2 text-sm text-[#23313A] outline-none placeholder:text-gray-400 focus:border-transparent focus:ring-0"
               />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="mr-2 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none"
+                  title="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -125,7 +148,7 @@ export default function BlogList() {
       {/* FILTER & POSTS GRID */}
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-          
+
           {/* SIDEBAR FILTERS */}
           <aside className="space-y-8 lg:col-span-1">
             {/* Categories */}
@@ -194,16 +217,16 @@ export default function BlogList() {
                 {/* Posts Cards Grid */}
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   {posts.map(post => (
-                    <article 
-                      key={post.id} 
+                    <article
+                      key={post.id}
                       className="group flex flex-col overflow-hidden rounded-2xl border border-[#E8ECE9] bg-white transition hover:-translate-y-1 hover:shadow-md"
                     >
                       {/* Cover Image */}
-                      <Link to={`/blog/${post.slug}`} className="relative block aspect-video overflow-hidden bg-gray-150">
+                      <Link to={`/blogs/${post.slug}`} className="relative block aspect-video overflow-hidden bg-gray-150">
                         {post.coverImage ? (
-                          <img 
-                            src={post.coverImage} 
-                            alt={post.title} 
+                          <img
+                            src={post.coverImage}
+                            alt={post.title}
                             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                           />
                         ) : (
@@ -232,7 +255,7 @@ export default function BlogList() {
                         </div>
 
                         <h3 className="mt-3 font-display text-lg font-extrabold text-[#172736] group-hover:text-[#2F7A5F] transition-colors line-clamp-2">
-                          <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                          <Link to={`/blogs/${post.slug}`}>{post.title}</Link>
                         </h3>
 
                         <p className="mt-2 text-xs text-[#4E5D6A] line-clamp-3">
@@ -247,9 +270,9 @@ export default function BlogList() {
                               </span>
                             ))}
                           </div>
-                          
-                          <Link 
-                            to={`/blog/${post.slug}`} 
+
+                          <Link
+                            to={`/blogs/${post.slug}`}
                             className="inline-flex items-center gap-1 text-xs font-bold text-[#2F7A5F] hover:text-[#235d48]"
                           >
                             Read More

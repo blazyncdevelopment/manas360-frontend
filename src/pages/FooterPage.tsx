@@ -1,6 +1,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { Instagram, Linkedin, Twitter, MessageCircle } from "lucide-react";
 
 
 
@@ -197,15 +198,15 @@ export const FooterPage: React.FC = () => {
     "Specialized Care": "/specialized-care",
     "For Providers": "/provider-landing",
     "NRI | Global Inc": "/nri-landing",
-    Careers: "/landing",
-
+    "Help Center": "/help-center",
+    Blogs: "/blogs",
   };
 
   const footerLegalRoutes: Record<string, string> = {
     "Privacy Policy": "/privacy",
     "Terms of Service": "/terms",
     "Cookie Policy": "/cookie-policy",
-    "DPDPA Compliance": "/privacy",
+    "DPDPA Compliance": "/dpdpa-compliance",
     "Refund Policy": "/refunds",
     Disclaimer: "/legal/community-guidelines"
   };
@@ -234,7 +235,7 @@ export const FooterPage: React.FC = () => {
 
             <div>
               <div className="footer-title">Quick Links</div>
-              {["About Us", "How It Works", "Specialized Care", "For Providers", "NRI | Global Inc", "Careers",].map((t) => (
+              {["About Us", "How It Works", "Specialized Care", "For Providers", "NRI | Global Inc", "Help Center", "Blogs"].map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -269,18 +270,18 @@ export const FooterPage: React.FC = () => {
                 &#9993; support@manas360.com
               </a>
               <a
-                href="tel:+918867736009"
+                href="tel:+918951927280"
                 className="footer-contact-link"
               >
-                &#9742; +91-8867736009
+                &#9742; +91-8951927280
               </a>
               <div style={{ fontSize: "12px", opacity: 0.9, marginBottom: "14px", fontWeight: 800 }}>&#128172; WhatsApp Support</div>
               <div style={{ display: "flex", gap: "10px", opacity: 0.85 }}>
                 {[
-                  { key: "wa", label: "wa", aria: "WhatsApp", href: "https://wa.me/919876543210" },
-                  { key: "ig", label: "ig", aria: "Instagram", href: "https://instagram.com/manas360" },
-                  { key: "in", label: "in", aria: "LinkedIn", href: "https://linkedin.com/company/manas360" },
-                  { key: "x", label: "x", aria: "X (Twitter)", href: "https://x.com/manas360" }
+                  { key: "wa", icon: <MessageCircle size={16} />, aria: "WhatsApp", href: "https://wa.me/918951927280" },
+                  { key: "ig", icon: <Instagram size={16} />, aria: "Instagram", href: "https://instagram.com/manas360" },
+                  { key: "in", icon: <Linkedin size={16} />, aria: "LinkedIn", href: "https://linkedin.com/company/manas360" },
+                  { key: "x", icon: <Twitter size={16} />, aria: "X (Twitter)", href: "https://x.com/manas360" }
                 ].map((s) => (
                   <a
                     key={s.key}
@@ -289,9 +290,8 @@ export const FooterPage: React.FC = () => {
                     target="_blank"
                     rel="noreferrer"
                     aria-label={s.aria}
-                    title={s.aria}
                   >
-                    {s.label}
+                    {s.icon}
                   </a>
                 ))}
               </div>

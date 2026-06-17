@@ -15,7 +15,15 @@ const normalizeApiUrl = (url: string): string => {
 		return url;
 	}
 
-	if (url === '/health' || url === '/metrics' || url.startsWith('/chat/') || url.startsWith('/webhooks/')) {
+	if (
+		url === '/health' || 
+		url === '/metrics' || 
+		url.startsWith('/chat/') || 
+		url.startsWith('/webhooks/') ||
+		url.startsWith('/help-center') ||
+		url.startsWith('/support-chat') ||
+		url.startsWith('/submit-contact')
+	) {
 		return url;
 	}
 

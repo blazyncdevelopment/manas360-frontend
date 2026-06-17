@@ -16,6 +16,7 @@ import { clearGuestClinicalScreening, readCachedClinicalScreening } from '../../
 import { patientApi } from '../../api/patient';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import OtpInput from '../../components/ui/OtpInput';
 import { useAuth, getPostLoginRoute } from '../../context/AuthContext';
 import { hasActivePaidPatientSubscription } from '../../lib/patientSubscriptionFlow';
 import NriPatch, { type NriConsentState } from '../legal/nri';
@@ -708,17 +709,11 @@ export default function SignupPage() {
 
 						{otpSent ? (
 							<>
-								<Input
-									id="signup-otp"
+								<OtpInput
 									label="OTP"
-									inputMode="numeric"
-									pattern={isProviderFlow ? '\\d{6}' : '\\d{4}'}
-									maxLength={isProviderFlow ? 6 : 4}
-									autoComplete="one-time-code"
-									placeholder={isProviderFlow ? '6-digit OTP' : '4-digit OTP'}
+									length={isProviderFlow ? 6 : 4}
 									value={otp}
-									onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, isProviderFlow ? 6 : 4))}
-									required
+									onChange={setOtp}
 								/>
 								{!isCertificationContext && !isProviderFlow ? (
 									<NriPatch onChange={setNriConsent} blockSubmitButtons={false} />

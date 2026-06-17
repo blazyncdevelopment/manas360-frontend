@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import "./AiPowerHubLandingPage.css";
 
 type HubCard = {
@@ -46,6 +47,7 @@ const hubCards: HubCard[] = [
 ];
 
 const AiPowerHubLandingPage: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <main className="ai-hub-page">
       {/* <header className="ai-hub-header">
@@ -66,7 +68,7 @@ const AiPowerHubLandingPage: React.FC = () => {
           </div>
           <h1>AI Power Hub</h1>
           <p>AI-driven wellness tools - available 24/7, no appointment needed. Your personal AI companion for mental wellness.</p>
-          <button type="button" className="ai-hub-primary">
+          <button type="button" className="ai-hub-primary" onClick={() => navigate("/login")}>
             Chat with AnytimeBuddy →
           </button>
         </div>
@@ -98,7 +100,7 @@ const AiPowerHubLandingPage: React.FC = () => {
       <section className="ai-hub-container ai-hub-cta">
         <h2>Your AI Companion Awaits</h2>
         <p>3 free conversations every day. No signup. No judgment. Just support.</p>
-        <button type="button">Start Chatting Free →</button>
+        <button type="button" onClick={() => navigate("/login")}>Start Chatting Free →</button>
       </section>
 
       {/* <footer className="ai-hub-footer">
