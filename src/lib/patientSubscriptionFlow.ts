@@ -1,13 +1,15 @@
 export type PatientPlanId = 'free' | 'monthly' | 'quarterly' | 'premium_monthly';
 
 export interface PatientAddonSelection {
-  premiumLibraryPack: 'none' | '1h' | '3h' | '5h';
+  premiumLibraryPack?: 'none' | '1h' | '3h' | '5h';
+  anytimeBuddyPack?: 'none' | 'anytime_buddy_basic' | 'anytime_buddy_standard' | 'anytime_buddy_premium';
 }
 
 export interface PatientSubscriptionCart {
   planId: PatientPlanId;
   addons: PatientAddonSelection;
   updatedAt: string;
+  isAddonOnly?: boolean;
 }
 
 export const PATIENT_CART_KEY = 'manas360.patient.subscription.cart.v1';
@@ -88,13 +90,21 @@ export const PATIENT_PLANS: Array<{
 
 export const DEFAULT_ADDONS: PatientAddonSelection = {
   premiumLibraryPack: 'none',
+  anytimeBuddyPack: 'none',
 };
 
-const PREMIUM_LIBRARY_PACK_PRICING: Record<PatientAddonSelection['premiumLibraryPack'], number> = {
+const PREMIUM_LIBRARY_PACK_PRICING: Record<NonNullable<PatientAddonSelection['premiumLibraryPack']>, number> = {
   none: 0,
   '1h': 39900,
   '3h': 99900,
   '5h': 169900,
+};
+
+const ANYTIME_BUDDY_PACK_PRICING: Record<NonNullable<PatientAddonSelection['anytimeBuddyPack']>, number> = {
+  none: 0,
+  'anytime_buddy_basic': 39900,
+  'anytime_buddy_standard': 99900,
+  'anytime_buddy_premium': 169900,
 };
 
 export const formatInr = (minor: number): string => {
@@ -108,12 +118,17 @@ export const getPlanAmountMinor = (id: PatientPlanId): number => getPlanById(id)
 
 export const getAddonSubtotalMinor = (cart: PatientSubscriptionCart): number => {
   const { addons } = cart;
-  const pack = addons?.premiumLibraryPack || 'none';
-  return PREMIUM_LIBRARY_PACK_PRICING[pack] || 0;
+  const premiumPack = addons?.premiumLibraryPack || 'none';
+  const buddyPack = addons?.anytimeBuddyPack || 'none';
+  
+  const premiumPrice = PREMIUM_LIBRARY_PACK_PRICING[premiumPack] || 0;
+  const buddyPrice = ANYTIME_BUDDY_PACK_PRICING[buddyPack] || 0;
+  
+  return premiumPrice + buddyPrice;
 };
 
 export const getCheckoutSummaryMinor = (cart: PatientSubscriptionCart) => {
-  const planMinor = getPlanAmountMinor(cart.planId);
+  const planMinor = cart.isAddonOnly ? 0 : getPlanAmountMinor(cart.planId);
   const addonsMinor = getAddonSubtotalMinor(cart);
   const subtotalMinor = planMinor + addonsMinor;
   const gstMinor = Math.round(subtotalMinor * 0.18);
@@ -132,16 +147,21 @@ export const loadCart = (): PatientSubscriptionCart | null => {
     const parsed = JSON.parse(raw) as any;
     if (!parsed || !parsed.planId || !parsed.addons) return null;
 
-    const premiumLibraryPack = parsed?.addons?.premiumLibraryPack || parsed?.addons?.anytimeBuddyPack || 'none';
+    const premiumLibraryPack = parsed?.addons?.premiumLibraryPack || 'none';
+    const anytimeBuddyPack = parsed?.addons?.anytimeBuddyPack || 'none';
 
     return {
       planId: parsed.planId,
       addons: {
-        premiumLibraryPack: premiumLibraryPack === '1h' || premiumLibraryPack === '3h' || premiumLibraryPack === '5h'
+        premiumLibraryPack: ['none', '1h', '3h', '5h'].includes(premiumLibraryPack)
           ? premiumLibraryPack
+          : 'none',
+        anytimeBuddyPack: ['none', 'anytime_buddy_basic', 'anytime_buddy_standard', 'anytime_buddy_premium'].includes(anytimeBuddyPack)
+          ? anytimeBuddyPack
           : 'none',
       },
       updatedAt: String(parsed.updatedAt || new Date().toISOString()),
+      isAddonOnly: Boolean(parsed.isAddonOnly),
     };
   } catch {
     return null;

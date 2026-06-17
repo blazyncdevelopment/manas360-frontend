@@ -29,6 +29,7 @@ import { getDraftStorageKey } from '../../hooks/useAssessmentFlow';
 import { FeatureGate } from '../FeatureGate';
 import { Manas360BrandLogo } from '../common/Manas360BrandLogo';
 import { readAIAssistantPreferences, saveAIAssistantPreferences, type AIAssistantPreferences } from '../../lib/aiAssistantPreferences';
+import { hasActivePaidPatientSubscription } from '../../lib/patientSubscriptionFlow';
 
 const STORAGE_KEY_MDC = 'mdc_user';
 
@@ -76,18 +77,6 @@ type NavItem = {
 
 type BuddyMessage = { role: 'user' | 'assistant'; content: string };
 
-const BUDDY_INITIAL_MESSAGE: BuddyMessage = {
-  role: 'assistant',
-  content: 'Hi, I am AnytimeBuddy. I can support you between sessions. What would help most right now?',
-};
-
-const BUDDY_QUICK_PROMPTS = [
-  'Help me calm anxiety quickly',
-  'Give me a sleep reset plan',
-  'Guide me through a 2-minute grounding',
-  "I'm feeling low today",
-];
-
 const BUDDY_LANGUAGES = [
   { code: 'en-IN', label: 'English' },
   { code: 'hi-IN', label: 'हिन्दी' },
@@ -97,6 +86,55 @@ const BUDDY_LANGUAGES = [
 ] as const;
 
 type BuddyLangCode = typeof BUDDY_LANGUAGES[number]['code'];
+
+const BUDDY_INITIAL_MESSAGES: Record<BuddyLangCode, string> = {
+  'en-IN': 'Hi, I am AnytimeBuddy. I can support you between sessions. What would help most right now?',
+  'hi-IN': 'नमस्ते, मैं एनि-टाइम बडी हूँ। मैं सत्रों के बीच आपका समर्थन कर सकता हूँ। अभी आपके लिए सबसे मददगार क्या होगा?',
+  'ta-IN': 'வணக்கம், நான் எனி-டைம் பட்டி. அமர்வுகளுக்கு இடையில் நான் உங்களுக்கு ஆதரவளிக்க முடியும். இப்போது உங்களுக்கு எது மிகவும் உதவும்?',
+  'te-IN': 'నమస్కారం, నేను ఎనీ-టైమ్ బడ్డీని. సెషన్ల మధ్య నేను మీకు మద్దతు ఇవ్వగలను. ఇప్పుడు మీకు ఏది ఎక్కువగా సహాయపడుతుంది?',
+  'kn-IN': 'ನಮಸ್ಕಾರ, ನಾನು ಎನಿ-ಟೈಮ್ ಬಡ್ಡಿ. ಸೆಷನ್‌ಗಳ ನಡುವೆ ನಾನು ನಿಮಗೆ ಬೆಂಬಲ ನೀಡಬಲ್ಲೆ. ಈಗ ನಿಮಗೆ ಯಾವುದು ಹೆಚ್ಚು ಸಹಾಯ ಮಾಡುತ್ತದೆ?',
+};
+
+const BUDDY_QUICK_PROMPTS_MAP: Record<BuddyLangCode, string[]> = {
+  'en-IN': [
+    'Help me calm anxiety quickly',
+    'Give me a sleep reset plan',
+    'Guide me through a 2-minute grounding',
+    "I'm feeling low today",
+  ],
+  'hi-IN': [
+    'चिंता को जल्दी शांत करने में मेरी मदद करें',
+    'मुझे एक स्लीप रीसेट प्लान दें',
+    'मुझे 2 मिनट की ग्राउंडिंग के माध्यम से मार्गदर्शन करें',
+    'आज मैं उदास महसूस कर रहा हूँ',
+  ],
+  'ta-IN': [
+    'பதற்றத்தை விரைவில் தணிக்க உதவுங்கள்',
+    'ஒரு தூக்க மீட்டமைப்பு திட்டத்தை எனக்கு கொடுங்கள்',
+    '2 நிமிட கிரவுண்டிங் மூலம் என்னை வழிநடத்துங்கள்',
+    'இன்று நான் சோர்வாக உணர்கிறேன்',
+  ],
+  'te-IN': [
+    'ఆందోళనను త్వరగా శాంతపరచడంలో నాకు సహాయపడండి',
+    'నాకు నిద్ర రీసెట్ ప్లాన్ ఇవ్వండి',
+    '2 నిమిషాల గ్రౌండింగ్ ద్వారా నాకు మార్గనిర్దేశం చేయండి',
+    'ఈ రోజు నేను నిరుత్సాహంగా ఉన్నాను',
+  ],
+  'kn-IN': [
+    'ಆತಂಕವನ್ನು ತ್ವರಿತವಾಗಿ ಶಾಂತಗೊಳಿಸಲು ನನಗೆ ಸಹಾಯ ಮಾಡಿ',
+    'ನನಗೆ ನಿದ್ರೆಯ ಮರುಹೊಂದಿಸುವ ಯೋಜನೆಯನ್ನು ನೀಡಿ',
+    '2 ನಿಮಿಷದ ಗ್ರೌಂಡಿಂಗ್ ಮೂಲಕ ನನಗೆ ಮಾರ್ಗದರ್ಶನ ನೀಡಿ',
+    'ಇಂದು ನನಗೆ ಬೇಸರವಾಗಿದೆ',
+  ],
+};
+
+const BUDDY_INPUT_PLACEHOLDERS: Record<BuddyLangCode, string> = {
+  'en-IN': 'Type your message to Anytime Buddy...',
+  'hi-IN': 'एनि-टाइम बडी को अपना संदेश लिखें...',
+  'ta-IN': 'எனி-டைம் பட்டிக்கு உங்கள் செய்தியை தட்டச்சு செய்யவும்...',
+  'te-IN': 'ఎనీ-టైమ్ బడ్డీకి మీ సందేశాన్ని టైప్ చేయండి...',
+  'kn-IN': 'ಎನಿ-ಟೈಮ್ ಬಡ್ಡಿಗೆ ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ...',
+};
 
 const HIGH_RISK_KEYWORDS = ['suicide', 'kill myself', 'end my life', 'self harm', 'hurt myself', "don't want to live", 'want to die'];
 const MED_RISK_KEYWORDS = ['panic', 'crisis', "can't breathe", 'scared', 'terrified', 'helpless', 'overwhelmed'];
@@ -143,12 +181,15 @@ export default function PatientDashboardLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [buddyFullOpen, setBuddyFullOpen] = useState(false);
-  const [buddyMessages, setBuddyMessages] = useState<BuddyMessage[]>([BUDDY_INITIAL_MESSAGE]);
+  const initialLang = (readAIAssistantPreferences().voiceLanguage as BuddyLangCode) || 'en-IN';
+  const [buddyLang, setBuddyLang] = useState<BuddyLangCode>(initialLang);
+  const [buddyMessages, setBuddyMessages] = useState<BuddyMessage[]>([
+    { role: 'assistant', content: BUDDY_INITIAL_MESSAGES[initialLang] || BUDDY_INITIAL_MESSAGES['en-IN'] }
+  ]);
   const [buddyInput, setBuddyInput] = useState('');
   const [buddySending, setBuddySending] = useState(false);
   const [buddyListening, setBuddyListening] = useState(false);
   const [buddyMode, setBuddyMode] = useState<'text' | 'voice'>('text');
-  const [buddyLang, setBuddyLang] = useState<BuddyLangCode>(() => (readAIAssistantPreferences().voiceLanguage as BuddyLangCode) || 'en-IN');
   const [buddyPrefs, setBuddyPrefs] = useState<AIAssistantPreferences>(() => readAIAssistantPreferences());
   const buddyBottomRef = useRef<HTMLDivElement>(null);
   const buddyRecognitionRef = useRef<any>(null);
@@ -156,6 +197,25 @@ export default function PatientDashboardLayout() {
   const { balance } = useWallet();
   const [mdcUser, setMdcUser] = useState<any>(null);
   const isMdcMode = !!mdcUser;
+  const [, setHasPlan] = useState(false);
+
+  useEffect(() => {
+    if (!user || user.role !== 'patient') return;
+    
+    // Quick fallback if user object has the flag
+    if ((user as any).patientSubscriptionActive) {
+      setHasPlan(true);
+      return;
+    }
+
+    // Otherwise fetch the subscription to check properly
+    patientApi.getSubscription()
+      .then((res: any) => {
+        const sub = res?.data ?? res;
+        setHasPlan(hasActivePaidPatientSubscription(user, sub));
+      })
+      .catch(() => setHasPlan(false));
+  }, [user]);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY_MDC);
@@ -273,6 +333,13 @@ export default function PatientDashboardLayout() {
     const next = { ...buddyPrefs, voiceLanguage: code as AIAssistantPreferences['voiceLanguage'] };
     setBuddyPrefs(next);
     saveAIAssistantPreferences(next);
+    setBuddyMessages((prev) => {
+      // If we only have the initial assistant message, replace it with the new language
+      if (prev.length === 1 && prev[0].role === 'assistant') {
+        return [{ role: 'assistant', content: BUDDY_INITIAL_MESSAGES[code] || BUDDY_INITIAL_MESSAGES['en-IN'] }];
+      }
+      return prev;
+    });
   };
 
   const pageTitleMap: Record<string, string> = {
@@ -573,16 +640,18 @@ export default function PatientDashboardLayout() {
       </nav>
 
       {/* Floating AnytimeBuddy button — opens full modal directly */}
-      <div className={`fixed bottom-[80px] right-4 z-[55] lg:bottom-6 lg:right-6 ${disableSidebarAndNav ? 'pointer-events-none opacity-0' : ''}`}>
-        <button
-          type="button"
-          onClick={() => setBuddyFullOpen(true)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-600 text-white shadow-lg transition hover:scale-105 hover:bg-teal-700 active:scale-95"
-          aria-label="Open AnytimeBuddy AI"
-        >
-          <MessageSquare className="h-6 w-6" />
-        </button>
-      </div>
+      {true && (
+        <div className={`fixed bottom-[80px] right-4 z-[55] lg:bottom-6 lg:right-6 ${disableSidebarAndNav ? 'pointer-events-none opacity-0' : ''}`}>
+          <button
+            type="button"
+            onClick={() => setBuddyFullOpen(true)}
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-600 text-white shadow-lg transition hover:scale-105 hover:bg-teal-700 active:scale-95"
+            aria-label="Open AnytimeBuddy AI"
+          >
+            <MessageSquare className="h-6 w-6" />
+          </button>
+        </div>
+      )}
 
       {/* AnytimeBuddy floating chat window */}
       {buddyFullOpen && (() => {
@@ -698,7 +767,7 @@ export default function PatientDashboardLayout() {
 
             {/* Quick prompts strip */}
             <div className="flex gap-2 overflow-x-auto border-t border-gray-100 bg-white px-4 py-2 scrollbar-hide">
-              {BUDDY_QUICK_PROMPTS.map((prompt) => (
+              {(BUDDY_QUICK_PROMPTS_MAP[buddyLang] || BUDDY_QUICK_PROMPTS_MAP['en-IN']).map((prompt) => (
                 <button
                   key={prompt}
                   type="button"
@@ -733,7 +802,7 @@ export default function PatientDashboardLayout() {
                     type="text"
                     value={buddyInput}
                     onChange={(e) => setBuddyInput(e.target.value)}
-                    placeholder="Type your message to Anytime Buddy..."
+                    placeholder={BUDDY_INPUT_PLACEHOLDERS[buddyLang] || BUDDY_INPUT_PLACEHOLDERS['en-IN']}
                     disabled={buddySending}
                     className="h-11 flex-1 rounded-xl border border-calm-sage/25 bg-gray-50 px-4 text-sm text-charcoal outline-none transition focus:border-teal-400 focus:bg-white disabled:opacity-60"
                   />

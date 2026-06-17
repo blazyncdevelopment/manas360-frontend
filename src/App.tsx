@@ -1,6 +1,7 @@
 import { useState, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { Toaster as SonnerToaster } from 'sonner';
 import { GlobalFallbackLoader } from './components/ui/FallbackLoader';
 import ScrollToTop from './components/common/ScrollToTop';
 import CookieConsentBanner from './components/common/CookieConsentBanner';
@@ -330,6 +331,7 @@ function App() {
                 },
               }}
             />
+            <SonnerToaster position="top-center" richColors />
             <Suspense fallback={<GlobalFallbackLoader />}>
               <div className="site-layout">
                 <ScrollToTop />

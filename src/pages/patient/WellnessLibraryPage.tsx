@@ -67,7 +67,7 @@ const modules: ModuleCard[] = [
     highlights: ['Phoenix Friend, Guardian Dragon, Wisdom Peacock', 'Tap a companion to launch', 'High-engagement premium flow'],
     goal: 'Transformation & Deep Engagement',
     cta: 'Enter VR Sanctuary →',
-    to: '/patient/wellness-library',
+    to: '/patient/buddy/vr',
     themeClass: 'from-[#0e5558]/85 via-[#146a6f]/80 to-[#1f7f86]/75',
     badge: 'PREMIUM LIBRARY',
   },
@@ -102,7 +102,6 @@ const formatMinutes = (seconds: number): string => {
 export default function WellnessLibraryPage() {
   const [usage, setUsage] = useState<PremiumLibraryUsage | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
-  const [usageError, setUsageError] = useState<string>('');
   const visibleSinceRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -113,11 +112,9 @@ export default function WellnessLibraryPage() {
         const data = await patientApi.getPremiumLibraryUsage();
         if (!mounted) return;
         setUsage(data);
-        setUsageError('');
       } catch (error: any) {
         if (!mounted) return;
         setUsage(null);
-        setUsageError(String(error?.response?.data?.message || error?.message || 'Unable to load usage'));
       } finally {
         if (mounted) setUsageLoading(false);
       }
@@ -193,6 +190,33 @@ export default function WellnessLibraryPage() {
 
   return (
     <section className="mx-auto w-full max-w-[1380px] pb-8" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+      <div className="mb-6 rounded-2xl border border-charcoal/10 bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2 text-sm font-semibold text-charcoal">
+          <Sparkles className="h-[19px] w-[19px] text-wellness-sky" aria-hidden="true" />
+          <span>Premium Library Screen-Time Meter</span>
+        </div>
+        {usageLoading ? (
+          <p className="mt-2 text-xs text-charcoal/65">Loading Premium Library usage...</p>
+        ) : usage?.hasPremiumLibraryAccess ? (
+          <div className="mt-2 text-xs text-charcoal/80">
+            <p>
+              Remaining time: <strong>{formatMinutes(usage.remainingSeconds)}</strong> of{' '}
+              <strong>{formatMinutes(usage.totalSeconds)}</strong>
+            </p>
+            <p className="mt-1 text-charcoal/60">
+              Time is automatically consumed while this page is open and visible.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-2 text-xs text-charcoal/80">
+            <p className="text-rose-700 font-semibold">You do not have an active AnytimeBuddy Add-on.</p>
+            <p className="mt-1 text-charcoal/60">
+              Purchase an add-on to unlock these modules and get your daily screen-time limit.
+            </p>
+          </div>
+        )}
+      </div>
+
       <div className="relative overflow-hidden rounded-[28px] border border-white/50 bg-gradient-to-br from-[#e8f4f0] via-[#edf4f7] to-[#f7efe7] p-6 shadow-[0_18px_42px_rgba(20,44,68,0.08)] sm:p-7 lg:p-8">
         <div className="absolute -right-14 -top-12 h-56 w-56 rounded-full bg-white/35 blur-3xl" />
         <p className="inline-flex rounded-full bg-white/75 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-charcoal/60">
@@ -204,28 +228,6 @@ export default function WellnessLibraryPage() {
         <p className="mt-2 max-w-3xl text-sm text-charcoal/70">
           Lifestyle-first care hub with focused modules for sleep, sound, and AI companionship.
         </p>
-
-        <div className="mt-4 rounded-2xl border border-white/60 bg-white/65 p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-charcoal">
-            <Sparkles className="h-[19px] w-[19px] text-wellness-sky" aria-hidden="true" />
-            <span>Premium Library Screen-Time Meter</span>
-          </div>
-          {usageLoading ? (
-            <p className="mt-2 text-xs text-charcoal/65">Loading Premium Library usage...</p>
-          ) : usage ? (
-            <div className="mt-2 text-xs text-charcoal/80">
-              <p>
-                Remaining time: <strong>{formatMinutes(usage.remainingSeconds)}</strong> of{' '}
-                <strong>{formatMinutes(usage.totalSeconds)}</strong>
-              </p>
-              <p className="mt-1 text-charcoal/60">
-                Time is automatically consumed while this page is open and visible.
-              </p>
-            </div>
-          ) : (
-            <p className="mt-2 text-xs text-rose-700">{usageError || 'Premium Library usage unavailable.'}</p>
-          )}
-        </div>
       </div>
 
       <motion.div
@@ -264,16 +266,25 @@ export default function WellnessLibraryPage() {
               </div>
 
               <div className="flex items-center justify-between gap-3">
-                <Link
-                  to={
-                    module.id === 'digital-pets'
-                      ? `/pet?returnTo=${encodeURIComponent('/patient/wellness-library')}`
-                      : module.to
-                  }
-                  className="inline-flex items-center rounded-full bg-charcoal px-4 py-2 text-sm font-semibold text-white transition hover:bg-black"
-                >
-                  {module.cta}
-                </Link>
+                {module.badge === 'PREMIUM LIBRARY' && !usage?.hasPremiumLibraryAccess && !usageLoading ? (
+                  <Link
+                    to="/plans"
+                    className="inline-flex items-center rounded-full bg-wellness-sky px-4 py-2 text-sm font-semibold text-white transition hover:bg-wellness-sky/90"
+                  >
+                    Purchase Add-on →
+                  </Link>
+                ) : (
+                  <Link
+                    to={
+                      module.id === 'digital-pets'
+                        ? `/pet?returnTo=${encodeURIComponent('/patient/wellness-library')}`
+                        : module.to
+                    }
+                    className="inline-flex items-center rounded-full bg-charcoal px-4 py-2 text-sm font-semibold text-white transition hover:bg-black"
+                  >
+                    {module.cta}
+                  </Link>
+                )}
                 <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${badgeClass(module.badge)}`}>
                   ● {module.badge}
                 </span>

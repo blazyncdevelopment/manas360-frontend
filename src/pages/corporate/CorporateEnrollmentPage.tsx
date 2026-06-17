@@ -22,15 +22,16 @@ export default function CorporateEnrollmentPage() {
   const [lastResult, setLastResult] = useState<BulkUploadResult | null>(null);
   const [singleEmployee, setSingleEmployee] = useState({
     name: '',
+    email: '',
     phone: '',
     location: '',
   });
 
   const sampleCsv = useMemo(
     () => [
-      'name,phone,location',
-      'New Employee 1,+919876543210,Bengaluru',
-      'New Employee 2,+919876543211,Hyderabad',
+      'name,email,phone,location',
+      'New Employee 1,emp1@company.com,+919876543210,Bengaluru',
+      'New Employee 2,emp2@company.com,+919876543211,Hyderabad',
     ].join('\n'),
     [],
   );
@@ -82,20 +83,21 @@ export default function CorporateEnrollmentPage() {
       .map((line) => line.split(',').map((part) => part.trim()))
       .filter((parts) => parts.length >= 2)
       .map((parts) => {
-        const phone = parts[1] || '';
+        const email = parts[1] || '';
+        const phone = parts[2] || '';
         return {
           employeeId: `${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           name: parts[0] || '',
-          email: phone ? `${phone.replace(/\D/g, '')}@noemail.manas360.com` : `user_${Date.now()}@noemail.manas360.com`,
+          email: email || (phone ? `${phone.replace(/\D/g, '')}@noemail.manas360.com` : `user_${Date.now()}@noemail.manas360.com`),
           phone: phone,
           department: 'General',
-          location: parts[2] || 'Bengaluru',
+          location: parts[3] || 'Bengaluru',
           manager: 'Unassigned',
         };
       });
 
     if (!rows.length) {
-      setError('Invalid manual format. Use: name,phone,location');
+      setError('Invalid manual format. Use: name,email,phone,location');
       return;
     }
 
@@ -116,8 +118,8 @@ export default function CorporateEnrollmentPage() {
   };
 
   const handleSingleUpload = async () => {
-    if (!singleEmployee.name || !singleEmployee.phone) {
-      setError('Please fill in at least the required fields: Name and Phone.');
+    if (!singleEmployee.name || (!singleEmployee.phone && !singleEmployee.email)) {
+      setError('Please fill in at least the required fields: Name and (Phone or Email).');
       return;
     }
 
@@ -128,10 +130,11 @@ export default function CorporateEnrollmentPage() {
     
     try {
       const phoneClean = singleEmployee.phone.replace(/\D/g, '');
+      const defaultEmail = phoneClean ? `${phoneClean}@noemail.manas360.com` : `user_${Date.now()}@noemail.manas360.com`;
       const result = (await corporateApi.bulkUploadEmployees([{
         employeeId: `${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         name: singleEmployee.name,
-        email: phoneClean ? `${phoneClean}@noemail.manas360.com` : `user_${Date.now()}@noemail.manas360.com`,
+        email: singleEmployee.email || defaultEmail,
         phone: singleEmployee.phone,
         department: 'General',
         location: singleEmployee.location || 'Bengaluru',
@@ -140,7 +143,7 @@ export default function CorporateEnrollmentPage() {
       
       setStatus(result?.message || 'Employee uploaded successfully.');
       setLastResult(result);
-      setSingleEmployee({ name: '', phone: '', location: '' });
+      setSingleEmployee({ name: '', email: '', phone: '', location: '' });
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Upload failed');
     } finally {
@@ -152,7 +155,7 @@ export default function CorporateEnrollmentPage() {
     <CorporateShellLayout title="Enrollment" subtitle="Add and onboard employees into the wellness program.">
       <div className="rounded-xl border border-ink-100 bg-white p-5">
         <h2 className="font-display text-lg font-bold text-ink-800">Bulk Enrollment</h2>
-        <p className="mt-2 text-sm text-ink-600">Upload CSV/XLSX files or paste employees manually. Template format: name,phone,location.</p>
+        <p className="mt-2 text-sm text-ink-600">Upload CSV/XLSX files or paste employees manually. Template format: name,email,phone,location.</p>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <input
@@ -184,7 +187,7 @@ export default function CorporateEnrollmentPage() {
             value={rowsText}
             onChange={(event) => setRowsText(event.target.value)}
             rows={6}
-            placeholder="Jane Doe,+919876543210,Bengaluru"
+            placeholder="Jane Doe,jane@company.com,+919876543210,Bengaluru"
             className="w-full rounded-lg border border-ink-200 p-3 text-sm text-ink-700"
           />
           <button
@@ -214,7 +217,17 @@ export default function CorporateEnrollmentPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-ink-700">Phone *</label>
+            <label className="mb-1 block text-sm font-medium text-ink-700">Email</label>
+            <input
+              type="email"
+              value={singleEmployee.email}
+              onChange={(e) => setSingleEmployee({ ...singleEmployee, email: e.target.value })}
+              className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm text-ink-800 focus:border-sage-500 focus:ring-1 focus:ring-sage-500"
+              placeholder="e.g. jane@company.com"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-ink-700">Phone</label>
             <input
               type="tel"
               value={singleEmployee.phone}

@@ -22,7 +22,7 @@ import { StatusLight, type ConnectionStatus } from '../../components/shared/Stat
 import GPSDashboard from '../../components/therapist/GPSDashboard';
 import useAuthToken from '../../hooks/useAuthToken';
 import { http } from '../../lib/http';
-import { AI_ENGINE_WS_URL } from '../../lib/runtimeEnv';
+import { AI_ENGINE_WS_URL, getApiBaseUrl } from '../../lib/runtimeEnv';
 import { useAuth } from '../../context/AuthContext';
 import { useVideoSession } from '../../context/VideoSessionContext';
 
@@ -79,7 +79,7 @@ export default function VideoSessionPage() {
   const [aiInsightInput, setAiInsightInput] = useState('');
   const [voiceMessages, setVoiceMessages] = useState<{ text: string; timestamp: string }[]>([]);
   const [isSpeechListening, setIsSpeechListening] = useState(false);
-  const [isSpeechAutoEnabled, setIsSpeechAutoEnabled] = useState(false);
+  const [isSpeechAutoEnabled, setIsSpeechAutoEnabled] = useState(true);
   const [hasSpeechPermission, setHasSpeechPermission] = useState(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
   const [speechStatus, setSpeechStatus] = useState<string | null>(null);
@@ -152,7 +152,7 @@ export default function VideoSessionPage() {
     const full = `${String(user?.firstName || '').trim()} ${String(user?.lastName || '').trim()}`.trim();
     return full || String(user?.email || (isProvider ? 'Provider' : 'Patient'));
   }, [user?.email, user?.firstName, user?.lastName, isProvider]);
-  const isSpeechSupported = false; // Disabled in favor of AI Engine transcriptions
+  const isSpeechSupported = true; // Re-enabled for Claude AI Engine integration
 
   useEffect(() => {
     let active = true;
@@ -251,7 +251,6 @@ export default function VideoSessionPage() {
     };
   }, [hasAuthError, meetingData?.patientId]);
 
-  // Start GPS Monitoring session
   useEffect(() => {
     if (!sessionId || !isProvider) return;
     let cancelled = false;
@@ -276,6 +275,27 @@ export default function VideoSessionPage() {
       }
     };
   }, [sessionId, isProvider]);
+
+  // Periodic GPS AI Analysis
+  useEffect(() => {
+    if (!sessionId) return; // Allow both provider and patient to send transcripts
+
+    const interval = window.setInterval(async () => {
+      try {
+        const fullTranscript = voiceMessages.map(m => m.text).join(' ') + ' ' + aiInsightInputRef.current;
+        const textToAnalyze = fullTranscript.trim();
+        if (!textToAnalyze) return;
+
+        await http.post(`/v1/gps/sessions/${sessionId}/analyze`, {
+          transcript: textToAnalyze.slice(-3000) // Send up to last ~3000 chars (approx last 60-90s)
+        });
+      } catch (err) {
+        console.warn('[VideoSessionPage] GPS Analyze error:', err);
+      }
+    }, 30_000); // Every 30 seconds
+
+    return () => window.clearInterval(interval);
+  }, [sessionId, voiceMessages]);
 
   useEffect(() => {
     return () => {
@@ -659,7 +679,6 @@ export default function VideoSessionPage() {
 
   useEffect(() => {
     if (!isSpeechAutoEnabled) return;
-    if (activeTab !== 'ai-insights') return;
     if (isSpeechListening) return;
 
     const restartTimer = window.setTimeout(() => {
@@ -669,16 +688,7 @@ export default function VideoSessionPage() {
     return () => {
       window.clearTimeout(restartTimer);
     };
-  }, [activeTab, isSpeechAutoEnabled, isSpeechListening, startSpeechRecognition]);
-
-  useEffect(() => {
-    if (activeTab === 'ai-insights') return;
-    if (!isSpeechAutoEnabled) return;
-    setSpeechStatus(null);
-    if (speechRecognitionRef.current) {
-      speechRecognitionRef.current.stop();
-    }
-  }, [activeTab, isSpeechAutoEnabled]);
+  }, [isSpeechAutoEnabled, isSpeechListening, startSpeechRecognition]);
 
   useEffect(() => {
     return () => {
@@ -1377,6 +1387,7 @@ export default function VideoSessionPage() {
             sessionId={sessionId}
             monitoringId={monitoringId}
             accessToken={accessToken}
+            socketUrl={getApiBaseUrl().replace(/\/api\/?$/, '')}
           />
         )}
 

@@ -4,6 +4,7 @@ import { UserPlus } from 'lucide-react';
 import CorporateShellLayout from '../../components/corporate/CorporateShellLayout';
 import { corporateApi } from '../../api/corporate.api';
 import { useCorporateKey } from './useCorporateDashboardData';
+import { toast } from 'sonner';
 
 type EmployeeRow = {
   id: string;
@@ -50,8 +51,9 @@ export default function CorporateEmployeeDirectoryPage() {
       }, companyKey);
       setEditingEmployee(null);
       await fetchEmployees();
+      toast.success('Employee updated successfully');
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to update employee');
+      toast.error(err?.response?.data?.message || 'Failed to update employee');
     } finally {
       setIsSaving(false);
     }
@@ -62,9 +64,9 @@ export default function CorporateEmployeeDirectoryPage() {
     setCreatingAccountFor(employeeId);
     try {
       await corporateApi.createEmployeeAccount(employeeId, companyKey);
-      alert('Account created! Welcome email and WhatsApp have been sent.');
+      toast.success('Account created! Welcome email and WhatsApp have been sent.');
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to create account');
+      toast.error(err.response?.data?.message || 'Failed to create account');
     } finally {
       setCreatingAccountFor(null);
     }
@@ -89,6 +91,7 @@ export default function CorporateEmployeeDirectoryPage() {
             <thead className="bg-ink-50 text-left text-xs uppercase tracking-wider text-ink-500">
               <tr>
                 <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Phone</th>
                 <th className="px-4 py-3">Location</th>
                 <th className="px-4 py-3 text-right">Actions</th>
@@ -105,6 +108,7 @@ export default function CorporateEmployeeDirectoryPage() {
                 rows.map((r) => (
                   <tr key={r.id}>
                     <td className="px-4 py-3 font-medium text-ink-700">{r.name}</td>
+                    <td className="px-4 py-3 text-ink-600">{r.email || '-'}</td>
                     <td className="px-4 py-3 text-ink-600">{r.phone || '-'}</td>
                     <td className="px-4 py-3 text-ink-600">{r.location || '-'}</td>
                     <td className="px-4 py-3 text-right">
@@ -145,6 +149,15 @@ export default function CorporateEmployeeDirectoryPage() {
                   value={editingEmployee.name}
                   onChange={(e) => setEditingEmployee({ ...editingEmployee, name: e.target.value })}
                   className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm text-ink-800 focus:border-sage-500 focus:ring-1 focus:ring-sage-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-ink-700">Email</label>
+                <input
+                  disabled
+                  type="email"
+                  value={editingEmployee.email}
+                  className="w-full rounded-lg border border-ink-200 bg-ink-50 px-3 py-2 text-sm text-ink-500"
                 />
               </div>
               <div>

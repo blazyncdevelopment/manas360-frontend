@@ -750,7 +750,24 @@ export default function SettingsPage() {
                     <p className="text-sm font-semibold text-charcoal">{renewalDate}</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap justify-end">
+                
+                {(subscription?.addons?.anytimeBuddyPack && subscription.addons.anytimeBuddyPack !== 'none') || (subscription?.addons?.premiumLibraryPack && subscription.addons.premiumLibraryPack !== 'none') ? (
+                  <div className="mt-4 rounded-xl border border-calm-sage/30 bg-calm-sage/5 p-4 flex flex-col gap-2">
+                    <p className="text-xs uppercase tracking-[0.2em] text-charcoal/60">Active Add-ons</p>
+                    {subscription?.addons?.anytimeBuddyPack && subscription.addons.anytimeBuddyPack !== 'none' && (
+                      <p className="text-sm font-semibold text-charcoal capitalize">
+                        {String(subscription.addons.anytimeBuddyPack).replace(/_/g, ' ')}
+                      </p>
+                    )}
+                    {subscription?.addons?.premiumLibraryPack && subscription.addons.premiumLibraryPack !== 'none' && (
+                      <p className="text-sm font-semibold text-charcoal capitalize">
+                        {String(subscription.addons.premiumLibraryPack).replace(/_/g, ' ')}
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+
+                <div className="flex flex-wrap justify-end mt-4">
                   <Link
                     to="/plans"
                     className="rounded-full border border-slate-200 bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-slate-800"

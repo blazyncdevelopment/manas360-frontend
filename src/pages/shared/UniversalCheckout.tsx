@@ -200,9 +200,9 @@ export default function UniversalCheckout() {
         ? {
           type: 'provider',
           planId: resolvedPlanId,
-          baseAmountMinor: isProviderTrialAuthFlow ? trialAuthMinor : (summary?.subtotalMinor || totalMinor),
-          gstMinor: isProviderTrialAuthFlow ? 0 : (summary?.gstMinor || 0),
-          totalAmountMinor: isProviderTrialAuthFlow ? trialAuthMinor : (summary?.totalMinor || totalMinor),
+          baseAmountMinor: isProviderTrialAuthFlow ? trialAuthMinor : (summary ? summary.subtotalMinor : totalMinor),
+          gstMinor: isProviderTrialAuthFlow ? 0 : (summary ? summary.gstMinor : 0),
+          totalAmountMinor: isProviderTrialAuthFlow ? trialAuthMinor : (summary ? summary.totalMinor : totalMinor),
           walletUsedMinor: applicableWalletMinor,
           finalAmountMinor,
           acceptedTerms: true,
@@ -218,9 +218,9 @@ export default function UniversalCheckout() {
         : {
           type: 'patient',
           planId: resolvedPlanId,
-          baseAmountMinor: summary?.subtotalMinor || totalMinor,
-          gstMinor: summary?.gstMinor || 0,
-          totalAmountMinor: summary?.totalMinor || totalMinor,
+          baseAmountMinor: summary ? summary.subtotalMinor : totalMinor,
+          gstMinor: summary ? summary.gstMinor : 0,
+          totalAmountMinor: summary ? summary.totalMinor : totalMinor,
           walletUsedMinor: applicableWalletMinor,
           finalAmountMinor,
           acceptedTerms: true,
@@ -306,7 +306,7 @@ export default function UniversalCheckout() {
           <div className="space-y-3 text-sm text-slate-700">
             <div className="flex items-center justify-between">
               <span>{mode === 'provider' ? 'Lead Plan' : 'Plan'} {checkoutCart ? `(${getPlanNameFromCart(mode, checkoutCart)})` : sharedPlan?.name || resolvedPlanId}</span>
-              <strong>{formatInr((providerSummary?.leadPlanMinor ?? patientSummary?.planMinor) || Math.round((sharedPlan?.baseAmount || 0) * 100))}</strong>
+              <strong>{formatInr((providerSummary?.leadPlanMinor ?? patientSummary?.planMinor) ?? Math.round((sharedPlan?.baseAmount || 0) * 100))}</strong>
             </div>
             {mode === 'provider' && providerCart && (
               <>
@@ -317,8 +317,8 @@ export default function UniversalCheckout() {
             {mode === 'patient' && patientCart && (
               <div className="flex items-center justify-between"><span>Add-ons</span><strong>{formatInr(patientSummary?.addonsMinor || 0)}</strong></div>
             )}
-            <div className="flex items-center justify-between"><span>Subtotal (before GST)</span><strong>{formatInr(isProviderTrialAuthFlow ? trialAuthMinor : (summary?.subtotalMinor || totalMinor))}</strong></div>
-            <div className="flex items-center justify-between"><span>GST (18%)</span><span>{formatInr(isProviderTrialAuthFlow ? 0 : (summary?.gstMinor || 0))}</span></div>
+            <div className="flex items-center justify-between"><span>Subtotal (before GST)</span><strong>{formatInr(isProviderTrialAuthFlow ? trialAuthMinor : (patientSummary ? patientSummary.subtotalMinor : providerSummary ? providerSummary.subtotalMinor : totalMinor))}</strong></div>
+            <div className="flex items-center justify-between"><span>GST (18%)</span><span>{formatInr(isProviderTrialAuthFlow ? 0 : (patientSummary ? patientSummary.gstMinor : providerSummary ? providerSummary.gstMinor : 0))}</span></div>
             {applicableWalletMinor > 0 && (
               <div className="flex items-center justify-between font-medium text-teal-600">
                 <span>Wallet Credits Applied</span>

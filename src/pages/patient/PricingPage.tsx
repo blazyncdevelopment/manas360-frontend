@@ -280,6 +280,16 @@ export default function PricingPage() {
     }
   };
 
+  const handleBuyAddon = (type: 'premiumLibraryPack' | 'anytimeBuddyPack', pack: string) => {
+    saveCart({
+      planId: activePlanId || 'free',
+      addons: { [type]: pack },
+      isAddonOnly: true,
+      updatedAt: new Date().toISOString()
+    });
+    navigate(`/universal/checkout?type=patient`);
+  };
+
   const patientCta = (
     planId: PatientPlanId,
     filled?: boolean,
@@ -467,6 +477,48 @@ export default function PricingPage() {
             </article>
           </div>
 
+          <div className="section-label">AnytimeBuddy Add-ons</div>
+          <h2 className="section-title">Monthly subscription tiers for the AI wellness companion.</h2>
+          <p className="section-desc">
+            All tiers include a <strong>1 hour per day limit</strong>. Time limit resets daily. Add-ons are billed monthly.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Tier</th>
+                <th>Price (₹/month)</th>
+                <th>Description</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>AnytimeBuddy Basic</strong></td>
+                <td>₹399</td>
+                <td>Standard emotional support chat.</td>
+                <td>
+                  <CardCta small onClick={() => handleBuyAddon('anytimeBuddyPack', 'anytime_buddy_basic')}>Buy Basic</CardCta>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>AnytimeBuddy Standard</strong> ⭐</td>
+                <td><strong>₹999</strong></td>
+                <td>Advanced context retention + priority responses.</td>
+                <td>
+                  <CardCta small filled onClick={() => handleBuyAddon('anytimeBuddyPack', 'anytime_buddy_standard')}>Buy Standard</CardCta>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>AnytimeBuddy Premium</strong></td>
+                <td>₹1,699</td>
+                <td>Deep therapy-aligned insights and proactive check-ins.</td>
+                <td>
+                  <CardCta small onClick={() => handleBuyAddon('anytimeBuddyPack', 'anytime_buddy_premium')}>Buy Premium</CardCta>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
           <div className="section-label">Therapy Sessions</div>
           <h2 className="section-title">Session Fees (Paid Per Session)</h2>
           <p className="section-desc">
@@ -566,25 +618,20 @@ export default function PricingPage() {
             </tbody>
           </table>
 
-          <div className="section-label">Add-On Features (À la Carte)</div>
+
+
+          <div className="section-label mt-8">Add-On Features (À la Carte)</div>
           <table>
             <thead>
               <tr>
                 <th>Feature</th>
-                <th>1 Hour</th>
-                <th>3 Hours ⭐</th>
-                <th>5 Hours</th>
+                <th>Basic</th>
+                <th>Standard ⭐</th>
+                <th>Premium</th>
                 <th>Description</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>🤖 AnytimeBuddy</td>
-                <td>₹399</td>
-                <td><strong>₹999</strong></td>
-                <td>₹1,699</td>
-                <td>On-demand emotional support chat (24/7 AI companion)</td>
-              </tr>
               <tr>
                 <td>🐾 Digital Pet Hub</td>
                 <td colSpan={3}>Free starter + Premium unlock via subscription</td>

@@ -24,7 +24,7 @@ export default function SubscriptionAddonsPage() {
     setAddons(cart.addons || DEFAULT_ADDONS);
 
     if (cart.planId === 'free') {
-      navigate('/checkout', { replace: true });
+      navigate('/universal/checkout?type=patient', { replace: true });
     }
   }, [navigate]);
 
@@ -42,7 +42,7 @@ export default function SubscriptionAddonsPage() {
       addons,
       updatedAt: new Date().toISOString(),
     });
-    navigate('/checkout');
+    navigate('/universal/checkout?type=patient');
   };
 
   const plan = getPlanById(planId);
@@ -58,19 +58,20 @@ export default function SubscriptionAddonsPage() {
         </section>
 
         <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900">Premium Library Packs</h2>
+          <h2 className="text-lg font-bold text-slate-900">AnytimeBuddy Add-ons</h2>
+          <p className="text-sm text-slate-600 mb-2">Monthly subscription tiers for the AI wellness companion. <strong>(1 hour per day limit on all tiers)</strong></p>
           <div className="grid gap-2 sm:grid-cols-4">
             {[
               { key: 'none', label: 'None' },
-              { key: '1h', label: '1 Hour INR 399' },
-              { key: '3h', label: '3 Hours INR 999' },
-              { key: '5h', label: '5 Hours INR 1699' },
+              { key: 'anytime_buddy_basic', label: 'Basic INR 399' },
+              { key: 'anytime_buddy_standard', label: 'Standard INR 999' },
+              { key: 'anytime_buddy_premium', label: 'Premium INR 1699' },
             ].map((opt) => (
               <button
                 key={opt.key}
                 type="button"
-                onClick={() => setAddons((prev) => ({ ...prev, premiumLibraryPack: opt.key as PatientAddonSelection['premiumLibraryPack'] }))}
-                className={`rounded-lg border px-3 py-2 text-sm ${addons.premiumLibraryPack === opt.key ? 'border-[#4a6741] bg-[#e8f0e5]' : 'border-slate-200 bg-white'}`}
+                onClick={() => setAddons((prev) => ({ ...prev, anytimeBuddyPack: opt.key as any }))}
+                className={`rounded-lg border px-3 py-2 text-sm ${addons.anytimeBuddyPack === opt.key ? 'border-[#4a6741] bg-[#e8f0e5]' : 'border-slate-200 bg-white'}`}
               >
                 {opt.label}
               </button>
@@ -78,7 +79,7 @@ export default function SubscriptionAddonsPage() {
           </div>
 
           <p className="text-sm text-slate-600">
-            Premium Library pack time is consumed by your actual screen time in Premium Library.
+            Time limit resets daily. Add-on is billed monthly along with your plan.
           </p>
 
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 space-y-1">
