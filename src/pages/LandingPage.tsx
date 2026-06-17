@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import SupportChatBot from "../components/common/SupportChatBot";
 
 const landingBg = encodeURI("/You renot alone-Beach.jpeg");
 
@@ -439,59 +440,7 @@ const LandingPage: React.FC = () => {
         ))}
       </div>
 
-      <div style={{ position: "fixed", right: "24px", bottom: "24px", zIndex: 140 }}>
-        <button
-          type="button"
-          style={{
-            width: "62px",
-            height: "62px",
-            borderRadius: "999px",
-            border: "none",
-            cursor: "pointer",
-            background: "linear-gradient(135deg, #7C3AED, #5B21B6)",
-            boxShadow: "0 16px 36px rgba(0,0,0,0.22)",
-            color: "white",
-            position: "relative",
-            animation: "landingChatFloat 3.2s ease-in-out infinite"
-          }}
-          aria-label="Chat"
-        >
-          <span style={{ fontSize: "30px", display: "inline-block", transform: "rotate(0deg)", animation: "landingChatTilt 3s ease-in-out infinite" }}>&#129302;</span>
-          <span
-            style={{
-              position: "absolute",
-              top: "-8px",
-              left: "-7px",
-              width: "18px",
-              height: "18px",
-              borderRadius: "999px",
-              background: "#EF4444",
-              color: "white",
-              fontSize: "11px",
-              fontWeight: 800,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "2px solid rgba(255,255,255,0.9)"
-            }}
-          >
-            3
-          </span>
-          <span
-            style={{
-              position: "absolute",
-              top: "4px",
-              right: "4px",
-              width: "14px",
-              height: "14px",
-              borderRadius: "999px",
-              background: "#22C55E",
-              border: "2px solid rgba(255,255,255,0.95)"
-            }}
-            aria-hidden
-          />
-        </button>
-      </div>
+      <SupportChatBot />
 
       <main className="landing-main">
 
