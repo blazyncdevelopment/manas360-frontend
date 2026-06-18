@@ -37,10 +37,13 @@ export default function SubscriptionAddonsPage() {
   }, [planId, addons]);
 
   const persistAndProceed = () => {
+    const existingCart = loadCart();
     saveCart({
       planId,
       addons,
       updatedAt: new Date().toISOString(),
+      isTrial: existingCart?.isTrial,
+      isAddonOnly: existingCart?.isAddonOnly,
     });
     navigate('/universal/checkout?type=patient');
   };

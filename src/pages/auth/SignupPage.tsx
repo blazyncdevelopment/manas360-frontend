@@ -208,7 +208,7 @@ export default function SignupPage() {
 		const returnTarget = String(query.get('next') || query.get('returnTo') || '').toLowerCase();
 		return (
 			returnTarget.includes('/assessment-preset')
-			|| returnTarget.includes('/patient/sessions')
+			|| returnTarget.includes('/patient/dashboard')
 			|| returnTarget.includes('/patient/dashboard')
 			|| returnTarget.includes('/plans')
 		);
@@ -452,7 +452,7 @@ export default function SignupPage() {
 		}
 
 		if (candidate.startsWith('/patient/dashboard') || candidate === '/patient' || candidate === '/patient/') {
-			candidate = '/patient/sessions';
+			candidate = '/patient/dashboard';
 		}
 
 		return candidate;
@@ -565,11 +565,11 @@ export default function SignupPage() {
 				}
 
 				if (hasActiveSubscription || hasBookedSession) {
-					navigate('/patient/sessions', { replace: true });
+					navigate('/patient/dashboard', { replace: true });
 					return;
 				}
 
-				navigate(`/patient/preferences?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
+				navigate(`/plans?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
 				return;
 			}
 			const postLoginRoute = getPostLoginRoute(resolvedUser);

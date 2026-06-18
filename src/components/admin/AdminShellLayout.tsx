@@ -58,6 +58,7 @@ const ADMIN_DOMAINS: AdminDomain[] = [
 			{ to: '/admin/operations/retreat-requests', label: 'Retreat Requests', shortLabel: 'Ret' },
 			{ to: '/admin/audio-upload', label: 'Audio Upload', shortLabel: 'Aud' },
 			{ to: '/admin/operations/blogs', label: 'Blog Management', shortLabel: 'Blg' },
+			{ to: '/admin/courses', label: 'Course Builder', shortLabel: 'Cou' },
 		],
 	},
 	{
@@ -96,6 +97,7 @@ const ADMIN_DOMAINS: AdminDomain[] = [
 			{ to: '/admin/system/settings', label: 'Settings', shortLabel: 'Set' },
 			{ to: '/admin/system/platform-config', label: 'Platform Config', shortLabel: 'Cfg' },
 			{ to: '/admin/system/aws-cost-triage', label: 'AWS Cost Triage', shortLabel: 'Aws' },
+			{ to: '/admin/operations/logs', label: 'Live Logs', shortLabel: 'Log' },
 		],
 	},
 ];

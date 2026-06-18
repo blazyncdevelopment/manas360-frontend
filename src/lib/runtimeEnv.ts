@@ -35,11 +35,8 @@ export const AI_ENGINE_WS_URL =
   import.meta.env.VITE_AI_ENGINE_WS_URL?.trim() ||
   `${toWebsocketOrigin(stripTrailingApiSegment(FRONTEND_URL))}/ai-engine`;
 
-// Set USE_LOCAL_TUNNEL = true only when testing via devtunnel
-// const LOCAL_TUNNEL_BASE = 'http://localhost:4502';
-// const USE_LOCAL_TUNNEL = true;
-
-const LOCAL_TUNNEL_BASE = import.meta.env.VITE_LOCAL_TUNNEL_BASE?.trim() || 'https://api.manas360.com/api';
+// Set VITE_USE_LOCAL_TUNNEL=true in .env to test via devtunnel
+const LOCAL_TUNNEL_BASE = import.meta.env.VITE_LOCAL_TUNNEL_BASE?.trim() || 'http://localhost:4502';
 const USE_LOCAL_TUNNEL = import.meta.env.VITE_USE_LOCAL_TUNNEL === 'true';
 
 const getWindowCapacitor = (): any => {

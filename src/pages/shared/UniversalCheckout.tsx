@@ -166,8 +166,12 @@ export default function UniversalCheckout() {
     : '/plans/addons';
 
   const title = mode === 'provider' ? 'Provider Checkout' : 'Checkout';
+  const billingDate = new Date();
+  billingDate.setDate(billingDate.getDate() + trialDays);
+  const formattedBillingDate = billingDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
   const subtitle = isAnyTrialAuthFlow
-      ? "Start your " + trialDays + "-day trial with Rs.1 authorization. Post-trial billing cycle: " + postTrialCycle + "."
+      ? `Start your ${trialDays}-day trial with Rs.1 authorization. Post-trial billing cycle: ${postTrialCycle} (starts ${formattedBillingDate}).`
       : (mode === "provider" ? "Platform access, lead plan, and marketplace add-ons." : "GST 18% is charged extra on top of the selected plan and add-ons.");
 
   const handleTermsScroll = (event: React.UIEvent<HTMLDivElement>) => {

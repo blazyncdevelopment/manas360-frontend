@@ -376,6 +376,10 @@ export const updateAdminUsersBulkStatus = async (
 	})).data;
 };
 
+export const deleteAdminUser = async (userId: string): Promise<ApiEnvelope<unknown>> => {
+	return (await client.delete<ApiEnvelope<unknown>>(`/v1/admin/users/${encodeURIComponent(userId)}`)).data;
+};
+
 export type AdminGlobalSearchResult = {
 	users: Array<{ id: string; name: string; email: string; role: string }>;
 	payments: Array<{ id: string; status: string; amountMinor: number; currency: string }>;

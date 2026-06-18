@@ -125,6 +125,9 @@ const QrCodeManager = lazy(() => import('./pages/admin/QrCodeManager'));
 const TherapistPerformance = lazy(() => import('./pages/admin/TherapistPerformance'));
 const AgreementsPage = lazy(() => import('./pages/admin/AgreementsPage'));
 const AdminRetreatsPage = lazy(() => import('./pages/admin/AdminRetreatsPage'));
+const AdminCoursesPage = lazy(() => import('./pages/admin/AdminCoursesPage'));
+const AdminCourseBuilderPage = lazy(() => import('./pages/admin/AdminCourseBuilderPage'));
+const AdminLiveLogsPage = lazy(() => import('./pages/admin/AdminLiveLogsPage'));
 const AgreementDetailPage = lazy(() => import('./pages/admin/AgreementDetailPage'));
 const ClientAgreementPage = lazy(() => import('./pages/admin/ClientAgreementPage'));
 const SessionAnalytics = lazy(() => import('./pages/admin/SessionAnalytics'));
@@ -739,6 +742,8 @@ function App() {
                         <Route path="operations/agreements/:agreementId/client" element={<ClientAgreementPage />} />
                         <Route path="operations/retreat-requests" element={<AdminRetreatsPage />} />
                         <Route path="operations/blogs" element={<AdminBlogManagementPage />} />
+                        <Route path="courses" element={<AdminCoursesPage />} />
+                        <Route path="courses/builder/:id" element={<AdminCourseBuilderPage />} />
 
                         <Route path="intelligence/platform-analytics" element={<PlatformAnalytics />} />
                         <Route path="intelligence/user-growth" element={<UserGrowthAnalytics />} />
@@ -748,6 +753,7 @@ function App() {
                         <Route path="governance/audit" element={<AuditTrail />} />
                         <Route path="governance/center" element={<GovernanceCenterPage />} />
                         <Route path="governance/privacy" element={<AdminDataPrivacyHubPage />} />
+                        <Route path="operations/logs" element={<AdminLiveLogsPage />} />
                         <Route path="governance/legal" element={<CentralizedLegalDocumentManagement />} />
                         <Route path="governance/compliance" element={<ComplianceDashboard />} />
 

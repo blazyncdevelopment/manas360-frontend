@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Download, FileX, ArrowLeft } from 'lucide-react';
+import { Download, FileX, ArrowLeft, FileText } from 'lucide-react';
 import { patientApi } from '../../api/patient';
 
 type SharedMeta = {
@@ -97,21 +97,36 @@ export default function PatientReportDownloadPage() {
         ) : null}
 
         {!loading && !error && meta ? (
-          <div className="space-y-4">
-            <h1 className="text-xl font-semibold text-charcoal">{meta.title}</h1>
-            <div className="rounded-xl border border-calm-sage/20 bg-calm-sage/5 p-3 text-xs text-charcoal/70">
-              <p>Shared: {new Date(meta.sharedTimestamp).toLocaleString()}</p>
-              <p>Expires: {new Date(meta.expiresAt).toLocaleString()}</p>
+          <div className="flex flex-col">
+            <div className="mb-6 flex items-center gap-4 border-b border-calm-sage/15 pb-5">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                <FileText className="h-6 w-6" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-charcoal sm:text-xl">{meta.title}</h1>
+                <p className="mt-0.5 text-sm font-medium text-charcoal/60">Secure Provider Report</p>
+              </div>
+            </div>
+
+            <div className="mb-6 rounded-xl border border-calm-sage/15 bg-slate-50/50 p-4 text-sm text-charcoal/80">
+              <div className="mb-2 flex items-center justify-between border-b border-calm-sage/10 pb-2">
+                <span className="font-medium">Shared On:</span>
+                <span className="text-charcoal/70">{new Date(meta.sharedTimestamp).toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <span className="font-medium">Access Expires:</span>
+                <span className="font-medium text-rose-600">{new Date(meta.expiresAt).toLocaleString()}</span>
+              </div>
             </div>
 
             <button
               type="button"
               onClick={() => void onDownload()}
               disabled={downloading}
-              className="inline-flex min-h-[40px] items-center gap-2 rounded-xl bg-calm-sage px-4 py-2 text-sm font-medium text-white transition hover:bg-calm-sage/90 disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-calm-sage px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-calm-sage/90 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <Download className="h-4 w-4" />
-              {downloading ? 'Preparing download...' : 'Download PDF'}
+              {downloading ? 'Preparing Download...' : 'Download PDF Report'}
             </button>
           </div>
         ) : null}

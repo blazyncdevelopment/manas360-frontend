@@ -1017,7 +1017,7 @@ export const generateWellnessPlan = async (
   patientId: string,
 ): Promise<{ pdfUrl: string; sentViaWhatsapp: boolean }> => {
   const response = await http.post<Envelope<{ pdfUrl: string; sentViaWhatsapp: boolean }>>(
-    `/v1/wellness-plan/generate`,
+    `/v1/provider/wellness-plan/generate`,
     { patientId },
   );
   return unwrap<{ pdfUrl: string; sentViaWhatsapp: boolean }>(response.data);

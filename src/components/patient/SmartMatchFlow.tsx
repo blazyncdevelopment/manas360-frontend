@@ -123,7 +123,7 @@ export default function SmartMatchFlow({
         setSubscriptionStatus(status);
         setGraceEndDate(graceEnd ? new Date(graceEnd).toISOString() : null);
         setInGrace(status === 'grace');
-        setIsFreeBlocked(status === 'locked' || !activeLike || freeLike);
+        setIsFreeBlocked(status === 'locked' || !activeLike);
       } catch {
         setSubscriptionStatus('locked');
         setGraceEndDate(null);

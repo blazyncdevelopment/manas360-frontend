@@ -65,7 +65,7 @@ export const getDefaultRouteForRole = (role: unknown): string => {
   }
   if (normalizedRole === 'psychiatrist') return '/provider/dashboard';
   if (normalizedRole === 'therapist' || normalizedRole === 'coach') return '/provider/dashboard';
-  return '/patient/sessions';
+  return '/patient/dashboard';
 };
 
 const isProviderRole = (role: unknown): boolean => {
@@ -111,7 +111,7 @@ export const isPlatformAdminUser = (user: AuthUser | null | undefined): boolean 
 };
 
 export const getPostLoginRoute = (user: AuthUser | null | undefined): string => {
-  if (!user) return '/patient/sessions';
+  if (!user) return '/patient/dashboard';
 
   if ((user as any)?.legalAcceptanceRequired) {
     return '/auth/legal-accept';
@@ -126,7 +126,7 @@ export const getPostLoginRoute = (user: AuthUser | null | undefined): string => 
   // If patient requires subscription, route to plans page
   if ((user as any)?.requiresSubscription) {
     if ((user as any)?.patientSubscriptionActive) {
-      return '/patient/sessions';
+      return '/patient/dashboard';
     }
     return '/plans';
   }
