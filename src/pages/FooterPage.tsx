@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Instagram, Linkedin, Twitter, MessageCircle } from "lucide-react";
+import { Instagram, Linkedin, Youtube, MessageCircle } from "lucide-react";
 
 
 
@@ -170,21 +170,29 @@ export const landingFooterStyles = `
           .footer-grid > div {
             padding-bottom: 4px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
           }
           .footer-grid > div:last-child {
             border-bottom: none;
             padding-bottom: 0;
           }
+          .landing-footer .footer-link {
+            text-align: center;
+          }
           .landing-footer-crisis {
             font-size: 11px !important;
             line-height: 1.55 !important;
             padding: 12px !important;
-            text-align: left !important;
+            text-align: center !important;
           }
           .landing-footer-copy {
             font-size: 10px !important;
             line-height: 1.65 !important;
             padding: 0 4px;
+            text-align: center !important;
           }
         }
 `;
@@ -279,9 +287,9 @@ export const FooterPage: React.FC = () => {
               <div style={{ display: "flex", gap: "10px", opacity: 0.85 }}>
                 {[
                   { key: "wa", icon: <MessageCircle size={16} />, aria: "WhatsApp", href: "https://wa.me/918951927280" },
-                  { key: "ig", icon: <Instagram size={16} />, aria: "Instagram", href: "https://instagram.com/manas360" },
-                  { key: "in", icon: <Linkedin size={16} />, aria: "LinkedIn", href: "https://linkedin.com/company/manas360" },
-                  { key: "x", icon: <Twitter size={16} />, aria: "X (Twitter)", href: "https://x.com/manas360" }
+                  { key: "ig", icon: <Instagram size={16} />, aria: "Instagram", href: "https://www.instagram.com/manas360care?igsh=MW1tdnNrdXZjYXVqcA%3D%3D" },
+                  { key: "in", icon: <Linkedin size={16} />, aria: "LinkedIn", href: "https://www.linkedin.com/company/manas360care/" },
+                  { key: "yt", icon: <Youtube size={16} />, aria: "YouTube", href: "https://www.youtube.com/@officialmanas360" }
                 ].map((s) => (
                   <a
                     key={s.key}

@@ -6,6 +6,7 @@ import { useEnrollmentStore } from '../store/CertificationEnrollmentStore';
 import { CERTIFICATIONS } from '../CertificationConstants';
 import { Enrollment } from '../CertificationTypes';
 import { useAuth } from '../context/AuthContext';
+import { useCertificationProgress } from '../store/useCertificationProgress';
 import { getModulesByCertification } from '../utils/certificationLessonUtils';
 
 export const MyCertificationsPage: React.FC = () => {
@@ -14,6 +15,7 @@ export const MyCertificationsPage: React.FC = () => {
     const location = useLocation();
     const [processingId, setProcessingId] = useState<string | null>(null);
     const { user, becomeProvider } = useAuth();
+    const { isQuizPassed } = useCertificationProgress();
     const isNested = location.pathname.startsWith('/provider') || location.pathname.startsWith('/patient') || location.pathname.startsWith('/learner');
     const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
 
@@ -233,7 +235,7 @@ export const MyCertificationsPage: React.FC = () => {
                                             </button>
                                         )}
 
-                                        {enrollment.completionPercentage === 100 && (
+                                        {enrollment.completionPercentage === 100 && isQuizPassed(enrollment.id) && (
                                             <button
                                                 onClick={() => {
                                                     const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';

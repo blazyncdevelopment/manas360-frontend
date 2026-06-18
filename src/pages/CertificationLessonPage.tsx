@@ -634,9 +634,7 @@ export const CertificationLessonPage: React.FC = () => {
 
         {/* Bottom Action Bar */}
         <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-slate-200">
-          <button className="px-6 py-3 bg-white text-slate-600 border border-slate-200 font-medium text-sm rounded-full hover:bg-slate-50 transition-colors shadow-sm">
-            Mark for Review
-          </button>
+
           {enrollmentId && isQuizUnlocked(enrollmentId) && (
             <button
               onClick={() => {

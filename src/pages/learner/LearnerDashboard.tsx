@@ -13,7 +13,6 @@ import {
   ChevronRight,
   RefreshCcw,
   Loader2,
-  Lock,
 } from 'lucide-react';
 import { useEnrollmentStore } from '../../store/CertificationEnrollmentStore';
 import { CERTIFICATIONS } from '../../CertificationConstants';
@@ -93,10 +92,10 @@ function PaymentBadge({ status }: { status: Enrollment['paymentStatus'] }) {
 }
 
 // ─── Enrollment row card ───────────────────────────────────────────────────
-function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
+function EnrollmentRow({ enrollment, quizPassed }: { enrollment: Enrollment; quizPassed: boolean }) {
   const navigate = useNavigate();
   const cert = CERTIFICATIONS.find((c) => c.id === enrollment.certificationId);
-  const isComplete = enrollment.completionPercentage === 100;
+  const isComplete = enrollment.completionPercentage === 100 && quizPassed;
   const dot = BADGE_DOT[enrollment.badgeColor] ?? BADGE_DOT.blue;
   const tag = BADGE_TAG[enrollment.badgeColor] ?? BADGE_TAG.blue;
 
@@ -180,30 +179,12 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
   );
 }
 
-// ─── Achievement badge ─────────────────────────────────────────────────────
-function AchievementBadge({ icon, label, unlocked }: { icon: string; label: string; unlocked: boolean }) {
-  return (
-    <div
-      className={`flex flex-col items-center gap-2 rounded-xl border p-4 text-center transition-all ${unlocked ? 'border-emerald-200 bg-white shadow-sm' : 'border-slate-200 bg-slate-50 opacity-50 grayscale'
-        }`}
-    >
-      {!unlocked && <Lock size={10} className="text-slate-300 self-end absolute" />}
-      <span className="text-3xl">{icon}</span>
-      <p className="text-[11px] font-semibold text-slate-700">{label}</p>
-      {unlocked && (
-        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
-          <CheckCircle size={9} /> Unlocked
-        </span>
-      )}
-    </div>
-  );
-}
-
 // ─── Main Component ────────────────────────────────────────────────────────
 
 export const LearnerDashboard: React.FC = () => {
   const { enrollments, syncEnrollments, loading } = useEnrollmentStore();
   const { user, upgradeUserRole } = useAuth();
+  const certProgress = useCertificationProgress();
   const navigate = useNavigate();
   const location = useLocation();
   const currentTab = location.pathname.includes('/certificate')
@@ -249,7 +230,7 @@ export const LearnerDashboard: React.FC = () => {
 
   // ── Stats ────────────────────────────────────────────────────────────────
   const totalEnrollments = enrollments.length;
-  const completed = enrollments.filter((e: Enrollment) => e.completionPercentage === 100).length;
+  const completed = enrollments.filter((e: Enrollment) => e.completionPercentage === 100 && certProgress.isQuizPassed(e.id)).length;
   const inProgress = enrollments.filter(
     (e: Enrollment) => e.completionPercentage > 0 && e.completionPercentage < 100,
   ).length;
@@ -267,16 +248,6 @@ export const LearnerDashboard: React.FC = () => {
   const availableCerts = CERTIFICATIONS.filter(
     (c) => !enrollments.find((e: Enrollment) => e.certificationId === c.id),
   );
-
-  // ── Achievements ─────────────────────────────────────────────────────────
-  const achievements = [
-    { icon: '🎯', label: 'First Enrollment', unlocked: totalEnrollments >= 1 },
-    { icon: '🔥', label: '3-Day Streak', unlocked: true },
-    { icon: '📚', label: '5 Modules Done', unlocked: totalModulesCompleted >= 5 },
-    { icon: '🏆', label: 'First Certificate', unlocked: completed >= 1 },
-    { icon: '⚡', label: 'Fast Learner', unlocked: overallProgress >= 50 },
-    { icon: '🌟', label: 'Pro Learner', unlocked: completed >= 2 },
-  ];
 
   const handleProviderUpgrade = async () => {
     setUpgradeLoading(true);
@@ -372,7 +343,7 @@ export const LearnerDashboard: React.FC = () => {
                 </div>
               ) : (
                 enrollments.map((en: Enrollment) => (
-                  <EnrollmentRow key={en.id} enrollment={en} />
+                  <EnrollmentRow key={en.id} enrollment={en} quizPassed={certProgress.isQuizPassed(en.id)} />
                 ))
               )}
             </div>
@@ -546,20 +517,10 @@ export const LearnerDashboard: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 {enrollments.map((en: Enrollment) => (
-                  <EnrollmentRow key={en.id} enrollment={en} />
+                  <EnrollmentRow key={en.id} enrollment={en} quizPassed={certProgress.isQuizPassed(en.id)} />
                 ))}
               </div>
             )}
-          </article>
-
-          {/* Badges */}
-          <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="mb-4 text-base font-semibold text-slate-900">Achievement Badges</h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-              {achievements.map((a) => (
-                <AchievementBadge key={a.label} {...a} />
-              ))}
-            </div>
           </article>
 
           {/* Certificates earned */}
@@ -580,7 +541,7 @@ export const LearnerDashboard: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 {enrollments
-                  .filter((e: Enrollment) => e.completionPercentage === 100)
+                  .filter((e: Enrollment) => e.completionPercentage === 100 && certProgress.isQuizPassed(e.id))
                   .map((en: Enrollment) => (
                     <div
                       key={en.id}

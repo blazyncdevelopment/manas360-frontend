@@ -430,26 +430,26 @@ const HitASixerGame: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
           <div className="flex items-center gap-4">
             <span className="text-5xl">🏏</span>
-            <h1 className="text-4xl md:text-5xl font-bold text-emerald-900">Hit a Sixer Daily</h1>
+            <h1 className="text-3xl md:text-5xl font-bold text-emerald-900">Hit a Sixer Daily</h1>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 md:gap-6 w-full md:w-auto">
             <div
-              className="bg-white px-7 py-4 rounded-3xl shadow flex items-center gap-3 text-xl"
+              className="bg-white px-5 md:px-7 py-4 rounded-3xl shadow flex items-center justify-between sm:justify-start gap-3 text-xl w-full sm:w-auto"
               title="Rewards are only credited to registered users"
             >
               <span className="font-semibold text-emerald-700">Wallet</span>
-              <span className="font-bold text-3xl">₹{total}</span>
-              {!canClaimWallet && <span className="text-sm font-medium text-slate-500">(Start earning now)</span>}
+              <span className="font-bold text-2xl md:text-3xl">₹{total}</span>
+              {!canClaimWallet && <span className="text-xs md:text-sm font-medium text-slate-500">(Start earning now)</span>}
               {total === 0 && balance && (
-                <span className="text-xs text-slate-400 ml-2">(Balance data: {JSON.stringify(balance).slice(0, 50)}...)</span>
+                <span className="text-xs text-slate-400 ml-2 hidden sm:inline">(Balance data: {JSON.stringify(balance).slice(0, 50)}...)</span>
               )}
             </div>
 
             <button
               onClick={handlePlayNow}
               disabled={(canClaimWallet && !eligibility?.eligible) || stage !== 'ready' || playMutation.isPending || guestHasPlayed}
-              className="px-10 py-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white text-2xl font-bold rounded-3xl shadow-xl transition flex items-center gap-3 animate-pulse"
+              className="px-6 md:px-10 py-4 md:py-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white text-xl md:text-2xl font-bold rounded-3xl shadow-xl transition flex items-center justify-center gap-3 animate-pulse w-full sm:w-auto"
             >
               {playMutation.isPending ? '⏳ Starting...' : guestHasPlayed ? '✅ Guest Play Used' : '🎯 Take Your Shot'}
             </button>
@@ -469,13 +469,13 @@ const HitASixerGame: React.FC = () => {
         )}
 
         {stage === 'ready' && (
-          <div className="bg-emerald-950 rounded-3xl p-8 text-center text-white max-w-md mx-auto">
-            <div className="flex justify-center gap-8 text-7xl mb-6">
+          <div className="bg-emerald-950 rounded-3xl p-6 md:p-8 text-center text-white max-w-md mx-auto">
+            <div className="flex justify-center gap-8 text-6xl md:text-7xl mb-6">
               <span>🏏</span>
               <span>🔴</span>
             </div>
-            <h2 className="text-4xl font-bold mb-4">🏏 Ready to hit a SIX?</h2>
-            <p className="text-xl">🎯 One shot. One chance.<br />Hit it right and win rewards!</p>
+            <h2 className="text-2xl md:text-4xl font-bold mb-4">🏏 Ready to hit a SIX?</h2>
+            <p className="text-lg md:text-xl">🎯 One shot. One chance.<br />Hit it right and win rewards!</p>
           </div>
         )}
 
@@ -494,10 +494,10 @@ const HitASixerGame: React.FC = () => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black z-50 flex flex-col"
           >
-            <div className="h-16 bg-emerald-900 flex items-center justify-between px-6 text-white text-lg font-medium shrink-0">
-              <button onClick={exitGame} className="flex items-center gap-2">✕ Exit</button>
-              <div className="font-bold text-2xl">Hit a Sixer</div>
-              <div className="font-bold text-xl">₹{total}</div>
+            <div className="h-16 bg-emerald-900 flex items-center justify-between px-4 md:px-6 text-white text-base md:text-lg font-medium shrink-0">
+              <button onClick={exitGame} className="flex items-center gap-1 md:gap-2">✕ <span className="hidden sm:inline">Exit</span></button>
+              <div className="font-bold text-xl md:text-2xl">Hit a Sixer</div>
+              <div className="font-bold text-lg md:text-xl">₹{total}</div>
             </div>
 
             <div className="flex-1 flex items-center justify-center p-4 bg-emerald-950 relative min-h-0">
@@ -519,7 +519,7 @@ const HitASixerGame: React.FC = () => {
                   >
                     <button
                       onClick={handleStartBowling}
-                      className="w-full flex items-center justify-center gap-4 bg-white text-emerald-700 px-6 py-6 rounded-3xl text-3xl font-bold shadow-[0_10px_40px_rgba(0,0,0,0.6)] active:scale-95 transition"
+                      className="w-full flex items-center justify-center gap-3 md:gap-4 bg-white text-emerald-700 px-4 py-4 md:px-6 md:py-6 rounded-3xl text-2xl md:text-3xl font-bold shadow-[0_10px_40px_rgba(0,0,0,0.6)] active:scale-95 transition"
                     >
                       🏏 Start bowling
                     </button>
@@ -548,17 +548,17 @@ const HitASixerGame: React.FC = () => {
                   animate={{ scale: 1, opacity: 1 }}
                   className="absolute inset-0 flex items-center justify-center bg-black/80 z-20"
                 >
-                  <div className="bg-white rounded-3xl px-12 py-12 text-center max-w-sm w-full mx-6 shadow-2xl">
-                    <div className="text-8xl mb-6">
+                  <div className="bg-white rounded-3xl px-6 py-8 md:px-12 md:py-12 text-center max-w-sm w-full mx-4 sm:mx-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+                    <div className="text-6xl md:text-8xl mb-4 md:mb-6">
                       {outcome === 'sixer' ? '🏏💥' : outcome === 'four' ? '🏏✨' : '🏏😢'}
                     </div>
-                    <h2 className="text-6xl font-black text-emerald-600">
+                    <h2 className="text-4xl md:text-6xl font-black text-emerald-600">
                       {outcome.toUpperCase()}!
                     </h2>
-                    <p className="text-5xl font-bold mt-4">+₹{displayCredit}</p>
+                    <p className="text-3xl md:text-5xl font-bold mt-2 md:mt-4">+₹{displayCredit}</p>
 
-                    <div className="mt-6 flex flex-col items-center gap-2">
-                       <p className="text-xl text-gray-600 font-medium">
+                    <div className="mt-4 md:mt-6 flex flex-col items-center gap-2">
+                       <p className="text-lg md:text-xl text-gray-600 font-medium">
                         {hitQuality === 'perfect' ? '🔥 Perfect Timing!' : hitQuality === 'good' ? '👍 Good Swing!' : '😅 Missed the ball'}
                        </p>
                        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
@@ -567,7 +567,7 @@ const HitASixerGame: React.FC = () => {
                     </div>
 
                     {!canClaimWallet && (
-                      <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-900">
+                      <div className="mt-4 md:mt-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs md:text-sm font-semibold text-blue-900">
                         🎉 You scored! Register now to claim your rewards in wallet.
                         <div className="mt-3">
                           <Link to="/auth/signup" className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800">
@@ -579,7 +579,7 @@ const HitASixerGame: React.FC = () => {
 
                     <button
                       onClick={exitGame}
-                      className="mt-10 w-full py-6 text-2xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl shadow-lg transition"
+                      className="mt-6 md:mt-10 w-full py-4 md:py-6 text-xl md:text-2xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl shadow-lg transition"
                     >
                       Done – See you tomorrow!
                     </button>

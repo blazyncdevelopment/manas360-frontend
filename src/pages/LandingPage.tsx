@@ -398,9 +398,8 @@ const LandingPage: React.FC = () => {
         ].map((item, idx) => (
           <div
             key={idx}
+            className="landing-floating-avatar"
             style={{
-              width: "78px",
-              height: "78px",
               borderRadius: "999px",
               background: item.bg,
               border: "3px solid rgba(255,255,255,0.92)",
@@ -1680,6 +1679,10 @@ const LandingPage: React.FC = () => {
           font-weight: 600;
           line-height: 1.45;
         }
+        .landing-floating-avatar {
+          width: 78px;
+          height: 78px;
+        }
         @media (max-width: 980px) {
           .landing-page-root {
             background-attachment: scroll !important;
@@ -1750,6 +1753,10 @@ const LandingPage: React.FC = () => {
                   }
         }
         @media (max-width: 600px) {
+                  .landing-floating-avatar {
+                    width: 50px;
+                    height: 50px;
+                  }
                   .landing-hero-title br {
                     display: none;
                   }

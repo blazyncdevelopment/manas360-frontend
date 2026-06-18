@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Users, Calendar, Settings, CreditCard, LogOut, ClipboardCheck, Star, Radio, Award, Zap, FileText } from 'lucide-react';
+import { Home, Users, Calendar, Settings, CreditCard, LogOut, ClipboardCheck, Star, Radio, Award, Zap, FileText, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-export const ProviderSidebar = () => {
+interface ProviderSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const ProviderSidebar = ({ isOpen, onClose }: ProviderSidebarProps) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -73,14 +78,27 @@ export const ProviderSidebar = () => {
   const menuConfig = getMenuConfig(role);
 
   return (
-    <aside className="w-64 h-screen bg-[#F5F3F0] border-r border-gray-200 flex flex-col fixed left-0 top-0">
-      <div className="h-16 px-5 flex items-center gap-3 border-b border-gray-200 shrink-0">
-        <img src="/AppIcon.jpeg" alt="MANAS360 logo" className="w-8 h-8 rounded-lg object-cover" />
-        <span className="font-bold text-lg text-[#2D4128]">MANAS360</span>
-        <span className="ml-auto text-[10px] font-medium bg-[#E8EFE6] text-[#4A6741] px-2 py-0.5 rounded-full">
-          Provider
-        </span>
-      </div>
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      <aside className={`w-64 h-screen bg-[#F5F3F0] border-r border-gray-200 flex flex-col fixed left-0 top-0 z-50 transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="h-16 px-5 flex items-center gap-3 border-b border-gray-200 shrink-0">
+          <img src="/AppIcon.jpeg" alt="MANAS360 logo" className="w-8 h-8 rounded-lg object-cover" />
+          <span className="font-bold text-lg text-[#2D4128]">MANAS360</span>
+          <button
+            type="button"
+            className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 lg:hidden"
+            onClick={onClose}
+            aria-label="Close sidebar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-4">
         {menuConfig.map((section, idx) => (
@@ -134,6 +152,7 @@ export const ProviderSidebar = () => {
         </button>
       </div>
     </aside>
+    </>
   );
 };
 

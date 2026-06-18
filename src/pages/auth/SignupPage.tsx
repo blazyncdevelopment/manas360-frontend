@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
@@ -351,6 +352,9 @@ export default function SignupPage() {
 						setStoredProviderId(response.provider_id);
 					}
 					setOtpSent(true);
+					if (response.devOtp) {
+						toast.success(`Dev OTP: ${response.devOtp}`, { duration: 10000 });
+					}
 				} catch (err) {
 					if (isProviderAlreadyRegisteredError(err)) {
 						const conflictPayload = (err as { response?: { data?: unknown } }).response?.data;
@@ -366,13 +370,16 @@ export default function SignupPage() {
 				return;
 			}
 
-			await signupWithPhone(
+			const signupResult = await signupWithPhone(
 				phone.trim(),
 				isCertificationContext
 					? { name: name.trim(), role: 'learner' }
 					: { name: name.trim(), role: isPatientLeadFlow ? 'patient' : role },
 			);
 			setOtpSent(true);
+			if (signupResult.devOtp) {
+				toast.success(`Dev OTP: ${signupResult.devOtp}`, { duration: 10000 });
+			}
 		} catch (err) {
 			setError(
 				isProviderFlow

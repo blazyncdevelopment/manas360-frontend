@@ -36,8 +36,11 @@ export const AI_ENGINE_WS_URL =
   `${toWebsocketOrigin(stripTrailingApiSegment(FRONTEND_URL))}/ai-engine`;
 
 // Set USE_LOCAL_TUNNEL = true only when testing via devtunnel
-const LOCAL_TUNNEL_BASE = 'http://localhost:4502';
-const USE_LOCAL_TUNNEL = true;
+// const LOCAL_TUNNEL_BASE = 'http://localhost:4502';
+// const USE_LOCAL_TUNNEL = true;
+
+const LOCAL_TUNNEL_BASE = import.meta.env.VITE_LOCAL_TUNNEL_BASE?.trim() || 'https://api.manas360.com/api';
+const USE_LOCAL_TUNNEL = import.meta.env.VITE_USE_LOCAL_TUNNEL === 'true';
 
 const getWindowCapacitor = (): any => {
   if (typeof window === 'undefined') return null;

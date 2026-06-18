@@ -84,8 +84,8 @@ export default function CorporateEmployeeSignupPage() {
               {step === 'details'
                 ? 'Enter your company Client ID and work email to get started.'
                 : step === 'otp'
-                ? `Enter the OTP sent to ${phone}`
-                : 'You are registered!'}
+                  ? `Enter the OTP sent to ${phone}`
+                  : 'You are registered!'}
             </p>
           </div>
 
@@ -94,10 +94,9 @@ export default function CorporateEmployeeSignupPage() {
             <div className="mb-6 flex items-center gap-2">
               {(['details', 'otp'] as Step[]).map((s, i) => (
                 <div key={s} className="flex items-center gap-2">
-                  <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${
-                    s === step ? 'bg-teal-600 text-white' :
-                    (step === 'otp' && i === 0) || step === 'done' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'
-                  }`}>
+                  <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${s === step ? 'bg-teal-600 text-white' :
+                      (step === 'otp' && i === 0) || step === 'done' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'
+                    }`}>
                     {(step === 'otp' && i === 0) || step === 'done' ? '✓' : i + 1}
                   </div>
                   <span className="text-xs font-medium text-gray-500">{s === 'details' ? 'Details' : 'Verify'}</span>

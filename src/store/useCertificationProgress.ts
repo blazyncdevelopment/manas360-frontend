@@ -11,9 +11,12 @@ const devtoolsTyped = devtools as any;
 interface CertificationProgressState {
     completedModules: Record<string, string[]>;
     quizUnlocked: Record<string, boolean>;
+    quizPassed: Record<string, boolean>;
     markModuleComplete: (enrollmentId: string, moduleId: string, allModuleIds: string[]) => void;
+    markQuizPassed: (enrollmentId: string) => void;
     isModuleCompleted: (enrollmentId: string, moduleId: string) => boolean;
     isQuizUnlocked: (enrollmentId: string) => boolean;
+    isQuizPassed: (enrollmentId: string) => boolean;
 }
 
 export const useCertificationProgress = create<CertificationProgressState>(
@@ -22,6 +25,7 @@ export const useCertificationProgress = create<CertificationProgressState>(
             (set: any, get: any) => ({
                 completedModules: {},
                 quizUnlocked: {},
+                quizPassed: {},
 
                 markModuleComplete: (enrollmentId: string, moduleId: string, allModuleIds: string[]) => {
                     const prev = get().completedModules[enrollmentId] ?? [];
@@ -51,6 +55,16 @@ export const useCertificationProgress = create<CertificationProgressState>(
 
                 isQuizUnlocked: (enrollmentId: string): boolean => {
                     return get().quizUnlocked[enrollmentId] ?? false;
+                },
+
+                markQuizPassed: (enrollmentId: string) => {
+                    set((state: CertificationProgressState) => ({
+                        quizPassed: { ...state.quizPassed, [enrollmentId]: true },
+                    }));
+                },
+
+                isQuizPassed: (enrollmentId: string): boolean => {
+                    return get().quizPassed[enrollmentId] ?? false;
                 },
             }),
             { name: 'certification-progress' }

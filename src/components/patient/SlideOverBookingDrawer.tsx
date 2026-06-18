@@ -325,24 +325,26 @@ export default function SlideOverBookingDrawer({
 
           {step === 1 && (
             <div className="space-y-6">
-              <div>
-                <label className="block mb-2 text-sm font-semibold uppercase tracking-wider text-charcoal/50">
-                  <Clock className="mr-2 inline h-4 w-4" />
-                  Your Timezone
-                </label>
-                <select
-                  value={patientTimezone}
-                  onChange={(e) => setPatientTimezone(e.target.value)}
-                  className="w-full rounded-lg border border-calm-sage/30 bg-white px-3 py-2 text-sm text-charcoal focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-                >
-                  {TIMEZONES.map((tz) => (
-                    <option key={tz.value} value={tz.value}>
-                      {tz.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1 text-xs text-charcoal/50">Session times will be displayed in this timezone</p>
-              </div>
+              {isNriUser && (
+                <div>
+                  <label className="block mb-2 text-sm font-semibold uppercase tracking-wider text-charcoal/50">
+                    <Clock className="mr-2 inline h-4 w-4" />
+                    Your Timezone
+                  </label>
+                  <select
+                    value={patientTimezone}
+                    onChange={(e) => setPatientTimezone(e.target.value)}
+                    className="w-full rounded-lg border border-calm-sage/30 bg-white px-3 py-2 text-sm text-charcoal focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  >
+                    {TIMEZONES.map((tz) => (
+                      <option key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-charcoal/50">Session times will be displayed in this timezone</p>
+                </div>
+              )}
 
               <div>
                 <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-charcoal/50">

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
-import { Instagram, Youtube, Linkedin, User } from "lucide-react";
+import { Instagram, Youtube, Linkedin, User, Menu, X } from "lucide-react";
 import {
   applyTheme,
   getStoredThemePreference,
@@ -155,6 +155,9 @@ export const landingHeaderStyles = `
           white-space: nowrap;
           max-width: none;
         }
+        .mobile-side-menu-overlay {
+          display: none;
+        }
         .brand-bar > div {
           padding-left: 216px;
         }
@@ -238,7 +241,74 @@ export const landingHeaderStyles = `
           top: calc(100% + 10px);
           z-index: 170;
         }
+        .mobile-side-menu {
+          display: none;
+        }
+        .mobile-side-menu-overlay {
+          display: none;
+        }
+        .mobile-only-header {
+          display: none !important;
+        }
         @media (max-width: 980px) {
+          .brand-bar-top-row {
+            display: none !important;
+          }
+          .quick-nav-row {
+            display: none !important;
+          }
+          .mobile-header-top-row {
+            display: flex !important;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            width: 100%;
+          }
+          .mobile-header-langs-row {
+            display: flex !important;
+            align-items: center;
+            gap: 6px;
+            padding: 0 16px 10px 16px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+          }
+          .mobile-header-langs-row::-webkit-scrollbar {
+            display: none;
+          }
+          .mobile-side-menu {
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            max-width: 100%;
+            background: white;
+            z-index: 2000;
+            box-shadow: -4px 0 24px rgba(0,0,0,0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+          }
+          .mobile-side-menu.open {
+            transform: translateX(0);
+          }
+          .mobile-side-menu-overlay {
+            display: block;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 1999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+          }
+          .mobile-side-menu-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+          }
           .landing-sticky-header {
             --landing-promo-offset: 44px;
           }
@@ -343,6 +413,7 @@ export const landingHeaderStyles = `
           }
           .landing-login-dropdown.landing-login-dropdown--mobile {
             position: fixed;
+            top: 64px !important;
             right: 12px;
             width: min(280px, calc(100vw - 24px));
             max-height: min(70vh, 360px);
@@ -426,6 +497,9 @@ export const landingHeaderStyles = `
           .quick-nav-mega-grid {
             grid-template-columns: 1fr !important;
           }
+          .desktop-only-mega {
+            display: none !important;
+          }
         }
         @media (max-width: 980px) {
           .quick-nav-row.header-scroll-x {
@@ -497,6 +571,7 @@ export const HeaderPage: React.FC = () => {
   const [activeQuickNav, setActiveQuickNav] = useState<string | null>(null);
   const [loginDropdownTop, setLoginDropdownTop] = useState<number | null>(null);
   const [quickNavMegaTop, setQuickNavMegaTop] = useState<number | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState(() => {
     const target = new Date();
     target.setHours(23, 59, 59, 999);
@@ -525,6 +600,7 @@ export const HeaderPage: React.FC = () => {
   const loginDropdownRef = useRef<HTMLDivElement>(null);
   const quickNavRowRef = useRef<HTMLDivElement>(null);
   const quickNavMegaRef = useRef<HTMLDivElement>(null);
+  const topShortcutsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     applyTheme(activeTheme);
@@ -605,7 +681,7 @@ export const HeaderPage: React.FC = () => {
       psychiatrist: "/auth/login?role=psychiatrist",
       psychologist: "/auth/login?role=psychologist",
       therapist: "/auth/login?role=therapist",
-      corporate: "/auth/login?next=/corporate/dashboard",
+      corporate: "/auth/login?mode=corporate&next=/corporate/dashboard",
       clinic: "/auth/login?role=therapist",
     }),
     []
@@ -1075,7 +1151,8 @@ export const HeaderPage: React.FC = () => {
       const target = e.target as Node;
       if (
         quickNavRowRef.current?.contains(target) ||
-        quickNavMegaRef.current?.contains(target)
+        quickNavMegaRef.current?.contains(target) ||
+        topShortcutsRef.current?.contains(target)
       ) {
         return;
       }
@@ -1299,6 +1376,134 @@ export const HeaderPage: React.FC = () => {
           </a>
           <div className={`brand-bar${isScrolled ? " scrolled" : ""}`}>
             <div style={{ maxWidth: "1260px", margin: "0 auto", padding: "0 16px" }}>
+
+              {/* MOBILE ONLY ROWS */}
+              <div className="mobile-header-top-row mobile-only-header">
+                <a href="/landing" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
+                  <img src={logo} alt="MANAS360" style={{ height: "36px", width: "36px", borderRadius: "8px" }} />
+                </a>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <button type="button" onClick={() => setShowSearch(true)} style={{ background: 'transparent', border: 'none', padding: 0, color: '#0B2D5E', cursor: 'pointer' }}>
+                    <span className="notranslate" translate="no" style={{ fontSize: "20px" }}>&#128269;</span>
+                  </button>
+                  {isAuthenticated ? (
+                    <button
+                      type="button"
+                      className="landing-profile-btn"
+                      onClick={() => {
+                        const route = getPostLoginRoute(user);
+                        navigate(route === '/plans' ? '/patient/sessions' : route);
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "50%",
+                        border: "1px solid #D5DEE9",
+                        cursor: "pointer",
+                        background: "#E8EFE6",
+                        color: "#0B2D5E",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {userInitial ? (
+                        <span style={{ fontSize: "13px", fontWeight: 900 }}>{userInitial}</span>
+                      ) : (
+                        <User size={18} aria-hidden />
+                      )}
+                    </button>
+                  ) : (
+                    <div style={{ position: 'relative', display: 'flex' }}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLoginDropdownTop(64);
+                          setLoginDropdownOpen(!loginDropdownOpen);
+                        }}
+                        style={{ background: 'transparent', border: 'none', padding: 0, color: '#0B2D5E', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                      >
+                        <User size={22} />
+                      </button>
+                      {loginDropdownOpen && (
+                        <div
+                          className="landing-login-dropdown landing-login-dropdown--mobile"
+                          role="menu"
+                        >
+                          {loginOptions.map((option) => (
+                            <button
+                              key={option.type}
+                              type="button"
+                              role="menuitem"
+                              onClick={() => handleLogin(option.type)}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                width: "100%",
+                                padding: "10px 10px",
+                                borderRadius: "9px",
+                                cursor: "pointer",
+                                transition: "background 0.15s",
+                                border: "none",
+                                background: "transparent",
+                                textAlign: "left",
+                                fontFamily: "inherit",
+                              }}
+                              onMouseEnter={(e) => {
+                                (e.currentTarget as HTMLElement).style.background = "#FAFCFF";
+                              }}
+                              onMouseLeave={(e) => {
+                                (e.currentTarget as HTMLElement).style.background = "transparent";
+                              }}
+                            >
+                              <span className="notranslate" translate="no" style={{ fontSize: "17px", width: "24px", textAlign: "center" }}>{option.icon}</span>
+                              <div>
+                                <div style={{ fontSize: "12px", fontWeight: 900, color: "#1A1A2E" }}>{option.label}</div>
+                                <div style={{ fontSize: "10px", color: "#666680", marginTop: "1px" }}>{option.desc}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <button type="button" onClick={() => setMobileMenuOpen(true)} style={{ background: 'transparent', border: 'none', padding: 0, color: '#0B2D5E', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <Menu size={26} />
+                  </button>
+                </div>
+              </div>
+              <div className="mobile-header-langs-row mobile-only-header notranslate" translate="no">
+                {(["English", "Hindi", "Kannada", "Tamil", "Telugu"] as const).map((lang) => {
+                  const active = selectedLanguage === lang;
+                  return (
+                    <button
+                      key={lang}
+                      type="button"
+                      className="notranslate"
+                      translate="no"
+                      onClick={() => setSelectedLanguage(lang)}
+                      style={{
+                        border: "1px solid #E8EDF2",
+                        background: active ? "#0B2D5E" : "white",
+                        color: active ? "white" : "#1A1A2E",
+                        fontSize: "11px",
+                        fontWeight: 800,
+                        padding: "6px 12px",
+                        borderRadius: "16px",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      <span className="notranslate" translate="no">{languageLabelMap[lang]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* DESKTOP ONLY ROWS */}
               <div className="brand-bar-top-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "52px", gap: "8px", flexWrap: "nowrap" }}>
                 <div className="brand-bar-top-leading" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "nowrap", minWidth: 0 }}>
                   <div className="landing-brand-langs notranslate" translate="no" style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}>
@@ -1329,37 +1534,63 @@ export const HeaderPage: React.FC = () => {
                   </div>
 
                   <div
+                    ref={topShortcutsRef}
                     className="landing-top-shortcuts"
                     style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}
                     onMouseEnter={keepQuickNavMenuOpen}
                     onMouseLeave={closeQuickNavMenuWithDelay}
                   >
-                    {topShortcutItems.map((item) => (
-                      <button
-                        key={item.label}
-                        type="button"
-                        onClick={() => navigate(item.route)}
-                        onMouseEnter={() => openQuickNavMenu(item.label)}
-                        className="landing-top-shortcut-btn"
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          border: "1px solid #D5DEE9",
-                          background: "white",
-                          color: "#1A1A2E",
-                          fontSize: "10px",
-                          fontWeight: 800,
-                          padding: "5px 8px",
-                          borderRadius: "999px",
-                          cursor: "pointer",
-                          whiteSpace: "nowrap"
-                        }}
-                      >
-                        <span aria-hidden className="notranslate" translate="no">{item.icon}</span>
-                        <span>{item.label}</span>
-                      </button>
-                    ))}
+                    {topShortcutItems.map((item) => {
+                      const menu = quickNavMegaMenus[item.label];
+                      const isActive = activeQuickNav === item.label && !!menu;
+                      const accent = menu?.accent;
+                      return (
+                        <button
+                          key={item.label}
+                          type="button"
+                          aria-expanded={isActive}
+                          aria-haspopup={menu ? "menu" : undefined}
+                          onPointerDown={handleQuickNavChipPointerDown}
+                          onPointerUp={(e) => handleQuickNavChipPointerUp(e, item.label, !!menu)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (quickNavTouchHandled.current) {
+                              quickNavTouchHandled.current = false;
+                              return;
+                            }
+                            if (menu) {
+                              activateQuickNavChip(item.label, true);
+                            } else {
+                              navigate(item.route);
+                            }
+                          }}
+                          onMouseEnter={() => {
+                            if (typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+                              openQuickNavMenu(item.label);
+                            }
+                          }}
+                          className="landing-top-shortcut-btn"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            border: isActive && accent ? `1px solid ${accent}` : "1px solid #D5DEE9",
+                            background: "white",
+                            color: "#1A1A2E",
+                            fontSize: "10px",
+                            fontWeight: 800,
+                            padding: "5px 8px",
+                            borderRadius: "999px",
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                            boxShadow: isActive ? "0 10px 24px rgba(15, 23, 42, 0.14)" : "none",
+                          }}
+                        >
+                          <span aria-hidden className="notranslate" translate="no">{item.icon}</span>
+                          <span>{item.label}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -1544,9 +1775,9 @@ export const HeaderPage: React.FC = () => {
 
                   <div className="landing-brand-socials" style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "6px" }}>
                     {[
-                      { key: "ig", label: <Instagram className="h-4 w-4" />, href: "https://instagram.com/manas360" },
-                      { key: "yt", label: <Youtube className="h-4 w-4" />, href: "https://youtube.com/@manas360" },
-                      { key: "in", label: <Linkedin className="h-4 w-4" />, href: "https://linkedin.com/company/manas360" }
+                      { key: "ig", label: <Instagram className="h-4 w-4" />, href: "https://www.instagram.com/manas360care?igsh=MW1tdnNrdXZjYXVqcA%3D%3D" },
+                      { key: "yt", label: <Youtube className="h-4 w-4" />, href: "https://www.youtube.com/@officialmanas360" },
+                      { key: "in", label: <Linkedin className="h-4 w-4" />, href: "https://www.linkedin.com/company/manas360care/" }
                     ].map((s) => (
                       <a
                         key={s.key}
@@ -1580,6 +1811,7 @@ export const HeaderPage: React.FC = () => {
                 (activeQuickNav === "Premium Therapy Hub" || activeQuickNav === "AI Power Hub" || activeQuickNav === "Group Sessions" || activeQuickNav === "Specialized Care") &&
                 quickNavMegaMenus[activeQuickNav] && (
                   <div
+                    className="desktop-only-mega"
                     style={{ position: "relative" }}
                     onMouseEnter={keepQuickNavMenuOpen}
                     onMouseLeave={closeQuickNavMenuWithDelay}
@@ -1777,7 +2009,7 @@ export const HeaderPage: React.FC = () => {
 
                   {activeQuickNav &&
                     quickNavMegaMenus[activeQuickNav] &&
-                    quickNavItems.some((q) => q.label === activeQuickNav) && (
+                    (quickNavItems.some((q) => q.label === activeQuickNav) || (typeof window !== "undefined" && window.innerWidth <= 980)) && (
                       <div
                         ref={quickNavMegaRef}
                         className={`quick-nav-mega-panel${quickNavMegaTop != null ? " quick-nav-mega-panel--mobile" : ""}`}
@@ -1898,6 +2130,113 @@ export const HeaderPage: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {/* Mobile Sidebar Overlay */}
+      <div
+        className={`mobile-side-menu-overlay ${mobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setMobileMenuOpen(false)}
+      />
+      <div className={`mobile-side-menu ${mobileMenuOpen ? 'open' : ''}`}>
+        <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E8EDF2', flexShrink: 0 }}>
+          <span style={{ fontSize: '18px', fontWeight: 900, color: '#0B2D5E' }}>Menu</span>
+          <button type="button" onClick={() => setMobileMenuOpen(false)} style={{ background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer', display: 'flex' }}>
+            <X size={24} />
+          </button>
+        </div>
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1 }}>
+          {quickNavItems.map((item) => (
+            <div key={item.label}>
+              <div
+                style={{ fontSize: '16px', padding: '12px 14px', background: '#F8FBFF', borderRadius: '12px', border: '1px solid #E8EDF2', fontWeight: 800, color: '#1A1A2E', marginBottom: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
+                onClick={() => {
+                  const menu = quickNavMegaMenus[item.label];
+                  if (!menu) {
+                    activateQuickNavChip(item.label, false);
+                    setMobileMenuOpen(false);
+                  } else {
+                    activateQuickNavChip(item.label, true);
+                  }
+                }}
+              >
+                <span className="notranslate" translate="no" style={{ fontSize: '20px' }}>{item.icon}</span> <span>{item.label}</span>
+              </div>
+              {quickNavMegaMenus[item.label] && activeQuickNav === item.label && (
+                <div style={{ paddingLeft: '12px', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', marginBottom: '16px' }}>
+                  {quickNavMegaMenus[item.label].items.map(mi => (
+                    <div
+                      key={mi.title}
+                      onClick={() => {
+                        handleMegaItemNav(mi.title, item.label);
+                        setMobileMenuOpen(false);
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "10px",
+                        padding: "12px",
+                        borderRadius: "14px",
+                        background: "#FFFFFF",
+                        cursor: "pointer",
+                        border: "1px solid #E8EDF2",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
+                      }}
+                    >
+                      <div
+                        className="notranslate"
+                        translate="no"
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "8px",
+                          border: "1px solid rgba(232, 237, 242, 0.95)",
+                          background: "#F8FBFF",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flex: "0 0 auto",
+                          fontSize: "16px"
+                        }}
+                      >
+                        {mi.icon}
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                          <div style={{ fontSize: "14px", fontWeight: 800, color: "#0F172A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {mi.title}
+                          </div>
+                          {mi.badge && (
+                            <div style={{ fontSize: "10px", fontWeight: 900, padding: "2px 8px", borderRadius: "999px", background: "#E2E8F0", color: "#0F172A" }}>
+                              {mi.badge}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ marginTop: "2px", fontSize: "12px", fontWeight: 600, color: "#64748B", lineHeight: 1.4 }}>
+                          {mi.subtitle}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          <div style={{ borderTop: '1px solid #E8EDF2', paddingTop: '16px', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {topShortcutItems.map(item => (
+              <div
+                key={item.label}
+                onClick={() => {
+                  navigate(item.route);
+                  setMobileMenuOpen(false);
+                }}
+                style={{ fontSize: '16px', padding: '12px 14px', background: '#F8FBFF', borderRadius: '12px', border: '1px solid #E8EDF2', fontWeight: 800, color: '#1A1A2E', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
+              >
+                <span className="notranslate" translate="no" style={{ fontSize: '20px' }}>{item.icon}</span> <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {showSearch && (
         <div
           role="dialog"

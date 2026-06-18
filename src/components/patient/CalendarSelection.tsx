@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Clock, Loader2 } from 'lucide-react';
 import { patientApi } from '../../api/patient';
 import { FRONTEND_URL } from '../../lib/runtimeEnv';
 import { toDisplayTimeParts, getEquivalentIstTime } from '../../utils/timezoneUtils';
+import { useAuth } from '../../context/AuthContext';
 
 export type MarketplaceBookingOptions = {
   concerns: string[];
@@ -46,6 +47,8 @@ const TIMEZONES = [
 ];
 
 export default function CalendarSelection({ onDateTimeSelect, onCancel }: CalendarSelectionProps) {
+  const { user } = useAuth();
+  const isNriUser = Boolean((user as any)?.nriTermsAccepted || (user as any)?.nriDeclared);
   const [step, setStep] = useState<SelectionStep>('calendar');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -152,24 +155,26 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
       {/* Calendar Step */}
       {step === 'calendar' && (
         <div className="space-y-4">
-          <div>
-            <label className="block mb-2 text-sm font-semibold uppercase tracking-wider text-charcoal/50">
-              <Clock className="mr-2 inline h-4 w-4" />
-              Your Timezone
-            </label>
-            <select
-              value={patientTimezone}
-              onChange={(e) => setPatientTimezone(e.target.value)}
-              className="w-full rounded-lg border border-calm-sage/30 bg-white px-3 py-2 text-sm text-charcoal focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            >
-              {TIMEZONES.map((tz) => (
-                <option key={tz.value} value={tz.value}>
-                  {tz.label}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-charcoal/50">Session times will be displayed in this timezone</p>
-          </div>
+          {isNriUser && (
+            <div>
+              <label className="block mb-2 text-sm font-semibold uppercase tracking-wider text-charcoal/50">
+                <Clock className="mr-2 inline h-4 w-4" />
+                Your Timezone
+              </label>
+              <select
+                value={patientTimezone}
+                onChange={(e) => setPatientTimezone(e.target.value)}
+                className="w-full rounded-lg border border-calm-sage/30 bg-white px-3 py-2 text-sm text-charcoal focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              >
+                {TIMEZONES.map((tz) => (
+                  <option key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-charcoal/50">Session times will be displayed in this timezone</p>
+            </div>
+          )}
 
           {/* Month/Year Header */}
           <div className="flex items-center justify-between">
@@ -214,10 +219,10 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
                   onClick={() => handleDateSelect(day)}
                   disabled={!available}
                   className={`relative rounded-lg py-2 text-sm font-medium transition-all ${selected
-                      ? 'bg-teal-500 text-white shadow-md'
-                      : available
-                        ? 'bg-calm-sage/10 text-charcoal hover:bg-teal-50 hover:border-teal-300'
-                        : 'text-charcoal/30 cursor-not-allowed'
+                    ? 'bg-teal-500 text-white shadow-md'
+                    : available
+                      ? 'bg-calm-sage/10 text-charcoal hover:bg-teal-50 hover:border-teal-300'
+                      : 'text-charcoal/30 cursor-not-allowed'
                     } border border-transparent hover:border-teal-300`}
                 >
                   {day}
@@ -283,8 +288,8 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
                       }}
                       disabled={timeSlotsLoading}
                       className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors flex flex-col items-center ${selectedTime === slot.startTime
-                          ? 'border-teal-500 bg-teal-50 text-teal-700'
-                          : 'border-calm-sage/20 text-charcoal/70 hover:border-teal-300 hover:bg-teal-50/50'
+                        ? 'border-teal-500 bg-teal-50 text-teal-700'
+                        : 'border-calm-sage/20 text-charcoal/70 hover:border-teal-300 hover:bg-teal-50/50'
                         }`}
                     >
                       <span className="font-bold">{time}</span>

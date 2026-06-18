@@ -168,14 +168,15 @@ export default function SmartMatchFlow({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-charcoal/30 backdrop-blur-sm transition-opacity duration-300"
+        className={`fixed inset-0 z-40 bg-charcoal/30 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={handleClose}
         aria-hidden="true"
       />
 
-      {/* Modal */}
-      <div className="fixed top-8 left-0 right-0 z-50 flex justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto flex flex-col animate-in fade-in slide-in-from-top-4 duration-300">
+      {/* Drawer */}
+      <div
+        className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      >
           {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-calm-sage/15 bg-white px-6 py-4">
             <div>
@@ -358,7 +359,6 @@ export default function SmartMatchFlow({
               </div>
             )}
           </div>
-        </div>
       </div>
     </>,
     document.body

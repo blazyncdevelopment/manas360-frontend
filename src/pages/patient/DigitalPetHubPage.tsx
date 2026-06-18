@@ -313,6 +313,14 @@ function TemboModal({ onClose }: { onClose: () => void }) {
       cursor: default;
       background: transparent;
     }
+    
+    @media (max-width: 768px) {
+      .layout { padding: 10px; margin-top: 40px; }
+      header { padding-left: 0; flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 20px; }
+      .main { grid-template-columns: 1fr; gap: 20px; }
+      iframe#elephant-frame { height: 320px; }
+      .reward-grid { grid-template-columns: 1fr 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -738,7 +746,7 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
       {/* Hero Section */}
       <div className="bg-gradient-to-b from-violet-50 via-white to-white py-20">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="flex gap-12 items-center">
+          <div className="flex flex-col md:flex-row gap-12 items-center">
             <div className="flex-shrink-0">
               <Pt06HeroVideoFrame className="w-72 aspect-[9/16] rounded-3xl overflow-hidden bg-black shadow-2xl border-4 border-violet-100" />
             </div>
@@ -772,7 +780,7 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
           <p className="text-center text-slate-600 text-sm max-w-2xl mx-auto mb-12">
             Every interaction with your digital pet triggers real brain chemistry. This isn't gaming — it's <strong>evidence-based emotional wellness</strong>.
           </p>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { emoji: '💜', name: 'OXYTOCIN', color: 'text-violet-600', desc: '"Love hormone" — released when your pet greets you, nuzzles, or responds to your care.', tag: 'Trigger: Pet greetings, nurturing' },
               { emoji: '☀️', name: 'SEROTONIN', color: 'text-orange-600', desc: '"Happy chemical" — boosted by daily routines, care rituals, and watching your pet thrive.', tag: 'Trigger: Daily check-ins, growth' },
@@ -794,7 +802,7 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
       <div className="py-16 bg-slate-50">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-center text-4xl font-bold mb-12">🔀 Two Ways to Begin</h2>
-          <div className="grid grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {[
               { icon: '📋', title: 'Prescribed by Therapist / Psychiatrist', desc: 'After a coaching session, your therapist prescribes a specific pet type based on your needs — loneliness, anxiety, habit building, or engagement therapy.', steps: ['Therapy Session', 'Rx: Digital Pet', 'Therapist picks species', 'Unlocked in your Hub'] },
               { icon: '🛍️', title: 'Explore Independently', desc: 'Browse the full pet catalog. Start free with an ambient companion, then upgrade to interactive or AI-powered pets as your journey deepens.', steps: ['PT06 Hub Landing', 'Watch Avatar Pitch', 'Choose Free Pet', 'Upgrade when ready'] },
@@ -831,9 +839,9 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
               <span className="px-3 py-1 rounded-full text-xs font-bold text-green-700 bg-green-100">FREE</span>
               <span className="text-sm text-slate-600">Watch, breathe, be present</span>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
-                { vimeoId: '1184033995', title: 'Ponda — Koi Fish', desc: 'Calm ambient koi — watch, breathe, be present', aspect: '177.78%' },
+                { vimeoId: '1184033995', title: 'Ponda — Calm Bear', desc: 'Calm ambient bear — watch, breathe, be present', aspect: '177.78%' },
                 { vimeoId: '1184033994', title: 'Bholu — Clown Fish', desc: 'Ocean rhythm ambient — stillness and calm', aspect: '56.25%' },
                 { vimeoId: '1184033993', title: 'Navil — Cheerful Peacock', desc: 'Colourful, cheerful ambient — mood lift', aspect: '177.78%' },
               ].map((pet, i) => (
@@ -865,7 +873,7 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
               <span className="px-3 py-1 rounded-full text-xs font-bold text-purple-700 bg-purple-100">₹99/MO OR ₹199 OWN</span>
               <span className="text-sm text-slate-600">Pet, play, breathe, grow</span>
             </div>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { emoji: '🦕', name: 'Baby Dinosaur', env: '🌅 Cozy Nest', tags: ['Love', 'Nurture'], bg: 'from-yellow-50', hormone: 'Oxytocin', hormoneDesc: 'Oxytocin — nurture, bond, feel loved', route: '/patient/dino' },
                 { emoji: '🐕', name: 'Golden Retriever', env: '☀️ Sunny Meadow', tags: ['Happy', 'Routine'], bg: 'from-yellow-50', hormone: 'Serotonin', hormoneDesc: 'Serotonin — daily routines, calm, stability', route: '/patient/goldenPup' },
@@ -910,7 +918,7 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
               <span className="px-3 py-1 rounded-full text-xs font-bold text-amber-700 bg-amber-100">₹299/MO OR ₹499 OWN</span>
               <span className="text-sm text-slate-600">Talk, remember, evolve, heal</span>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
                 { emoji: '🦋', name: 'Phoenix Friend', env: '🔥 Rebirth Temple', tags: ['Transformation', 'Crisis Support'], price: '₹299/mo or ₹499 own' },
                 { emoji: '🐉', name: 'Guardian Dragon', env: '💎 Crystal Cave', tags: ['Protection', 'AI Voice Chat'], price: '₹299/mo or ₹499 own' },
@@ -1021,7 +1029,7 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
               { time: '5:00 PM', icon: '🎮', title: 'Mini-Game Session', desc: '5-minute therapeutic game with your pet. Progress unlocks new environments.', tags: ['⚡ Dopamine', '🔔 Endorphins'] },
               { time: '9:30 PM', icon: '🌙', title: 'Bedtime Wind-Down', desc: 'Pet yawns, curls up. Guided gratitude. Pet falls asleep with you. Ambient sounds fade in.', tags: ['💜 Oxytocin', '☀️ Serotonin', '🔔 Endorphins'] },
             ].map((item, i) => (
-              <div key={i} className="flex gap-4 p-6 bg-white border border-slate-200 rounded-2xl hover:border-violet-300 hover:shadow-md transition-all">
+              <div key={i} className="flex flex-col sm:flex-row gap-4 p-6 bg-white border border-slate-200 rounded-2xl hover:border-violet-300 hover:shadow-md transition-all">
                 <div className="text-sm font-bold text-violet-600 min-w-20">{item.time}</div>
                 <span className="text-2xl">{item.icon}</span>
                 <div className="flex-1">

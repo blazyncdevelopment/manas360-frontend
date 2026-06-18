@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { CheckCircle2, XCircle, ArrowLeft, Award, RotateCcw } from "lucide-react";
 import { useEnrollmentStore } from "../store/CertificationEnrollmentStore";
 import { completeCertification } from "../api/certifications";
+import { useCertificationProgress } from "../store/useCertificationProgress";
 
 /* ──────────────────────────────────────────────────────────
    Quiz Data – one quiz per module, keyed by moduleId
@@ -142,6 +143,7 @@ export const CertificationQuizPage: React.FC = () => {
   const { enrollmentId } = useParams<{ enrollmentId: string }>();
   const navigate = useNavigate();
   const { enrollments, updateProgress } = useEnrollmentStore();
+  const { isQuizUnlocked, markQuizPassed } = useCertificationProgress();
 
   const enrollment = useMemo(() =>
     enrollments.find((e: any) => e.id === enrollmentId),
@@ -207,6 +209,25 @@ export const CertificationQuizPage: React.FC = () => {
     );
   }
 
+  // Prevent users from skipping straight to the quiz without attending modules
+  if (enrollmentId && !isQuizUnlocked(enrollmentId)) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 text-center max-w-md">
+          <div className="text-4xl mb-4">🔒</div>
+          <h2 className="text-xl font-bold text-slate-900 font-serif mb-2">Quiz Locked</h2>
+          <p className="text-slate-500 text-sm mb-6">You must attend and complete all course modules before taking the certification quiz.</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="px-6 py-3 bg-slate-900 text-white font-bold text-sm rounded-full hover:bg-slate-800 transition"
+          >
+            ← Return to Modules
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const handleSelect = (questionId: string, letter: string) => {
     if (submitted) return;
     setAnswers((prev) => ({ ...prev, [questionId]: letter }));
@@ -235,6 +256,7 @@ export const CertificationQuizPage: React.FC = () => {
     try {
       await completeCertification(enrollment.slug);
       updateProgress(enrollmentId, 100);
+      markQuizPassed(enrollmentId);
       const basePath = location.pathname.startsWith('/provider') ? '/provider' : location.pathname.startsWith('/patient') ? '/patient' : location.pathname.startsWith('/learner') ? '/learner' : '';
       navigate(`${basePath}/certifications/certificate/${enrollmentId}`);
     } catch {

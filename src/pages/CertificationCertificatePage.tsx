@@ -4,7 +4,9 @@ import { useEnrollmentStore } from '../store/CertificationEnrollmentStore';
 import { Enrollment } from '../CertificationTypes';
 import { QRCodeSVG } from 'qrcode.react';
 import { Download, ArrowLeft, Printer } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { useAuth } from '../context/AuthContext';
+import { useCertificationProgress } from '../store/useCertificationProgress';
+import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 
 function generateCertId(enrollmentId: string): string {
@@ -29,7 +31,9 @@ const CertificationCertificatePage: React.FC = () => {
     const { enrollmentId } = useParams<{ enrollmentId: string }>();
     const navigate = useNavigate();
     const { enrollments, updateEnrollment } = useEnrollmentStore();
+    const { isQuizPassed } = useCertificationProgress();
     const certificateRef = useRef<HTMLDivElement>(null);
+    const { user } = useAuth();
 
     const enrollment = enrollments.find((e: Enrollment) => e.id === enrollmentId);
 
@@ -46,6 +50,17 @@ const CertificationCertificatePage: React.FC = () => {
         }
     }, [enrollment, certId, updateEnrollment]);
 
+    // Force load fonts so html-to-image can embed them properly
+    useEffect(() => {
+        const link = document.createElement('link');
+        link.href = 'https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cinzel:wght@400;600&display=swap';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+        return () => {
+            if (document.head.contains(link)) document.head.removeChild(link);
+        };
+    }, []);
+
     const qrValue = `${window.location.origin}/verify/${certId}`;
     const fontCqi = enrollment ? calcFontCqi(enrollment.certificationName) : 1.75;
     const displayCertId = certId.includes('_') ? certId.split('_').pop() : certId;
@@ -53,29 +68,83 @@ const CertificationCertificatePage: React.FC = () => {
     const handleDownloadPDF = async () => {
         if (!certificateRef.current) return;
         try {
-            const canvas = await html2canvas(certificateRef.current, {
-                scale: 3, useCORS: true, allowTaint: true,
-                backgroundColor: null, logging: false,
+            await document.fonts.ready;
+
+            // html-to-image natively uses browser's rendering engine (SVG foreignObject),
+            // which flawlessly supports cqi container queries and custom fonts!
+            const imgData = await htmlToImage.toJpeg(certificateRef.current, {
+                quality: 0.95,
+                pixelRatio: 2, // High resolution
             });
-            const imgData = canvas.toDataURL('image/png');
+
+            // The width and height as rendered on screen
+            const width = certificateRef.current.offsetWidth;
+            const height = certificateRef.current.offsetHeight;
+
             const pdf = new jsPDF({
                 orientation: 'landscape', unit: 'px',
-                format: [canvas.width / 3, canvas.height / 3],
+                format: [width, height],
             });
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
+            pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
             pdf.save(`Certificate-${enrollment?.certificationName || 'Manas360'}-${certId}.pdf`);
         } catch (err) {
             console.error('PDF generation failed:', err);
         }
     };
 
-    if (!enrollment) {
+    const handlePrint = async () => {
+        if (!certificateRef.current) return;
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert("Please allow popups to print the certificate.");
+            return;
+        }
+
+        printWindow.document.write('<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h2>Preparing document for printing...</h2></body></html>');
+
+        try {
+            await document.fonts.ready;
+            const imgData = await htmlToImage.toJpeg(certificateRef.current, {
+                quality: 0.95,
+                pixelRatio: 2,
+            });
+
+            printWindow.document.open();
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Print Certificate</title>
+                        <style>
+                            body { margin: 0; padding: 0; background: white; }
+                            @page { size: landscape; margin: 0; }
+                            img { width: 100vw; height: 100vh; object-fit: contain; }
+                        </style>
+                    </head>
+                    <body>
+                        <img src="${imgData}" onload="window.print(); window.close();" />
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        } catch (err) {
+            console.error('Print failed:', err);
+            printWindow.close();
+        }
+    };
+
+    if (!enrollment || (enrollmentId && !isQuizPassed(enrollmentId))) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 text-center">
                 <div>
                     <h2 className="text-2xl font-serif font-bold text-slate-800 mb-4">
-                        Certification Details Not Loaded
+                        {!enrollment ? "Certification Details Not Loaded" : "Certificate Locked"}
                     </h2>
+                    {enrollment && (!enrollmentId || !isQuizPassed(enrollmentId)) && (
+                        <p className="text-slate-600 mb-6 max-w-md mx-auto">
+                            You must attend all course modules and pass the final certification quiz to unlock this certificate.
+                        </p>
+                    )}
                     <button onClick={() => navigate(-1)} className="text-teal-600 font-bold hover:underline">
                         Go Back
                     </button>
@@ -85,14 +154,9 @@ const CertificationCertificatePage: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#111827] py-10 px-4 flex flex-col items-center">
+        <div className="min-h-screen bg-[#111827] py-10 px-4 flex flex-col items-center overflow-x-hidden relative" id="cert-container">
             <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cinzel:wght@400;600&display=swap');
-        @media print {
-          .no-print { display: none !important; }
-          body { background: white; margin: 0; padding: 0; }
-          @page { size: A4 landscape; margin: 0; }
-        }
       `}</style>
 
             <div className="no-print max-w-[980px] w-full flex justify-between items-center mb-6">
@@ -104,7 +168,7 @@ const CertificationCertificatePage: React.FC = () => {
                 </button>
                 <div className="flex gap-3">
                     <button
-                        onClick={() => window.print()}
+                        onClick={handlePrint}
                         className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/20 border border-white/20 transition text-sm"
                     >
                         <Printer size={16} /> Print
@@ -120,6 +184,7 @@ const CertificationCertificatePage: React.FC = () => {
             </div>
 
             <div
+                id="cert-wrapper"
                 ref={certificateRef}
                 className="relative w-full max-w-[980px] shadow-[0_30px_80px_rgba(0,0,0,0.8)] overflow-hidden bg-white"
                 style={{ aspectRatio: '2340 / 1655', containerType: 'inline-size' }}
@@ -167,7 +232,7 @@ const CertificationCertificatePage: React.FC = () => {
 
                 <div
                     className="absolute flex justify-center"
-                    style={{ top: '21.5%', left: '4%', width: '58%' }}
+                    style={{ top: '23.5%', left: '4%', width: '58%' }}
                 >
                     <span style={{
                         fontFamily: "'Cinzel', serif",
@@ -203,14 +268,14 @@ const CertificationCertificatePage: React.FC = () => {
                     <span style={{
                         fontFamily: "'Great Vibes', cursive",
                         color: '#c5a059',
-                        fontSize: `${Math.min(9, 85 / ((enrollment.userName || 'Recipient Name').length * 0.5))}cqi`,
+                        fontSize: `${Math.min(9, 85 / (((user as any)?.name || (user as any)?.displayName || enrollment.userName || 'Recipient Name').length * 0.5))}cqi`,
                         lineHeight: 1,
                         whiteSpace: 'nowrap',
                         textAlign: 'center',
                         display: 'block',
                         textShadow: '0 1px 5px rgba(197,160,89,0.3)',
                     }}>
-                        {enrollment.userName || 'Recipient Name'}
+                        {(user as any)?.name || (user as any)?.displayName || enrollment.userName || 'Recipient Name'}
                     </span>
                 </div>
 
@@ -339,4 +404,3 @@ const CertificationCertificatePage: React.FC = () => {
 };
 
 export default CertificationCertificatePage;
-;

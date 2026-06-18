@@ -102,7 +102,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
       <div className={`${baseStyles} ${stateStyles} ${className}`}>
         <div className="relative flex items-center bg-slate-50 border-r-2 border-inherit">
           <select
-            className="h-full py-3 pl-3 pr-8 bg-transparent text-sm font-medium text-slate-700 focus:outline-none appearance-none cursor-pointer"
+            className="h-full py-3 pl-3 pr-8 bg-transparent border-0 focus:ring-0 text-sm font-medium text-slate-700 focus:outline-none appearance-none cursor-pointer"
             value={countryCode}
             onChange={handleCodeChange}
           >
@@ -123,7 +123,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
         <input
           id={inputId}
           type="tel"
-          className="flex-1 px-4 py-3 bg-transparent focus:outline-none text-slate-800"
+          className="flex-1 px-4 py-3 bg-transparent border-0 focus:ring-0 focus:outline-none text-slate-800"
           value={phoneNumber}
           onChange={handleNumberChange}
           placeholder="10-digit mobile number"
