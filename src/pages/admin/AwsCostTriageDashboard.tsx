@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { getAwsCostTriageData, AwsCostTriageData } from '../../api/admin.api';
 
 type ResourceStatus = 'safe' | 'danger' | 'warn' | 'off';
 type CostType = 'free' | 'paid' | 'waste';
@@ -12,17 +13,6 @@ type ResourceCard = {
   costType: CostType;
   costLabel: string;
 };
-
-const initialResources: ResourceCard[] = [
-  { id: 'ec2', icon: '🖥️', name: 'EC2 Instances', status: 'danger', statusLabel: '2 running (1 zombie)', costType: 'waste', costLabel: '₹5,600/mo waste' },
-  { id: 'rds', icon: '🗄️', name: 'RDS Databases', status: 'warn', statusLabel: '1 running (oversized)', costType: 'paid', costLabel: '₹3,800/mo' },
-  { id: 'nat', icon: '🌐', name: 'NAT Gateway', status: 'danger', statusLabel: '1 ACTIVE — silent killer!', costType: 'waste', costLabel: '₹3,500+/mo' },
-  { id: 'eip', icon: '📍', name: 'Elastic IPs', status: 'warn', statusLabel: '2 unattached', costType: 'waste', costLabel: '₹740/mo waste' },
-  { id: 'elb', icon: '⚖️', name: 'Load Balancers', status: 'off', statusLabel: '0 found', costType: 'free', costLabel: '₹0' },
-  { id: 'eks', icon: '☸️', name: 'EKS Clusters', status: 'safe', statusLabel: '0 found (good!)', costType: 'free', costLabel: '₹0 saved' },
-  { id: 'lightsail', icon: '💡', name: 'Lightsail', status: 'safe', statusLabel: '1 instance (4GB) — expected', costType: 'paid', costLabel: '₹3,300/mo (fixed)' },
-  { id: 's3', icon: '📦', name: 'S3 + Snapshots', status: 'warn', statusLabel: '12 snapshots accumulating', costType: 'paid', costLabel: '₹480/mo' },
-];
 
 const checklist = [
   {
@@ -60,29 +50,16 @@ const checklist = [
 ];
 
 export default function AwsCostTriageDashboard() {
-  const [resources, setResources] = useState<ResourceCard[]>(initialResources);
-  const [scanState, setScanState] = useState<'idle' | 'scanning' | 'done'>('idle');
-  const [lastScan, setLastScan] = useState<string>('Last scan: Mon, Feb 03 · 9:00 AM');
+  const [awsData, setAwsData] = useState<AwsCostTriageData | null>(null);
+  const [scanState, setScanState] = useState<'idle' | 'scanning' | 'done'>('scanning');
+  const [lastScan, setLastScan] = useState<string>('Never');
   const [checkedMap, setCheckedMap] = useState<Record<string, boolean>>({});
 
-  const redCount = useMemo(() => resources.filter((r) => r.status === 'danger').length, [resources]);
-  const yellowCount = useMemo(() => resources.filter((r) => r.status === 'warn').length, [resources]);
-
-  const alert = useMemo(() => {
-    if (redCount === 0 && yellowCount === 0) {
-      return { className: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300', icon: '✅', text: 'All clear! No zombie resources detected. Infrastructure is cost-efficient.' };
-    }
-    if (redCount === 0) {
-      return { className: 'border-amber-500/20 bg-amber-500/10 text-amber-300', icon: '⚠️', text: `${yellowCount} warning(s) remaining. Review and resolve this week.` };
-    }
-    return { className: 'border-rose-500/30 bg-rose-500/10 text-rose-300', icon: '🚨', text: '₹8,000 charged last cycle exceeds Lightsail budget. Immediate action required.' };
-  }, [redCount, yellowCount]);
-
-  const runScan = () => {
-    if (scanState === 'scanning') return;
+  const fetchTriageData = async () => {
     setScanState('scanning');
-    window.setTimeout(() => {
-      setScanState('done');
+    try {
+      const data = await getAwsCostTriageData();
+      setAwsData(data);
       setLastScan(
         `Last scan: ${new Date().toLocaleString('en-US', {
           weekday: 'short',
@@ -91,27 +68,114 @@ export default function AwsCostTriageDashboard() {
           hour: 'numeric',
           minute: '2-digit',
           hour12: true,
-        })}`,
+        })}`
       );
-      window.setTimeout(() => setScanState('idle'), 1600);
-    }, 1400);
+      setScanState('done');
+      window.setTimeout(() => setScanState('idle'), 2000);
+    } catch (error) {
+      console.error('Failed to fetch AWS triage data:', error);
+      setScanState('idle');
+    }
   };
 
-  const resolveResource = (id: string) => {
-    setResources((prev) =>
-      prev.map((item) =>
-        item.id === id && (item.status === 'danger' || item.status === 'warn')
-          ? {
-              ...item,
-              status: 'safe',
-              statusLabel: 'Fixed — resource removed',
-              costType: 'free',
-              costLabel: '₹0 saved',
-            }
-          : item,
-      ),
-    );
-  };
+  useEffect(() => {
+    fetchTriageData();
+  }, []);
+
+  const resources: ResourceCard[] = useMemo(() => {
+    if (!awsData) return [];
+
+    const { resources: r } = awsData;
+
+    return [
+      {
+        id: 'ec2',
+        icon: '🖥️',
+        name: 'EC2 Instances',
+        status: r.ec2RunningCount > 0 ? 'danger' : r.ec2Count > 0 ? 'warn' : 'safe',
+        statusLabel: `${r.ec2RunningCount} running / ${r.ec2Count} total`,
+        costType: r.ec2RunningCount > 0 ? 'waste' : 'paid',
+        costLabel: r.ec2RunningCount > 0 ? 'Potential Waste!' : 'Variable',
+      },
+      {
+        id: 'rds',
+        icon: '🗄️',
+        name: 'RDS Databases',
+        status: r.rdsCount > 0 ? 'warn' : 'safe',
+        statusLabel: `${r.rdsCount} found`,
+        costType: r.rdsCount > 0 ? 'paid' : 'free',
+        costLabel: r.rdsCount > 0 ? 'Review size' : '₹0',
+      },
+      {
+        id: 'nat',
+        icon: '🌐',
+        name: 'NAT Gateway',
+        status: r.natCount > 0 ? 'danger' : 'safe',
+        statusLabel: `${r.natCount} ACTIVE`,
+        costType: r.natCount > 0 ? 'waste' : 'free',
+        costLabel: r.natCount > 0 ? '₹3,500+/mo each!' : '₹0',
+      },
+      {
+        id: 'eip',
+        icon: '📍',
+        name: 'Elastic IPs',
+        status: r.eipUnattachedCount > 0 ? 'danger' : 'safe',
+        statusLabel: `${r.eipUnattachedCount} unattached`,
+        costType: r.eipUnattachedCount > 0 ? 'waste' : 'free',
+        costLabel: r.eipUnattachedCount > 0 ? '₹740/mo waste' : '₹0',
+      },
+      {
+        id: 'elb',
+        icon: '⚖️',
+        name: 'Load Balancers',
+        status: r.elbCount > 0 ? 'warn' : 'safe',
+        statusLabel: `${r.elbCount} found`,
+        costType: r.elbCount > 0 ? 'paid' : 'free',
+        costLabel: r.elbCount > 0 ? 'Check usage' : '₹0',
+      },
+      {
+        id: 'eks',
+        icon: '☸️',
+        name: 'EKS Clusters',
+        status: r.eksCount > 0 ? 'danger' : 'safe',
+        statusLabel: `${r.eksCount} found`,
+        costType: r.eksCount > 0 ? 'waste' : 'free',
+        costLabel: r.eksCount > 0 ? '₹30k/mo base fee!' : '₹0 saved',
+      },
+      {
+        id: 'lightsail',
+        icon: '💡',
+        name: 'Lightsail',
+        status: r.lightsailCount > 0 ? 'safe' : 'off',
+        statusLabel: `${r.lightsailCount} instance(s)`,
+        costType: r.lightsailCount > 0 ? 'paid' : 'free',
+        costLabel: r.lightsailCount > 0 ? 'Predictable' : '₹0',
+      },
+      {
+        id: 's3',
+        icon: '📦',
+        name: 'S3 Buckets',
+        status: r.s3BucketCount > 0 ? 'safe' : 'safe',
+        statusLabel: `${r.s3BucketCount} buckets`,
+        costType: r.s3BucketCount > 0 ? 'paid' : 'free',
+        costLabel: 'Cheap',
+      },
+    ];
+  }, [awsData]);
+
+  const redCount = useMemo(() => resources.filter((r) => r.status === 'danger').length, [resources]);
+  const yellowCount = useMemo(() => resources.filter((r) => r.status === 'warn').length, [resources]);
+
+  const alert = useMemo(() => {
+    if (!awsData) return { className: 'border-slate-500/20 bg-slate-500/10 text-slate-300', icon: '⏳', text: 'Scanning AWS...' };
+    if (redCount === 0 && yellowCount === 0) {
+      return { className: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300', icon: '✅', text: 'All clear! No zombie resources detected. Infrastructure is cost-efficient.' };
+    }
+    if (redCount === 0) {
+      return { className: 'border-amber-500/20 bg-amber-500/10 text-amber-300', icon: '⚠️', text: `${yellowCount} warning(s) remaining. Review and resolve this week.` };
+    }
+    return { className: 'border-rose-500/30 bg-rose-500/10 text-rose-300', icon: '🚨', text: `${redCount} critical resources running! Immediate action required to prevent billing surprises.` };
+  }, [awsData, redCount, yellowCount]);
 
   const statusClass = (status: ResourceStatus) => {
     if (status === 'danger') return 'text-rose-400';
@@ -126,6 +190,12 @@ export default function AwsCostTriageDashboard() {
     return 'border border-emerald-400/25 bg-emerald-500/10 text-emerald-300';
   };
 
+  const currentSpend = awsData?.metrics.currentSpend || 0;
+  const projectedSpend = awsData?.metrics.projectedSpend || 0;
+  const budget = 10000;
+  const percentUsed = Math.min(Math.round((currentSpend / budget) * 100), 100);
+  const projectedPercent = Math.min(Math.round((projectedSpend / budget) * 100), 100);
+
   return (
     <div className="min-h-full bg-[#07080c] text-slate-100">
       <div className="mx-auto max-w-[1440px] space-y-5 p-4 lg:p-6">
@@ -134,17 +204,18 @@ export default function AwsCostTriageDashboard() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-orange-500 font-mono text-sm font-bold text-white">₹</div>
             <div>
               <h2 className="text-base font-semibold tracking-wide">AWS Cost Triage</h2>
-              <p className="text-xs text-slate-400">MANS360 Infrastructure</p>
+              <p className="text-xs text-slate-400">Live API Connection</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <span className="font-mono text-xs text-slate-400">{lastScan}</span>
             <button
               type="button"
-              onClick={runScan}
-              className="rounded-md border border-orange-400/30 bg-orange-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-widest text-orange-300 transition hover:bg-orange-500/20"
+              onClick={fetchTriageData}
+              disabled={scanState === 'scanning'}
+              className="rounded-md border border-orange-400/30 bg-orange-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-widest text-orange-300 transition hover:bg-orange-500/20 disabled:opacity-50"
             >
-              {scanState === 'scanning' ? 'Scanning...' : scanState === 'done' ? 'Scan Complete' : 'Run Triage'}
+              {scanState === 'scanning' ? 'Scanning API...' : scanState === 'done' ? 'Scan Complete' : 'Run Triage'}
             </button>
           </div>
         </section>
@@ -157,41 +228,47 @@ export default function AwsCostTriageDashboard() {
         <section className="grid gap-3 md:grid-cols-3">
           <div className="rounded-xl border border-slate-800 bg-[#0d1017] p-4">
             <p className="text-[11px] uppercase tracking-widest text-slate-500">Current Month Spend</p>
-            <p className="mt-2 font-mono text-3xl font-bold text-amber-300">₹6,240</p>
-            <p className="mt-1 text-xs text-slate-400">Day 4 of 28 · 62% of budget used</p>
-            <div className="mt-3 h-2 overflow-hidden rounded bg-black/40"><div className="h-full w-[62%] bg-gradient-to-r from-emerald-400 to-amber-400" /></div>
+            <p className="mt-2 font-mono text-3xl font-bold text-amber-300">
+              {currentSpend === 0 ? 'Pending CE' : `₹${currentSpend.toLocaleString('en-IN')}`}
+            </p>
+            <p className="mt-1 text-xs text-slate-400">Current cycle · {percentUsed}% of budget used</p>
+            <div className="mt-3 h-2 overflow-hidden rounded bg-black/40"><div className="h-full bg-gradient-to-r from-emerald-400 to-amber-400" style={{ width: `${percentUsed}%`}} /></div>
           </div>
           <div className="rounded-xl border border-slate-800 bg-[#0d1017] p-4">
             <p className="text-[11px] uppercase tracking-widest text-slate-500">Projected Month-End</p>
-            <p className="mt-2 font-mono text-3xl font-bold text-rose-400">₹43,680</p>
-            <p className="mt-1 text-xs text-slate-400">Current burn rate · 4.4x over budget</p>
-            <div className="mt-3 h-2 overflow-hidden rounded bg-black/40"><div className="h-full w-full bg-gradient-to-r from-amber-400 to-rose-400" /></div>
+            <p className={`mt-2 font-mono text-3xl font-bold ${projectedSpend > budget ? 'text-rose-400' : 'text-emerald-400'}`}>
+              {projectedSpend === 0 ? 'Pending CE' : `₹${projectedSpend.toLocaleString('en-IN')}`}
+            </p>
+            <p className="mt-1 text-xs text-slate-400">Estimated based on current burn rate</p>
+            <div className="mt-3 h-2 overflow-hidden rounded bg-black/40"><div className="h-full bg-gradient-to-r from-amber-400 to-rose-400" style={{ width: `${projectedPercent}%`}} /></div>
           </div>
           <div className="rounded-xl border border-slate-800 bg-[#0d1017] p-4">
             <p className="text-[11px] uppercase tracking-widest text-slate-500">Monthly Budget Target</p>
-            <p className="mt-2 font-mono text-3xl font-bold text-emerald-400">₹10,000</p>
-            <p className="mt-1 text-xs text-slate-400">Lightsail plan ₹7,700 + buffer</p>
-            <div className="mt-3 h-2 overflow-hidden rounded bg-black/40"><div className="h-full w-[77%] bg-emerald-400" /></div>
+            <p className="mt-2 font-mono text-3xl font-bold text-emerald-400">₹{budget.toLocaleString('en-IN')}</p>
+            <p className="mt-1 text-xs text-slate-400">Target safe limit</p>
+            <div className="mt-3 h-2 overflow-hidden rounded bg-black/40"><div className="h-full w-full bg-emerald-400" /></div>
           </div>
         </section>
 
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {resources.map((resource) => (
-            <button
-              key={resource.id}
-              type="button"
-              onClick={() => resolveResource(resource.id)}
-              className="rounded-xl border border-slate-800 bg-[#0d1017] p-4 text-left transition hover:border-slate-600 hover:bg-[#111820]"
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-2xl">{resource.icon}</span>
-                <span className={`h-2.5 w-2.5 rounded-full ${resource.status === 'danger' ? 'bg-rose-500' : resource.status === 'warn' ? 'bg-amber-400' : resource.status === 'safe' ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+          {!awsData ? (
+            <div className="col-span-full py-12 text-center text-slate-500 animate-pulse">Connecting to AWS API...</div>
+          ) : (
+            resources.map((resource) => (
+              <div
+                key={resource.id}
+                className="rounded-xl border border-slate-800 bg-[#0d1017] p-4 text-left transition hover:border-slate-600 hover:bg-[#111820]"
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-2xl">{resource.icon}</span>
+                  <span className={`h-2.5 w-2.5 rounded-full ${resource.status === 'danger' ? 'bg-rose-500' : resource.status === 'warn' ? 'bg-amber-400' : resource.status === 'safe' ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                </div>
+                <p className="text-sm font-semibold">{resource.name}</p>
+                <p className={`mt-1 text-xs ${statusClass(resource.status)}`}>{resource.statusLabel}</p>
+                <span className={`mt-2 inline-block rounded px-2 py-1 text-[11px] ${costClass(resource.costType)}`}>{resource.costLabel}</span>
               </div>
-              <p className="text-sm font-semibold">{resource.name}</p>
-              <p className={`mt-1 text-xs ${statusClass(resource.status)}`}>{resource.statusLabel}</p>
-              <span className={`mt-2 inline-block rounded px-2 py-1 text-[11px] ${costClass(resource.costType)}`}>{resource.costLabel}</span>
-            </button>
-          ))}
+            ))
+          )}
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[1.3fr,1fr]">

@@ -828,6 +828,32 @@ export const fetchProviderLeadStats = async () => {
   return unwrap<any>(response.data);
 };
 
+export interface ProviderLeadCredits {
+  hot: number;
+  warm: number;
+  cold: number;
+}
+
+export const fetchProviderLeadCredits = async (): Promise<ProviderLeadCredits> => {
+  const response = await http.get<Envelope<ProviderLeadCredits>>('/v1/provider/lead-credits');
+  return unwrap<ProviderLeadCredits>(response.data);
+};
+
+export interface LeadMarketplacePricing {
+  hot: number;
+  warm: number;
+  cold: number;
+}
+
+export const fetchLeadMarketplacePricing = async (): Promise<LeadMarketplacePricing> => {
+  const response = await http.get<Envelope<LeadMarketplacePricing>>('/v1/provider/marketplace/lead-pricing');
+  return unwrap<LeadMarketplacePricing>(response.data);
+};
+
+export const purchaseProviderLeadWithCredit = async (leadId: string): Promise<void> => {
+  await http.post(`/v1/leads/marketplace/${encodeURIComponent(leadId)}/purchase-with-credit`, {});
+};
+
 export const fetchProviderMarketplace = async (params?: { page?: number; limit?: number }) => {
   const response = await http.get<Envelope<{ items: any[] }>>('/v1/leads/marketplace', { params });
   return unwrap<{ items: any[] }>(response.data);

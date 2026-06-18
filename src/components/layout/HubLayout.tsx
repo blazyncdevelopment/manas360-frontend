@@ -4,8 +4,9 @@ import { ProviderSidebar } from './ProviderSidebar';
 import { useAuth } from '../../context/AuthContext';
 import { hasProviderSubmittedOnboarding } from '../../lib/providerOnboardingFlow';
 import PersistentVideoLayout from './PersistentVideoLayout';
-import { Lock, FileCheck, CreditCard, RefreshCw, MessageSquare, Menu } from 'lucide-react';
+import { Lock, FileCheck, CreditCard, RefreshCw, MessageSquare, Menu, Zap } from 'lucide-react';
 import { http } from '../../lib/http';
+import { fetchProviderLeadStats, fetchProviderLeadCredits } from '../../api/provider';
 import toast from 'react-hot-toast';
 
 export const HubLayout = () => {
@@ -15,10 +16,46 @@ export const HubLayout = () => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const location = useLocation();
 
+  // Lead credits for header
+  const [leadStats, setLeadStats] = useState<{
+    currentPlan: string;
+    leadsPerWeek: number;
+    leadsAssigned: number;
+    leadsRemaining: number;
+    byType?: { hot: number; warm: number; cold: number };
+    leadQualityMix?: string;
+  } | null>(null);
+  const [leadCredits, setLeadCredits] = useState<{ hot: number; warm: number; cold: number } | null>(null);
+
   // Close sidebar on route change
   useEffect(() => {
     setMobileSidebarOpen(false);
   }, [location.pathname]);
+
+  // Fetch lead stats for header display
+  useEffect(() => {
+    const providerRolesCheck = ['THERAPIST', 'PSYCHIATRIST', 'PSYCHOLOGIST', 'COACH'];
+    if (!user || !providerRolesCheck.includes(String(user.role).toUpperCase())) return;
+
+    fetchProviderLeadStats()
+      .then((data) => {
+        if (data) {
+          console.log('[HubLayout] Lead stats loaded:', JSON.stringify(data));
+          setLeadStats(data);
+        } else {
+          console.warn('[HubLayout] Lead stats returned empty data');
+        }
+      })
+      .catch((err) => {
+        console.warn('[HubLayout] Failed to load lead stats:', err?.response?.status, err?.response?.data?.message || err?.message);
+      });
+
+    fetchProviderLeadCredits()
+      .then((data) => setLeadCredits(data))
+      .catch((err) => {
+        console.warn('[HubLayout] Failed to load lead credits:', err?.response?.status, err?.response?.data?.message || err?.message);
+      });
+  }, [user]);
 
   const handleSyncAccount = async () => {
     setSyncing(true);
@@ -85,6 +122,58 @@ export const HubLayout = () => {
               </button>
               <h1 className="font-bold text-lg text-gray-800">Workspace</h1>
             </div>
+
+            {/* Lead Credits Widget */}
+            {leadStats && (
+              <button
+                type="button"
+                onClick={() => navigate('/provider/leads')}
+                className="hidden md:flex items-center gap-3 px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 transition-all group cursor-pointer"
+                title={`Plan: ${(leadStats.currentPlan || 'free').charAt(0).toUpperCase() + (leadStats.currentPlan || 'free').slice(1)} · ${leadStats.leadQualityMix || 'No leads'}`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Zap size={14} className="text-amber-500" />
+                  <span className="text-[11px] font-bold text-slate-600 capitalize">
+                    {leadStats.currentPlan || 'free'}
+                  </span>
+                  <span className="text-xs font-bold text-slate-700">
+                    {leadStats.leadsRemaining}/{leadStats.leadsPerWeek}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium">leads/wk</span>
+                </div>
+
+                <div className="h-4 w-px bg-slate-200" />
+
+                <div className="flex items-center gap-2 text-[10px] font-semibold">
+                  <span className="text-red-600" title="Hot leads assigned this week">🔥 {leadStats.byType?.hot ?? 0}</span>
+                  <span className="text-amber-600" title="Warm leads assigned this week">🌟 {leadStats.byType?.warm ?? 0}</span>
+                  <span className="text-blue-600" title="Cold leads assigned this week">❄️ {leadStats.byType?.cold ?? 0}</span>
+                </div>
+
+                {leadCredits && (leadCredits.hot + leadCredits.warm + leadCredits.cold) > 0 && (
+                  <>
+                    <div className="h-4 w-px bg-slate-200" />
+                    <div className="flex items-center gap-2 text-[10px] font-semibold" title="Purchased lead credits remaining (from subscription add-ons)">
+                      <span className="text-slate-400 font-medium uppercase tracking-tighter">Credits</span>
+                      <span className="text-red-500">🔥 {leadCredits.hot}</span>
+                      <span className="text-amber-500">🌟 {leadCredits.warm}</span>
+                      <span className="text-blue-500">❄️ {leadCredits.cold}</span>
+                    </div>
+                  </>
+                )}
+
+                {/* Tiny progress bar */}
+                {leadStats.leadsPerWeek > 0 && (
+                  <div className="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden" title={`${leadStats.leadsAssigned} of ${leadStats.leadsPerWeek} used`}>
+                    <div
+                      className={`h-full rounded-full transition-all ${leadStats.leadsRemaining === 0 ? 'bg-red-400' : 'bg-emerald-400'}`}
+                      style={{ width: `${Math.min(100, (leadStats.leadsAssigned / leadStats.leadsPerWeek) * 100)}%` }}
+                    />
+                  </div>
+                )}
+              </button>
+            )}
+
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-xs font-medium text-[#4A6741] bg-[#f0f5ee] px-3 py-1.5 rounded-full">
                 <span className="w-2 h-2 bg-[#4A6741] rounded-full animate-pulse"></span>

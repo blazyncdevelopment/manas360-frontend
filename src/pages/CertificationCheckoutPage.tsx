@@ -6,6 +6,8 @@ import { SEO } from '../components/CertificationSEO';
 import { useWallet } from '../hooks/useWallet';
 import { useEnrollmentStore } from '../store/CertificationEnrollmentStore';
 import { getCertificationsErrorMessage, registerCertificationEnrollment } from '../api/certifications';
+import { getPublishedCourseById } from '../api/courses';
+import { Loader2 } from 'lucide-react';
 
 export const CheckoutPage: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -34,8 +36,41 @@ export const CheckoutPage: React.FC = () => {
         ? '/learner/enrollments'
         : '/my-certifications';
 
+    const staticCert = useMemo(() => CERTIFICATIONS.find(c => c.slug === slug), [slug]);
+    const [dynamicCert, setDynamicCert] = useState<any>(null);
+    const [loadingCert, setLoadingCert] = useState(!staticCert);
 
-    const cert = CERTIFICATIONS.find(c => c.slug === slug);
+    React.useEffect(() => {
+        const fetchDynamicCert = async () => {
+            if (!slug) return;
+            try {
+                const fetchedCourse = await getPublishedCourseById(slug);
+                if (fetchedCourse) {
+                    setDynamicCert({
+                        id: fetchedCourse.id,
+                        name: fetchedCourse.title,
+                        slug: fetchedCourse.slug || slug,
+                        price_inr: fetchedCourse.price || 0,
+                        badgeColor: 'purple',
+                        duration_weeks: fetchedCourse.modules?.length || 4,
+                        tier: 'Advanced'
+                    });
+                }
+            } catch (error) {
+                console.error("Dynamic course load failed", error);
+            } finally {
+                setLoadingCert(false);
+            }
+        };
+
+        if (!staticCert) {
+            fetchDynamicCert();
+        } else {
+            setLoadingCert(false);
+        }
+    }, [slug, staticCert]);
+
+    const cert = dynamicCert || staticCert;
 
     // NOTE: fullName and mobile are read from location.state inside the transaction handler when needed
 
@@ -165,6 +200,14 @@ export const CheckoutPage: React.FC = () => {
             setProcessing(false);
         }
     };
+
+    if (loadingCert) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <Loader2 className="animate-spin text-purple-600 w-10 h-10" />
+            </div>
+        );
+    }
 
     if (!cert) return <div className="p-20 text-center">Invalid certification</div>;
 

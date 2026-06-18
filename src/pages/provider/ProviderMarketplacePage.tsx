@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ShoppingCart, Filter, Lock, Info, CheckCircle2, Loader2, X, Calendar, Clock, User } from 'lucide-react';
-import { fetchProviderMarketplace, fetchProviderLeadStats, fetchProviderLeads, purchaseProviderLead, scheduleLeadSession } from '../../api/provider';
+import { fetchProviderMarketplace, fetchProviderLeadStats, fetchProviderLeads, fetchProviderLeadCredits, purchaseProviderLead, purchaseProviderLeadWithCredit, scheduleLeadSession } from '../../api/provider';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -277,6 +277,8 @@ interface LeadStats {
   leadsAssigned: number;
   leadsClaimed: number;
   leadsRemaining: number;
+  byType?: { hot: number; warm: number; cold: number };
+  leadQualityMix?: string;
 }
 
 const typeColors: Record<string, { bg: string; text: string; label: string; emoji: string }> = {
@@ -303,6 +305,7 @@ export default function ProviderMarketplacePage() {
   const [leads, setLeads] = useState<MarketplaceLead[]>([]);
   const [purchasedLeads, setPurchasedLeads] = useState<any[]>([]);
   const [stats, setStats] = useState<LeadStats | null>(null);
+  const [credits, setCredits] = useState<{ hot: number; warm: number; cold: number }>({ hot: 0, warm: 0, cold: 0 });
   const [filter, setFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
@@ -326,8 +329,9 @@ export default function ProviderMarketplacePage() {
       fetchProviderMarketplace(),
       fetchProviderLeadStats().catch(() => null),
       fetchProviderLeads().catch(() => []),
+      fetchProviderLeadCredits().catch(() => ({ hot: 0, warm: 0, cold: 0 })),
     ])
-      .then(([marketplaceData, statsData, myLeads]) => {
+      .then(([marketplaceData, statsData, myLeads, creditsData]) => {
         const rawLeads = (marketplaceData as any)?.items
           ?? (marketplaceData as any)?.leads
           ?? (Array.isArray(marketplaceData) ? marketplaceData : []);
@@ -342,6 +346,7 @@ export default function ProviderMarketplacePage() {
 
         setLeads(sortedLeads);
         setStats(statsData);
+        setCredits(creditsData);
 
         const normalizedMyLeads = (Array.isArray(myLeads) ? myLeads : []).map((lead: any) => {
           const normalized = normalizeMarketplaceLead(lead);
@@ -465,6 +470,22 @@ export default function ProviderMarketplacePage() {
     }
   };
 
+  const onPurchaseWithCredit = async (leadId: string) => {
+    if (!canPurchase) return;
+    setPurchasing(leadId);
+    try {
+      await purchaseProviderLeadWithCredit(leadId);
+      toast.success('Lead acquired using your credit balance!');
+      setTab('purchased');
+      loadData();
+    } catch (err: any) {
+      const serverMessage = err?.response?.data?.message;
+      toast.error(serverMessage || 'Unable to use credit for this lead.');
+    } finally {
+      setPurchasing(null);
+    }
+  };
+
   if (verifyingPayment) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#F8FAFC] px-4">
@@ -496,7 +517,7 @@ export default function ProviderMarketplacePage() {
             {/* Status Pill */}
             {stats && (
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-4">
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Your Weekly Quota</p>
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-24 bg-white/10 rounded-full overflow-hidden">
@@ -506,6 +527,28 @@ export default function ProviderMarketplacePage() {
                       />
                     </div>
                     <span className="text-xs font-black text-white">{stats.leadsAssigned}/{stats.leadsPerWeek}</span>
+                  </div>
+                  {/* Per-type breakdown */}
+                  {stats.byType && (
+                    <div className="flex items-center gap-2.5 text-[10px] font-semibold">
+                      <span className="text-red-400">🔥 {stats.byType.hot}</span>
+                      <span className="text-amber-400">🌟 {stats.byType.warm}</span>
+                      <span className="text-blue-400">❄️ {stats.byType.cold}</span>
+                    </div>
+                  )}
+                  {stats.leadQualityMix && (
+                    <p className="text-[9px] text-slate-500 font-medium">{stats.leadQualityMix}</p>
+                  )}
+                  {/* Lead credit balance (from purchased subscription add-ons) */}
+                  <div
+                    className="mt-1 flex items-center gap-2.5 text-[10px] font-semibold border-t border-white/10 pt-2"
+                    title="Lead credits come from hot/warm/cold lead bundles purchased as add-ons during subscription checkout. Each credit lets you claim one matching-tier lead for free."
+                  >
+                    <span className="text-[9px] text-slate-500 font-medium uppercase tracking-tighter">Credits:</span>
+                    <span className="text-red-400">🔥 {credits.hot}</span>
+                    <span className="text-amber-400">🌟 {credits.warm}</span>
+                    <span className="text-blue-400">❄️ {credits.cold}</span>
+                    <Info className="h-3 w-3 text-slate-500" />
                   </div>
                 </div>
                 {isQuotaExhausted ? (
@@ -834,6 +877,22 @@ export default function ProviderMarketplacePage() {
                           )}
                           {!canPurchase ? 'Quota Locked' : purchasing === lead.id ? 'Processing...' : 'Buy This Lead'}
                         </button>
+
+                        {canPurchase && (credits[lead.leadType as 'hot' | 'warm' | 'cold'] ?? 0) > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => void onPurchaseWithCredit(lead.id)}
+                            disabled={purchasing === lead.id}
+                            className="group/btn mt-2 flex w-full items-center justify-center gap-3 rounded-2xl py-3 text-sm font-black border-2 border-teal-500 text-teal-700 hover:bg-teal-50 transition-all"
+                          >
+                            {purchasing === lead.id ? (
+                              <div className="h-4 w-4 border-2 border-teal-300 border-t-teal-700 rounded-full animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="h-4 w-4" />
+                            )}
+                            {purchasing === lead.id ? 'Processing...' : `Buy with Credit (${credits[lead.leadType as 'hot' | 'warm' | 'cold']} left)`}
+                          </button>
+                        )}
                       </article>
                     );
                   })}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getApiBaseUrl } from '../lib/runtimeEnv';
 
 export const CrisisPage: React.FC = () => {
   const [showCounselor, setShowCounselor] = useState(false);
@@ -14,7 +15,7 @@ export const CrisisPage: React.FC = () => {
 
   const sendCrisisAlert = async (type: 'safe' | 'urgent', uName: string, uPhone: string) => {
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/v1/shared/crisis-alert`, {
+      await fetch(`${getApiBaseUrl()}/v1/shared/crisis-alert`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: uName, phone: uPhone, type })

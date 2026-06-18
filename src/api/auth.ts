@@ -59,6 +59,13 @@ export interface LoginPayload {
 	password: string;
 }
 
+export type AdminLoginOtpChallenge = {
+	challengeToken: string;
+	email: string | null;
+	expiresInSeconds: number;
+	devOtp?: string;
+};
+
 export interface ProviderRegisterPayload {
 	professionalType: string;
 	fullName: string;
@@ -167,6 +174,16 @@ export const login = async (payload: LoginPayload): Promise<AuthUser> => {
 	}
 
 	return loggedInUser;
+};
+
+export const requestAdminLoginOtp = async (payload: LoginPayload): Promise<AdminLoginOtpChallenge> => {
+	const response = await http.post<ApiEnvelope<AdminLoginOtpChallenge>>('/v1/auth/admin/login/request-otp', payload);
+	return response.data.data;
+};
+
+export const verifyAdminLoginOtp = async (payload: { challengeToken: string; otp: string }): Promise<AuthSessionPayload> => {
+	const response = await http.post<ApiEnvelope<AuthSessionPayload>>('/v1/auth/admin/login/verify-otp', payload);
+	return response.data.data;
 };
 
 export const providerRegister = async (payload: ProviderRegisterPayload): Promise<void> => {

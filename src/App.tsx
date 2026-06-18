@@ -118,6 +118,7 @@ const AdminPayoutsPage = lazy(() => import('./pages/admin/Payouts'));
 const ZohoDeskPanel = lazy(() => import('./pages/admin/ZohoDeskPanel'));
 const OfferMarqueeEditor = lazy(() => import('./pages/admin/OfferMarqueeEditor'));
 const PricingManagementPage = lazy(() => import('./pages/admin/PricingManagement'));
+const LeadMarketplacePricingPage = lazy(() => import('./pages/admin/LeadMarketplacePricing'));
 const CrisisConsole = lazy(() => import('./pages/admin/CrisisConsole'));
 const AuditTrail = lazy(() => import('./pages/admin/AuditTrail'));
 const GroupManagement = lazy(() => import('./pages/admin/GroupManagement'));
@@ -226,6 +227,7 @@ const CertificateVerificationPage = lazy(() => import('./pages/CertificateVerifi
 // Learner Pages
 const LearnerDashboardLayout = lazy(() => import('./components/layout/LearnerDashboardLayout'));
 const LearnerDashboard = lazy(() => import('./pages/learner/LearnerDashboard'));
+const LearnerCertificatePage = lazy(() => import('./pages/learner/LearnerCertificatePage'));
 const PaymentHistory = lazy(() => import('./pages/shared/PaymentHistory'));
 
 interface AssessmentData {
@@ -611,7 +613,7 @@ function App() {
                     >
                       <Route index element={<Navigate to="dashboard" replace />} />
                       <Route path="dashboard" element={<LearnerDashboard />} />
-                      <Route path="certificate" element={<LearnerDashboard />} />
+                      <Route path="certificate" element={<LearnerCertificatePage />} />
                       <Route path="enrollments" element={<LearnerDashboard />} />
                       <Route path="payments" element={<PaymentHistory />} />
                       {/* ── Certification pages embedded inside Learner layout ── */}
@@ -728,6 +730,7 @@ function App() {
                         <Route path="billing/company-reports" element={<AdminReportsPage />} />
                         <Route path="billing/revenue" element={<AdminRevenuePage />} />
                         <Route path="billing/pricing" element={<PricingManagementPage />} />
+                        <Route path="billing/lead-pricing" element={<LeadMarketplacePricingPage />} />
                         <Route path="billing/offers" element={<OfferMarqueeEditor />} />
                         <Route path="billing/payouts" element={<AdminPayoutsPage />} />
                         <Route path="billing/payment-reliability" element={<AdminPaymentReliability />} />

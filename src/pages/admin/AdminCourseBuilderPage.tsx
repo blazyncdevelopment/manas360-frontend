@@ -137,24 +137,14 @@ export default function AdminCourseBuilderPage() {
     const isFreePreview = formData.get('isFreePreview') === 'on';
 
     try {
-      const url = editingLesson
-        ? `${getApiBaseUrl()}/admin/courses/lessons/${editingLesson.id}`
-        : `${getApiBaseUrl()}/admin/courses/modules/${targetModuleId}/lessons`;
-      const method = editingLesson ? 'PUT' : 'POST';
+      const payload = { title, videoUrl, content, isFreePreview, orderIndex: editingLesson ? editingLesson.orderIndex : (course.modules?.find((m: any) => m.id === targetModuleId)?.lessons?.length || 0) };
 
-      const moduleObj = course.modules.find((m: any) => m.id === targetModuleId);
-      const orderIndex = editingLesson ? editingLesson.orderIndex : moduleObj?.lessons?.length || 0;
+      if (editingLesson) {
+        await http.put(`/admin/courses/lessons/${editingLesson.id}`, payload);
+      } else {
+        await http.post(`/admin/courses/modules/${targetModuleId}/lessons`, payload);
+      }
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ title, videoUrl, content, isFreePreview, orderIndex })
-      });
-
-      if (!response.ok) throw new Error('Failed to save lesson');
       toast.success('Lesson saved');
       setLessonModalOpen(false);
       setEditingLesson(null);

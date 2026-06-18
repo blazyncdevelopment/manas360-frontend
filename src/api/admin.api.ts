@@ -1922,3 +1922,26 @@ export const updateAdminRetreatIntentStatus = async (
 ): Promise<ApiEnvelope<RetreatIntentRecord>> => {
 	return (await client.patch<ApiEnvelope<RetreatIntentRecord>>(`/v1/admin/retreat-intents/${encodeURIComponent(id)}/status`, { status, adminNotes })).data;
 };
+
+// === AWS TRIAGE ===
+export interface AwsCostTriageData {
+  resources: {
+    ec2Count: number;
+    ec2RunningCount: number;
+    rdsCount: number;
+    natCount: number;
+    eipUnattachedCount: number;
+    eksCount: number;
+    elbCount: number;
+    lightsailCount: number;
+    s3BucketCount: number;
+  };
+  metrics: {
+    currentSpend: number;
+    projectedSpend: number;
+  };
+}
+
+export const getAwsCostTriageData = async (): Promise<AwsCostTriageData> => {
+  return (await client.get<ApiEnvelope<AwsCostTriageData>>('/v1/admin/system/aws-triage')).data.data;
+};

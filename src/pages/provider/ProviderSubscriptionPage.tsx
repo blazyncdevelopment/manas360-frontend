@@ -18,6 +18,9 @@ import {
 } from '../../lib/providerSubscriptionFlow';
 import { setStoredPlatformTransactionId } from '../../utils/providerOnboardingStorage';
 import { hasProviderSubmittedOnboarding } from '../../lib/providerOnboardingFlow';
+import { fetchLeadMarketplacePricing, type LeadMarketplacePricing } from '../../api/provider';
+
+const DEFAULT_LEAD_PRICING: LeadMarketplacePricing = { hot: 299, warm: 199, cold: 99 };
 
 export default function ProviderSubscriptionPage() {
   const navigate = useNavigate();
@@ -25,6 +28,13 @@ export default function ProviderSubscriptionPage() {
   const [selectedPlatformCycle] = useState<ProviderBillingCycle>('quarterly');
   const [loading, setLoading] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [leadPricing, setLeadPricing] = useState<LeadMarketplacePricing>(DEFAULT_LEAD_PRICING);
+
+  useEffect(() => {
+    fetchLeadMarketplacePricing()
+      .then(setLeadPricing)
+      .catch(() => setLeadPricing(DEFAULT_LEAD_PRICING));
+  }, []);
 
   const isPlatformActive = user?.platformAccessActive;
   const isOnboardingComplete = hasProviderSubmittedOnboarding(user);
@@ -56,6 +66,11 @@ export default function ProviderSubscriptionPage() {
         } catch {
           // ignore
         }
+      }
+      if (result.bypassed) {
+        alert('Payment Confirmation: ₹99 Platform access activated successfully!');
+        window.location.reload();
+        return;
       }
       if (!result.payment_url) {
         setPaymentError('Payment could not be started. Please try again.');
@@ -169,7 +184,7 @@ export default function ProviderSubscriptionPage() {
               <span className="text-2xl">🔥</span>
               <div>
                 <p className="text-sm font-black text-red-700">Hot Lead</p>
-                <p className="text-xl font-black text-slate-900">₹299</p>
+                <p className="text-xl font-black text-slate-900">₹{leadPricing.hot}</p>
                 <p className="text-[10px] text-slate-500 mt-0.5">Score 90–100 · ~70% conversion</p>
               </div>
             </div>
@@ -177,7 +192,7 @@ export default function ProviderSubscriptionPage() {
               <span className="text-2xl">🌟</span>
               <div>
                 <p className="text-sm font-black text-amber-700">Warm Lead</p>
-                <p className="text-xl font-black text-slate-900">₹199</p>
+                <p className="text-xl font-black text-slate-900">₹{leadPricing.warm}</p>
                 <p className="text-[10px] text-slate-500 mt-0.5">Score 70–89 · ~50% conversion</p>
               </div>
             </div>
@@ -185,7 +200,7 @@ export default function ProviderSubscriptionPage() {
               <span className="text-2xl">❄️</span>
               <div>
                 <p className="text-sm font-black text-blue-700">Cold Lead</p>
-                <p className="text-xl font-black text-slate-900">₹99</p>
+                <p className="text-xl font-black text-slate-900">₹{leadPricing.cold}</p>
                 <p className="text-[10px] text-slate-500 mt-0.5">Score 50–69 · ~25% conversion</p>
               </div>
             </div>
