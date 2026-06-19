@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Play, Lock, CheckCircle, ChevronDown, ChevronRight, Award, Loader2 } from 'lucide-react';
 import { useEnrollmentStore } from '../../store/CertificationEnrollmentStore';
@@ -38,7 +38,7 @@ export default function LearnerCertificatePage() {
   }
 
   const isEnrolled = (courseId: string) => {
-    return enrollments.some(e => e.certificationId === courseId);
+    return enrollments.some((e: any) => e.certificationId === courseId);
   };
 
   return (

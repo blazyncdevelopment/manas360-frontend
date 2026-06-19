@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { FileText, Download, Eye, Share2, ClipboardList, Activity, Pill, TrendingUp } from 'lucide-react';
 import { patientApi } from '../../api/patient';
 import toast from 'react-hot-toast';
@@ -49,7 +49,7 @@ const fallbackReports: ReportItem[] = [
 ];
 
 export default function ReportsPage() {
-  const navigate = useNavigate();
+
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');

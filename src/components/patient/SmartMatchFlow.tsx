@@ -116,7 +116,7 @@ export default function SmartMatchFlow({
         const response = await patientApi.getSubscription();
         const subscription = (response as any)?.data ?? response;
         const status = String(subscription?.status || '').toLowerCase();
-        const freeLike = Number(subscription?.price || 0) <= 0 || String(subscription?.planName || '').toLowerCase().includes('free');
+
         const activeLike = ['active', 'trial', 'trialing', 'grace'].includes(status);
         const graceEnd = subscription?.metadata?.graceEndDate || null;
 

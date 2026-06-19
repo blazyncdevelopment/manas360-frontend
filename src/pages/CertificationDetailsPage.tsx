@@ -8,7 +8,7 @@ import { SEO } from '../components/CertificationSEO';
 import { useAuth } from '../context/AuthContext';
 import { useEnrollmentStore } from '../store/CertificationEnrollmentStore';
 import { getCertificationsErrorMessage, getMyCertificationState, registerCertificationEnrollment } from '../api/certifications';
-import { getPublishedCourseById, Course } from '../api/courses';
+import { getPublishedCourseById } from '../api/courses';
 
 export const CertificationDetailsPage: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -342,7 +342,7 @@ export const CertificationDetailsPage: React.FC = () => {
                         <div className="bg-white rounded-xl p-5 md:p-6 border border-slate-100 shadow-sm">
                             <h3 className="font-serif font-bold text-lg md:text-xl text-slate-800 mb-4">Certification Requirements</h3>
                             <ul className="space-y-3">
-                                {cert!.requirements.map((req, i) => (
+                                {cert!.requirements.map((req: any, i: number) => (
                                     <li key={i} className="flex items-start gap-3">
                                         <div className="mt-0.5 bg-green-100 rounded-full p-0.5 flex-shrink-0">
                                             <Check size={12} className="text-green-600" />
@@ -420,7 +420,7 @@ export const CertificationDetailsPage: React.FC = () => {
                             <>
                                 {activeTab === 'modules' && (
                                     <div className="space-y-3">
-                                        {cert!.modules.map((module, i) => (
+                                        {cert!.modules.map((module: any, i: number) => (
                                             <div key={module.id} className="bg-white border border-slate-100 rounded-lg p-3 md:p-4 hover:border-purple-200 transition-colors shadow-sm">
                                                 <div className="flex justify-between items-start mb-1.5">
                                                     <h3 className="font-bold text-slate-800 text-sm md:text-base flex items-center">
@@ -436,7 +436,7 @@ export const CertificationDetailsPage: React.FC = () => {
                                                 </div>
                                                 <div className="pl-7 md:pl-8">
                                                     <ul className="list-disc list-inside text-slate-600 text-xs space-y-0.5">
-                                                        {module.topics.map((topic, idx) => (
+                                                        {module.topics.map((topic: any, idx: number) => (
                                                             <li key={idx}>{topic}</li>
                                                         ))}
                                                     </ul>
@@ -448,7 +448,7 @@ export const CertificationDetailsPage: React.FC = () => {
 
                                 {activeTab === 'faq' && (
                                     <div className="space-y-3">
-                                        {cert!.faqs.map((faq, i) => (
+                                        {cert!.faqs.map((faq: any, i: number) => (
                                             <div key={i} className="bg-white border border-slate-100 rounded-lg overflow-hidden shadow-sm">
                                                 <button
                                                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -510,7 +510,7 @@ export const CertificationDetailsPage: React.FC = () => {
                         <div>
                             <h4 className="font-serif font-bold text-slate-800 text-base mb-3">What Students Say</h4>
                             <div className="space-y-3">
-                                {cert.testimonials.map(t => (
+                                {cert.testimonials.map((t: any) => (
                                     <div key={t.id} className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                                         <div className="flex text-yellow-400 mb-1.5">
                                             {Array.from({ length: t.rating }).map((_, i) => <Star key={i} size={12} fill="currentColor" />)}

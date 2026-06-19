@@ -49,7 +49,7 @@ export const CheckoutPage: React.FC = () => {
                     setDynamicCert({
                         id: fetchedCourse.id,
                         name: fetchedCourse.title,
-                        slug: fetchedCourse.slug || slug,
+                        slug: (fetchedCourse as any).slug || slug,
                         price_inr: fetchedCourse.price || 0,
                         badgeColor: 'purple',
                         duration_weeks: fetchedCourse.modules?.length || 4,

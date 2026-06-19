@@ -27,7 +27,7 @@ export const CrisisPage: React.FC = () => {
 
   const handleSafeClick = () => {
     if (user && user.phone) {
-      sendCrisisAlert('safe', user.firstName || user.name || 'User', user.phone);
+      sendCrisisAlert('safe', user.firstName || (user as any).name || 'User', user.phone);
       setShowCounselor(true);
     } else {
       setCrisisType('safe');
@@ -38,7 +38,7 @@ export const CrisisPage: React.FC = () => {
   const handleUrgentClick = (e: React.MouseEvent) => {
     e.preventDefault();
     if (user && user.phone) {
-      sendCrisisAlert('urgent', user.firstName || user.name || 'User', user.phone);
+      sendCrisisAlert('urgent', user.firstName || (user as any).name || 'User', user.phone);
       window.location.href = 'tel:112';
     } else {
       setCrisisType('urgent');

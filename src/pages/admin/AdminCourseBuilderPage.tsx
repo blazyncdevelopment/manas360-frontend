@@ -259,7 +259,7 @@ export default function AdminCourseBuilderPage() {
                 <h3 className="font-semibold text-slate-800">Curriculum</h3>
                 <Button 
                   size="sm" 
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => { setEditingModule(null); setModuleModalOpen(true); }}
                   className="flex items-center gap-1"
                 >

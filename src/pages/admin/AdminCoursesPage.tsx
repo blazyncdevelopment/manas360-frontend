@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, BookOpen, Clock } from 'lucide-react';
+import { Plus, Edit, Trash2, BookOpen } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -73,7 +73,7 @@ export default function AdminCoursesPage() {
           <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 mb-1">No courses yet</h3>
           <p className="text-slate-500 mb-4">Get started by creating your first course.</p>
-          <Button onClick={() => navigate('/admin/courses/builder/new')} variant="outline">
+          <Button onClick={() => navigate('/admin/courses/builder/new')} variant="secondary">
             Create First Course
           </Button>
         </div>
@@ -121,7 +121,7 @@ export default function AdminCoursesPage() {
                     <Trash2 className="w-4 h-4" />
                   </Button>
                   <Button 
-                    variant="outline" 
+                    variant="secondary" 
                     size="sm" 
                     onClick={() => navigate(`/admin/courses/builder/${course.id}`)}
                     className="flex items-center gap-2"

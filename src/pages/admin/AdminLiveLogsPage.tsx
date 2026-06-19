@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Terminal, History, Download, Clock, Play, Pause, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Terminal, History, Download, Clock, Play, Pause, Trash2, FileText } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { http } from '../../lib/http';
 import toast from 'react-hot-toast';
+import { getApiBaseUrl } from '../../lib/runtimeEnv';
 
 export default function AdminLiveLogsPage() {
   const [activeTab, setActiveTab] = useState<'live' | 'history'>('live');
@@ -260,7 +261,7 @@ export default function AdminLiveLogsPage() {
                       </div>
                     </div>
                     <Button 
-                      variant="outline" 
+                      variant="secondary" 
                       size="sm"
                       onClick={() => downloadLog(file.filename)}
                       className="flex items-center gap-2"
