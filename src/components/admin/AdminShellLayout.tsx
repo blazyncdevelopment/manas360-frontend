@@ -28,7 +28,7 @@ const ADMIN_DOMAINS: AdminDomain[] = [
 		items: [
 			{ to: '/admin/identity/users', label: 'Users', shortLabel: 'U' },
 			{ to: '/admin/identity/approvals', label: 'Approvals', shortLabel: 'Ap' },
-			{ to: '/admin/identity/therapists', label: 'Therapists', shortLabel: 'Th' },
+			{ to: '/admin/identity/therapists', label: 'Approval Provider', shortLabel: 'AP' },
 			{ to: '/admin/identity/roles', label: 'Roles', shortLabel: 'Rl' },
 		],
 	},

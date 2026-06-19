@@ -76,6 +76,8 @@ export const ProviderSidebar = ({ isOpen, onClose }: ProviderSidebarProps) => {
   };
 
   const menuConfig = getMenuConfig(role);
+  const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Provider';
+  const displayName = /^Dr\.?\s/i.test(fullName) ? fullName : `Dr. ${fullName}`;
 
   return (
     <>
@@ -137,7 +139,7 @@ export const ProviderSidebar = ({ isOpen, onClose }: ProviderSidebarProps) => {
             {user?.firstName ? user.firstName.charAt(0) : 'P'}
           </div>
           <div className="min-w-0 flex-1 flex flex-col justify-center">
-            <p className="truncate text-[15px] font-bold text-gray-800 leading-none mb-1">Dr. {user?.firstName || 'Provider'}</p>
+            <p className="truncate text-[15px] font-bold text-gray-800 leading-none mb-1">{displayName}</p>
             <p className="truncate text-xs font-medium text-gray-500 capitalize leading-none">{role.toLowerCase()}</p>
           </div>
         </div>

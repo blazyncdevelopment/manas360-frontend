@@ -43,6 +43,7 @@ interface PreBookingPaymentStepProps {
     night?: boolean;
     crisis?: boolean;
   };
+  providerType?: string;
   bookingOptions: MarketplaceBookingOptions;
   onSuccess: (appointmentRequestId: string) => void;
   onBack: () => void;
@@ -61,6 +62,7 @@ export default function PreBookingPaymentStep({
   presetEntryType,
   timezoneRegion,
   matchPreferences,
+  providerType,
   bookingOptions,
   onSuccess,
   onBack,
@@ -76,19 +78,29 @@ export default function PreBookingPaymentStep({
   const [fee, setFee] = useState<number>(Math.max(...selectedProviders.map((p) => p.fee), 29900));
 
   useEffect(() => {
-    // Convert presetEntryType (underscore format) to pricing lookup format (hyphen)
-    const baseType = presetEntryType ? presetEntryType.replace(/_/g, '-') : null;
-    // If user is NRI, look up NRI variant of the provider type
-    let pricingType: string | null = null;
-    if (isNriUser && baseType) {
-      pricingType = baseType.startsWith('nri-') ? baseType : (NRI_PROVIDER_MAP[baseType] ?? `nri-${baseType}`);
-    } else {
-      pricingType = baseType;
-    }
+    const providerKey = providerType ? providerType.toLowerCase() : 'all';
+    
+    const DOMESTIC_MAP: Record<string, string> = {
+      'psychologist': 'clinical-psychologist',
+      'therapist': 'clinical-psychologist',
+      'psychiatrist': 'psychiatrist',
+      'coach': 'nlp-coach',
+      'all': 'clinical-psychologist'
+    };
+    
+    const NRI_MAP: Record<string, string> = {
+      'psychologist': 'nri-psychologist',
+      'therapist': 'nri-therapist',
+      'psychiatrist': 'nri-psychiatrist',
+      'coach': 'nri-coach',
+      'all': 'nri-therapist'
+    };
+
+    const pricingType = isNriUser ? (NRI_MAP[providerKey] || 'nri-therapist') : (DOMESTIC_MAP[providerKey] || 'clinical-psychologist');
 
     patientApi.getPricing({ mode: isNriUser ? 'nri' : undefined }).then((res: any) => {
       const data = res?.data ?? res;
-      const rows: any[] = data?.sessionPricing ?? [];
+      const rows: any[] = data?.sessions ?? data?.sessionPricing ?? [];
       let match: any = null;
       if (pricingType) {
         match = rows.find((r: any) => String(r.providerType).toLowerCase() === pricingType)
@@ -105,7 +117,7 @@ export default function PreBookingPaymentStep({
         setFee(isVideoAppointment ? Math.round(baseMinor * (1 + videoSurcharge / 100)) : baseMinor);
       }
     }).catch(() => { });
-  }, [presetEntryType, isNriUser, isVideoAppointment]);
+  }, [providerType, isNriUser, isVideoAppointment]);
 
   const feeInRupees = fee / 100;
 
@@ -230,6 +242,17 @@ export default function PreBookingPaymentStep({
             </p>
           </div>
         )}
+
+        <div>
+          <p className="text-xs text-charcoal/60 uppercase tracking-wider font-semibold">
+            Session Type
+          </p>
+          <p className="text-sm font-semibold text-charcoal mt-1 capitalize">
+            {!providerType || providerType === 'ALL' 
+              ? 'Single Session' 
+              : `${providerType.toLowerCase()} Session`}
+          </p>
+        </div>
 
         <div>
           <p className="text-xs text-charcoal/60 uppercase tracking-wider font-semibold">

@@ -189,11 +189,31 @@ export type AdminPricingBundleItem = {
 	effectiveTo?: string | null;
 };
 
+export type AdminProviderPlanItem = {
+	price: number;
+	quarterlyPrice: number;
+	leadsPerWeek: number;
+	hotLeads: number;
+	warmLeads: number;
+	coldLeads: number;
+	leadsPerMonth: number;
+	discount: number;
+	claimWindowHours: number;
+	leadQualityMix: string;
+	leadDelivery: string;
+	profileListing: string;
+	dashboardAccess: string;
+	certificationBadge: string;
+	support: string;
+	recommendedFor: string;
+};
+
 export type AdminPricingConfig = {
 	platformFee: AdminPricingPlatformFee | null;
 	platformPlans: AdminPricingPlanItem[];
 	sessionPricing: AdminPricingSessionItem[];
 	premiumBundles: AdminPricingBundleItem[];
+	providerPlans?: Record<string, AdminProviderPlanItem>;
 	surchargePercent: number;
 	impactSummary?: {
 		totalSubscriptions: number;
@@ -562,6 +582,7 @@ export const updateAdminPricingConfig = async (payload: {
 		price: number;
 		active?: boolean;
 	}>;
+	providerPlans?: Record<string, AdminProviderPlanItem>;
 }): Promise<ApiEnvelope<AdminPricingConfig>> => {
 	return (await client.patch<ApiEnvelope<AdminPricingConfig>>('/v1/admin/pricing', payload)).data;
 };
@@ -1107,7 +1128,7 @@ export const extractAdminProviderOnboardingProfile = (
 	if (Object.keys(merged).length === 0) return null;
 
 	const profile: AdminProviderOnboardingProfile = {
-		name: pickString(merged.name, merged.fullName, merged.full_name),
+		name: pickString(merged.name, merged.fullName, merged.full_name, merged.displayName) || `${merged.firstName || ''} ${merged.lastName || ''}`.trim() || 'Unknown',
 		phone: pickString(merged.phone, merged.phoneNumber, merged.phone_number),
 		dob: pickString(merged.dob, merged.dateOfBirth, merged.date_of_birth),
 		city: pickString(merged.city),
@@ -1127,7 +1148,7 @@ export const extractAdminProviderOnboardingProfile = (
 			merged.clinical_categories,
 		),
 		specializations: pickStringArray(merged.specializations, merged.specialization),
-		yearsOfExperience: pickNumber(merged.yearsOfExperience, merged.years_of_experience),
+		yearsOfExperience: pickNumber(merged.yearsOfExperience, merged.years_of_experience, merged.yearsExperience),
 		availability: pickAvailability(merged.availability),
 		consultationFee: pickNumber(merged.consultationFee, merged.consultation_fee),
 		hourlyRate: pickNumber(merged.hourlyRate, merged.hourly_rate),

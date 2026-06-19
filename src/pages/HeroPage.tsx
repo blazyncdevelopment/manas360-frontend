@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SEO } from '../components/SEO';
 
 
 
@@ -175,6 +176,17 @@ export const Hero: React.FC = () => {
 
   return (
     <div className="hero-wrapper min-h-screen h-screen flex flex-col relative overflow-hidden">
+      <SEO 
+        title="MANAS360 - You're Not Alone | Mental Wellness Platform"
+        description="India's complete mental wellness ecosystem. Verified therapists, AI companion, and clinical care. Get a free 6-min screening."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "MANAS360",
+          "url": "https://manas360.com",
+          "logo": "https://manas360.com/AppIcon.jpeg"
+        }}
+      />
       <style>{`
         :root { 
           --navy: #032467; 

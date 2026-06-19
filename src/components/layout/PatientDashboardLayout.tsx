@@ -198,6 +198,7 @@ export default function PatientDashboardLayout() {
   const [mdcUser, setMdcUser] = useState<any>(null);
   const isMdcMode = !!mdcUser;
   const [, setHasPlan] = useState(false);
+  const [planName, setPlanName] = useState<string>('Free Plan');
 
   useEffect(() => {
     if (!user || user.role !== 'patient') return;
@@ -205,14 +206,20 @@ export default function PatientDashboardLayout() {
     // Quick fallback if user object has the flag
     if ((user as any).patientSubscriptionActive) {
       setHasPlan(true);
-      return;
+      setPlanName('Premium Plan');
     }
 
     // Otherwise fetch the subscription to check properly
     patientApi.getSubscription()
       .then((res: any) => {
         const sub = res?.data ?? res;
-        setHasPlan(hasActivePaidPatientSubscription(user, sub));
+        const isActivePaid = hasActivePaidPatientSubscription(user, sub);
+        setHasPlan(isActivePaid);
+        if (sub?.planName) {
+          setPlanName(sub.planName);
+        } else if (isActivePaid) {
+          setPlanName('Premium Plan');
+        }
       })
       .catch(() => setHasPlan(false));
   }, [user]);
@@ -550,6 +557,10 @@ export default function PatientDashboardLayout() {
             <div className="ml-auto flex items-center gap-2 sm:gap-3">
               {!isMdcMode && (
                 <>
+                  <div className="inline-flex min-h-[36px] items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+                    <span className="text-[10px] uppercase tracking-[0.18em] text-sky-800/70">Plan</span>
+                    <span>{planName}</span>
+                  </div>
                   <div className="inline-flex min-h-[36px] items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                     <span className="text-[10px] uppercase tracking-[0.18em] text-emerald-800/70">Wallet</span>
                     <span>{formattedWalletBalance}</span>

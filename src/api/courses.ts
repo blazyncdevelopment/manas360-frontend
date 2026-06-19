@@ -45,3 +45,9 @@ export const getPublishedCourseById = async (id: string): Promise<Course> => {
   const response = await client.get<Course>(`/v1/courses/${id}`);
   return response.data;
 };
+
+export const getAdminCourses = async (): Promise<Course[]> => {
+  const response = await client.get<Course[]>('/v1/admin/courses');
+  return response.data;
+};
+

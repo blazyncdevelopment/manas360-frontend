@@ -818,6 +818,11 @@ export const fetchProviderPlans = async () => {
   return unwrap<any[]>(response.data);
 };
 
+export const fetchPublicPricingConfig = async () => {
+  const response = await http.get<Envelope<any>>('/v1/pricing');
+  return unwrap<any>(response.data);
+};
+
 export const fetchProviderLeads = async () => {
   const response = await http.get<Envelope<any[]>>('/v1/provider/leads');
   return unwrap<any[]>(response.data);
@@ -850,8 +855,14 @@ export const fetchLeadMarketplacePricing = async (): Promise<LeadMarketplacePric
   return unwrap<LeadMarketplacePricing>(response.data);
 };
 
-export const purchaseProviderLeadWithCredit = async (leadId: string): Promise<void> => {
-  await http.post(`/v1/leads/marketplace/${encodeURIComponent(leadId)}/purchase-with-credit`, {});
+export const purchaseProviderLeadWithCredit = async (leadId: string) => {
+  const { data } = await http.post('/v1/provider/marketplace/purchase-with-credit', { leadId });
+  return data;
+};
+
+export const claimProviderLeadWithQuota = async (leadId: string) => {
+  const { data } = await http.post('/v1/provider/marketplace/claim-with-quota', { leadId });
+  return data;
 };
 
 export const fetchProviderMarketplace = async (params?: { page?: number; limit?: number }) => {

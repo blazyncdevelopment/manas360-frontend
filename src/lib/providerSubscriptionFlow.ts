@@ -38,7 +38,7 @@ export const PROVIDER_LEAD_PLANS: Array<{
     name: 'Basic',
     trialDays: 21,
     subtitle: 'For new providers',
-    features: ['3 leads/week', 'Warm + Cold leads', 'Verified badge'],
+    features: ['3 leads/week (Hot: 0 | Warm: 1 | Cold: 2)', 'Warm + Cold leads', 'Verified badge'],
   },
   {
     id: 'standard',
@@ -46,14 +46,14 @@ export const PROVIDER_LEAD_PLANS: Array<{
     trialDays: 21,
     subtitle: 'For active providers',
     badge: 'Most Chosen',
-    features: ['6 leads/week', 'Hot + Warm + Cold', 'Preferred badge', '10% marketplace discount'],
+    features: ['6 leads/week (Hot: 1 | Warm: 2 | Cold: 3)', 'Hot + Warm + Cold', 'Preferred badge', '10% marketplace discount'],
   },
   {
     id: 'premium',
     name: 'Premium',
     trialDays: 21,
     subtitle: 'For maximum patient flow',
-    features: ['7 leads/week', 'Priority hot leads', 'Premium badge', '20% marketplace discount'],
+    features: ['7 leads/week (Hot: 3 | Warm: 2 | Cold: 2)', 'Priority hot leads', 'Premium badge', '20% marketplace discount'],
   },
 ];
 
@@ -94,8 +94,8 @@ export const getProviderAddonMinor = (addons: ProviderAddonSelection): number =>
   );
 };
 
-export const getProviderCheckoutSummaryMinor = (cart: ProviderSubscriptionCart) => {
-  const platformMinor = getPlatformAccessMinor(cart.platformCycle);
+export const getProviderCheckoutSummaryMinor = (cart: ProviderSubscriptionCart, isPlatformAccessActive: boolean = false) => {
+  const platformMinor = isPlatformAccessActive ? 0 : getPlatformAccessMinor(cart.platformCycle);
   const leadPlanMinor = getLeadPlanAmountMinor(cart.leadPlanId, cart.platformCycle);
   const addonsMinor = getProviderAddonMinor(cart.addons);
   const subtotalMinor = platformMinor + leadPlanMinor + addonsMinor;

@@ -83,7 +83,7 @@ export const groupTherapyApi = {
 
   createPublicJoinPaymentIntent: async (
     sessionId: string,
-    payload?: { guestName?: string; guestEmail?: string },
+    payload?: { guestName?: string; guestEmail?: string; guestPhone?: string },
   ) => {
     const res = await http.post(`/v1/group-therapy/public/sessions/${encodeURIComponent(sessionId)}/join/payment-intent`, payload || {});
     return unwrap<{ transactionId: string; redirectUrl: string; enrollmentId: string; amountMinor: number }>(res.data);

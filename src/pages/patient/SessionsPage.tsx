@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { parseJourneyPayload, type JourneyPayload } from '../../utils/journey';
 import SlideOverBookingDrawer from '../../components/patient/SlideOverBookingDrawer';
 import SmartMatchFlow from '../../components/patient/SmartMatchFlow';
+import CalendarSelection from '../../components/patient/CalendarSelection';
 import {
   CLINICAL_ASSESSMENT_KEYS,
   CLINICAL_ASSESSMENT_TEMPLATE_KEYS,
@@ -47,7 +48,7 @@ type AssessmentHistoryEntry = {
   createdAt?: string;
 };
 
-type ClinicalFlowPhase = 'intro' | 'question' | 'loading-next' | 'next-phase' | 'provider-list';
+type ClinicalFlowPhase = 'intro' | 'question' | 'loading-next' | 'next-phase' | 'provider-list' | 'choose-provider';
 type SmartMatchProviderType = 'ALL' | 'THERAPIST' | 'PSYCHOLOGIST' | 'PSYCHIATRIST' | 'COACH';
 type AdPresetEntryType =
   | 'therapist'
@@ -154,6 +155,7 @@ export default function SessionsPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<any | null>(null);
   const [isSmartMatchOpen, setIsSmartMatchOpen] = useState(false);
+  const [isEditPreferencesOpen, setIsEditPreferencesOpen] = useState(false);
   const [hasCompletedCheckin, setHasCompletedCheckin] = useState(false);
   const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistoryEntry[]>([]);
   const [assessmentHistoryLoading, setAssessmentHistoryLoading] = useState(true);
@@ -582,14 +584,16 @@ export default function SessionsPage() {
     await submitCurrentStructuredAssessment(updatedAnswers);
   };
 
-  const startCarePath = async (path: 'recommended' | 'direct' | 'urgent') => {
+  const startCarePath = async (path: 'recommended' | 'direct' | 'urgent', selectedType?: SmartMatchProviderType) => {
     const pathway = path === 'urgent' ? 'urgent-care' : path === 'direct' ? 'direct-provider' : 'stepped-care';
     const recommendedProvider = String(clinicalJourney?.recommendedProvider || '').toLowerCase();
     const preferredSpecialization = path === 'urgent'
       ? 'PSYCHIATRIST'
-      : path === 'recommended'
-        ? (recommendedProvider.includes('psychiatrist') ? 'PSYCHIATRIST' : 'PSYCHOLOGIST')
-        : 'ALL';
+      : path === 'direct' && selectedType
+        ? selectedType
+        : path === 'recommended'
+          ? (recommendedProvider.includes('psychiatrist') ? 'PSYCHIATRIST' : 'PSYCHOLOGIST')
+          : 'ALL';
 
     try {
       await patientApi.selectJourneyPathway({
@@ -1113,7 +1117,7 @@ export default function SessionsPage() {
                   <p className="mt-1 text-sm font-medium text-charcoal">Continue with {adPresetLabel} providers</p>
                 </button>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <button
                     type="button"
                     onClick={() => void startCarePath('recommended')}
@@ -1121,6 +1125,14 @@ export default function SessionsPage() {
                   >
                     <p className="text-base font-bold text-teal-800">Book a Session</p>
                     <p className="mt-1 text-sm text-teal-700/80">Best-matched therapist for your scores. Start healing today.</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setClinicalFlowPhase('choose-provider')}
+                    className="rounded-xl border border-blue-200 bg-blue-50 p-5 text-left transition hover:bg-blue-100"
+                  >
+                    <p className="text-base font-bold text-blue-800">Choose Provider</p>
+                    <p className="mt-1 text-sm text-blue-700/80">Skip screening, book directly based on preference.</p>
                   </button>
                   <button
                     type="button"
@@ -1273,7 +1285,7 @@ export default function SessionsPage() {
                   <p className="mt-0.5 text-xs text-charcoal/55">Based on your assessment results</p>
                 </button>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <button
                     type="button"
                     onClick={() => void startCarePath('recommended')}
@@ -1281,6 +1293,14 @@ export default function SessionsPage() {
                   >
                     <p className="text-sm font-bold text-teal-800">Book a Session</p>
                     <p className="mt-1 text-xs text-teal-700/80">Best-matched therapist for your scores. Start healing today.</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setClinicalFlowPhase('choose-provider')}
+                    className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-left transition hover:bg-blue-100"
+                  >
+                    <p className="text-sm font-bold text-blue-800">Choose Provider</p>
+                    <p className="mt-1 text-xs text-blue-700/80">Skip screening, book directly based on preference.</p>
                   </button>
                   <button
                     type="button"
@@ -1292,6 +1312,71 @@ export default function SessionsPage() {
                   </button>
                 </div>
               )}
+            </div>
+          ) : null}
+
+          {clinicalFlowPhase === 'choose-provider' ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setClinicalFlowPhase('next-phase')}
+                  className="rounded-lg border border-calm-sage/20 p-1.5 text-charcoal/70 hover:bg-calm-sage/5"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                <h3 className="text-base font-bold text-charcoal">Choose Provider Type</h3>
+              </div>
+              
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => void startCarePath('direct', 'PSYCHOLOGIST')}
+                  className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-4 transition hover:border-emerald-200"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">💚</span>
+                    <span className="font-bold text-charcoal">Psychologist</span>
+                  </div>
+                  <span className="rounded-lg bg-white px-2.5 py-1 text-sm font-bold text-charcoal/60 shadow-sm">₹699</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => void startCarePath('direct', 'PSYCHIATRIST')}
+                  className="flex items-center justify-between rounded-xl border border-sky-100 bg-sky-50 px-4 py-4 transition hover:border-sky-200"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">💊</span>
+                    <span className="font-bold text-charcoal">Psychiatrist</span>
+                  </div>
+                  <span className="rounded-lg bg-white px-2.5 py-1 text-sm font-bold text-charcoal/60 shadow-sm">₹999</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => void startCarePath('direct', 'THERAPIST')}
+                  className="flex items-center justify-between rounded-xl border border-rose-100 bg-rose-50 px-4 py-4 transition hover:border-rose-200"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">💎</span>
+                    <span className="font-bold text-charcoal">Advanced</span>
+                  </div>
+                  <span className="rounded-lg bg-white px-2.5 py-1 text-sm font-bold text-charcoal/60 shadow-sm">₹1,499</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => void startCarePath('direct', 'COACH')}
+                  className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50 px-4 py-4 transition hover:border-amber-200"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🎯</span>
+                    <span className="font-bold text-charcoal">Coach</span>
+                  </div>
+                  <span className="rounded-lg bg-white px-2.5 py-1 text-sm font-bold text-charcoal/60 shadow-sm">₹499</span>
+                </button>
+              </div>
             </div>
           ) : null}
 
@@ -1667,14 +1752,27 @@ export default function SessionsPage() {
 
           {smartMatchSummary && (
             <section className="rounded-3xl border border-teal-200/70 bg-teal-50/80 p-6 shadow-soft-sm">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100 text-teal-600">
-                  <TrendingUp className="h-5 w-5" />
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-600">
+                    <TrendingUp className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-teal-900">Confirmed Match Summary</h3>
+                    <div className="space-y-1">
+                      <p className="text-xs text-teal-700/80">Your platform fee is confirmed. These preferences will drive your provider recommendations.</p>
+                      <p className="text-xs font-medium text-teal-800">
+                        <span className="font-bold">Note:</span> If your session isn't booked within 24 hours, our system will automatically find new matches for you. You don't need to worry!
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-teal-900">Confirmed Match Summary</h3>
-                  <p className="text-xs text-teal-700/80">Your platform fee is confirmed. These preferences will drive your provider recommendations.</p>
-                </div>
+                <button
+                  onClick={() => setIsEditPreferencesOpen(true)}
+                  className="shrink-0 rounded-lg border border-teal-200 bg-white px-4 py-2 text-sm font-bold text-teal-700 shadow-sm transition-colors hover:bg-teal-50 hover:text-teal-800"
+                >
+                  Edit
+                </button>
               </div>
 
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -1707,6 +1805,13 @@ export default function SessionsPage() {
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-teal-700/70">Session Mode</p>
                   <p className="mt-1 text-sm font-semibold text-charcoal">
                     {smartMatchSummary.preferences?.mode || 'Not captured'}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-white/90 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-teal-700/70">Session Type</p>
+                  <p className="mt-1 text-sm font-semibold text-charcoal capitalize">
+                    {smartMatchSummary.preferences?.providerType?.toLowerCase() || 'General Session'}
                   </p>
                 </div>
 
@@ -1764,6 +1869,19 @@ export default function SessionsPage() {
                   </div>
                 </div>
               ))}
+              
+              <button
+                type="button"
+                onClick={!isAssessmentComplete ? onAssessmentPrimaryAction : handlePrimaryBookSession}
+                disabled={bookingFallbackLoading}
+                className="group flex min-h-[200px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-teal-200/60 bg-teal-50/30 p-5 transition-all hover:border-teal-300 hover:bg-teal-50 disabled:opacity-50"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 text-teal-600 transition-transform group-hover:scale-110">
+                  <span className="text-2xl font-light">+</span>
+                </div>
+                <h4 className="mt-3 font-bold text-teal-900">Create new session</h4>
+                <p className="mt-1 text-center text-xs text-teal-700/70">Connect with a new therapist or coach</p>
+              </button>
             </div>
           </section>
 
@@ -2123,6 +2241,52 @@ export default function SessionsPage() {
           }
         }}
       />
+      {isEditPreferencesOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-teal-950/40 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="flex h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex-1 overflow-y-auto p-2">
+              <CalendarSelection
+                onDateTimeSelect={(date, time, options) => {
+                  const newSummary = {
+                    ...smartMatchSummary,
+                    selectedDate: date.toISOString(),
+                    selectedTime: time,
+                    preferences: {
+                      ...smartMatchSummary?.preferences,
+                      concerns: options.concerns,
+                      mode: options.appointmentType,
+                    },
+                  };
+                  
+                  // Update state
+                  setSmartMatchSummary(newSummary);
+                  
+                  // Update pending storage if exists
+                  if (marketplaceBookingPending?.transactionId) {
+                    const pendingKey = `manas360.smartmatch.pending.${marketplaceBookingPending.transactionId}`;
+                    try {
+                      const existing = JSON.parse(localStorage.getItem(pendingKey) || '{}');
+                      existing.smartMatchSummary = newSummary;
+                      localStorage.setItem(pendingKey, JSON.stringify(existing));
+                      setMarketplaceBookingPendingState({
+                        ...marketplaceBookingPending,
+                        smartMatchSummary: newSummary
+                      });
+                    } catch (err) {}
+                  }
+                  
+                  // Update session storage
+                  window.sessionStorage.setItem('manas360.smartmatch.lastSummary', JSON.stringify(newSummary));
+                  
+                  setIsEditPreferencesOpen(false);
+                }}
+                onCancel={() => setIsEditPreferencesOpen(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

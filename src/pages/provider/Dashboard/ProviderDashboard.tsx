@@ -219,6 +219,13 @@ export default function ProviderDashboard() {
   const allDone = platformPaid && onboardingDone && verified;
   const nextStep = steps.find((s) => !s.done);
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
     <div className="space-y-6">
       {/* Account status banner — shown until fully active */}
@@ -270,7 +277,7 @@ export default function ProviderDashboard() {
       <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            {isMdcMode ? `Welcome back, ${mdcUser.fullName}` : `Good morning, Dr. ${user?.firstName || 'Provider'} 👋`}
+            {isMdcMode ? `Welcome back, ${mdcUser.fullName}` : `${getGreeting()}, ${/^Dr\.?\s/i.test(`${user?.firstName || ''} ${user?.lastName || ''}`.trim()) ? `${user?.firstName || ''} ${user?.lastName || ''}`.trim() : `Dr. ${`${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Provider'}`} 👋`}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
             {isMdcMode ? `Workspace: ${mdcUser.clinicName}` : 'Here is your practice overview for today.'}

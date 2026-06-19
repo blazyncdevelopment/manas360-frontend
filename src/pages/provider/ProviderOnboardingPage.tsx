@@ -262,14 +262,17 @@ function ProviderOnboardingPage() {
   };
 
   const handleVerifyPAN = async () => {
-    if (!form.panNumber || !form.nameOnPan) {
-      setPanError("PAN Number and Name on PAN are required.");
+    if (!form.panNumber || !form.nameOnPan || !form.dob) {
+      setPanError("PAN Number, Name on PAN, and Date of Birth are required.");
       return;
     }
     setVerifyingPan(true);
     setPanError(null);
     try {
-      const result = await verifyPAN(user?.id as string, form.panNumber, form.nameOnPan);
+      // Format YYYY-MM-DD to DD/MM/YYYY
+      const [year, month, day] = form.dob.split('-');
+      const formattedDob = `${day}/${month}/${year}`;
+      const result = await verifyPAN(user?.id as string, form.panNumber, form.nameOnPan, formattedDob);
       if (result.success) {
         setIsPanVerified(true);
       } else {
@@ -401,9 +404,8 @@ function ProviderOnboardingPage() {
       form.yearsOfExperience > 0,          // Bug fix: must be > 0 (can't have 0 years experience)
     );
     const hasAvailability = Object.values(form.availability || {}).some((slots) => slots && slots.length > 0);
-    if (step === 5) return hasAvailability && form.consultationFee > 0;   // Bug fix: fee must be > 0
+    if (step === 5) return hasAvailability;
     if (step === 6) return Boolean(
-      form.hourlyRate > 0 &&                // Bug fix: rate must be > 0
       form.bio.trim() &&
       form.tagline.trim() &&
       bioWordCount <= 500,                  // Bug fix: block if bio exceeds limit
@@ -707,7 +709,7 @@ function ProviderOnboardingPage() {
                     <button
                       type="button"
                       onClick={handleVerifyPAN}
-                      disabled={verifyingPan || !form.panNumber || !form.nameOnPan}
+                      disabled={verifyingPan || !form.panNumber || !form.nameOnPan || !form.dob}
                       className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                     >
                       {verifyingPan ? 'Verifying...' : 'Verify PAN'}
@@ -988,20 +990,11 @@ function ProviderOnboardingPage() {
                 </table>
               </div>
 
-              <label className="grid gap-1.5 max-w-md">
-                <span className="text-sm font-semibold text-slate-700">Consultation Fee (₹ per session) <span className="text-rose-500">*</span></span>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-4 flex items-center text-sm font-semibold text-slate-400">₹</span>
-                  <input
-                    type="number"
-                    min="1"
-                    className="w-full rounded-xl border border-slate-300 py-3 pl-8 pr-4 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition"
-                    value={form.consultationFee || ''}
-                    placeholder="e.g. 500"
-                    onChange={(e) => setForm((p) => ({ ...p, consultationFee: Math.max(0, Number(e.target.value)) }))}
-                  />
-                </div>
-              </label>
+              <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                <p className="text-sm text-blue-800">
+                  <span className="font-semibold">Note:</span> Your consultation fee and hourly rate will be assigned by the platform administration based on your role and experience.
+                </p>
+              </div>
             </div>
           )}
 
@@ -1013,22 +1006,7 @@ function ProviderOnboardingPage() {
                 <p className="mt-1 text-sm text-emerald-950/80">Configure your hourly charge rates and detail your clinical approaches.</p>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
-                <label className="grid gap-1.5">
-                  <span className="text-sm font-semibold text-slate-700">Hourly Rate (₹) <span className="text-rose-500">*</span></span>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-4 flex items-center text-sm font-semibold text-slate-400">₹</span>
-                    <input
-                      type="number"
-                      min="1"
-                      className="w-full rounded-xl border border-slate-300 py-3 pl-8 pr-4 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition"
-                      value={form.hourlyRate || ''}
-                      placeholder="e.g. 1500"
-                      onChange={(e) => setForm((p) => ({ ...p, hourlyRate: Math.max(0, Number(e.target.value)) }))}
-                    />
-                  </div>
-                </label>
-
+              <div className="grid gap-6">
                 <label className="grid gap-1.5">
                   <span className="text-sm font-semibold text-slate-700">Tagline <span className="text-rose-500">*</span></span>
                   <input
@@ -1135,15 +1113,8 @@ function ProviderOnboardingPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 py-4">
-                  <div>
-                    <span className="font-semibold text-slate-400">Consultation Fee:</span>
-                    <p className="text-slate-900 font-bold text-emerald-600 mt-0.5">₹{form.consultationFee} / session</p>
-                  </div>
-                  <div>
-                    <span className="font-semibold text-slate-400">Hourly Rate:</span>
-                    <p className="text-slate-900 font-bold text-emerald-600 mt-0.5">₹{form.hourlyRate} / hour</p>
-                  </div>
+                <div className="py-2 border-t border-b border-slate-100 my-4">
+                  <p className="text-xs font-semibold text-slate-500">Note: Pricing rates will be assigned by administration based on your verified role.</p>
                 </div>
 
                 <div className="pt-4">

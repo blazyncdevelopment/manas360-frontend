@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Check } from 'lucide-react';
+import { X, Check, Calendar as CalendarIcon, Users, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import ProviderSelectionStep from './steps/ProviderSelectionStep';
@@ -18,7 +18,7 @@ interface SmartMatchFlowProps {
   timezoneRegion?: string;
 }
 
-type FlowStep = 'calendar' | 'provider-selection' | 'pre-payment' | 'success';
+type FlowStep = 'session-type' | 'direct-provider' | 'calendar' | 'provider-selection' | 'pre-payment' | 'success';
 
 type SmartMatchPreferences = {
   concerns: string[];
@@ -69,7 +69,7 @@ export default function SmartMatchFlow({
 }: SmartMatchFlowProps) {
   const nriFixedFeeMinor = getNriFixedFeeMinor(presetEntryType);
   const navigate = useNavigate();
-  const [step, setStep] = useState<FlowStep>('calendar');
+  const [step, setStep] = useState<FlowStep>('session-type');
   const [calendarSelection, setCalendarSelection] = useState<CalendarSelection | null>(null);
   const [selectedProviderType, setSelectedProviderType] = useState<
     'ALL' | 'THERAPIST' | 'PSYCHOLOGIST' | 'PSYCHIATRIST' | 'COACH'
@@ -138,7 +138,7 @@ export default function SmartMatchFlow({
 
   // Reset state when drawer closes
   const handleClose = () => {
-    setStep('calendar');
+    setStep('session-type');
     setCalendarSelection(null);
     setBookingOptions(null);
     setSelectedProviderType(initialProviderType);
@@ -156,12 +156,22 @@ export default function SmartMatchFlow({
 
   const getStepTitle = (): string => {
     const titles: Record<FlowStep, string> = {
+      'session-type': 'Book a Session',
+      'direct-provider': 'Book a Session',
       'calendar': 'Book a Session',
       'provider-selection': 'Choose Providers',
       'pre-payment': 'Confirm & Pay',
       'success': 'Booking Created',
     };
-    return titles[step];
+    
+    let title = titles[step];
+    
+    if (['session-type', 'direct-provider', 'calendar'].includes(step) && initialProviderType && initialProviderType !== 'ALL') {
+      const typeStr = initialProviderType.charAt(0).toUpperCase() + initialProviderType.slice(1).toLowerCase();
+      title = `Book a Session - ${typeStr}`;
+    }
+    
+    return title;
   };
 
   return createPortal(
@@ -252,6 +262,122 @@ export default function SmartMatchFlow({
               </div>
             )}
 
+            {!isCheckingSubscription && !isFreeBlocked && step === 'session-type' && (
+              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+                <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-charcoal/50">
+                  Select Session Type
+                </h3>
+
+                <div className="grid gap-3">
+                  <button
+                    onClick={() => {
+                      setSelectedProviderType(initialProviderType);
+                      setStep('calendar');
+                    }}
+                    className="flex items-center justify-between rounded-xl border border-calm-sage/20 bg-white p-4 transition-all hover:border-teal-300 hover:bg-teal-50 hover:shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100 text-teal-600">
+                        <CalendarIcon className="h-5 w-5" />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-bold text-charcoal">Single Session</h4>
+                        <p className="text-xs text-charcoal/60">Find the best match for your schedule</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setStep('direct-provider')}
+                    className="flex items-center justify-between rounded-xl border border-calm-sage/20 bg-white p-4 transition-all hover:border-teal-300 hover:bg-teal-50 hover:shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                        <Users className="h-5 w-5" />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-bold text-charcoal">Choose Direct Provider</h4>
+                        <p className="text-xs text-charcoal/60">Match with any available provider by role</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setSelectedProviderType('PSYCHIATRIST');
+                      setStep('calendar');
+                    }}
+                    className="flex items-center justify-between rounded-xl border border-calm-sage/20 bg-white p-4 transition-all hover:border-teal-300 hover:bg-teal-50 hover:shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+                        <Activity className="h-5 w-5" />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-bold text-charcoal">Choose Psychiatrist</h4>
+                        <p className="text-xs text-charcoal/60">Match specifically with a Psychiatrist</p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!isCheckingSubscription && !isFreeBlocked && step === 'direct-provider' && (
+              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+                <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-charcoal/50">
+                  Choose Provider Role
+                </h3>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    onClick={() => { setSelectedProviderType('PSYCHOLOGIST'); setStep('calendar'); }}
+                    className="flex flex-col items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-6 transition hover:border-emerald-300 hover:shadow-md"
+                  >
+                    <span className="text-4xl mb-2">🧠</span>
+                    <span className="font-bold text-charcoal">Psychologist</span>
+                    <span className="text-[10px] text-center text-charcoal/60 mt-2">Clinical & counseling psychology</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => { setSelectedProviderType('PSYCHIATRIST'); setStep('calendar'); }}
+                    className="flex flex-col items-center justify-center rounded-xl border border-sky-100 bg-sky-50 px-4 py-6 transition hover:border-sky-300 hover:shadow-md"
+                  >
+                    <span className="text-4xl mb-2">💊</span>
+                    <span className="font-bold text-charcoal">Psychiatrist</span>
+                    <span className="text-[10px] text-center text-charcoal/60 mt-2">Diagnosis & medication</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => { setSelectedProviderType('THERAPIST'); setStep('calendar'); }}
+                    className="flex flex-col items-center justify-center rounded-xl border border-rose-100 bg-rose-50 px-4 py-6 transition hover:border-rose-300 hover:shadow-md"
+                  >
+                    <span className="text-4xl mb-2">💚</span>
+                    <span className="font-bold text-charcoal">Therapist</span>
+                    <span className="text-[10px] text-center text-charcoal/60 mt-2">CBT, DBT, REBT, integrative</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => { setSelectedProviderType('COACH'); setStep('calendar'); }}
+                    className="flex flex-col items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-4 py-6 transition hover:border-amber-300 hover:shadow-md"
+                  >
+                    <span className="text-4xl mb-2">⭐</span>
+                    <span className="font-bold text-charcoal">NLP Coach</span>
+                    <span className="text-[10px] text-center text-charcoal/60 mt-2">Life coaching & transformation</span>
+                  </button>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                      onClick={() => setStep('session-type')}
+                      className="w-full rounded-xl border border-calm-sage/25 px-4 py-3 text-sm font-semibold text-charcoal/70 transition-colors hover:bg-calm-sage/5"
+                    >
+                      Back
+                  </button>
+                </div>
+              </div>
+            )}
+
             {!isCheckingSubscription && !isFreeBlocked && step === 'calendar' && (
               <CalendarSelection
                 onDateTimeSelect={(date, time, options) => {
@@ -265,7 +391,7 @@ export default function SmartMatchFlow({
                   setSelectedProviderType(initialProviderType);
                   setStep('pre-payment');
                 }}
-                onCancel={handleClose}
+                onCancel={() => setStep('session-type')}
               />
             )}
 
@@ -308,6 +434,7 @@ export default function SmartMatchFlow({
                 sourceFunnel={sourceFunnel}
                 timezoneRegion={timezoneRegion}
                 matchPreferences={matchPreferences}
+                providerType={selectedProviderType}
                 bookingOptions={bookingOptions}
                 onSuccess={() => {
                   // Save summary to session storage so SessionsPage shows it

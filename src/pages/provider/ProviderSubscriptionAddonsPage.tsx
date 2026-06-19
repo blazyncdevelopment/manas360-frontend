@@ -7,8 +7,11 @@ import {
   type ProviderAddonSelection,
 } from '../../lib/providerSubscriptionFlow';
 
+import { useAuth } from '../../context/AuthContext';
+
 export default function ProviderSubscriptionAddonsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [leadPlanId, setLeadPlanId] = useState<'free' | 'basic' | 'standard' | 'premium'>('basic');
   const [platformCycle, setPlatformCycle] = useState<'monthly' | 'quarterly'>('monthly');
   const [addons, setAddons] = useState<ProviderAddonSelection>({ hot: 0, warm: 0, cold: 0 });
@@ -35,8 +38,8 @@ export default function ProviderSubscriptionAddonsPage() {
       platformCycle,
       addons,
       updatedAt: new Date().toISOString(),
-    });
-  }, [leadPlanId, platformCycle, addons]);
+    }, user?.platformAccessActive);
+  }, [leadPlanId, platformCycle, addons, user?.platformAccessActive]);
 
   const proceed = () => {
     saveProviderCart({

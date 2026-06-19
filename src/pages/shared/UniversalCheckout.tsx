@@ -6,6 +6,7 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { http } from '../../lib/http';
+import { useAuth } from '../../context/AuthContext';
 import { useWallet } from '../../hooks/useWallet';
 import {
   buildPatientSubscriptionSuccessRedirect,
@@ -60,6 +61,7 @@ export default function UniversalCheckout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const { balance } = useWallet();
 
   const inferredMode: CheckoutMode = searchParams.get('type') === 'provider' || location.pathname.startsWith('/provider')
@@ -140,7 +142,7 @@ export default function UniversalCheckout() {
   }, [mode, queryPlanId]);
 
   const patientSummary = useMemo(() => (mode === 'patient' && patientCart ? getCheckoutSummaryMinor(patientCart) : null), [mode, patientCart]);
-  const providerSummary = useMemo(() => (mode === 'provider' && providerCart ? getProviderCheckoutSummaryMinor(providerCart) : null), [mode, providerCart]);
+  const providerSummary = useMemo(() => (mode === 'provider' && providerCart ? getProviderCheckoutSummaryMinor(providerCart, user?.platformAccessActive) : null), [mode, providerCart, user?.platformAccessActive]);
   const summary = patientSummary || providerSummary;
 
   const resolvedPlanId = mode === 'provider'
@@ -315,7 +317,11 @@ export default function UniversalCheckout() {
             </div>
             {mode === 'provider' && providerCart && (
               <>
-                <div className="flex items-center justify-between"><span>Platform Access ({providerCart.platformCycle})</span><strong>{formatInr(providerSummary?.platformMinor || 0)}</strong></div>
+                {providerSummary?.platformMinor ? (
+                  <div className="flex items-center justify-between"><span>Platform Access ({providerCart.platformCycle})</span><strong>{formatInr(providerSummary.platformMinor)}</strong></div>
+                ) : user?.platformAccessActive ? (
+                  <div className="flex items-center justify-between"><span>Platform Access ({providerCart.platformCycle})</span><strong className="text-emerald-600">Already Active (₹0)</strong></div>
+                ) : null}
                 <div className="flex items-center justify-between"><span>Marketplace Add-ons</span><strong>{formatInr(providerSummary?.addonsMinor || 0)}</strong></div>
               </>
             )}

@@ -420,6 +420,7 @@ export default function Settings() {
         );
 
       case 'billing': {
+        const pd = sub?.planDetails;
         return (
           <div className="space-y-4">
             <div className={CARD}>
@@ -442,6 +443,46 @@ export default function Settings() {
                   </div>
                 ))}
               </div>
+
+              {pd && (
+                <div className="mt-8 border-t border-calm-sage/10 pt-6">
+                  <h4 className="mb-4 text-sm font-semibold text-charcoal">Plan Features & Limits</h4>
+                  <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+                    <div className="flex justify-between border-b border-calm-sage/10 pb-2">
+                      <span className="text-sm text-charcoal/60">Leads Per Week</span>
+                      <span className="text-sm font-medium text-charcoal">{pd.leadsPerWeek} (Hot: {pd.hotLeads || 0} | Warm: {pd.warmLeads || 0} | Cold: {pd.coldLeads || 0})</span>
+                    </div>
+                    <div className="flex justify-between border-b border-calm-sage/10 pb-2">
+                      <span className="text-sm text-charcoal/60">Leads Per Month</span>
+                      <span className="text-sm font-medium text-charcoal">~{pd.leadsPerMonth} leads</span>
+                    </div>
+                    <div className="flex justify-between border-b border-calm-sage/10 pb-2">
+                      <span className="text-sm text-charcoal/60">Claim Window</span>
+                      <span className="text-sm font-medium text-charcoal">{pd.claimWindowHours} hours</span>
+                    </div>
+                    <div className="flex justify-between border-b border-calm-sage/10 pb-2">
+                      <span className="text-sm text-charcoal/60">Lead Quality</span>
+                      <span className="text-sm font-medium text-charcoal text-right pl-4">{pd.leadQualityMix}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-calm-sage/10 pb-2">
+                      <span className="text-sm text-charcoal/60">Delivery Days</span>
+                      <span className="text-sm font-medium text-charcoal text-right pl-4">{(pd.deliveryDays || []).join(', ') || 'None'}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-calm-sage/10 pb-2">
+                      <span className="text-sm text-charcoal/60">Marketplace Access</span>
+                      <span className="text-sm font-medium text-charcoal">{pd.marketplaceAccess ? `Yes (${pd.discount}% off)` : 'No'}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-calm-sage/10 pb-2">
+                      <span className="text-sm text-charcoal/60">Profile Listing</span>
+                      <span className="text-sm font-medium text-charcoal">{pd.profileListing}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-calm-sage/10 pb-2">
+                      <span className="text-sm text-charcoal/60">Badge</span>
+                      <span className="text-sm font-medium text-charcoal">{pd.certificationBadge}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );

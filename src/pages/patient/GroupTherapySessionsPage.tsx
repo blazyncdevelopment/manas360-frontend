@@ -143,6 +143,13 @@ export default function GroupTherapySessionsPage() {
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [joiningCode, setJoiningCode] = useState(false);
 
+  // Guest Registration State
+  const [guestModalOpen, setGuestModalOpen] = useState(false);
+  const [guestName, setGuestName] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
+  const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
+  const [isProcessingGuest, setIsProcessingGuest] = useState(false);
+
   const tryCompleteGroupTherapyTask = async () => {
     try {
       const plan = await patientApi.getTherapyPlan();
@@ -186,8 +193,8 @@ export default function GroupTherapySessionsPage() {
 
   const handleJoin = async (sessionId: string) => {
     if (!isAuthenticated) {
-      toast('Login or register to join and complete payment.');
-      navigate('/auth/login?next=/patient/group-therapy');
+      setTargetSessionId(sessionId);
+      setGuestModalOpen(true);
       return;
     }
     try {
@@ -196,6 +203,27 @@ export default function GroupTherapySessionsPage() {
       window.location.href = result.redirectUrl;
     } catch (error: any) {
       toast.error(error?.response?.data?.message || error?.message || 'Unable to start payment');
+    }
+  };
+
+  const handleGuestJoin = async () => {
+    if (!targetSessionId) return;
+    if (!guestName.trim() || !guestPhone.trim()) {
+      toast.error('Please provide your name and WhatsApp number');
+      return;
+    }
+    setIsProcessingGuest(true);
+    try {
+      const result = await groupTherapyApi.createPublicJoinPaymentIntent(targetSessionId, {
+        guestName,
+        guestPhone
+      });
+      if (!result.redirectUrl) throw new Error('Payment link not available');
+      window.location.href = result.redirectUrl;
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || error?.message || 'Unable to start payment');
+    } finally {
+      setIsProcessingGuest(false);
     }
   };
 
@@ -584,6 +612,58 @@ export default function GroupTherapySessionsPage() {
           Go to Home
         </button>
       </div>
+
+      {/* Guest Registration Modal */}
+      {guestModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-charcoal/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="mb-2 text-lg font-bold text-charcoal">Join Group Session</h3>
+            <p className="mb-4 text-xs text-charcoal/70">
+              Please enter your details to reserve your spot and receive the join link via WhatsApp.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-charcoal/80">Full Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. John Doe"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  className="w-full rounded-xl border border-calm-sage/20 bg-white px-4 py-2.5 text-sm font-medium text-charcoal shadow-sm outline-none transition focus:border-brand-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-charcoal/80">WhatsApp Number</label>
+                <div className="relative flex items-center rounded-xl border border-calm-sage/20 bg-white px-4 py-2.5 shadow-sm focus-within:border-brand-primary">
+                  <span className="mr-2 text-sm text-charcoal/50">+91</span>
+                  <input
+                    type="tel"
+                    placeholder="9999999999"
+                    value={guestPhone}
+                    onChange={(e) => setGuestPhone(e.target.value)}
+                    className="w-full bg-transparent text-sm font-medium text-charcoal outline-none placeholder:font-normal placeholder:text-charcoal/40"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setGuestModalOpen(false)}
+                className="flex-1 rounded-xl bg-charcoal/5 py-2.5 text-sm font-bold text-charcoal transition hover:bg-charcoal/10"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void handleGuestJoin()}
+                disabled={isProcessingGuest}
+                className="flex-1 rounded-xl bg-brand-primary py-2.5 text-sm font-bold text-white transition hover:bg-brand-primary/90 disabled:opacity-70"
+              >
+                {isProcessingGuest ? 'Processing...' : 'Proceed to Pay'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

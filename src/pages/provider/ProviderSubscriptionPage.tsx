@@ -18,9 +18,18 @@ import {
 } from '../../lib/providerSubscriptionFlow';
 import { setStoredPlatformTransactionId } from '../../utils/providerOnboardingStorage';
 import { hasProviderSubmittedOnboarding } from '../../lib/providerOnboardingFlow';
-import { fetchLeadMarketplacePricing, type LeadMarketplacePricing } from '../../api/provider';
+import { fetchLeadMarketplacePricing, fetchPublicPricingConfig, type LeadMarketplacePricing } from '../../api/provider';
 
 const DEFAULT_LEAD_PRICING: LeadMarketplacePricing = { hot: 299, warm: 199, cold: 99 };
+
+interface UILeadPlan {
+  id: ProviderLeadPlanId;
+  name: string;
+  subtitle: string;
+  badge?: string;
+  amountMinor: number;
+  features: string[];
+}
 
 export default function ProviderSubscriptionPage() {
   const navigate = useNavigate();
@@ -29,12 +38,76 @@ export default function ProviderSubscriptionPage() {
   const [loading, setLoading] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [leadPricing, setLeadPricing] = useState<LeadMarketplacePricing>(DEFAULT_LEAD_PRICING);
+  const [dynamicPlans, setDynamicPlans] = useState<UILeadPlan[]>([]);
+  const [currentPlanId, setCurrentPlanId] = useState<ProviderLeadPlanId>('free');
 
   useEffect(() => {
     fetchLeadMarketplacePricing()
       .then(setLeadPricing)
       .catch(() => setLeadPricing(DEFAULT_LEAD_PRICING));
+
+    fetchPublicPricingConfig()
+      .then((data) => {
+        if (data && data.providerPlans) {
+          const plansData = data.providerPlans;
+          const mapped: UILeadPlan[] = [
+            { id: 'free', name: 'Free', subtitle: 'Profile only', badge: '', plan: plansData.free },
+            { id: 'basic', name: 'Basic', subtitle: 'For new providers', badge: '', plan: plansData.basic },
+            { id: 'standard', name: 'Standard', subtitle: 'For active providers', badge: 'Most Chosen', plan: plansData.standard },
+            { id: 'premium', name: 'Premium', subtitle: 'For maximum patient flow', badge: '', plan: plansData.premium },
+          ].map(tier => {
+            if (!tier.plan) return null;
+            const p = tier.plan;
+            return {
+              id: tier.id as ProviderLeadPlanId,
+              name: tier.name,
+              subtitle: tier.subtitle,
+              badge: tier.badge,
+              amountMinor: (p.quarterlyPrice || 0) * 100,
+              features: [
+                p.leadsPerWeek > 0 
+                  ? `${p.leadsPerWeek} leads/week (Hot: ${p.hotLeads || 0} | Warm: ${p.warmLeads || 0} | Cold: ${p.coldLeads || 0})`
+                  : `${p.leadsPerWeek} leads/week`,
+                tier.id === 'free' ? 'Basic profile' : p.leadQualityMix,
+                tier.id === 'free' ? 'No marketplace access' : p.certificationBadge,
+                ...(p.discount > 0 ? [`${p.discount}% marketplace discount`] : []),
+              ]
+            }
+          }).filter(Boolean) as UILeadPlan[];
+          
+          if (mapped.length > 0) {
+            setDynamicPlans(mapped);
+          } else {
+            setDynamicPlans(fallbackPlans);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load plans:', err);
+        setDynamicPlans(fallbackPlans);
+      });
+
+    // Assume fetchProviderSubscription returns the current subscription config
+    // We'll catch it gracefully if it fails
+    import('../../api/provider').then(({ fetchProviderSubscription }) => {
+      fetchProviderSubscription()
+        .then((sub) => {
+          const currentPlan = sub?.plan || sub?.planKey;
+          if (currentPlan) {
+            setCurrentPlanId(currentPlan as ProviderLeadPlanId);
+          }
+        })
+        .catch(() => {
+          // If no subscription found, it defaults to 'free'
+        });
+    });
   }, []);
+
+  // Fallback plans if API fails
+  const fallbackPlans: UILeadPlan[] = PROVIDER_LEAD_PLANS.map(plan => ({
+    ...plan,
+    amountMinor: getLeadPlanAmountMinor(plan.id, 'quarterly'),
+  }));
 
   const isPlatformActive = user?.platformAccessActive;
   const isOnboardingComplete = hasProviderSubmittedOnboarding(user);
@@ -251,10 +324,12 @@ export default function ProviderSubscriptionPage() {
           </div>
 
           <div className={`grid gap-6 md:grid-cols-2 lg:grid-cols-4 ${!canChoosePlan ? 'pointer-events-none' : ''}`}>
-            {PROVIDER_LEAD_PLANS.map((plan) => {
-              const leadAmountMinor = getLeadPlanAmountMinor(plan.id, 'quarterly');
+            {(dynamicPlans.length > 0 ? dynamicPlans : fallbackPlans).map((plan) => {
+              const leadAmountMinor = plan.amountMinor;
+              const isCurrentPlan = currentPlanId === plan.id;
+              
               return (
-                <article key={plan.id} className="relative flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm border-b-4 border-b-slate-100">
+                <article key={plan.id} className={`relative flex flex-col rounded-3xl border bg-white p-6 shadow-sm border-b-4 ${isCurrentPlan ? 'border-[#1f6f5f] shadow-md' : 'border-slate-200 border-b-slate-100'}`}>
                   {plan.badge && (
                     <span className="absolute -top-3 left-6 inline-flex rounded-full bg-amber-400 px-3 py-1 text-[10px] font-black text-amber-950 uppercase tracking-tighter">
                       {plan.badge}
@@ -279,14 +354,17 @@ export default function ProviderSubscriptionPage() {
 
                   <button
                     type="button"
-                    disabled={!canChoosePlan}
+                    disabled={!canChoosePlan || isCurrentPlan}
                     onClick={() => startFlow(plan.id)}
-                    className={`w-full rounded-2xl py-3.5 text-sm font-black transition-all ${canChoosePlan
-                        ? 'bg-[#1f6f5f] text-white hover:bg-[#145347] shadow-lg shadow-[#1f6f5f]/20'
-                        : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    className={`w-full rounded-2xl py-3.5 text-sm font-black transition-all ${
+                      !canChoosePlan 
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                        : isCurrentPlan
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
+                        : 'bg-[#1f6f5f] text-white hover:bg-[#145347] shadow-lg shadow-[#1f6f5f]/20'
                       }`}
                   >
-                    {!canChoosePlan ? 'Pending Verification' : plan.id === 'free' ? 'Select Free Tier' : 'Upgrade Now'}
+                    {!canChoosePlan ? 'Pending Verification' : isCurrentPlan ? 'Current Plan' : 'Upgrade Now'}
                   </button>
                 </article>
               );

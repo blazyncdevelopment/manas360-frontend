@@ -4,9 +4,9 @@ import { ProviderSidebar } from './ProviderSidebar';
 import { useAuth } from '../../context/AuthContext';
 import { hasProviderSubmittedOnboarding } from '../../lib/providerOnboardingFlow';
 import PersistentVideoLayout from './PersistentVideoLayout';
-import { Lock, FileCheck, CreditCard, RefreshCw, MessageSquare, Menu, Zap } from 'lucide-react';
+import { Lock, FileCheck, CreditCard, RefreshCw, MessageSquare, Menu, Zap, Mail, Phone, LogOut, ChevronDown } from 'lucide-react';
 import { http } from '../../lib/http';
-import { fetchProviderLeadStats, fetchProviderLeadCredits } from '../../api/provider';
+import { fetchProviderLeadStats, fetchProviderLeadCredits, fetchProviderLeads } from '../../api/provider';
 import toast from 'react-hot-toast';
 
 export const HubLayout = () => {
@@ -14,6 +14,8 @@ export const HubLayout = () => {
   const navigate = useNavigate();
   const [syncing, setSyncing] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [ledgerOpen, setLedgerOpen] = useState(false);
   const location = useLocation();
 
   // Lead credits for header
@@ -23,13 +25,16 @@ export const HubLayout = () => {
     leadsAssigned: number;
     leadsRemaining: number;
     byType?: { hot: number; warm: number; cold: number };
+    planLimits?: { hot: number; warm: number; cold: number };
     leadQualityMix?: string;
   } | null>(null);
   const [leadCredits, setLeadCredits] = useState<{ hot: number; warm: number; cold: number } | null>(null);
+  const [recentLeads, setRecentLeads] = useState<any[]>([]);
 
-  // Close sidebar on route change
+  // Close sidebar and profile on route change
   useEffect(() => {
     setMobileSidebarOpen(false);
+    setProfileOpen(false);
   }, [location.pathname]);
 
   // Fetch lead stats for header display
@@ -55,6 +60,13 @@ export const HubLayout = () => {
       .catch((err) => {
         console.warn('[HubLayout] Failed to load lead credits:', err?.response?.status, err?.response?.data?.message || err?.message);
       });
+
+    fetchProviderLeads()
+      .then((data) => {
+        const rawLeads = Array.isArray(data) ? data : (data as any)?.items || [];
+        setRecentLeads(rawLeads.slice(0, 5)); // Keep last 5 leads for the ledger
+      })
+      .catch(() => {});
   }, [user]);
 
   const handleSyncAccount = async () => {
@@ -125,53 +137,75 @@ export const HubLayout = () => {
 
             {/* Lead Credits Widget */}
             {leadStats && (
-              <button
-                type="button"
-                onClick={() => navigate('/provider/leads')}
-                className="hidden md:flex items-center gap-3 px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 transition-all group cursor-pointer"
-                title={`Plan: ${(leadStats.currentPlan || 'free').charAt(0).toUpperCase() + (leadStats.currentPlan || 'free').slice(1)} · ${leadStats.leadQualityMix || 'No leads'}`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <Zap size={14} className="text-amber-500" />
-                  <span className="text-[11px] font-bold text-slate-600 capitalize">
-                    {leadStats.currentPlan || 'free'}
-                  </span>
-                  <span className="text-xs font-bold text-slate-700">
-                    {leadStats.leadsRemaining}/{leadStats.leadsPerWeek}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-medium">leads/wk</span>
-                </div>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setLedgerOpen(!ledgerOpen)}
+                  className="hidden md:flex items-center gap-3 px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 transition-all group cursor-pointer"
+                  title={`Plan: ${(leadStats.currentPlan || 'free').charAt(0).toUpperCase() + (leadStats.currentPlan || 'free').slice(1)} · ${leadStats.leadQualityMix || 'No leads'}`}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Zap size={14} className="text-amber-500" />
+                    <span className="text-[11px] font-bold text-slate-600 capitalize">
+                      {leadStats.currentPlan || 'free'}
+                    </span>
+                    <span className="text-xs font-bold text-slate-700">
+                      {leadStats.leadsRemaining}/{leadStats.leadsPerWeek}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">leads/wk</span>
+                  </div>
 
-                <div className="h-4 w-px bg-slate-200" />
+                  <div className="h-4 w-px bg-slate-200" />
 
-                <div className="flex items-center gap-2 text-[10px] font-semibold">
-                  <span className="text-red-600" title="Hot leads assigned this week">🔥 {leadStats.byType?.hot ?? 0}</span>
-                  <span className="text-amber-600" title="Warm leads assigned this week">🌟 {leadStats.byType?.warm ?? 0}</span>
-                  <span className="text-blue-600" title="Cold leads assigned this week">❄️ {leadStats.byType?.cold ?? 0}</span>
-                </div>
+                  <div className="flex items-center gap-2 text-[10px] font-semibold">
+                    <span className="text-red-600" title={`Hot leads: ${leadStats.byType?.hot ?? 0} assigned out of ${(leadStats.planLimits?.hot ?? 0) + (leadCredits?.hot ?? 0)} limit`}>🔥 {leadStats.byType?.hot ?? 0}/{(leadStats.planLimits?.hot ?? 0) + (leadCredits?.hot ?? 0)}</span>
+                    <span className="text-amber-600" title={`Warm leads: ${leadStats.byType?.warm ?? 0} assigned out of ${(leadStats.planLimits?.warm ?? 0) + (leadCredits?.warm ?? 0)} limit`}>🌟 {leadStats.byType?.warm ?? 0}/{(leadStats.planLimits?.warm ?? 0) + (leadCredits?.warm ?? 0)}</span>
+                    <span className="text-blue-600" title={`Cold leads: ${leadStats.byType?.cold ?? 0} assigned out of ${(leadStats.planLimits?.cold ?? 0) + (leadCredits?.cold ?? 0)} limit`}>❄️ {leadStats.byType?.cold ?? 0}/{(leadStats.planLimits?.cold ?? 0) + (leadCredits?.cold ?? 0)}</span>
+                  </div>
 
-                {leadCredits && (leadCredits.hot + leadCredits.warm + leadCredits.cold) > 0 && (
+                  {/* Tiny progress bar */}
+                  {leadStats.leadsPerWeek > 0 && (
+                    <div className="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden" title={`${leadStats.leadsAssigned} of ${leadStats.leadsPerWeek} used`}>
+                      <div
+                        className={`h-full rounded-full transition-all ${leadStats.leadsRemaining === 0 ? 'bg-red-400' : 'bg-emerald-400'}`}
+                        style={{ width: `${Math.min(100, (leadStats.leadsAssigned / leadStats.leadsPerWeek) * 100)}%` }}
+                      />
+                    </div>
+                  )}
+                </button>
+
+                {ledgerOpen && (
                   <>
-                    <div className="h-4 w-px bg-slate-200" />
-                    <div className="flex items-center gap-2 text-[10px] font-semibold" title="Purchased lead credits remaining (from subscription add-ons)">
-                      <span className="text-slate-400 font-medium uppercase tracking-tighter">Credits</span>
-                      <span className="text-red-500">🔥 {leadCredits.hot}</span>
-                      <span className="text-amber-500">🌟 {leadCredits.warm}</span>
-                      <span className="text-blue-500">❄️ {leadCredits.cold}</span>
+                    <div className="fixed inset-0 z-40" onClick={() => setLedgerOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 p-4">
+                      <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+                        <h3 className="font-bold text-sm text-gray-800">Lead Ledger</h3>
+                        <button onClick={() => { setLedgerOpen(false); navigate('/provider/leads'); }} className="text-[10px] font-bold text-teal-600 hover:text-teal-700 uppercase tracking-wider">View All</button>
+                      </div>
+                      <div className="space-y-3">
+                        {recentLeads.length > 0 ? recentLeads.map((lead) => {
+                          const tier = String(lead.tier || lead.leadType || 'cold').toLowerCase();
+                          const icon = tier === 'hot' ? '🔥' : tier === 'warm' ? '🌟' : '❄️';
+                          return (
+                            <div key={lead.id} className="flex flex-col gap-1 text-sm bg-gray-50 p-2 rounded-lg">
+                              <div className="flex justify-between items-center">
+                                <span className="font-semibold text-gray-800">{icon} {tier.charAt(0).toUpperCase() + tier.slice(1)} Lead In</span>
+                                <span className="text-[10px] text-gray-400">{new Date(lead.createdAt).toLocaleDateString()}</span>
+                              </div>
+                              <p className="text-xs text-gray-600 truncate">{lead.patientName || 'Patient'}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[10px] bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded font-medium">-1 Quota Used</span>
+                              </div>
+                            </div>
+                          );
+                        }) : (
+                          <p className="text-xs text-gray-400 text-center py-4">No recent leads assigned.</p>
+                        )}
+                      </div>
                     </div>
                   </>
                 )}
-
-                {/* Tiny progress bar */}
-                {leadStats.leadsPerWeek > 0 && (
-                  <div className="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden" title={`${leadStats.leadsAssigned} of ${leadStats.leadsPerWeek} used`}>
-                    <div
-                      className={`h-full rounded-full transition-all ${leadStats.leadsRemaining === 0 ? 'bg-red-400' : 'bg-emerald-400'}`}
-                      style={{ width: `${Math.min(100, (leadStats.leadsAssigned / leadStats.leadsPerWeek) * 100)}%` }}
-                    />
-                  </div>
-                )}
-              </button>
+              </div>
             )}
 
             <div className="flex items-center gap-4">
@@ -195,19 +229,74 @@ export const HubLayout = () => {
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
 
-              {/* User Avatar */}
-              <button
-                type="button"
-                onClick={() => void handleHeaderLogout()}
-                disabled={isLoggingOut}
-                title={isLoggingOut ? 'Logging out...' : 'Logout'}
-                className="flex items-center gap-2 p-1 pr-3 rounded-lg hover:bg-gray-100 transition disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <div className="w-8 h-8 rounded-full bg-[#E8EFE6] flex items-center justify-center text-[#4A6741] font-bold text-xs">
-                  {user?.firstName ? user.firstName.charAt(0) : 'U'}
-                </div>
-                <span className="text-xs font-semibold text-gray-600">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
-              </button>
+              {/* User Profile */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="flex items-center gap-2 p-1.5 pr-4 rounded-full bg-white hover:bg-gray-50 transition border border-gray-200 shadow-sm"
+                >
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs shadow-inner">
+                    {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <div className="hidden md:flex flex-col items-start">
+                    <span className="text-sm font-bold text-gray-700 leading-tight">
+                      {user?.firstName} {user?.lastName}
+                    </span>
+                    <span className="text-[10px] text-emerald-600 font-semibold tracking-wide uppercase">
+                      {user?.role?.toLowerCase()}
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {profileOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                      <div className="p-5 border-b border-gray-100 bg-gradient-to-br from-emerald-50/50 to-white">
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xl shadow-inner border border-emerald-200/50">
+                            {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-gray-900 text-lg">
+                              {user?.firstName} {user?.lastName}
+                            </span>
+                            <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">
+                              {user?.role?.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3 space-y-1">
+                        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-sm text-gray-700">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                            <Mail className="w-4 h-4" />
+                          </div>
+                          <span className="font-medium truncate">{user?.email}</span>
+                        </div>
+                        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-sm text-gray-700">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                            <Phone className="w-4 h-4" />
+                          </div>
+                          <span className="font-medium">{user?.phone || 'No phone added'}</span>
+                        </div>
+                      </div>
+                      <div className="p-3 border-t border-gray-100 bg-gray-50/50">
+                        <button
+                          onClick={() => void handleHeaderLogout()}
+                          disabled={isLoggingOut}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition shadow-sm border border-transparent hover:border-red-100"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          {isLoggingOut ? 'Logging out...' : 'Logout'}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </header>
         )}

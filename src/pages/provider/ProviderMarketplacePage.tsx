@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ShoppingCart, Filter, Lock, Info, CheckCircle2, Loader2, X, Calendar, Clock, User } from 'lucide-react';
-import { fetchProviderMarketplace, fetchProviderLeadStats, fetchProviderLeads, fetchProviderLeadCredits, purchaseProviderLead, purchaseProviderLeadWithCredit, scheduleLeadSession } from '../../api/provider';
+import { fetchProviderMarketplace, fetchProviderLeadStats, fetchProviderLeads, fetchProviderLeadCredits, purchaseProviderLead, purchaseProviderLeadWithCredit, claimProviderLeadWithQuota, scheduleLeadSession } from '../../api/provider';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -363,7 +363,9 @@ export default function ProviderMarketplacePage() {
         setPurchasedLeads(normalizedMyLeads);
       })
       .catch((err: any) => {
-        if (err?.response?.status === 403) toast.error('Access restricted');
+        if (err?.response?.status === 403) {
+          toast.error(err?.response?.data?.message || 'Please purchase a lead plan first to access the marketplace.');
+        }
       })
       .finally(() => setLoading(false));
   };
@@ -470,17 +472,27 @@ export default function ProviderMarketplacePage() {
     }
   };
 
-  const onPurchaseWithCredit = async (leadId: string) => {
-    if (!canPurchase) return;
+  const onClaimCombined = async (leadId: string, leadType: 'hot' | 'warm' | 'cold') => {
+    if (!canPurchase || !stats) return;
     setPurchasing(leadId);
+    
+    const limit = stats.planLimits?.[leadType] || 0;
+    const used = stats.byType?.[leadType] || 0;
+    const hasWeeklyQuota = stats.leadsRemaining > 0 && (limit - used > 0);
+
     try {
-      await purchaseProviderLeadWithCredit(leadId);
-      toast.success('Lead acquired using your credit balance!');
+      if (hasWeeklyQuota) {
+        await claimProviderLeadWithQuota(leadId);
+        toast.success('Lead claimed using your weekly free quota!');
+      } else {
+        await purchaseProviderLeadWithCredit(leadId);
+        toast.success('Lead acquired using your credit balance!');
+      }
       setTab('purchased');
       loadData();
     } catch (err: any) {
       const serverMessage = err?.response?.data?.message;
-      toast.error(serverMessage || 'Unable to use credit for this lead.');
+      toast.error(serverMessage || 'Unable to claim this lead.');
     } finally {
       setPurchasing(null);
     }
@@ -696,7 +708,7 @@ export default function ProviderMarketplacePage() {
             <div className="mb-6 p-4 rounded-2xl bg-teal-50 border border-teal-100 flex items-center gap-3">
               <Info className="h-4 w-4 text-teal-600 flex-shrink-0" />
               <p className="text-sm text-teal-800 font-medium">
-                You have <strong>{leadsRemaining}</strong> free weekly leads remaining. Marketplace leads are additional one-time purchases.
+                You have <strong>{leadsRemaining} out of {stats?.leadsPerWeek || 0}</strong> free weekly leads remaining. Marketplace leads are additional one-time purchases.
               </p>
             </div>
           )}
@@ -858,41 +870,54 @@ export default function ProviderMarketplacePage() {
                           )}
                         </div>
 
-                        {/* Buy Button */}
-                        <button
-                          type="button"
-                          onClick={() => void onPurchase(lead.id)}
-                          disabled={purchasing === lead.id || !canPurchase}
-                          className={`group/btn mt-auto flex w-full items-center justify-center gap-3 rounded-2xl py-4 text-sm font-black transition-all ${canPurchase
-                            ? 'bg-slate-900 text-white hover:bg-[#1f6f5f] shadow-lg shadow-slate-900/10'
-                            : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                            }`}
-                        >
-                          {purchasing === lead.id ? (
-                            <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          ) : !canPurchase ? (
-                            <Lock className="h-4 w-4" />
-                          ) : (
-                            <ShoppingCart className="h-4 w-4 group-hover/btn:scale-110 transition" />
-                          )}
-                          {!canPurchase ? 'Quota Locked' : purchasing === lead.id ? 'Processing...' : 'Buy This Lead'}
-                        </button>
+                        {/* Action Buttons */}
+                        {(() => {
+                          const limit = stats?.planLimits?.[lead.leadType as 'hot' | 'warm' | 'cold'] || 0;
+                          const used = stats?.byType?.[lead.leadType as 'hot' | 'warm' | 'cold'] || 0;
+                          const hasWeeklyQuota = (stats?.leadsRemaining || 0) > 0 && (limit - used > 0);
+                          const availableCredits = credits[lead.leadType as 'hot' | 'warm' | 'cold'] || 0;
+                          const hasCredits = availableCredits > 0;
+                          const canClaimFree = hasWeeklyQuota || hasCredits;
 
-                        {canPurchase && (credits[lead.leadType as 'hot' | 'warm' | 'cold'] ?? 0) > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => void onPurchaseWithCredit(lead.id)}
-                            disabled={purchasing === lead.id}
-                            className="group/btn mt-2 flex w-full items-center justify-center gap-3 rounded-2xl py-3 text-sm font-black border-2 border-teal-500 text-teal-700 hover:bg-teal-50 transition-all"
-                          >
-                            {purchasing === lead.id ? (
-                              <div className="h-4 w-4 border-2 border-teal-300 border-t-teal-700 rounded-full animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="h-4 w-4" />
-                            )}
-                            {purchasing === lead.id ? 'Processing...' : `Buy with Credit (${credits[lead.leadType as 'hot' | 'warm' | 'cold']} left)`}
-                          </button>
-                        )}
+                          if (canPurchase && canClaimFree) {
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => void onClaimCombined(lead.id, lead.leadType as 'hot' | 'warm' | 'cold')}
+                                disabled={purchasing === lead.id}
+                                className="group/btn mt-auto flex w-full items-center justify-center gap-3 rounded-2xl py-4 text-sm font-black border-2 border-emerald-500 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all"
+                              >
+                                {purchasing === lead.id ? (
+                                  <div className="h-4 w-4 border-2 border-emerald-300 border-t-emerald-700 rounded-full animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="h-4 w-4 group-hover/btn:scale-110 transition" />
+                                )}
+                                {purchasing === lead.id ? 'Processing...' : `Claim Lead`}
+                              </button>
+                            );
+                          }
+
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => void onPurchase(lead.id)}
+                              disabled={purchasing === lead.id || !canPurchase}
+                              className={`group/btn mt-auto flex w-full items-center justify-center gap-3 rounded-2xl py-4 text-sm font-black transition-all ${canPurchase
+                                ? 'bg-slate-900 text-white hover:bg-[#1f6f5f] shadow-lg shadow-slate-900/10'
+                                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                }`}
+                            >
+                              {purchasing === lead.id ? (
+                                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              ) : !canPurchase ? (
+                                <Lock className="h-4 w-4" />
+                              ) : (
+                                <ShoppingCart className="h-4 w-4 group-hover/btn:scale-110 transition" />
+                              )}
+                              {!canPurchase ? 'Quota Locked' : purchasing === lead.id ? 'Processing...' : 'Buy This Lead'}
+                            </button>
+                          );
+                        })()}
                       </article>
                     );
                   })}

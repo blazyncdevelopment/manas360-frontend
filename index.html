@@ -3,26 +3,17 @@
 
 <head>
 
-  <!-- Google tag (gtag.js) -->
-  <script>
-    (function initAnalytics() {
-      var host = window.location.hostname;
-      var isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
-      if (isLocal) return;
-
-      var script = document.createElement('script');
-      script.async = true;
-      script.src = 'https://www.googletagmanager.com/gtag/js?id=G-3W2QY650WM';
-      document.head.appendChild(script);
-
-      window.dataLayer = window.dataLayer || [];
-      window.gtag = function gtag() {
-        window.dataLayer.push(arguments);
-      };
-      window.gtag('js', new Date());
-      window.gtag('config', 'G-3W2QY650WM');
-    })();
-  </script>
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){
+    var host = window.location.hostname;
+    var isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+    if (isLocal) return;
+    w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-TZGVFS2D');</script>
+  <!-- End Google Tag Manager -->
 
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="/Untitled.png" />
@@ -43,6 +34,10 @@
 </head>
 
 <body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TZGVFS2D"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>

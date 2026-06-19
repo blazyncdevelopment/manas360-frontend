@@ -56,8 +56,8 @@ export default defineConfig(({ mode }) => {
       },
       proxy: {
         '/api': {
-          target: env.VITE_BACKEND_URL || 'http://127.0.0.1:4000',
-        changeOrigin: true,
+          target: env.VITE_BACKEND_URL || 'http://localhost:4502',
+          changeOrigin: true,
         secure: false,
       },
     },

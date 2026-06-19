@@ -367,11 +367,12 @@ export const resolveProviderIdForOnboarding = async (
 	return null;
 };
 
-export const verifyPAN = async (providerId: string, panNumber: string, nameOnPan: string): Promise<{ success: boolean; data?: any; error?: string }> => {
+export const verifyPAN = async (providerId: string, panNumber: string, nameOnPan: string, dob: string): Promise<{ success: boolean; data?: any; error?: string }> => {
 	const response = await http.post('/v1/provider-onboarding/kyc/verify-pan', {
 		providerId,
 		panNumber,
 		nameOnPan,
+		dob,
 	});
 	return response.data;
 };

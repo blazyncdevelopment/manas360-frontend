@@ -353,7 +353,7 @@ export default function TherapistDashboardPage() {
       <section className={`rounded-2xl border p-5 md:p-6 ${dashboardMode === 'professional' ? 'border-sage-100 bg-gradient-to-r from-sage-50/60 to-clay-50/40' : 'border-sky-100 bg-gradient-to-r from-sky-50/70 to-cyan-50/60'}`}>
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="font-display text-2xl font-bold text-ink-800">Good morning, {data.therapist.name} 👋</h2>
+            <h2 className="font-display text-2xl font-bold text-ink-800">{new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening'}, {data.therapist.name} 👋</h2>
             <p className="mt-1 text-sm text-ink-600">
               {dashboardMode === 'professional'
                 ? `Care mode active: ${data.stats.todaysSessions} sessions today and ${data.stats.pendingNotes} notes pending.`

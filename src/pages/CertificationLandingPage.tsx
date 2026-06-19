@@ -7,9 +7,12 @@ import { CardSkeleton } from '../components/CertificationSkeleton';
 import { SEO } from '../components/CertificationSEO';
 import { useAuth } from '../context/AuthContext';
 import { MyCertificationsPage } from './MyCertificationsPage';
+import { getPublishedCourses } from '../api/courses';
+import { Certification, BadgeColor } from '../CertificationTypes';
 
 export const CertificationLandingPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
+  const [certificationsData, setCertificationsData] = useState<Certification[]>(CERTIFICATIONS);
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,8 +32,52 @@ export const CertificationLandingPage: React.FC = () => {
   }, [location.search]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
+    const fetchCourses = async () => {
+      try {
+        let coursesResult: any = await getPublishedCourses();
+        if (!Array.isArray(coursesResult)) {
+           let data = coursesResult.data;
+           if (Array.isArray(data)) {
+               coursesResult = data;
+           } else {
+               throw new Error("Invalid format");
+           }
+        }
+        const mappedCertifications: Certification[] = coursesResult.map((course: any, index: number) => {
+          const colors: BadgeColor[] = ['blue', 'green', 'yellow', 'orange', 'red', 'purple'];
+          return {
+            id: course.id,
+            slug: course.id, 
+            name: course.title,
+            description: course.description || '',
+            badgeColor: colors[index % colors.length], 
+            tier: 'Professional', 
+          duration_weeks: course.modules?.length || 0,
+          price_inr: course.price,
+          monthly_income_min_inr: 0,
+          monthly_income_max_inr: 0,
+          requirements: [],
+          modulesCount: course.modules?.length || 0,
+          prerequisites: [],
+          syllabusPdfUrl: '',
+          modules: course.modules?.map((m: any) => ({
+            id: m.id,
+            title: m.title,
+            duration_minutes: m.lessons?.length ? m.lessons.length * 10 : 0,
+            topics: m.lessons?.map((l: any) => l.title) || [],
+          })) || [],
+          faqs: [],
+          testimonials: []
+        };
+        });
+        setCertificationsData(mappedCertifications);
+      } catch (error) {
+        console.error('Failed to fetch courses', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourses();
   }, []);
 
   return (
@@ -136,7 +183,7 @@ export const CertificationLandingPage: React.FC = () => {
                 <CardSkeleton /><CardSkeleton />
               </div>
             ) : (
-              <JourneyMap certifications={CERTIFICATIONS} />
+              <JourneyMap certifications={certificationsData} />
             )}
             
             <div className="w-full flex justify-start mt-12">

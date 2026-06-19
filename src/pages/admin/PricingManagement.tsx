@@ -15,6 +15,13 @@ import { isPlatformAdminUser, useAuth } from '../../context/AuthContext';
 type SessionEdit = { providerType: string; durationMinutes: number; price: number };
 type BundleEdit  = { bundleName: string; minutes: number; price: number };
 type PlanEdit    = { planKey: string; planName: string; price: number; billingCycle: string; active: boolean; description?: string | null };
+type ProviderPlanEdit = {
+  planKey: string; planName: string; monthly: number; quarterly: number; leads: number;
+  hotLeads: number; warmLeads: number; coldLeads: number;
+  discount: number; claim: number;
+  leadsPerMonth: number; leadQualityMix: string; leadDelivery: string; profileListing: string; dashboardAccess: string;
+  certificationBadge: string; support: string; recommendedFor: string;
+};
 
 const labelForProviderType = (value: string): string => {
   const key = String(value || '').toLowerCase().replace(/_/g, '-');
@@ -53,6 +60,8 @@ export default function AdminPricingManagementPage() {
   const [platformFee,  setPlatformFee]  = useState('99');
   const [surcharge,    setSurcharge]    = useState('20');
   const [planRows,     setPlanRows]     = useState<PlanEdit[]>([]);
+  const [providerPlanRows, setProviderPlanRows] = useState<ProviderPlanEdit[]>([]);
+  const [editingProviderPlanIndex, setEditingProviderPlanIndex] = useState<number | null>(null);
   const [sessionRows,  setSessionRows]  = useState<SessionEdit[]>([]);
   const [bundleRows,   setBundleRows]   = useState<BundleEdit[]>([]);
 
@@ -145,6 +154,59 @@ export default function AdminPricingManagementPage() {
       setBundleRows((data?.premiumBundles || []).map((r: AdminPricingBundleItem) => ({
         bundleName: r.bundleName, minutes: r.minutes, price: r.price,
       })));
+
+      const defaultProviderPlans: ProviderPlanEdit[] = [
+        { 
+          planKey: 'free', planName: 'Free', monthly: 0, quarterly: 0, leads: 0,
+          hotLeads: 0, warmLeads: 0, coldLeads: 0,
+          discount: 0, claim: 0,
+          leadsPerMonth: 0, leadQualityMix: '—', leadDelivery: '—', profileListing: 'Basic (text only)',
+          dashboardAccess: 'Basic stats only', certificationBadge: '❌ No', support: 'Self-serve FAQ', recommendedFor: 'Profile only'
+        },
+        { 
+          planKey: 'basic', planName: 'Basic', monthly: 199, quarterly: 549, leads: 3,
+          hotLeads: 0, warmLeads: 1, coldLeads: 2,
+          discount: 0, claim: 24,
+          leadsPerMonth: 12, leadQualityMix: 'Warm + Cold only', leadDelivery: 'Auto-pushed every Mon & Thu', profileListing: 'Enhanced (photo + video intro)',
+          dashboardAccess: 'Full analytics + conversion tracking', certificationBadge: '✅ Verified Provider', support: 'Email support (48h response)', recommendedFor: 'New providers (testing the waters)'
+        },
+        { 
+          planKey: 'standard', planName: 'Standard', monthly: 299, quarterly: 829, leads: 6,
+          hotLeads: 1, warmLeads: 2, coldLeads: 3,
+          discount: 10, claim: 24,
+          leadsPerMonth: 24, leadQualityMix: 'Hot + Warm + Cold', leadDelivery: 'Auto-pushed every Mon, Wed & Fri', profileListing: 'Featured (search priority)',
+          dashboardAccess: 'Full analytics + patient insights', certificationBadge: '✅ Verified + Preferred', support: 'Priority email (24h response)', recommendedFor: 'Active providers (building practice)'
+        },
+        { 
+          planKey: 'premium', planName: 'Premium', monthly: 399, quarterly: 1099, leads: 7,
+          hotLeads: 3, warmLeads: 2, coldLeads: 2,
+          discount: 20, claim: 48,
+          leadsPerMonth: 28, leadQualityMix: 'Priority Hot leads (first access)', leadDelivery: 'Auto-pushed daily (7 days/week)', profileListing: 'Spotlight (top of results + badge)',
+          dashboardAccess: 'Full analytics + AI recommendations', certificationBadge: '✅ Verified + Premium', support: 'Dedicated manager + WhatsApp', recommendedFor: 'Full-time providers (max patient flow)'
+        },
+      ];
+      setProviderPlanRows(defaultProviderPlans.map(dp => {
+        const p = data?.providerPlans?.[dp.planKey];
+        return p ? {
+          ...dp,
+          monthly: p.price ?? dp.monthly,
+          quarterly: p.quarterlyPrice ?? dp.quarterly,
+          leads: p.leadsPerWeek ?? dp.leads,
+          hotLeads: p.hotLeads ?? dp.hotLeads,
+          warmLeads: p.warmLeads ?? dp.warmLeads,
+          coldLeads: p.coldLeads ?? dp.coldLeads,
+          discount: p.discount ?? dp.discount,
+          claim: p.claimWindowHours ?? dp.claim,
+          leadsPerMonth: p.leadsPerMonth ?? dp.leadsPerMonth,
+          leadQualityMix: p.leadQualityMix ?? dp.leadQualityMix,
+          leadDelivery: p.leadDelivery ?? dp.leadDelivery,
+          profileListing: p.profileListing ?? dp.profileListing,
+          dashboardAccess: p.dashboardAccess ?? dp.dashboardAccess,
+          certificationBadge: p.certificationBadge ?? dp.certificationBadge,
+          support: p.support ?? dp.support,
+          recommendedFor: p.recommendedFor ?? dp.recommendedFor,
+        } : dp;
+      }));
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Unable to load pricing configuration.');
       setConfig(null);
@@ -208,6 +270,12 @@ export default function AdminPricingManagementPage() {
     setPlanRows(next);
   };
 
+  const updateProviderPlanRow = (index: number, patch: Partial<ProviderPlanEdit>) => {
+    const next = [...providerPlanRows];
+    next[index] = { ...next[index], ...patch };
+    setProviderPlanRows(next);
+  };
+
   const addSessionRow = () => {
     const pt = newRow.providerType.trim();
     if (!pt) { setError('Provider type is required.'); return; }
@@ -251,6 +319,27 @@ export default function AdminPricingManagementPage() {
         premium_bundles: bundleRows.map((r) => ({
           bundleName: r.bundleName, minutes: r.minutes, price: r.price, active: true,
         })),
+        providerPlans: providerPlanRows.reduce((acc, r) => {
+          acc[r.planKey] = {
+            price: r.monthly,
+            quarterlyPrice: r.quarterly,
+            leadsPerWeek: r.leads,
+            hotLeads: r.hotLeads,
+            warmLeads: r.warmLeads,
+            coldLeads: r.coldLeads,
+            discount: r.discount,
+            claimWindowHours: r.claim,
+            leadsPerMonth: r.leadsPerMonth,
+            leadQualityMix: r.leadQualityMix,
+            leadDelivery: r.leadDelivery,
+            profileListing: r.profileListing,
+            dashboardAccess: r.dashboardAccess,
+            certificationBadge: r.certificationBadge,
+            support: r.support,
+            recommendedFor: r.recommendedFor,
+          };
+          return acc;
+        }, {} as Record<string, any>),
       });
       await load();
       setSuccess('Pricing saved successfully.');
@@ -466,44 +555,47 @@ export default function AdminPricingManagementPage() {
         </div>
       </div>
 
-      {/* Provider Platform Plans (read-only reference) */}
+      {/* Provider Platform Plans */}
       <div className="rounded-xl border border-emerald-100 bg-white p-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-display text-base font-bold text-ink-800">Provider Platform Plans</h3>
             <p className="mt-0.5 text-xs text-ink-400">Subscription tiers for providers. Determines lead allocation, marketplace access, and lead discount.</p>
           </div>
-          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">Read-only reference</span>
         </div>
         <div className="mt-3 overflow-x-auto rounded-lg border border-ink-100">
           <table className="min-w-full divide-y divide-ink-100">
             <thead className="bg-emerald-50">
               <tr>
-                {['Plan', 'Monthly (₹)', 'Quarterly (₹)', 'Leads/Week', 'Lead Discount', 'Claim Window'].map((h) => (
+                {['Plan', 'Monthly (₹)', 'Quarterly (₹)', 'Leads/Week', 'Claim (h)', 'Actions'].map((h) => (
                   <th key={h} className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
-              {[
-                { plan: 'Free',     monthly: 0,   quarterly: 0,    leads: 0,  discount: '0%',  claim: 'N/A' },
-                { plan: 'Basic',    monthly: 199,  quarterly: 549,  leads: 3,  discount: '0%',  claim: '48h' },
-                { plan: 'Standard', monthly: 299,  quarterly: 829,  leads: 6,  discount: '10%', claim: '36h' },
-                { plan: 'Premium',  monthly: 399,  quarterly: 1099, leads: 7,  discount: '20%', claim: '12h' },
-              ].map((r) => (
-                <tr key={r.plan} className="hover:bg-ink-50/40">
-                  <td className="px-3 py-2 text-sm font-medium text-ink-800">{r.plan}</td>
-                  <td className="px-3 py-2 text-sm font-semibold text-emerald-700">{r.monthly === 0 ? 'Free' : `₹${r.monthly}`}</td>
-                  <td className="px-3 py-2 text-sm text-ink-600">{r.quarterly === 0 ? 'Free' : `₹${r.quarterly}`}</td>
-                  <td className="px-3 py-2 text-sm text-ink-600">{r.leads === 0 ? '—' : r.leads}</td>
-                  <td className="px-3 py-2 text-sm text-ink-600">{r.discount}</td>
-                  <td className="px-3 py-2 text-sm text-ink-600">{r.claim}</td>
+              {providerPlanRows.map((r, i) => (
+                <tr key={r.planKey} className="hover:bg-ink-50/40">
+                  <td className="px-3 py-3 text-sm font-medium text-ink-800">{r.planName}</td>
+                  <td className="px-3 py-3 text-sm font-semibold text-emerald-700">{r.monthly === 0 ? 'Free' : `₹${r.monthly}`}</td>
+                  <td className="px-3 py-3 text-sm text-ink-600">{r.quarterly === 0 ? 'Free' : `₹${r.quarterly}`}</td>
+                  <td className="px-3 py-3 text-sm text-ink-600">{r.leads === 0 ? '—' : r.leads}</td>
+                  <td className="px-3 py-3 text-sm text-ink-600">{r.claim === 0 ? '—' : r.claim}</td>
+                  <td className="px-3 py-3 text-sm">
+                    {r.planKey !== 'free' && (
+                      <button 
+                        onClick={() => setEditingProviderPlanIndex(i)} 
+                        className="rounded bg-emerald-100 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-200"
+                      >
+                        Edit Plan
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-[11px] text-ink-400">Lead marketplace prices: Hot ₹299 · Warm ₹199 · Cold ₹99 (before plan discount)</p>
+        <p className="mt-2 text-[11px] text-ink-400">Click "Edit Plan" to modify comprehensive features (delivery schedule, marketplace discount, etc).</p>
       </div>
 
       {/* Subscription plans */}
@@ -832,6 +924,111 @@ export default function AdminPricingManagementPage() {
           </div>
         </div>
       </div>
+      
+      {/* Provider Plan Edit Modal */}
+      {editingProviderPlanIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-ink-100 px-6 py-4">
+              <h3 className="text-lg font-bold text-ink-800">Edit {providerPlanRows[editingProviderPlanIndex].planName} Plan</h3>
+              <button onClick={() => setEditingProviderPlanIndex(null)} className="text-ink-400 hover:text-ink-600 font-bold text-xl">&times;</button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                
+                {/* Core Metrics */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-emerald-800 border-b border-emerald-100 pb-2">Core Metrics</h4>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-ink-600">Monthly Price (₹)</label>
+                    <input type="number" value={providerPlanRows[editingProviderPlanIndex].monthly} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { monthly: Number(e.target.value) })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-ink-600">Quarterly Price (₹)</label>
+                    <input type="number" value={providerPlanRows[editingProviderPlanIndex].quarterly} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { quarterly: Number(e.target.value) })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-ink-600">Total Leads / Week</label>
+                      <input type="number" value={providerPlanRows[editingProviderPlanIndex].leads} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { leads: Number(e.target.value) })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-ink-600">Leads / Month</label>
+                      <input type="number" value={providerPlanRows[editingProviderPlanIndex].leadsPerMonth} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { leadsPerMonth: Number(e.target.value) })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-ink-600">Hot Leads</label>
+                      <input type="number" value={providerPlanRows[editingProviderPlanIndex].hotLeads} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { hotLeads: Number(e.target.value) })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-ink-600">Warm Leads</label>
+                      <input type="number" value={providerPlanRows[editingProviderPlanIndex].warmLeads} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { warmLeads: Number(e.target.value) })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-ink-600">Cold Leads</label>
+                      <input type="number" value={providerPlanRows[editingProviderPlanIndex].coldLeads} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { coldLeads: Number(e.target.value) })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-ink-600">Marketplace Discount (%)</label>
+                      <input type="number" value={providerPlanRows[editingProviderPlanIndex].discount} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { discount: Number(e.target.value) })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-ink-600">Claim Window (Hours)</label>
+                      <input type="number" value={providerPlanRows[editingProviderPlanIndex].claim} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { claim: Number(e.target.value) })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Features */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-emerald-800 border-b border-emerald-100 pb-2">Features Display</h4>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-ink-600">Lead Quality Mix</label>
+                    <input type="text" value={providerPlanRows[editingProviderPlanIndex].leadQualityMix} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { leadQualityMix: e.target.value })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-ink-600">Lead Delivery</label>
+                    <input type="text" value={providerPlanRows[editingProviderPlanIndex].leadDelivery} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { leadDelivery: e.target.value })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-ink-600">Profile Listing</label>
+                    <input type="text" value={providerPlanRows[editingProviderPlanIndex].profileListing} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { profileListing: e.target.value })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-ink-600">Dashboard Access</label>
+                    <input type="text" value={providerPlanRows[editingProviderPlanIndex].dashboardAccess} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { dashboardAccess: e.target.value })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-ink-600">Certification Badge</label>
+                    <input type="text" value={providerPlanRows[editingProviderPlanIndex].certificationBadge} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { certificationBadge: e.target.value })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-ink-600">Support</label>
+                    <input type="text" value={providerPlanRows[editingProviderPlanIndex].support} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { support: e.target.value })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-ink-600">Recommended For</label>
+                    <input type="text" value={providerPlanRows[editingProviderPlanIndex].recommendedFor} onChange={e => updateProviderPlanRow(editingProviderPlanIndex, { recommendedFor: e.target.value })} className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none ring-sage-500 focus:ring-2" />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+            <div className="border-t border-ink-100 bg-ink-50 px-6 py-4 flex justify-end">
+              <button 
+                onClick={() => setEditingProviderPlanIndex(null)}
+                className="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-bold text-white hover:bg-emerald-700"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

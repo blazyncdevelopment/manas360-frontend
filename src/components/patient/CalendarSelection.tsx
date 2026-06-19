@@ -279,18 +279,28 @@ export default function CalendarSelection({ onDateTimeSelect, onCancel }: Calend
               <div className="grid grid-cols-3 gap-2">
                 {timeSlots.map((slot) => {
                   const { time, abbr } = toDisplayTimeParts(slot.startTime, patientTimezone, selectedDate || new Date());
+                  const isToday = selectedDate?.toDateString() === new Date().toDateString();
+                  const now = new Date();
+                  const currentMinuteOfDay = now.getHours() * 60 + now.getMinutes();
+                  const slotStartMinute = toMinuteOfDay(slot.startTime);
+                  const isPast = isToday && slotStartMinute < currentMinuteOfDay;
+                  const isDisabled = timeSlotsLoading || isPast;
+
                   return (
                     <button
                       key={slot.startTime}
                       onClick={() => {
-                        if (timeSlotsLoading) return;
+                        if (isDisabled) return;
                         setSelectedTime(slot.startTime);
                       }}
-                      disabled={timeSlotsLoading}
-                      className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors flex flex-col items-center ${selectedTime === slot.startTime
-                        ? 'border-teal-500 bg-teal-50 text-teal-700'
-                        : 'border-calm-sage/20 text-charcoal/70 hover:border-teal-300 hover:bg-teal-50/50'
-                        }`}
+                      disabled={isDisabled}
+                      className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors flex flex-col items-center ${
+                        isDisabled
+                          ? 'border-calm-sage/10 bg-gray-50 text-charcoal/30 cursor-not-allowed opacity-60'
+                          : selectedTime === slot.startTime
+                            ? 'border-teal-500 bg-teal-50 text-teal-700'
+                            : 'border-calm-sage/20 text-charcoal/70 hover:border-teal-300 hover:bg-teal-50/50'
+                      }`}
                     >
                       <span className="font-bold">{time}</span>
                       {abbr && <span className="text-[10px] opacity-75">({abbr})</span>}
