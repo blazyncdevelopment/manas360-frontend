@@ -6,7 +6,7 @@ type Pt06HeroVideoFrameProps = {
   title?: string;
 };
 
-const VIMEO_SRC = 'https://player.vimeo.com/video/1166597087?autoplay=1&muted=1&controls=1&title=0&byline=0&portrait=0&badge=0&autopause=0&player_id=0&app_id=58479';
+const VIMEO_SRC = 'https://player.vimeo.com/video/1166597087?autoplay=0&muted=1&controls=1&title=0&byline=0&portrait=0&badge=0&autopause=0&player_id=0&app_id=58479';
 
 export default function Pt06HeroVideoFrame({
   className,

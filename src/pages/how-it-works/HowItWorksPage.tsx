@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { homeSections, getJourney } from './howItWorksData';
 import type {
   HomeCard,
@@ -109,6 +111,7 @@ function HomeCardBadge({ card }: { card: HomeCard }) {
 }
 
 const HowItWorksPage = () => {
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<JourneyId>('home');
 
   const showJourney = useCallback((id: JourneyId) => {
@@ -161,9 +164,6 @@ const HowItWorksPage = () => {
       ) : null}
 
       <div className="nav-buttons">
-        <button className="btn btn-secondary" onClick={() => showJourney('home')} type="button">
-          ← Back to Home
-        </button>
         {journey.next ? (
           <button
             className="btn btn-outline"
@@ -180,9 +180,10 @@ const HowItWorksPage = () => {
   const activeJourney = activeSection === 'home' ? null : getJourney(activeSection);
 
   return (
-    <div className="how-it-works-page">
-      <div className="container">
-      
+    <div className="how-it-works-page" style={{ position: 'relative' }}>
+
+      <div className="container !pt-[72px] md:!pt-[80px]">
+
 
         {activeSection === 'home' ? (
           <section className="journey-section">
@@ -231,6 +232,27 @@ const HowItWorksPage = () => {
         ) : activeJourney ? (
           renderJourneySection(activeJourney)
         ) : null}
+      </div>
+
+      <div className="w-full flex justify-start pb-6 pt-0 -mt-4 md:-mt-12 relative z-10">
+        <div className="flex items-center gap-2 ml-4 md:ml-[80px]">
+          {activeSection !== 'home' && (
+            <button
+              onClick={() => setActiveSection('home')}
+              className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              Go Back
+            </button>
+          )}
+          <button
+            onClick={() => navigate('/landing')}
+            className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            Go to Home
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -46,11 +46,10 @@ const ConfigSection: React.FC<Props> = ({
             <button
               key={key}
               onClick={() => onTierChange(key)}
-              className={`flex min-h-[58px] flex-col items-center justify-center rounded-md border-2 px-4 py-3 text-center transition-all duration-200 ${
-                currentTier === key
-                  ? 'border-[#4A6741] bg-[#4A6741] text-white shadow-sm'
-                  : 'border-slate-300 bg-white text-slate-700 hover:border-[#4A6741] hover:bg-green-50'
-              }`}
+              className={`flex min-h-[58px] flex-col items-center justify-center rounded-md border-2 px-4 py-3 text-center transition-all duration-200 ${currentTier === key
+                ? 'border-[#4A6741] bg-[#4A6741] text-white shadow-sm'
+                : 'border-slate-300 bg-white text-slate-700 hover:border-[#4A6741] hover:bg-green-50'
+                }`}
             >
               <span className="text-sm font-semibold leading-none">{value.label}</span>
               <span className="mt-1 text-[11px] leading-none opacity-80">{value.range}</span>
@@ -75,11 +74,10 @@ const ConfigSection: React.FC<Props> = ({
             <button
               key={key}
               onClick={() => onBillingChange(key)}
-              className={`flex min-h-[58px] flex-col items-center justify-center rounded-md border-2 px-4 py-3 text-center transition-all duration-200 ${
-                currentBilling === key
-                  ? 'border-[#4A6741] bg-[#4A6741] text-white shadow-sm'
-                  : 'border-slate-300 bg-white text-slate-700 hover:border-[#4A6741] hover:bg-green-50'
-              }`}
+              className={`flex min-h-[58px] flex-col items-center justify-center rounded-md border-2 px-4 py-3 text-center transition-all duration-200 ${currentBilling === key
+                ? 'border-[#4A6741] bg-[#4A6741] text-white shadow-sm'
+                : 'border-slate-300 bg-white text-slate-700 hover:border-[#4A6741] hover:bg-green-50'
+                }`}
             >
               <span className="text-sm font-semibold leading-none">
                 {key === 'monthly' ? 'Monthly' : 'Quarterly'}
@@ -121,7 +119,7 @@ const ConfigSection: React.FC<Props> = ({
         disabled={isLoading}
         className="w-full bg-green-700 text-white py-2 rounded text-sm"
       >
-        {isLoading ? 'Loading...' : 'Start 21-Day Free Trial'}
+        {isLoading ? 'Loading...' : 'Start 6-Day Free Trial'}
       </button>
     </div>
   );

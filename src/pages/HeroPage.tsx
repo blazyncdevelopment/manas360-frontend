@@ -590,7 +590,7 @@ export const Hero: React.FC = () => {
           <span className="fs-label">Free Screening<br />No Login Needed</span>
         </div>
         <div className="float-stat">
-          <span className="fs-num">21</span>
+          <span className="fs-num">6</span>
           <span className="fs-label">Day Free Trial<br />No Card Required</span>
         </div>
       </div>

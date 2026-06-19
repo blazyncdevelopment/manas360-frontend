@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import './SpecializedCarePage.css';
 
 type FilterSegment = 'all' | 'adults' | 'teens' | 'children' | 'programs';
@@ -356,7 +357,8 @@ export default function SpecializedCarePage() {
   };
 
   return (
-    <div className="specialized-care-page">
+    <div className="specialized-care-page" style={{ position: 'relative' }}>
+
       <div className="sc-header">
         <h1>
           Not sure what you need?
@@ -643,6 +645,16 @@ export default function SpecializedCarePage() {
             </div>
           </div>
         ) : null}
+      </div>
+
+      <div className="w-full flex justify-start pb-4 pt-4">
+        <button
+          onClick={() => navigate('/landing')}
+          className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors ml-4 md:ml-[80px]"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+          Go to Home
+        </button>
       </div>
     </div>
   );

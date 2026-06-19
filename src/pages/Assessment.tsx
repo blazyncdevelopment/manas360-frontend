@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import toast from 'react-hot-toast';
 import { theme } from '../theme/theme';
 import { getApiErrorMessage } from '../api/auth';
@@ -315,7 +316,8 @@ export const Assessment: React.FC<AssessmentProps> = ({ onSubmit }) => {
 
   return (
     <>
-      <div className="responsive-page bg-wellness-bg animate-fadeIn">
+      <div className="responsive-page bg-wellness-bg animate-fadeIn relative">
+
         <div className="responsive-container section-stack py-8 sm:py-12">
           <div className="w-full max-w-screen-lg mx-auto flex flex-col sm:flex-row gap-4 justify-between sm:items-center">
             <div
@@ -418,6 +420,7 @@ export const Assessment: React.FC<AssessmentProps> = ({ onSubmit }) => {
                 {submitting ? 'Submitting...' : 'Submit • Analyze My Results'}
               </button>
             </div>
+
           </div>
         </div>
       </div>

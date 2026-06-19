@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { JourneyMap } from '../components/CertificationJourneyMap';
 import { CERTIFICATIONS } from '../CertificationConstants';
 import { CardSkeleton } from '../components/CertificationSkeleton';
@@ -11,6 +12,7 @@ export const CertificationLandingPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const isProviderRoute = location.pathname.startsWith('/provider') || location.pathname.startsWith('/patient') || location.pathname.startsWith('/learner');
   const [activeTab, setActiveTab] = useState<'my' | 'browse'>(() => {
     const params = new URLSearchParams(location.search);
@@ -32,9 +34,10 @@ export const CertificationLandingPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex flex-col font-sans bg-white overflow-x-hidden selection:bg-purple-100">
+    <div className="flex flex-col font-sans bg-white overflow-x-hidden selection:bg-purple-100 relative">
+
       <SEO title="Certification Journey | MANAS360" />
-      
+
       {/* Hero Section */}
       {!isProviderRoute && (
         <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden bg-[#0F172A] text-white py-24">
@@ -72,7 +75,7 @@ export const CertificationLandingPage: React.FC = () => {
                 </Link>
               </div>
             )}
-            
+
             <div className="flex flex-wrap justify-center gap-8 mt-4 animate-fade-in [animation-delay:400ms]">
               {[
                 { label: 'Certifications', val: '6' },
@@ -95,21 +98,19 @@ export const CertificationLandingPage: React.FC = () => {
           <div className="flex border-b border-slate-200">
             <button
               onClick={() => setActiveTab('my')}
-              className={`py-4 px-6 font-bold text-sm border-b-2 transition-colors ${
-                activeTab === 'my'
-                  ? 'border-purple-600 text-purple-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
+              className={`py-4 px-6 font-bold text-sm border-b-2 transition-colors ${activeTab === 'my'
+                ? 'border-purple-600 text-purple-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
             >
               My Certifications
             </button>
             <button
               onClick={() => setActiveTab('browse')}
-              className={`py-4 px-6 font-bold text-sm border-b-2 transition-colors ${
-                activeTab === 'browse'
-                  ? 'border-purple-600 text-purple-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
+              className={`py-4 px-6 font-bold text-sm border-b-2 transition-colors ${activeTab === 'browse'
+                ? 'border-purple-600 text-purple-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
             >
               Browse Certifications
             </button>
@@ -131,15 +132,26 @@ export const CertificationLandingPage: React.FC = () => {
           )}
           <div className="max-w-[1600px] mx-auto px-6 lg:px-12">
             {loading ? (
-               <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12">
+              <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12">
                 <CardSkeleton /><CardSkeleton />
               </div>
             ) : (
               <JourneyMap certifications={CERTIFICATIONS} />
             )}
+            
+            <div className="w-full flex justify-start mt-12">
+              <button
+                onClick={() => navigate('/landing')}
+                className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                Go to Home
+              </button>
+            </div>
           </div>
         </section>
       )}
+
     </div>
   );
 };

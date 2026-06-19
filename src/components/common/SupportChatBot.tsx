@@ -14,7 +14,7 @@ const SupportChatBot: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   // Initialize with welcome message
   useEffect(() => {
     if (isOpen && messages.length === 0) {
@@ -56,21 +56,26 @@ const SupportChatBot: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text })
       });
-      
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       const data = await res.json();
-      
+
       setIsTyping(false);
-      
+
+      let replyText = data.reply || "I'm sorry, I couldn't understand that. You can chat with us on WhatsApp at https://wa.me/918951927280";
+
+      // Replace pricing link to plans
+      replyText = replyText.replace('https://manas360.com/pricing', 'https://manas360.com/plans');
+
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: 'bot',
-        text: data.reply || "I'm sorry, I couldn't understand that. You can chat with us on WhatsApp at https://wa.me/918951927280"
+        text: replyText
       };
-      
+
       setMessages(prev => [...prev, botMsg]);
     } catch (err) {
       console.error('[SupportChatBot] Connection error:', err);
@@ -119,7 +124,7 @@ const SupportChatBot: React.FC = () => {
                 🤖
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '15px' }}>Support Assistant</div>
+                <div style={{ fontWeight: 700, fontSize: '15px' }}>Dr. Meera</div>
                 <div style={{ fontSize: '12px', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22C55E' }}></span>
                   Online
@@ -154,7 +159,7 @@ const SupportChatBot: React.FC = () => {
                 </div>
               </div>
             ))}
-            
+
             {/* Initial Quick Replies if only welcome message is present */}
             {messages.length === 1 && messages[0].sender === 'bot' && (
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
@@ -201,11 +206,12 @@ const SupportChatBot: React.FC = () => {
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: '#F8FAFC', borderRadius: '999px', padding: '6px 16px', border: '1px solid #E2E8F0' }}>
               <input
                 type="text"
+                className="chat-input-no-border"
                 value={inputValue}
                 onChange={e => setInputValue(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSend(inputValue)}
                 placeholder="Type your message..."
-                style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: '#1E293B', padding: '6px 0' }}
+                style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', boxShadow: 'none', fontSize: '14px', color: '#1E293B', padding: '6px 0' }}
               />
               <button
                 onClick={() => handleSend(inputValue)}
@@ -222,42 +228,44 @@ const SupportChatBot: React.FC = () => {
           </div>
         </div>
       ) : (
-        <button
-          onClick={() => setIsOpen(true)}
-          type="button"
-          style={{
-            width: '62px',
-            height: '62px',
-            borderRadius: '999px',
-            border: 'none',
-            cursor: 'pointer',
-            background: 'linear-gradient(135deg, #7C3AED, #5B21B6)',
-            boxShadow: '0 16px 36px rgba(0,0,0,0.22)',
-            color: 'white',
-            position: 'relative',
-            animation: 'landingChatFloat 3.2s ease-in-out infinite',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          aria-label="Chat"
-        >
-          <span style={{ fontSize: '30px', transform: 'rotate(0deg)', animation: 'landingChatTilt 3s ease-in-out infinite' }}>🤖</span>
-          <span style={{
-            position: 'absolute', top: '-8px', left: '-7px', width: '18px', height: '18px',
-            borderRadius: '999px', background: '#EF4444', color: 'white', fontSize: '11px',
-            fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: '2px solid rgba(255,255,255,0.9)'
-          }}>
-            3
-          </span>
-          <span style={{
-            position: 'absolute', top: '4px', right: '4px', width: '14px', height: '14px',
-            borderRadius: '999px', background: '#22C55E', border: '2px solid rgba(255,255,255,0.95)'
-          }}></span>
-        </button>
+        <div className="chatbot-btn-wrapper">
+          <button
+            onClick={() => setIsOpen(true)}
+            type="button"
+            style={{
+              width: '62px',
+              height: '62px',
+              borderRadius: '999px',
+              border: 'none',
+              cursor: 'pointer',
+              background: 'linear-gradient(135deg, #7C3AED, #5B21B6)',
+              boxShadow: '0 16px 36px rgba(0,0,0,0.22)',
+              color: 'white',
+              position: 'relative',
+              animation: 'landingChatFloat 3.2s ease-in-out infinite',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            aria-label="Chat"
+          >
+            <span style={{ fontSize: '30px', transform: 'rotate(0deg)', animation: 'landingChatTilt 3s ease-in-out infinite' }}>🤖</span>
+            <span style={{
+              position: 'absolute', top: '-8px', left: '-7px', width: '18px', height: '18px',
+              borderRadius: '999px', background: '#EF4444', color: 'white', fontSize: '11px',
+              fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: '2px solid rgba(255,255,255,0.9)'
+            }}>
+              3
+            </span>
+            <span style={{
+              position: 'absolute', top: '4px', right: '4px', width: '14px', height: '14px',
+              borderRadius: '999px', background: '#22C55E', border: '2px solid rgba(255,255,255,0.95)'
+            }}></span>
+          </button>
+        </div>
       )}
-      
+
       <style>{`
         @keyframes chatFadeIn {
           from { opacity: 0; transform: translateY(20px) scale(0.95); }
@@ -266,6 +274,16 @@ const SupportChatBot: React.FC = () => {
         @keyframes bounce {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-4px); }
+        }
+        .chat-input-no-border:focus {
+          outline: none !important;
+          box-shadow: none !important;
+          border: none !important;
+        }
+        .chatbot-btn-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
         }
       `}</style>
     </div>

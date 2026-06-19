@@ -1,11 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import "./NRILandingPage.css";
 
 const NRILandingPage: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <main className="nri-page">
+    <main className="nri-page" style={{ position: 'relative' }}>
+
       {/* <div className="nri-top-strip">
         <div className="nri-shell">
           <span>IN Janmabhoomi Vibes - Therapy in your mother tongue, from anywhere in the world</span>
@@ -137,6 +139,15 @@ const NRILandingPage: React.FC = () => {
       {/* <footer className="nri-legal-footer">
         © 2025 MANAS360 Mental Wellness Pvt. Ltd. - Bengaluru, Karnataka, India | Home · Privacy · Terms
       </footer> */}
+      <div className="w-full flex justify-start pb-4 pt-4">
+        <button
+          onClick={() => navigate('/landing')}
+          className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors ml-4 md:ml-[80px]"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+          Go to Home
+        </button>
+      </div>
     </main>
   );
 };

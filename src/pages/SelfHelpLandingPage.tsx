@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import "./SelfHelpLandingPage.css";
 
 type ToolCard = {
@@ -59,7 +60,8 @@ const toolCards: ToolCard[] = [
 const SelfHelpLandingPage: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <main className="self-help-page">
+    <main className="self-help-page" style={{ position: 'relative' }}>
+
       {/* <header className="self-help-header">
         <div className="self-help-container self-help-header-inner">
           <div className="self-help-logo">
@@ -137,6 +139,15 @@ const SelfHelpLandingPage: React.FC = () => {
           Crisis? Call KIRAN: 1800-599-0019 (24/7, Free)
         </p>
       </footer> */}
+      <div className="w-full flex justify-start pb-4 pt-4">
+        <button
+          onClick={() => navigate('/landing')}
+          className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors ml-4 md:ml-[80px]"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+          Go to Home
+        </button>
+      </div>
     </main>
   );
 };

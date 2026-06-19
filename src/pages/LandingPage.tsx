@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SupportChatBot from "../components/common/SupportChatBot";
+import { http } from "../lib/http";
 
 const landingBg = encodeURI("/You renot alone-Beach.jpeg");
 
@@ -49,8 +50,7 @@ function getGtStatus(session: GtSession, now: number, pageEpoch: number): GtSess
   if (now >= endTime) return "completed";
   if (diff <= 0) return "live";
   if (diff <= 15 * 60000) return "soon";
-  if (diff <= 120 * 60000) return "upcoming";
-  return "hidden";
+  return "upcoming";
 }
 
 function getGtCountdown(session: GtSession, now: number, pageEpoch: number): number {
@@ -102,6 +102,34 @@ const LandingPage: React.FC = () => {
     return () => window.clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://api.messegy.com/widget.js";
+    script.setAttribute("data-phone", "+918951927280");
+    script.setAttribute("data-message", "Hi, I want to know more about your services.");
+    script.async = true;
+    document.body.appendChild(script);
+
+    // Add a style tag to push the widget above Dr. Meera
+    const style = document.createElement("style");
+    style.id = "wa-widget-override-style";
+    style.innerHTML = `
+      #gx-chat-toggle, [id^="wa-widget"], [class*="whatsapp"], iframe[src*="whatsapp"] {
+        bottom: 100px !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
+  }, []);
+
   const handleScrollToAssess = () => {
     navigate("/assessment");
   };
@@ -111,9 +139,8 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     const fetchSessions = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-        const res = await fetch(`${apiUrl}/v1/group-therapy/public/sessions`);
-        const json = await res.json();
+        const res = await http.get("/group-therapy/public/sessions");
+        const json = res.data;
         if (json.success && json.data?.items) {
           const fetchedSessions: GtSession[] = json.data.items.map((item: any) => {
             const scheduledAtTime = new Date(item.scheduledAt).getTime();
@@ -392,49 +419,50 @@ const LandingPage: React.FC = () => {
         }}
       >
         {[
-          { bg: "#FFF", image: "/AnytimeBUDDY.jpeg", label: "Doctor", href: "/ai-power-hub" },
-          { bg: "#111827", image: "/HitASixer.jpeg", label: "Cricket", href: "/hit-a-sixer" },
-          { bg: "#03163A", image: "/Pet.jpg", label: "Digital Pet", href: "/pet" }
+          { bg: "#FFF", image: "/AnytimeBUDDY.jpeg", label: "Anytime buddy", href: "/ai-power-hub" },
+          { bg: "#111827", image: "/HitASixer.jpeg", label: "Hit a Sixer", href: "/hit-a-sixer" },
+          { bg: "#03163A", image: "/Pet.jpg", label: "DigitalPet", href: "/pet" }
         ].map((item, idx) => (
-          <div
-            key={idx}
-            className="landing-floating-avatar"
-            style={{
-              borderRadius: "999px",
-              background: item.bg,
-              border: "3px solid rgba(255,255,255,0.92)",
-              boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              animation: `landingAvatarFloat 3.8s ease-in-out ${idx * 0.35}s infinite`,
-              transition: "transform 180ms ease, box-shadow 180ms ease"
-            }}
-            aria-label={item.label}
-            role="button"
-            tabIndex={0}
-            onClick={() => navigate(item.href)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                navigate(item.href);
-              }
-            }}
-          >
-            <img
-              src={item.image}
-              alt={item.label}
+          <div key={idx} className="landing-avatar-wrapper">
+            <div
+              className="landing-floating-avatar"
               style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                objectPosition: "center",
-                display: "block",
                 borderRadius: "999px",
-                background: item.bg
+                background: item.bg,
+                border: "3px solid rgba(255,255,255,0.92)",
+                boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                animation: `landingAvatarFloat 3.8s ease-in-out ${idx * 0.35}s infinite`,
+                transition: "transform 180ms ease, box-shadow 180ms ease"
               }}
-            />
+              aria-label={item.label}
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(item.href)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  navigate(item.href);
+                }
+              }}
+            >
+              <img
+                src={item.image}
+                alt={item.label}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  objectPosition: "center",
+                  display: "block",
+                  borderRadius: "999px",
+                  background: item.bg
+                }}
+              />
+            </div>
           </div>
         ))}
       </div>
@@ -442,7 +470,13 @@ const LandingPage: React.FC = () => {
       <SupportChatBot />
 
       <main className="landing-main">
-
+        <style>{`
+          .landing-avatar-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+          }
+        `}</style>
 
         <div className="landing-hero-section" style={{ textAlign: "center", padding: "50px 24px 30px", maxWidth: "980px", margin: "0 auto", width: "100%" }}>
           <h1 className="landing-hero-title">
@@ -700,7 +734,8 @@ const LandingPage: React.FC = () => {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      gap: "14px"
+                      gap: "14px",
+                      cursor: "pointer"
                     }}
                     onClick={() => window.open("https://wa.me/918951927280", "_blank")}
                     role="button"
@@ -909,12 +944,10 @@ const LandingPage: React.FC = () => {
                       <div className="landing-gg-seats">
                         <div className="landing-gg-seats-label">
                           <span className="landing-gg-seats-left">
-                            {session.isUpcoming
-                              ? `${session.seatsLeft} couples left!`
-                              : `${session.seatsLeft} seats left!`}
+                            {`${session.seatsLeft} spots left!`}
                           </span>
                           <span className="landing-gg-seats-total">
-                            {session.isUpcoming ? `${session.seatsMax} couples max` : `${session.seatsMax} max`}
+                            {`${session.seatsMax} spots max`}
                           </span>
                         </div>
                         <div className="landing-gg-seats-bar">
@@ -1223,11 +1256,13 @@ const LandingPage: React.FC = () => {
                   gap: 18px;
                 }
                 .landing-pro-card {
-                  background: rgba(255, 255, 255, 0.92);
-                  border: 1px solid rgba(226, 232, 240, 0.95);
+                  background: rgba(255, 255, 255, 0.35);
+                  backdrop-filter: blur(8px);
+                  -webkit-backdrop-filter: blur(8px);
+                  border: 1.5px solid rgba(148, 163, 184, 0.8);
                   border-radius: 22px;
                   padding: 18px 16px;
-                  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.07);
+                  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.05);
                   min-width: 0;
                 }
                 .assess-grid {

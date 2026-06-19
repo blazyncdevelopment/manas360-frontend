@@ -17,7 +17,7 @@ const tiers = [
     period: '/month',
     description: 'Full support experience with therapy enablement and guided programs.',
     features: ['Everything in Free', 'Unlimited AI conversations', 'Priority matching', 'Full therapy and support programs'],
-    cta: 'Start 7-Day Trial',
+    cta: 'Start 6-Day Trial',
     featured: true,
   },
   {

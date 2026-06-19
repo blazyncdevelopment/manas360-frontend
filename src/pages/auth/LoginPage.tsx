@@ -137,11 +137,8 @@ export default function LoginPage() {
 		setError(null);
 		setLoading(true);
 		try {
-			const result = await signupWithPhone(phone.trim(), undefined, true);
+			await signupWithPhone(phone.trim(), undefined, true);
 			setOtpSent(true);
-			if (result.devOtp) {
-				toast.success(`Dev OTP: ${result.devOtp}`, { duration: 10000 });
-			}
 		} catch (err) {
 			setError(getApiErrorMessage(err, 'Failed to send OTP'));
 		} finally {

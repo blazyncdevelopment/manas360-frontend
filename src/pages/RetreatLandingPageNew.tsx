@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { submitRetreatIntentApi } from '../api/retreat.api';
 import './RetreatLandingPageNew.css';
@@ -91,6 +93,7 @@ const RETREAT_THEMES = [
 ];
 
 export default function RetreatLandingPageNew() {
+  const navigate = useNavigate();
   const [form, setForm] = useState<FormState>({
     name: '',
     phone: '',
@@ -117,7 +120,7 @@ export default function RetreatLandingPageNew() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!form.name || !form.phone || !form.theme || !form.consentContact) {
       setError('Please fill in all required fields and consent checkbox.');
       return;
@@ -159,7 +162,8 @@ export default function RetreatLandingPageNew() {
   };
 
   return (
-    <div className="retreat-page">
+    <div className="retreat-page" style={{ position: 'relative' }}>
+
       {/* BRAND BAR */}
       {/* <div className="brand-bar">
         <div className="brand-row">
@@ -169,7 +173,7 @@ export default function RetreatLandingPageNew() {
       </div> */}
 
       {/* HERO */}
-      <div className="hero">
+      <div className="retreat-hero">
         <div className="hero-emoji">🏔️</div>
         <h1>Heal in <i>Nature's Embrace</i></h1>
         <p className="tagline">Not a vacation. A transformation. Curated wellness retreats across Karnataka's most healing landscapes — where therapy meets terrain.</p>
@@ -393,6 +397,16 @@ export default function RetreatLandingPageNew() {
           </p>
         </div>
       </footer> */}
+
+      <div className="w-full flex justify-start !pb-8 !pt-4">
+        <button
+          onClick={() => navigate('/landing')}
+          className="inline-flex items-center !gap-1 md:!gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] !px-2.5 !py-1.5 md:!px-3.5 md:!py-2 hover:bg-slate-50 transition-colors !ml-4 md:!ml-[80px]"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+          Go to Home
+        </button>
+      </div>
     </div>
   );
 }

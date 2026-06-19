@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { ArrowLeft } from 'lucide-react';
 import Pt06HeroVideoFrame from '../../components/common/Pt06HeroVideoFrame';
 
 interface DigitalPetHubPageProps {
@@ -694,7 +695,9 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white relative">
+
+
       {/* Tembo Modal */}
       {showTembo && <TemboModal onClose={() => setShowTembo(false)} />}
 
@@ -848,7 +851,7 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
                 <div key={i} className={`bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all ${i === 1 ? 'self-center' : 'h-full'}`}>
                   <div style={{ padding: `${pet.aspect} 0 0 0`, position: 'relative' }}>
                     <iframe
-                      src={`https://player.vimeo.com/video/${pet.vimeoId}?autoplay=1&muted=1&controls=1&playsinline=1&title=0&byline=0&portrait=0&badge=0&autopause=0&player_id=0&app_id=58479`}
+                      src={`https://player.vimeo.com/video/${pet.vimeoId}?autoplay=0&muted=1&controls=1&playsinline=1&title=0&byline=0&portrait=0&badge=0&autopause=0&player_id=0&app_id=58479`}
                       frameBorder="0"
                       allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
                       allowFullScreen
@@ -885,8 +888,12 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
                   onClick={(e) => handleTier2Click(e, pet.route)}
                   className={`cursor-pointer bg-gradient-to-br ${pet.bg} to-white border-2 rounded-2xl overflow-hidden transition-all block border-slate-200 hover:shadow-xl hover:-translate-y-2 hover:border-violet-500 ring-1 ring-transparent hover:ring-violet-200`}
                 >
-                  <div className="h-28 flex items-center justify-center text-5xl relative">
-                    {pet.emoji}
+                  <div className="h-32 flex items-center justify-center relative">
+                    {pet.name === 'Healing Elephant' ? (
+                      <img src="/DigitalPet.png" alt={pet.name} className="h-28 w-auto object-contain drop-shadow-sm" />
+                    ) : (
+                      <div className="text-[80px] drop-shadow-sm">{pet.emoji}</div>
+                    )}
                     <div className="absolute inset-0 flex items-end justify-center pb-2 opacity-0 hover:opacity-100 transition-opacity">
                       <span className="text-xs font-bold bg-violet-600 text-white px-3 py-1 rounded-full shadow-lg">
                         ▶ Open Interactive
@@ -903,7 +910,11 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
                       ))}
                     </div>
                     <div className="mt-3 text-xs text-violet-600 font-semibold flex items-center gap-1">
-                      <span>{pet.emoji}</span> Click to experience →
+                      {pet.name === 'Healing Elephant' ? (
+                        <img src="/DigitalPet.png" className="h-4 w-4 object-contain inline-block" alt="" />
+                      ) : (
+                        <span className="text-base">{pet.emoji}</span>
+                      )} Click to experience →
                     </div>
                   </div>
                 </div>
@@ -1054,6 +1065,15 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
           <p className="text-sm text-slate-600 italic">Oxytocin Engine: "Your brain doesn't care if connection has fur or pixels. It only cares if it's <strong>felt</strong>."</p>
         </div>
       </div> */}
+      <div className="w-full flex justify-start pb-4 pt-4">
+        <button
+          onClick={() => navigate('/landing')}
+          className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors ml-4 md:ml-[80px]"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+          Go to Home
+        </button>
+      </div>
     </div>
   );
 }

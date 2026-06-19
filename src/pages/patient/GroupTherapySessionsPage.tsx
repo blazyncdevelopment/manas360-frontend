@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { groupTherapyApi } from '../../api/groupTherapy';
 import { patientApi } from '../../api/patient';
 import { useAuth } from '../../context/AuthContext';
-import { Clock, Globe, Users, AlertCircle, KeyRound, Copy } from 'lucide-react';
+import { Clock, Globe, Users, AlertCircle, KeyRound, Copy, ArrowLeft } from 'lucide-react';
 
 type ComputedState = 'LIVE' | 'NEXT' | 'TODAY' | 'UPCOMING' | 'FULL' | 'EXPIRED';
 
@@ -270,15 +270,15 @@ export default function GroupTherapySessionsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 pb-20 md:px-6 lg:pb-6">
+    <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 pb-20 md:px-6 lg:pb-6 relative">
 
       {/* Public landing hero + breadcrumb */}
       {isPublicPath && (
         <>
 
           {/* Hero banner */}
-          <section 
-            className="bg-gradient-to-br from-teal-700 via-teal-600 to-emerald-600 px-6 py-10 text-center md:py-14"
+          <section
+            className="bg-gradient-to-br from-teal-700 via-teal-600 to-emerald-600 px-6 py-10 text-center md:py-14 !mt-0"
             style={{ width: '100vw', marginLeft: 'calc(-50vw + 50%)' }}
           >
             <div className="mx-auto max-w-2xl">
@@ -574,6 +574,16 @@ export default function GroupTherapySessionsPage() {
           <p className="mt-1 text-xs text-charcoal/60">Group therapy sessions will appear here once published. Check back soon.</p>
         </section>
       )}
+
+      <div className="w-full flex justify-start pt-8 pb-4">
+        <button
+          onClick={() => navigate('/landing')}
+          className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors ml-4 md:ml-[80px]"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+          Go to Home
+        </button>
+      </div>
     </div>
   );
 }

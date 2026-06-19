@@ -103,18 +103,16 @@ export const HowItWorks: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('patient')}
-            className={`rounded-full px-4 py-2 text-xs font-semibold md:px-6 md:text-sm ${
-              activeTab === 'patient' ? 'bg-white text-calm-sage shadow-soft-xs' : 'text-charcoal/65'
-            }`}
+            className={`rounded-full px-4 py-2 text-xs font-semibold md:px-6 md:text-sm ${activeTab === 'patient' ? 'bg-white text-calm-sage shadow-soft-xs' : 'text-charcoal/65'
+              }`}
           >
             I Need Support
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('provider')}
-            className={`rounded-full px-4 py-2 text-xs font-semibold md:px-6 md:text-sm ${
-              activeTab === 'provider' ? 'bg-white text-calm-sage shadow-soft-xs' : 'text-charcoal/65'
-            }`}
+            className={`rounded-full px-4 py-2 text-xs font-semibold md:px-6 md:text-sm ${activeTab === 'provider' ? 'bg-white text-calm-sage shadow-soft-xs' : 'text-charcoal/65'
+              }`}
           >
             I'm a Provider
           </button>

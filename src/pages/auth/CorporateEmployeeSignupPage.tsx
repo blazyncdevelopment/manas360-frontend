@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Home } from 'lucide-react';
 import { corporateApi } from '../../api/corporate.api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -73,8 +74,9 @@ export default function CorporateEmployeeSignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-emerald-50 px-4 py-10">
-      <div className="mx-auto max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-emerald-50 px-4 py-10 relative">
+
+      <div className="mx-auto max-w-md pt-14 md:pt-10">
 
         <div className="mt-6 overflow-hidden rounded-3xl border border-[#D5E0DA] bg-white shadow-[0_20px_60px_rgba(8,57,53,0.1)]">
           <div className="bg-gradient-to-r from-teal-700 to-emerald-600 px-7 py-6">
@@ -95,7 +97,7 @@ export default function CorporateEmployeeSignupPage() {
               {(['details', 'otp'] as Step[]).map((s, i) => (
                 <div key={s} className="flex items-center gap-2">
                   <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${s === step ? 'bg-teal-600 text-white' :
-                      (step === 'otp' && i === 0) || step === 'done' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'
+                    (step === 'otp' && i === 0) || step === 'done' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'
                     }`}>
                     {(step === 'otp' && i === 0) || step === 'done' ? '✓' : i + 1}
                   </div>
@@ -218,6 +220,25 @@ export default function CorporateEmployeeSignupPage() {
               <Link to="/corporate" className="font-semibold text-teal-600 hover:underline">Create corporate account →</Link>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="w-full flex justify-start pb-4 pt-4">
+        <div className="flex items-center gap-2 ml-4 md:ml-[80px]">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            Go Back
+          </button>
+          <button
+            onClick={() => navigate('/landing')}
+            className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors"
+          >
+            <Home className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            Go to Home
+          </button>
         </div>
       </div>
     </div>

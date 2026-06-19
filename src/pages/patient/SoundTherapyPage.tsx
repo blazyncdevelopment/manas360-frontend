@@ -469,11 +469,10 @@ export default function SoundTherapyPage() {
                     <button
                       onClick={() => toggleTrack(t.id)}
                       aria-label={playing ? `Pause ${t.title}` : `Play ${t.title}`}
-                      className={`shrink-0 flex h-9 w-9 items-center justify-center rounded-full transition ${
-                        playing
-                          ? 'bg-teal-600 text-white shadow-md'
-                          : 'bg-teal-50 text-teal-600 hover:bg-teal-100'
-                      }`}
+                      className={`shrink-0 flex h-9 w-9 items-center justify-center rounded-full transition ${playing
+                        ? 'bg-teal-600 text-white shadow-md'
+                        : 'bg-teal-50 text-teal-600 hover:bg-teal-100'
+                        }`}
                     >
                       {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
                     </button>

@@ -64,36 +64,6 @@ const getStyles = (color: BadgeColor) => {
   }
 };
 
-const JourneyLevelItem: React.FC<{
-  title: string;
-  description: string;
-  tags: { label: string; color: BadgeColor }[];
-  borderHex: string;
-  icon: string;
-  isMastery?: boolean;
-}> = ({ title, description, tags, borderHex, icon, isMastery }) => (
-  <div 
-    className={`
-      flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-8 p-5 md:p-8 rounded-2xl md:rounded-3xl border-l-[6px] md:border-l-[8px] 
-      transition-all duration-300 hover:shadow-[0_10px_30px_rgba(13,148,136,0.1)]
-      ${isMastery ? 'bg-gradient-to-br from-purple-50/50 to-pink-50/50' : 'bg-gradient-to-br from-teal-50/10 to-purple-50/10'}
-    `} 
-    style={{ borderLeftColor: borderHex }}
-  >
-    <div className="text-4xl md:text-6xl flex-shrink-0 leading-none mb-3 md:mb-0">{icon}</div>
-    <div className="flex-1 w-full">
-      <h3 className="font-serif text-xl md:text-2xl font-bold text-slate-900 mb-2 leading-tight">{title}</h3>
-      <p className="text-slate-700 text-sm md:text-base mb-4 leading-relaxed">{description}</p>
-      <div className="flex flex-wrap gap-2">
-        {tags.map((tag, idx) => (
-           <span key={idx} className="px-3 py-1 md:px-4 md:py-1.5 rounded-full text-xs font-semibold bg-white/80 text-slate-700 whitespace-nowrap border border-slate-200 shadow-sm">
-             {tag.label}
-           </span>
-        ))}
-      </div>
-    </div>
-  </div>
-);
 
 const IncentivesBanner: React.FC = () => (
   <div className="bg-gradient-to-br from-purple-500 to-pink-500 text-white p-6 md:p-10 rounded-2xl md:rounded-[24px] mb-12 md:mb-20 relative overflow-hidden shadow-xl">
@@ -372,57 +342,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ certifications }) => {
   return (
     <div className="space-y-12 md:space-y-16">
       
-      {/* 1. Journey Summary Box */}
-      {!isProviderRoute && (
-        <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-8 md:mb-12">
-             <h2 className="font-serif text-3xl md:text-5xl font-black text-slate-900 mb-3 md:mb-4">Your Journey</h2>
-             <p className="text-slate-600 text-base md:text-xl max-w-3xl mx-auto leading-relaxed px-4">
-                Choose your entry point based on your background and aspirations.
-             </p>
-          </div>
 
-          <div className="bg-white rounded-2xl md:rounded-[30px] shadow-lg relative overflow-hidden mb-10 md:mb-16 mx-4 md:mx-0 border border-slate-100">
-              {/* Gradient Top Border */}
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-purple-500 to-pink-500"></div>
-              
-              <div className="p-5 md:p-10 flex flex-col gap-6 md:gap-8">
-                   <JourneyLevelItem 
-                     title="Entry Level"
-                     description="Start your mental wellness journey with patient psychoeducation."
-                     borderHex="#3B82F6"
-                     icon="🟦"
-                     tags={[
-                       { label: "Certified Practitioner", color: 'blue' },
-                       { label: "ASHA Champion", color: 'green' }
-                     ]}
-                   />
-                   <JourneyLevelItem 
-                     title="Professional Level"
-                     description="Build your professional practice with recognized clinical credentials."
-                     borderHex="#F59E0B"
-                     icon="🟨"
-                     tags={[
-                       { label: "NLP Therapist", color: 'yellow' },
-                       { label: "Certified Psychologist", color: 'orange' },
-                       { label: "Psychiatrist", color: 'red' }
-                     ]}
-                   />
-                   <JourneyLevelItem 
-                     title="Mastery Level"
-                     description="Integrate Western psychology with Eastern wisdom."
-                     borderHex="#8B5CF6"
-                     icon="🟪"
-                     isMastery
-                     tags={[
-                       { label: "Executive Therapist", color: 'purple' },
-                       { label: "Master Faculty", color: 'purple' }
-                     ]}
-                   />
-              </div>
-          </div>
-        </div>
-      )}
 
       {/* 2. Incentives Banner */}
       {!isProviderRoute && (

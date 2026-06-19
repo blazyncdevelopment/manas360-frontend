@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
-import { Instagram, Youtube, Linkedin, User, Menu, X } from "lucide-react";
+import { Instagram, Youtube, Linkedin, User, Menu, X, Search } from "lucide-react";
 import {
   applyTheme,
   getStoredThemePreference,
@@ -81,7 +81,7 @@ export const landingHeaderStyles = `
         .landing-fixed-logo {
           position: absolute;
           left: 16px;
-          top: 10px;
+          top: 2px;
           z-index: 5;
           will-change: box-shadow;
           display: inline-flex;
@@ -261,14 +261,14 @@ export const landingHeaderStyles = `
             display: flex !important;
             align-items: center;
             justify-content: space-between;
-            padding: 8px 16px;
+            padding: 4px 16px;
             width: 100%;
           }
           .mobile-header-langs-row {
             display: flex !important;
             align-items: center;
             gap: 6px;
-            padding: 0 16px 10px 16px;
+            padding: 0 16px 4px 16px;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
@@ -283,14 +283,15 @@ export const landingHeaderStyles = `
             top: 0;
             right: 0;
             bottom: 0;
-            width: 100%;
-            max-width: 100%;
+            width: calc(100% - 48px);
+            max-width: 400px;
             background: white;
             z-index: 2000;
             box-shadow: -4px 0 24px rgba(0,0,0,0.1);
             transform: translateX(100%);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
+            border-radius: 24px 0 0 24px;
           }
           .mobile-side-menu.open {
             transform: translateX(0);
@@ -572,6 +573,7 @@ export const HeaderPage: React.FC = () => {
   const [loginDropdownTop, setLoginDropdownTop] = useState<number | null>(null);
   const [quickNavMegaTop, setQuickNavMegaTop] = useState<number | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileExpandedItem, setMobileExpandedItem] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(() => {
     const target = new Date();
     target.setHours(23, 59, 59, 999);
@@ -682,7 +684,6 @@ export const HeaderPage: React.FC = () => {
       psychologist: "/auth/login?role=psychologist",
       therapist: "/auth/login?role=therapist",
       corporate: "/auth/login?mode=corporate&next=/corporate/dashboard",
-      clinic: "/auth/login?role=therapist",
     }),
     []
   );
@@ -754,7 +755,7 @@ export const HeaderPage: React.FC = () => {
   };
 
   const megaItemRoutes: Record<string, string> = {
-    "1-on-1 Therapy": "/premium-theraphy",
+    "Premium Therapy Hub": "/premium-theraphy",
     "Psychiatry Consult": "/premium-theraphy",
     "Couples Therapy": "/find-spark",
     "Group Therapy": "/group-therapy",
@@ -815,7 +816,7 @@ export const HeaderPage: React.FC = () => {
     "MyDigitalClinic": "/my-digital-clinic",
     "Certify 2 Earn More": "/certifications",
     "Digital Pets4Happy Hormones": "/pet",
-    "NRI | Global Inc": "/nri-landing",
+    "NRI / Indian": "/nri-landing",
   };
 
   const handleMegaItemNav = (itemTitle: string, parentMenu: string | null) => {
@@ -835,12 +836,11 @@ export const HeaderPage: React.FC = () => {
 
   const loginOptions: LoginOption[] = useMemo(
     () => [
-      { type: "patient", label: "Patient", icon: "🧑", desc: "Find therapy & healing" },
+      { type: "patient", label: "Mental Wellness Seeker", icon: "🧑", desc: "Find therapy & healing" },
       { type: "psychiatrist", label: "Psychiatrist", icon: "⚕️", desc: "Medication & diagnosis" },
       { type: "psychologist", label: "Psychologist", icon: "🧠", desc: "Clinical therapy" },
       { type: "therapist", label: "Therapist", icon: "🛋️", desc: "Counseling & support" },
-      { type: "corporate", label: "Corporate", icon: "🏢", desc: "Wellness programs" },
-      { type: "clinic", label: "Clinic", icon: "🏥", desc: "Manage practice" }
+      { type: "corporate", label: "Corporate / Institution", icon: "🏢", desc: "Wellness programs" }
     ],
     []
   );
@@ -855,7 +855,7 @@ export const HeaderPage: React.FC = () => {
       { icon: "\uD83C\uDFDB\uFE0F", label: "For Corporates / Edu / Healthcare" },
       { icon: "\uD83C\uDF93", label: "Certify 2 Earn More" },
       // { icon: "\uD83D\uDCCB", label: "MyDigitalClinic" },
-      { icon: "\uD83C\uDF10", label: "NRI | Global Inc" }
+      { icon: "\uD83C\uDF10", label: "NRI / Indian" }
     ],
     []
   );
@@ -863,7 +863,7 @@ export const HeaderPage: React.FC = () => {
   const topShortcutItems: Array<{ icon: string; label: string; route: string }> = useMemo(
     () => [
       { icon: "\uD83D\uDC8E", label: "Premium Therapy Hub", route: "/premium-theraphy" },
-      { icon: "\u26A1", label: "AI Power Hub", route: "/ai-power-hub" },
+      { icon: "🏕️", label: "Wellness Retreats", route: "/retreats" },
       { icon: "\uD83D\uDC65", label: "Group Sessions", route: "/group-therapy" },
       { icon: "\uD83C\uDFAF", label: "Specialized Care", route: "/specialized-care" },
     ],
@@ -956,17 +956,13 @@ export const HeaderPage: React.FC = () => {
         accent: "#0EA5A4",
         title: "Premium Therapy Hub",
         subtitle: "Clinically supervised, evidence-based sessions",
-        columns: 5,
+        columns: 3,
         items: [
-          { icon: "🧠", title: "1-on-1 Therapy", subtitle: "Psychologist sessions from ₹699", badge: "₹699" },
-          { icon: "⚕️", title: "Psychiatry Consult", subtitle: "Medication review from ₹999", badge: "₹999" },
-          { icon: "💑", title: "Couples Therapy", subtitle: "Rebuild your relationship", badge: "₹1,499" },
-          { icon: "👥", title: "Group Therapy", subtitle: "Peer circles from ₹149", badge: "₹149" },
+          { icon: "🧠", title: "Premium Therapy Hub", subtitle: "Psychologist sessions from ₹699", badge: "₹699" },
+          { icon: "\uD83E\uDD16", title: "Anytime Buddy AI", subtitle: "Guidance from your AI companion", badge: "AI" },
+          { icon: "\u2601\uFE0F", title: "Vent Buddy", subtitle: "Safe space to express feelings", badge: "Soon" },
           { icon: "🎵", title: "Sound Therapy", subtitle: "Raga healing + sleep tracks", badge: "20 Free" },
-          { icon: "🌙", title: "Sleep Therapy", subtitle: "Guided sleep hygiene program", badge: "New" },
-          { icon: "💼", title: "Executive Coaching", subtitle: "High-performance wellness", badge: "Pro" },
-          { icon: "🏕️", title: "Wellness Retreats", subtitle: "Rishikesh, Coorg, Goa" },
-          { icon: "🛒", title: "Wellness Shop", subtitle: "Journals, tools, merch", badge: "Soon" }
+          { icon: "🌙", title: "Sleep Therapy", subtitle: "Guided sleep hygiene program", badge: "New" }
         ]
       },
       "Self-Help Tools": {
@@ -1031,9 +1027,9 @@ export const HeaderPage: React.FC = () => {
           { icon: "\u2728", title: "3 days", subtitle: "All modules unlocked", badge: "Free" }
         ]
       },
-      "NRI | Global Inc": {
+      "NRI / Indian": {
         accent: "#EA580C",
-        title: "NRI | Global Inc",
+        title: "NRI / Indian",
         subtitle: "Global Indians, local language care",
         columns: 1,
         items: [
@@ -1050,7 +1046,8 @@ export const HeaderPage: React.FC = () => {
   );
 
   const openQuickNavMenu = (label: string) => {
-    if (!quickNavMegaMenus[label]) {
+    const menu = quickNavMegaMenus[label];
+    if (!menu || menu.items.length <= 1) {
       setActiveQuickNav(null);
       return;
     }
@@ -1345,8 +1342,8 @@ export const HeaderPage: React.FC = () => {
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              width: "88px",
-              height: "88px",
+              width: "80px",
+              height: "80px",
               borderRadius: "18px",
               padding: "3px",
               boxSizing: "border-box",
@@ -1372,19 +1369,24 @@ export const HeaderPage: React.FC = () => {
                 }}
               />
             </div>
-
+            <span style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", textAlign: "center", marginTop: "-2px", marginLeft: "6px", fontSize: "7.5px", fontWeight: 800, color: "#0B2D5E", letterSpacing: "0.2px", lineHeight: "1.3", whiteSpace: "normal", minWidth: "130px", maxWidth: "150px" }}>
+              HOLISTIC MENTAL WELLNESS<br />ANYTIME ANYWHERE
+            </span>
           </a>
           <div className={`brand-bar${isScrolled ? " scrolled" : ""}`}>
             <div style={{ maxWidth: "1260px", margin: "0 auto", padding: "0 16px" }}>
 
               {/* MOBILE ONLY ROWS */}
               <div className="mobile-header-top-row mobile-only-header">
-                <a href="/landing" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
-                  <img src={logo} alt="MANAS360" style={{ height: "36px", width: "36px", borderRadius: "8px" }} />
+                <a href="/landing" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', gap: '6px' }}>
+                  <img src={logo} alt="MANAS360" style={{ height: "48px", width: "48px", borderRadius: "8px", flexShrink: 0 }} />
+                  <span style={{ fontSize: "7.5px", fontWeight: 800, color: "#0B2D5E", letterSpacing: "0.2px", lineHeight: "1.3", whiteSpace: "normal", maxWidth: "130px" }}>
+                    HOLISTIC MENTAL WELLNESS<br />ANYTIME ANYWHERE
+                  </span>
                 </a>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <button type="button" onClick={() => setShowSearch(true)} style={{ background: 'transparent', border: 'none', padding: 0, color: '#0B2D5E', cursor: 'pointer' }}>
-                    <span className="notranslate" translate="no" style={{ fontSize: "20px" }}>&#128269;</span>
+                  <button type="button" onClick={() => setShowSearch(true)} style={{ background: 'transparent', border: 'none', padding: 0, color: '#0B2D5E', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                    <Search size={20} />
                   </button>
                   {isAuthenticated ? (
                     <button
@@ -1489,9 +1491,9 @@ export const HeaderPage: React.FC = () => {
                         border: "1px solid #E8EDF2",
                         background: active ? "#0B2D5E" : "white",
                         color: active ? "white" : "#1A1A2E",
-                        fontSize: "11px",
+                        fontSize: "9px",
                         fontWeight: 800,
-                        padding: "6px 12px",
+                        padding: "6px 14px",
                         borderRadius: "16px",
                         cursor: "pointer",
                         whiteSpace: "nowrap"
@@ -1541,7 +1543,7 @@ export const HeaderPage: React.FC = () => {
                     onMouseLeave={closeQuickNavMenuWithDelay}
                   >
                     {topShortcutItems.map((item) => {
-                      const menu = quickNavMegaMenus[item.label];
+                      const menu = quickNavMegaMenus[item.label]?.items.length > 1 ? quickNavMegaMenus[item.label] : undefined;
                       const isActive = activeQuickNav === item.label && !!menu;
                       const accent = menu?.accent;
                       return (
@@ -1558,11 +1560,8 @@ export const HeaderPage: React.FC = () => {
                               quickNavTouchHandled.current = false;
                               return;
                             }
-                            if (menu) {
-                              activateQuickNavChip(item.label, true);
-                            } else {
-                              navigate(item.route);
-                            }
+                            navigate(item.route);
+                            setActiveQuickNav(null);
                           }}
                           onMouseEnter={() => {
                             if (typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
@@ -1957,7 +1956,7 @@ export const HeaderPage: React.FC = () => {
                 >
                   <div className="quick-nav">
                     {quickNavItems.map((item) => {
-                      const menu = quickNavMegaMenus[item.label];
+                      const menu = quickNavMegaMenus[item.label]?.items.length > 1 ? quickNavMegaMenus[item.label] : undefined;
                       const isActive = activeQuickNav === item.label && !!menu;
                       const accent = menu?.accent;
 
@@ -1979,7 +1978,13 @@ export const HeaderPage: React.FC = () => {
                               quickNavTouchHandled.current = false;
                               return;
                             }
-                            activateQuickNavChip(item.label, !!menu);
+                            const fallbackRoute = menuFallbackRoutes[item.label];
+                            if (fallbackRoute) {
+                              navigate(fallbackRoute);
+                              setActiveQuickNav(null);
+                            } else {
+                              activateQuickNavChip(item.label, !!menu);
+                            }
                           }}
                           className="quick-nav-chip quick-nav-chip-btn"
                           style={{
@@ -2139,100 +2144,230 @@ export const HeaderPage: React.FC = () => {
       <div className={`mobile-side-menu ${mobileMenuOpen ? 'open' : ''}`}>
         <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E8EDF2', flexShrink: 0 }}>
           <span style={{ fontSize: '18px', fontWeight: 900, color: '#0B2D5E' }}>Menu</span>
-          <button type="button" onClick={() => setMobileMenuOpen(false)} style={{ background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer', display: 'flex' }}>
+          <button type="button" onClick={() => { setMobileMenuOpen(false); setMobileExpandedItem(null); }} style={{ background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer', display: 'flex' }}>
             <X size={24} />
           </button>
         </div>
         <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1 }}>
-          {quickNavItems.map((item) => (
-            <div key={item.label}>
-              <div
-                style={{ fontSize: '16px', padding: '12px 14px', background: '#F8FBFF', borderRadius: '12px', border: '1px solid #E8EDF2', fontWeight: 800, color: '#1A1A2E', marginBottom: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
-                onClick={() => {
-                  const menu = quickNavMegaMenus[item.label];
-                  if (!menu) {
-                    activateQuickNavChip(item.label, false);
-                    setMobileMenuOpen(false);
-                  } else {
-                    activateQuickNavChip(item.label, true);
-                  }
-                }}
-              >
-                <span className="notranslate" translate="no" style={{ fontSize: '20px' }}>{item.icon}</span> <span>{item.label}</span>
-              </div>
-              {quickNavMegaMenus[item.label] && activeQuickNav === item.label && (
-                <div style={{ paddingLeft: '12px', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', marginBottom: '16px' }}>
-                  {quickNavMegaMenus[item.label].items.map(mi => (
-                    <div
-                      key={mi.title}
-                      onClick={() => {
-                        handleMegaItemNav(mi.title, item.label);
+          {quickNavItems.map((item) => {
+            const menu = quickNavMegaMenus[item.label]?.items.length > 1 ? quickNavMegaMenus[item.label] : undefined;
+            const isExpanded = mobileExpandedItem === item.label;
+            const fallbackRoute = menuFallbackRoutes[item.label];
+            return (
+              <div key={item.label}>
+                <div
+                  style={{ fontSize: '12px', padding: '12px 14px', background: '#F8FBFF', borderRadius: isExpanded ? '12px 12px 0 0' : '12px', border: '1px solid #E8EDF2', borderBottom: isExpanded ? 'none' : '1px solid #E8EDF2', fontWeight: 800, color: '#1A1A2E', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
+                  onClick={() => {
+                    if (menu) {
+                      setMobileExpandedItem(isExpanded ? null : item.label);
+                    } else {
+                      const route = fallbackRoute;
+                      if (route) {
+                        navigate(route);
                         setMobileMenuOpen(false);
+                        setMobileExpandedItem(null);
+                      }
+                    }
+                  }}
+                >
+                  <span className="notranslate" translate="no" style={{ fontSize: '20px' }}>{item.icon}</span>
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  {menu && (
+                    <button
+                      type="button"
+                      aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMobileExpandedItem(isExpanded ? null : item.label);
                       }}
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: "10px",
-                        padding: "12px",
-                        borderRadius: "14px",
-                        background: "#FFFFFF",
-                        cursor: "pointer",
-                        border: "1px solid #E8EDF2",
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
-                      }}
+                      style={{ background: 'transparent', border: 'none', padding: '0 4px', cursor: 'pointer', color: '#64748B', display: 'flex', alignItems: 'center', flexShrink: 0, fontSize: '18px', lineHeight: 1, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
                     >
-                      <div
-                        className="notranslate"
-                        translate="no"
-                        style={{
-                          width: "32px",
-                          height: "32px",
-                          borderRadius: "8px",
-                          border: "1px solid rgba(232, 237, 242, 0.95)",
-                          background: "#F8FBFF",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flex: "0 0 auto",
-                          fontSize: "16px"
-                        }}
-                      >
-                        {mi.icon}
-                      </div>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                          <div style={{ fontSize: "14px", fontWeight: 800, color: "#0F172A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {mi.title}
-                          </div>
-                          {mi.badge && (
-                            <div style={{ fontSize: "10px", fontWeight: 900, padding: "2px 8px", borderRadius: "999px", background: "#E2E8F0", color: "#0F172A" }}>
-                              {mi.badge}
-                            </div>
-                          )}
-                        </div>
-                        <div style={{ marginTop: "2px", fontSize: "12px", fontWeight: 600, color: "#64748B", lineHeight: 1.4 }}>
-                          {mi.subtitle}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                      ▾
+                    </button>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
-          <div style={{ borderTop: '1px solid #E8EDF2', paddingTop: '16px', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {topShortcutItems.map(item => (
-              <div
-                key={item.label}
-                onClick={() => {
-                  navigate(item.route);
-                  setMobileMenuOpen(false);
-                }}
-                style={{ fontSize: '16px', padding: '12px 14px', background: '#F8FBFF', borderRadius: '12px', border: '1px solid #E8EDF2', fontWeight: 800, color: '#1A1A2E', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
-              >
-                <span className="notranslate" translate="no" style={{ fontSize: '20px' }}>{item.icon}</span> <span>{item.label}</span>
+                {menu && isExpanded && (
+                  <div style={{ paddingLeft: '0', display: 'flex', flexDirection: 'column', gap: '0', border: '1px solid #E8EDF2', borderTop: 'none', borderRadius: '0 0 12px 12px', overflow: 'hidden', marginBottom: '8px' }}>
+                    {menu.items.map((mi, idx) => (
+                      <div
+                        key={mi.title}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          handleMegaItemNav(mi.title, item.label);
+                          setMobileMenuOpen(false);
+                          setMobileExpandedItem(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleMegaItemNav(mi.title, item.label);
+                            setMobileMenuOpen(false);
+                            setMobileExpandedItem(null);
+                          }
+                        }}
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: "10px",
+                          padding: "12px 14px",
+                          background: "#FFFFFF",
+                          cursor: "pointer",
+                          borderTop: idx > 0 ? '1px solid #F1F5F9' : 'none',
+                          touchAction: 'manipulation',
+                        }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#F8FBFF'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#FFFFFF'; }}
+                      >
+                        <div
+                          className="notranslate"
+                          translate="no"
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "8px",
+                            border: "1px solid rgba(232, 237, 242, 0.95)",
+                            background: "#F8FBFF",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flex: "0 0 auto",
+                            fontSize: "16px"
+                          }}
+                        >
+                          {mi.icon}
+                        </div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                            <div style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {mi.title}
+                            </div>
+                            {mi.badge && (
+                              <div style={{ fontSize: "10px", fontWeight: 900, padding: "2px 8px", borderRadius: "999px", background: "#E2E8F0", color: "#0F172A", whiteSpace: 'nowrap' }}>
+                                {mi.badge}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ marginTop: "2px", fontSize: "10px", fontWeight: 600, color: "#64748B", lineHeight: 1.4 }}>
+                            {mi.subtitle}
+                          </div>
+                        </div>
+                        <span style={{ color: '#CBD5E1', fontSize: '16px', alignSelf: 'center', flexShrink: 0 }}>›</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            ))}
+            );
+          })}
+          <div style={{ borderTop: '1px solid #E8EDF2', paddingTop: '16px', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {topShortcutItems.map(item => {
+              const menu = quickNavMegaMenus[item.label]?.items.length > 1 ? quickNavMegaMenus[item.label] : undefined;
+              const isExpanded = mobileExpandedItem === item.label;
+              return (
+                <div key={item.label}>
+                  <div
+                    style={{ fontSize: '12px', padding: '12px 14px', background: '#F8FBFF', borderRadius: isExpanded ? '12px 12px 0 0' : '12px', border: '1px solid #E8EDF2', borderBottom: isExpanded ? 'none' : '1px solid #E8EDF2', fontWeight: 800, color: '#1A1A2E', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
+                    onClick={() => {
+                      if (menu) {
+                        setMobileExpandedItem(isExpanded ? null : item.label);
+                      } else {
+                        navigate(item.route);
+                        setMobileMenuOpen(false);
+                        setMobileExpandedItem(null);
+                      }
+                    }}
+                  >
+                    <span className="notranslate" translate="no" style={{ fontSize: '20px' }}>{item.icon}</span>
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                    {menu && (
+                      <button
+                        type="button"
+                        aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMobileExpandedItem(isExpanded ? null : item.label);
+                        }}
+                        style={{ background: 'transparent', border: 'none', padding: '0 4px', cursor: 'pointer', color: '#64748B', display: 'flex', alignItems: 'center', flexShrink: 0, fontSize: '18px', lineHeight: 1, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
+                      >
+                        ▾
+                      </button>
+                    )}
+                  </div>
+                  {menu && isExpanded && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0', border: '1px solid #E8EDF2', borderTop: 'none', borderRadius: '0 0 12px 12px', overflow: 'hidden', marginBottom: '8px' }}>
+                      {menu.items.map((mi, idx) => (
+                        <div
+                          key={mi.title}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => {
+                            handleMegaItemNav(mi.title, item.label);
+                            setMobileMenuOpen(false);
+                            setMobileExpandedItem(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleMegaItemNav(mi.title, item.label);
+                              setMobileMenuOpen(false);
+                              setMobileExpandedItem(null);
+                            }
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '10px',
+                            padding: '12px 14px',
+                            background: '#FFFFFF',
+                            cursor: 'pointer',
+                            borderTop: idx > 0 ? '1px solid #F1F5F9' : 'none',
+                            touchAction: 'manipulation',
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#F8FBFF'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#FFFFFF'; }}
+                        >
+                          <div
+                            className="notranslate"
+                            translate="no"
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '8px',
+                              border: '1px solid rgba(232, 237, 242, 0.95)',
+                              background: '#F8FBFF',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flex: '0 0 auto',
+                              fontSize: '16px',
+                            }}
+                          >
+                            {mi.icon}
+                          </div>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                              <div style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {mi.title}
+                              </div>
+                              {mi.badge && (
+                                <div style={{ fontSize: '10px', fontWeight: 900, padding: '2px 8px', borderRadius: '999px', background: '#E2E8F0', color: '#0F172A', whiteSpace: 'nowrap' }}>
+                                  {mi.badge}
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ marginTop: '2px', fontSize: '10px', fontWeight: 600, color: '#64748B', lineHeight: 1.4 }}>
+                              {mi.subtitle}
+                            </div>
+                          </div>
+                          <span style={{ color: '#CBD5E1', fontSize: '16px', alignSelf: 'center', flexShrink: 0 }}>›</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

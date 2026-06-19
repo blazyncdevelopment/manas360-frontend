@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Building2, BriefcaseBusiness, Globe2, Mail, ShieldCheck, User2, Users } from 'lucide-react';
+import { Building2, BriefcaseBusiness, Globe2, Mail, ShieldCheck, User2, Users, ArrowLeft, Home } from 'lucide-react';
 import { corporateApi } from '../../api/corporate.api';
 import PhoneInput from '../../components/ui/PhoneInput';
 
@@ -178,8 +178,9 @@ export default function CorporateOnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_10%_10%,#D8ECE7_0,#F5F7F2_35%,#EEF4F1_100%)] px-4 py-8 sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-6xl">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_10%_10%,#D8ECE7_0,#F5F7F2_35%,#EEF4F1_100%)] px-4 py-8 sm:px-6 lg:px-10 relative">
+
+      <div className="mx-auto max-w-6xl pt-14 md:pt-10">
         {/* 
         <Link to="/" className="inline-flex items-center gap-2 rounded-full border border-[#D4E3DE] bg-white/80 px-3 py-1.5 text-xs font-semibold tracking-wide text-[#20554D] hover:bg-white">
           <img src="/Untitled.png" alt="MANAS360" className="h-5 w-5 rounded-md object-cover" />
@@ -376,6 +377,25 @@ export default function CorporateOnboardingPage() {
               </p>
             </form>
           </section>
+        </div>
+        
+        <div className="w-full flex justify-start pb-4 pt-4">
+          <div className="flex items-center gap-2 ml-4 md:ml-[80px]">
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              Go Back
+            </button>
+            <button
+              onClick={() => navigate('/landing')}
+              className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors"
+            >
+              <Home className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              Go to Home
+            </button>
+          </div>
         </div>
       </div>
     </div>

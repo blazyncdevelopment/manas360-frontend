@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Instagram, Linkedin, Youtube, MessageCircle } from "lucide-react";
+import { Instagram, Linkedin, Youtube, MessageCircle, ShieldCheck } from "lucide-react";
 
 
 
@@ -214,7 +214,8 @@ export const FooterPage: React.FC = () => {
     "Privacy Policy": "/privacy",
     "Terms of Service": "/terms",
     "Cookie Policy": "/cookie-policy",
-    "DPDPA Compliance": "/dpdpa-compliance",
+    "DPDPA Compliance 2025": "/dpdpa-compliance",
+    "DPDPA Compliance Statement": "https://sites.google.com/manas360.com/manas360-mental-wellness?usp=sharing",
     "Refund Policy": "/refunds",
     Disclaimer: "/legal/community-guidelines"
   };
@@ -222,7 +223,11 @@ export const FooterPage: React.FC = () => {
   const handleFooterRoute = (routeMap: Record<string, string>, label: string) => {
     const path = routeMap[label];
     if (path) {
-      navigate(path);
+      if (path.startsWith("http")) {
+        window.open(path, "_blank", "noopener,noreferrer");
+      } else {
+        navigate(path);
+      }
     }
   };
 
@@ -257,7 +262,7 @@ export const FooterPage: React.FC = () => {
 
             <div>
               <div className="footer-title">Legal</div>
-              {["Privacy Policy", "Terms of Service", "Cookie Policy", "DPDPA Compliance", "Refund Policy", "Disclaimer"].map((t) => (
+              {["Privacy Policy", "Terms of Service", "Cookie Policy", "DPDPA Compliance 2025", "DPDPA Compliance Statement", "Refund Policy", "Disclaimer"].map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -302,6 +307,25 @@ export const FooterPage: React.FC = () => {
                     {s.icon}
                   </a>
                 ))}
+              </div>
+              <div style={{ marginTop: "24px" }}>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 12px",
+                    background: "rgba(164, 168, 48, 0.15)",
+                    border: "1px solid rgba(164, 168, 48, 0.3)",
+                    borderRadius: "20px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    color: "rgba(255,255,255,0.9)",
+                  }}
+                >
+                  <ShieldCheck size={14} color="#A4A830" />
+                  DPDPA 2023 Compliant
+                </div>
               </div>
             </div>
           </div>
