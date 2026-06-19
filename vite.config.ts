@@ -1,63 +1,62 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, loadEnv } from 'vite'
 import path from 'path'
 import react from '@vitejs/plugin-react'
 import Sitemap from 'vite-plugin-sitemap'
 
-const hmrProtocol = (process.env.VITE_HMR_PROTOCOL as 'ws' | 'wss' | undefined) || 'ws'
-const hmrHost = process.env.VITE_HMR_HOST || undefined
-const hmrPort = Number(process.env.VITE_HMR_PORT || process.env.PORT || 5173)
-const hmrClientPort = Number(process.env.VITE_HMR_CLIENT_PORT || process.env.VITE_HMR_PORT || process.env.PORT || 5173)
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  
+  const hmrProtocol = (env.VITE_HMR_PROTOCOL as 'ws' | 'wss' | undefined) || 'ws'
+  const hmrHost = env.VITE_HMR_HOST || undefined
+  const hmrPort = Number(env.VITE_HMR_PORT || env.PORT || 5173)
+  const hmrClientPort = Number(env.VITE_HMR_CLIENT_PORT || env.VITE_HMR_PORT || env.PORT || 5173)
 
-// https://vitejs.dev/config/
-export default defineConfig({
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, 'src'),
+  return {
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'src'),
+      },
     },
-  },
-  plugins: [
-    react(),
-    Sitemap({
-      hostname: 'https://manas360.com',
-      robots: [{ userAgent: '*', allow: '/' }],
-      dynamicRoutes: [
-        '/',
-        '/about',
-        '/contact',
-        '/how-it-works',
-        '/intro',
-        '/landing',
-        '/plans',
-        '/crisis',
-        '/specialized-care',
-        '/blogs'
-      ]
-    })
-  ],
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/test-utils.tsx'],
-  },
-  server: {
-    host: '0.0.0.0',
-    port: Number(process.env.PORT || 5173),
-    strictPort: true,
-    allowedHosts: true, // ✅ CORRECT: Must be boolean true, not 'all'
-    open: false,
-    cors: true,
-    hmr: {
-      // Explicit HMR websocket settings fix common localhost/proxy websocket failures.
-      protocol: hmrProtocol,
-      // Keep host undefined by default so browser hostname is used (works for localhost/LAN/tunnels).
-      host: hmrHost,
-      port: hmrPort,
-      clientPort: hmrClientPort,
+    plugins: [
+      react(),
+      Sitemap({
+        hostname: 'https://manas360.com',
+        robots: [{ userAgent: '*', allow: '/' }],
+        dynamicRoutes: [
+          '/',
+          '/about',
+          '/contact',
+          '/how-it-works',
+          '/intro',
+          '/landing',
+          '/plans',
+          '/crisis',
+          '/specialized-care',
+          '/blogs'
+        ]
+      })
+    ],
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: ['./src/test-utils.tsx'],
     },
-    proxy: {
-      '/api': {
-        // Backend runs on port 4000 locally. Change VITE_BACKEND_URL in .env.local to override.
-        target: process.env.VITE_BACKEND_URL || 'http://127.0.0.1:4000',
+    server: {
+      host: '0.0.0.0',
+      port: Number(env.PORT || 5173),
+      strictPort: true,
+      allowedHosts: true,
+      open: false,
+      cors: true,
+      hmr: {
+        protocol: hmrProtocol,
+        host: hmrHost,
+        port: hmrPort,
+        clientPort: hmrClientPort,
+      },
+      proxy: {
+        '/api': {
+          target: env.VITE_BACKEND_URL || 'http://127.0.0.1:4000',
         changeOrigin: true,
         secure: false,
       },
@@ -114,11 +113,12 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 1400,
   },
-  preview: {
-    host: '0.0.0.0',
-    port: Number(process.env.PORT || 5173),
-    strictPort: true,
-    allowedHosts: true, // ✅ CORRECT: Must be boolean true, not 'all'
-    cors: true,
-  },
+    preview: {
+      host: '0.0.0.0',
+      port: Number(env.PORT || 5173),
+      strictPort: true,
+      allowedHosts: true,
+      cors: true,
+    },
+  }
 })

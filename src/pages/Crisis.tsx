@@ -1,9 +1,61 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { getApiBaseUrl } from '../lib/runtimeEnv';
 
 export const CrisisPage: React.FC = () => {
   const [showCounselor, setShowCounselor] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [showModal, setShowModal] = useState(false);
+  const [crisisType, setCrisisType] = useState<'safe' | 'urgent'>('safe');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+
+  const sendCrisisAlert = async (type: 'safe' | 'urgent', uName: string, uPhone: string) => {
+    try {
+      await fetch(`${getApiBaseUrl()}/v1/shared/crisis-alert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: uName, phone: uPhone, type })
+      });
+    } catch (e) {
+      console.error('Failed to send crisis alert', e);
+    }
+  };
+
+  const handleSafeClick = () => {
+    if (user && user.phone) {
+      sendCrisisAlert('safe', user.firstName || user.name || 'User', user.phone);
+      setShowCounselor(true);
+    } else {
+      setCrisisType('safe');
+      setShowModal(true);
+    }
+  };
+
+  const handleUrgentClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (user && user.phone) {
+      sendCrisisAlert('urgent', user.firstName || user.name || 'User', user.phone);
+      window.location.href = 'tel:112';
+    } else {
+      setCrisisType('urgent');
+      setShowModal(true);
+    }
+  };
+
+  const handleModalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendCrisisAlert(crisisType, name, phone);
+    setShowModal(false);
+    if (crisisType === 'urgent') {
+      window.location.href = 'tel:112';
+    } else {
+      setShowCounselor(true);
+    }
+  };
 
   return (
     <div style={{
@@ -143,7 +195,7 @@ export const CrisisPage: React.FC = () => {
           </p>
           <div style={{ display: 'flex', gap: '0.6rem' }}>
             <button
-              onClick={() => setShowCounselor(true)}
+              onClick={handleSafeClick}
               className="crisis-btn"
               style={{
                 flex: 1, padding: '0.75rem',
@@ -157,6 +209,7 @@ export const CrisisPage: React.FC = () => {
             </button>
             <a
               href="tel:112"
+              onClick={handleUrgentClick}
               className="crisis-btn"
               style={{
                 flex: 1, padding: '0.75rem',
@@ -165,6 +218,7 @@ export const CrisisPage: React.FC = () => {
                 borderRadius: '12px', fontWeight: 600,
                 fontSize: '0.88rem', textDecoration: 'none',
                 textAlign: 'center',
+                cursor: 'pointer'
               }}
             >
               🆘 Need help now
@@ -215,6 +269,92 @@ export const CrisisPage: React.FC = () => {
         iCall: 9152987821 · Vandrevala Foundation: 1860-2662-345 (24/7)
         <br />All helplines are free and confidential.
       </p>
+
+      {/* Modal for capturing info if logged out */}
+      {showModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: '24px', padding: '2rem',
+            width: '100%', maxWidth: '400px',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+            animation: 'fade-in 0.2s ease-out'
+          }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>
+              We're here for you.
+            </h3>
+            <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+              Please share your name and WhatsApp number so we can check in on you. Support is just a message away.
+            </p>
+
+            <form onSubmit={handleModalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>Your Name</label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Rahul"
+                  style={{
+                    width: '100%', padding: '0.75rem 1rem', borderRadius: '12px',
+                    border: '1px solid #cbd5e1', fontSize: '0.95rem',
+                    outline: 'none', transition: 'border-color 0.2s'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#dc2626'}
+                  onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>WhatsApp Number</label>
+                <input
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="e.g. 9876543210"
+                  style={{
+                    width: '100%', padding: '0.75rem 1rem', borderRadius: '12px',
+                    border: '1px solid #cbd5e1', fontSize: '0.95rem',
+                    outline: 'none', transition: 'border-color 0.2s'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#dc2626'}
+                  onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  style={{
+                    flex: 1, padding: '0.75rem', borderRadius: '12px',
+                    background: '#f1f5f9', color: '#475569',
+                    border: 'none', fontWeight: 600, cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1, padding: '0.75rem', borderRadius: '12px',
+                    background: '#dc2626', color: '#fff',
+                    border: 'none', fontWeight: 600, cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(220,38,38,0.2)'
+                  }}
+                >
+                  {crisisType === 'urgent' ? 'Call 112 Now' : 'Send'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

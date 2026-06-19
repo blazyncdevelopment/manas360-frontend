@@ -6,6 +6,7 @@ import {
 	getAdminUserById,
 	getAdminUsers,
 	updateAdminUsersBulkStatus,
+	deleteAdminUser,
 	type AdminMetrics,
 	type AdminUser,
 	type AdminUserDetail,
@@ -248,6 +249,71 @@ export default function AdminUsersPage() {
 		}
 	};
 
+	const handleDeleteUser = async (userId: string): Promise<void> => {
+		if (!canManageUsers) {
+			toast.error('You do not have permission to manage users.');
+			return;
+		}
+		if (!window.confirm('Are you sure you want to permanently delete this user? This action cannot be undone.')) {
+			return;
+		}
+
+		setIsUpdatingStatus(true);
+		try {
+			await deleteAdminUser(userId);
+			toast.success('User deleted successfully.');
+			if (selectedUser?.id === userId) {
+				setSelectedUser(null);
+			}
+			await loadUsers(meta.page, roleFilter, statusFilter);
+		} catch (err: any) {
+			const message = err.response?.data?.error || err.response?.data?.message || err.message || 'Unable to delete user.';
+			setError(message);
+			toast.error(message);
+		} finally {
+			setIsUpdatingStatus(false);
+		}
+	};
+
+	const handleBulkDelete = async (): Promise<void> => {
+		if (!canManageUsers) {
+			toast.error('You do not have permission to manage users.');
+			return;
+		}
+		if (selectedIds.size === 0) return;
+		if (!window.confirm(`Are you sure you want to permanently delete ${selectedIds.size} selected user(s)? This action cannot be undone.`)) {
+			return;
+		}
+
+		setIsUpdatingStatus(true);
+		let successCount = 0;
+		let failCount = 0;
+		const toDelete = Array.from(selectedIds);
+		
+		for (const id of toDelete) {
+			try {
+				await deleteAdminUser(id);
+				successCount++;
+			} catch (err) {
+				failCount++;
+			}
+		}
+		
+		if (failCount > 0) {
+			toast.error(`Deleted ${successCount} users, ${failCount} failed (likely due to financial records).`);
+		} else {
+			toast.success(`Successfully deleted ${successCount} user(s).`);
+		}
+		
+		setSelectedIds(new Set());
+		if (selectedUser && toDelete.includes(selectedUser.id)) {
+			setSelectedUser(null);
+		}
+		
+		await loadUsers(meta.page, roleFilter, statusFilter);
+		setIsUpdatingStatus(false);
+	};
+
 	const exportUsersCsv = (): void => {
 		const exportRows = filteredUsers.filter((user) => selectedIds.size === 0 || selectedIds.has(user.id));
 		if (exportRows.length === 0) {
@@ -395,6 +461,14 @@ export default function AdminUsersPage() {
 						>
 							Activate
 						</button>
+						<button
+							disabled={!canManageUsers || isUpdatingStatus}
+							title={!canManageUsers ? "You don't have permission" : undefined}
+							onClick={() => handleDeleteUser(user.id)}
+							className="rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							Delete
+						</button>
 					</div>
 				),
 			},
@@ -480,6 +554,14 @@ export default function AdminUsersPage() {
 					className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					Activate Selected
+				</button>
+				<button
+					disabled={!canManageUsers || isUpdatingStatus || selectedIds.size === 0}
+					title={!canManageUsers ? "You don't have permission" : undefined}
+					onClick={handleBulkDelete}
+					className="rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+				>
+					Delete Selected
 				</button>
 				<button
 					onClick={exportUsersCsv}
@@ -592,6 +674,14 @@ export default function AdminUsersPage() {
 									className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
 								>
 									Activate User
+								</button>
+								<button
+									disabled={!canManageUsers || isUpdatingStatus}
+									title={!canManageUsers ? "You don't have permission" : undefined}
+									onClick={() => handleDeleteUser(selectedUser.id)}
+									className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+								>
+									Delete User
 								</button>
 							</div>
 						</div>

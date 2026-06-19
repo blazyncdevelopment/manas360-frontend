@@ -118,6 +118,7 @@ const AdminPayoutsPage = lazy(() => import('./pages/admin/Payouts'));
 const ZohoDeskPanel = lazy(() => import('./pages/admin/ZohoDeskPanel'));
 const OfferMarqueeEditor = lazy(() => import('./pages/admin/OfferMarqueeEditor'));
 const PricingManagementPage = lazy(() => import('./pages/admin/PricingManagement'));
+const LeadMarketplacePricingPage = lazy(() => import('./pages/admin/LeadMarketplacePricing'));
 const CrisisConsole = lazy(() => import('./pages/admin/CrisisConsole'));
 const AuditTrail = lazy(() => import('./pages/admin/AuditTrail'));
 const GroupManagement = lazy(() => import('./pages/admin/GroupManagement'));
@@ -125,6 +126,9 @@ const QrCodeManager = lazy(() => import('./pages/admin/QrCodeManager'));
 const TherapistPerformance = lazy(() => import('./pages/admin/TherapistPerformance'));
 const AgreementsPage = lazy(() => import('./pages/admin/AgreementsPage'));
 const AdminRetreatsPage = lazy(() => import('./pages/admin/AdminRetreatsPage'));
+const AdminCoursesPage = lazy(() => import('./pages/admin/AdminCoursesPage'));
+const AdminCourseBuilderPage = lazy(() => import('./pages/admin/AdminCourseBuilderPage'));
+const AdminLiveLogsPage = lazy(() => import('./pages/admin/AdminLiveLogsPage'));
 const AgreementDetailPage = lazy(() => import('./pages/admin/AgreementDetailPage'));
 const ClientAgreementPage = lazy(() => import('./pages/admin/ClientAgreementPage'));
 const SessionAnalytics = lazy(() => import('./pages/admin/SessionAnalytics'));
@@ -223,6 +227,7 @@ const CertificateVerificationPage = lazy(() => import('./pages/CertificateVerifi
 // Learner Pages
 const LearnerDashboardLayout = lazy(() => import('./components/layout/LearnerDashboardLayout'));
 const LearnerDashboard = lazy(() => import('./pages/learner/LearnerDashboard'));
+const LearnerCertificatePage = lazy(() => import('./pages/learner/LearnerCertificatePage'));
 const PaymentHistory = lazy(() => import('./pages/shared/PaymentHistory'));
 
 interface AssessmentData {
@@ -608,7 +613,7 @@ function App() {
                     >
                       <Route index element={<Navigate to="dashboard" replace />} />
                       <Route path="dashboard" element={<LearnerDashboard />} />
-                      <Route path="certificate" element={<LearnerDashboard />} />
+                      <Route path="certificate" element={<LearnerCertificatePage />} />
                       <Route path="enrollments" element={<LearnerDashboard />} />
                       <Route path="payments" element={<PaymentHistory />} />
                       {/* ── Certification pages embedded inside Learner layout ── */}
@@ -725,6 +730,7 @@ function App() {
                         <Route path="billing/company-reports" element={<AdminReportsPage />} />
                         <Route path="billing/revenue" element={<AdminRevenuePage />} />
                         <Route path="billing/pricing" element={<PricingManagementPage />} />
+                        <Route path="billing/lead-pricing" element={<LeadMarketplacePricingPage />} />
                         <Route path="billing/offers" element={<OfferMarqueeEditor />} />
                         <Route path="billing/payouts" element={<AdminPayoutsPage />} />
                         <Route path="billing/payment-reliability" element={<AdminPaymentReliability />} />
@@ -739,6 +745,8 @@ function App() {
                         <Route path="operations/agreements/:agreementId/client" element={<ClientAgreementPage />} />
                         <Route path="operations/retreat-requests" element={<AdminRetreatsPage />} />
                         <Route path="operations/blogs" element={<AdminBlogManagementPage />} />
+                        <Route path="courses" element={<AdminCoursesPage />} />
+                        <Route path="courses/builder/:id" element={<AdminCourseBuilderPage />} />
 
                         <Route path="intelligence/platform-analytics" element={<PlatformAnalytics />} />
                         <Route path="intelligence/user-growth" element={<UserGrowthAnalytics />} />
@@ -748,6 +756,7 @@ function App() {
                         <Route path="governance/audit" element={<AuditTrail />} />
                         <Route path="governance/center" element={<GovernanceCenterPage />} />
                         <Route path="governance/privacy" element={<AdminDataPrivacyHubPage />} />
+                        <Route path="operations/logs" element={<AdminLiveLogsPage />} />
                         <Route path="governance/legal" element={<CentralizedLegalDocumentManagement />} />
                         <Route path="governance/compliance" element={<ComplianceDashboard />} />
 

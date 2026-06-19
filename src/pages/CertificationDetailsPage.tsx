@@ -8,6 +8,7 @@ import { SEO } from '../components/CertificationSEO';
 import { useAuth } from '../context/AuthContext';
 import { useEnrollmentStore } from '../store/CertificationEnrollmentStore';
 import { getCertificationsErrorMessage, getMyCertificationState, registerCertificationEnrollment } from '../api/certifications';
+import { getPublishedCourseById, Course } from '../api/courses';
 
 export const CertificationDetailsPage: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -22,14 +23,47 @@ export const CertificationDetailsPage: React.FC = () => {
     const [enrollError, setEnrollError] = useState<string | null>(null);
     const { user } = useAuth();
 
-    const cert = CERTIFICATIONS.find(c => c.slug === slug);
+    const [cert, setCert] = useState<any>(null);
 
     useEffect(() => {
-        setLoading(true);
-        const timer = setTimeout(() => {
-            setLoading(false);
-        }, 800);
-        return () => clearTimeout(timer);
+        const fetchCourse = async () => {
+            setLoading(true);
+            try {
+                // Try fetching dynamically
+                const data = await getPublishedCourseById(slug as string);
+                setCert({
+                    ...data,
+                    slug: data.id,
+                    name: data.title,
+                    description: data.description,
+                    badgeColor: 'blue',
+                    tier: 'Professional',
+                    duration_weeks: Math.ceil((data.modules?.length || 0) * 1.5),
+                    price_inr: data.price,
+                    modulesCount: data.modules?.length || 0,
+                    monthly_income_max_inr: 0,
+                    requirements: [],
+                    prerequisites: [],
+                    testimonials: [],
+                    faqs: [],
+                    modules: data.modules?.map((m: any) => ({
+                        id: m.id,
+                        title: m.title,
+                        duration_minutes: m.lessons?.length * 10 || 0,
+                        topics: m.lessons?.map((l: any) => l.title) || [],
+                    })) || [],
+                });
+            } catch (error) {
+                // Fallback to static
+                const staticCert = CERTIFICATIONS.find(c => c.slug === slug);
+                if (staticCert) {
+                    setCert(staticCert);
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCourse();
     }, [slug]);
 
     useEffect(() => {

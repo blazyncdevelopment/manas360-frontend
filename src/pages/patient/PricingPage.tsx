@@ -329,30 +329,32 @@ export default function PricingPage() {
         </p>
       </header>
 
-      <div
-        className={cardClass('role-tabs', lockedRole ? 'role-tabs--locked' : undefined)}
-        role="tablist"
-        aria-label="Pricing audience"
-      >
-        {ROLE_TABS.map((tab) => {
-          const isActive = activeRole === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              aria-disabled={lockedRole ? true : undefined}
-              tabIndex={lockedRole ? -1 : undefined}
-              className={cardClass('role-tab', isActive && 'active')}
-              onClick={() => switchRole(tab.id)}
-            >
-              <span className="tab-icon">{tab.icon}</span>
-              <span className="tab-label">{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {lockedRole !== 'patient' && (
+        <div
+          className={cardClass('role-tabs', lockedRole ? 'role-tabs--locked' : undefined)}
+          role="tablist"
+          aria-label="Pricing audience"
+        >
+          {ROLE_TABS.map((tab) => {
+            const isActive = activeRole === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-disabled={lockedRole ? true : undefined}
+                tabIndex={lockedRole ? -1 : undefined}
+                className={cardClass('role-tab', isActive && 'active')}
+                onClick={() => switchRole(tab.id)}
+              >
+                <span className="tab-icon">{tab.icon}</span>
+                <span className="tab-label">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="content">
 

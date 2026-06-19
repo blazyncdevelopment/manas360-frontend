@@ -52,6 +52,7 @@ let refreshPromise: Promise<void> | null = null;
 
 const isAuthRoute = (url: string): boolean => (
 	url.includes('/auth/login')
+	|| url.includes('/auth/admin/login')
 	|| url.includes('/auth/logout')
 	|| url.includes('/auth/refresh')
 	|| url.includes('/auth/me')
@@ -60,6 +61,7 @@ const isAuthRoute = (url: string): boolean => (
 
 const isTokenIssuingAuthRoute = (url: string): boolean => (
 	url.includes('/auth/login')
+	|| url.includes('/auth/admin/login')
 	|| url.includes('/auth/verify/phone-otp')
 	|| url.includes('/provider-onboarding/verify-otp')
 	|| url.includes('/auth/refresh')

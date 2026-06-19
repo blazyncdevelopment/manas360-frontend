@@ -22,6 +22,7 @@ import { http } from '../../lib/http';
 
 import { getModulesByCertification } from '../../utils/certificationLessonUtils';
 import { useCertificationProgress } from '../../store/useCertificationProgress';
+import { getPublishedCourses, Course } from '../../api/courses';
 
 // ─── Color helpers (badge → Tailwind class) ────────────────────────────────
 const BADGE_DOT: Record<string, string> = {
@@ -199,6 +200,7 @@ export const LearnerDashboard: React.FC = () => {
   const [showPatientModal, setShowPatientModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'THERAPIST' | 'PSYCHOLOGIST' | 'PSYCHIATRIST' | 'COACH'>('THERAPIST');
   const [totalAmountPaid, setTotalAmountPaid] = useState<number>(0);
+  const [courses, setCourses] = useState<Course[]>([]);
 
   React.useEffect(() => {
     setActiveTab(currentTab);
@@ -207,6 +209,18 @@ export const LearnerDashboard: React.FC = () => {
   React.useEffect(() => {
     void syncEnrollments();
   }, [syncEnrollments]);
+
+  React.useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const data = await getPublishedCourses();
+        setCourses(data);
+      } catch (err) {
+        console.error("Error fetching courses", err);
+      }
+    };
+    fetchCourses();
+  }, []);
 
   React.useEffect(() => {
     const fetchPayments = async () => {
@@ -245,9 +259,17 @@ export const LearnerDashboard: React.FC = () => {
       )
       : 0;
 
-  const availableCerts = CERTIFICATIONS.filter(
+  const availableCerts = courses.filter(
     (c) => !enrollments.find((e: Enrollment) => e.certificationId === c.id),
-  );
+  ).map((c) => ({
+    ...c,
+    slug: c.id,
+    name: c.title,
+    badgeColor: 'blue',
+    tier: 'Professional',
+    duration_weeks: Math.ceil((c.modules?.length || 0) * 1.5),
+    price_inr: c.price,
+  }));
 
   const handleProviderUpgrade = async () => {
     setUpgradeLoading(true);

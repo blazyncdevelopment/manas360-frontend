@@ -198,6 +198,7 @@ export interface PlatformPaymentResult {
 	success: boolean;
 	payment_url: string;
 	transaction_id: string;
+	bypassed?: boolean;
 }
 
 /** Step 3 — Initiate ₹99 platform fee (PhonePe). */
@@ -215,6 +216,7 @@ export const initiatePlatformPayment = async (providerId: string): Promise<Platf
 		success: body.success ?? true,
 		payment_url: body.payment_url || String(record.payment_url || ''),
 		transaction_id: body.transaction_id || String(record.transaction_id || ''),
+		bypassed: body.bypassed || Boolean(record.bypassed),
 	};
 };
 
@@ -363,4 +365,23 @@ export const resolveProviderIdForOnboarding = async (
 	}
 
 	return null;
+};
+
+export const verifyPAN = async (providerId: string, panNumber: string, nameOnPan: string): Promise<{ success: boolean; data?: any; error?: string }> => {
+	const response = await http.post('/v1/provider-onboarding/kyc/verify-pan', {
+		providerId,
+		panNumber,
+		nameOnPan,
+	});
+	return response.data;
+};
+
+export const verifyBankAccount = async (providerId: string, accountNumber: string, ifsc: string, accountName: string): Promise<{ success: boolean; data?: any; error?: string }> => {
+	const response = await http.post('/v1/provider-onboarding/kyc/verify-bank', {
+		providerId,
+		accountNumber,
+		ifsc,
+		accountName,
+	});
+	return response.data;
 };

@@ -109,7 +109,13 @@ export default function ReportsPage() {
           return;
         }
 
-        navigate(`/patient/reports/shared/${encodeURIComponent(sharedId)}`);
+        window.open(`/patient/reports/shared/${encodeURIComponent(sharedId)}`, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      if (report.type === 'session_summary' && action === 'view') {
+        const sessionId = report.id.replace(/^session-/, '');
+        window.open(`/patient/sessions/${sessionId}`, '_blank', 'noopener,noreferrer');
         return;
       }
 
@@ -200,11 +206,10 @@ export default function ReportsPage() {
             key={opt.key}
             type="button"
             onClick={() => setFilter(opt.key)}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-              filter === opt.key
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${filter === opt.key
                 ? 'bg-calm-sage text-white'
                 : 'border border-calm-sage/20 bg-white text-charcoal/70 hover:bg-calm-sage/10'
-            }`}
+              }`}
           >
             {opt.label}
           </button>
@@ -231,68 +236,59 @@ export default function ReportsPage() {
           const Icon = config.icon;
 
           return (
-            <article key={report.id} className="rounded-2xl border border-calm-sage/15 bg-white/90 p-5 shadow-soft-sm transition hover:border-calm-sage/25">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${config.color}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-charcoal">{report.title}</h3>
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${config.color}`}>
-                        {config.label}
-                      </span>
-                      <span className="text-xs text-charcoal/50">
-                        {new Date(report.createdAt).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </span>
-                    </div>
-                    {report.providerName && (
-                      <p className="mt-1 text-xs text-charcoal/55">By {report.providerName}</p>
-                    )}
-                    {report.summary && (
-                      <p className="mt-2 text-xs text-charcoal/65 line-clamp-2">{report.summary}</p>
-                    )}
-                  </div>
+            <article key={report.id} className="group flex flex-col rounded-2xl border border-calm-sage/20 bg-white p-5 shadow-sm transition hover:border-calm-sage/40 hover:shadow-md sm:flex-row sm:gap-6">
+              <div className="flex flex-1 gap-4">
+                <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border bg-gradient-to-br from-white to-slate-50 shadow-sm ${config.color}`}>
+                  <Icon className="h-6 w-6" />
                 </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-charcoal">{report.title}</h3>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className={`inline-flex rounded-lg px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${config.color} bg-opacity-10 border-none`}>
+                      {config.label}
+                    </span>
+                    <span className="text-xs font-medium text-charcoal/50">
+                      • {new Date(report.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    {report.providerName && (
+                      <span className="text-xs font-medium text-charcoal/50">
+                        • Dr. {report.providerName.replace('Dr. ', '')}
+                      </span>
+                    )}
+                  </div>
+                  {report.summary && (
+                    <p className="mt-2.5 text-sm leading-relaxed text-charcoal/70 line-clamp-2">
+                      {report.summary}
+                    </p>
+                  )}
+                </div>
+              </div>
 
-                <div className="flex shrink-0 flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleAction(report, 'view')}
-                    className="inline-flex min-h-[34px] items-center gap-1.5 rounded-xl border border-calm-sage/25 px-3 text-xs font-medium text-charcoal/70 transition hover:bg-calm-sage/10"
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                    View
-                  </button>
+              <div className="mt-5 flex shrink-0 flex-wrap items-center gap-2 border-t border-calm-sage/10 pt-4 sm:mt-0 sm:flex-col sm:items-end sm:justify-center sm:border-t-0 sm:border-l sm:pl-6 sm:pt-0">
+                <button
+                  type="button"
+                  onClick={() => handleAction(report, 'view')}
+                  className="inline-flex w-full sm:w-auto min-h-[38px] items-center justify-center gap-2 rounded-xl bg-calm-sage px-4 text-xs font-bold text-white shadow-sm transition hover:bg-calm-sage/90"
+                >
+                  <Eye className="h-4 w-4" />
+                  {report.type === 'shared_report' ? 'Open Shared' : 'View Full Details'}
+                </button>
+                <div className="flex w-full sm:w-auto gap-3">
                   <button
                     type="button"
                     onClick={() => handleAction(report, 'download')}
-                    className="inline-flex min-h-[34px] items-center gap-1.5 rounded-xl border border-calm-sage/25 px-3 text-xs font-medium text-charcoal/70 transition hover:bg-calm-sage/10"
+                    className="inline-flex flex-1 sm:flex-initial min-h-[38px] items-center justify-center gap-2 rounded-xl border border-calm-sage/40 bg-white px-4 text-xs font-bold text-calm-sage shadow-sm transition hover:bg-calm-sage/10 hover:border-calm-sage"
                   >
-                    <Download className="h-3.5 w-3.5" />
-                    Download
+                    <Download className="h-4 w-4" />
+                    Download PDF
                   </button>
-                  {report.type === 'shared_report' ? (
-                    <button
-                      type="button"
-                      onClick={() => handleAction(report, 'view')}
-                      className="inline-flex min-h-[34px] items-center gap-1.5 rounded-xl border border-indigo-200 px-3 text-xs font-medium text-indigo-700 transition hover:bg-indigo-50"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      Open Shared
-                    </button>
-                  ) : (
+                  {report.type !== 'shared_report' && (
                     <button
                       type="button"
                       onClick={() => handleAction(report, 'share')}
-                      className="inline-flex min-h-[34px] items-center gap-1.5 rounded-xl border border-calm-sage/25 px-3 text-xs font-medium text-charcoal/70 transition hover:bg-calm-sage/10"
+                      className="inline-flex flex-1 sm:flex-initial min-h-[38px] items-center justify-center gap-2 rounded-xl border border-charcoal/20 bg-white px-4 text-xs font-bold text-charcoal/80 shadow-sm transition hover:bg-charcoal/5 hover:border-charcoal/40 hover:text-charcoal"
                     >
-                      <Share2 className="h-3.5 w-3.5" />
+                      <Share2 className="h-4 w-4" />
                       Share
                     </button>
                   )}

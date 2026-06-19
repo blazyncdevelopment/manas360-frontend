@@ -210,14 +210,14 @@ export default function LoginPage() {
 				}
 
 				if (hasActiveSubscription || hasBookedSession) {
-					navigate('/patient/sessions', { replace: true });
+					navigate('/patient/dashboard', { replace: true });
 					return;
 				}
 				const rawCandidate = from || afterLogin || next || null;
 				const candidate = rawCandidate && (rawCandidate.startsWith('/patient/dashboard') || rawCandidate === '/patient' || rawCandidate === '/patient/')
-					? '/patient/sessions'
+					? '/patient/dashboard'
 					: rawCandidate;
-				navigate(`/patient/preferences?returnTo=${encodeURIComponent(candidate || '/')}`, { replace: true });
+				navigate(candidate || '/patient/dashboard', { replace: true });
 				return;
 			}
 

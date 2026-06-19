@@ -3,7 +3,8 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEnrollmentStore } from "../store/CertificationEnrollmentStore";
 import { getModulesByCertification, ModuleData } from "../utils/certificationLessonUtils";
 import { useCertificationProgress } from "../store/useCertificationProgress";
-import { ClipboardCheck, Lock } from "lucide-react";
+import { ClipboardCheck, Lock, Loader2 } from "lucide-react";
+import { getPublishedCourseById } from "../api/courses";
 
 type ModuleStatus = "complete" | "in_progress" | "locked" | "locked_by_payment";
 
@@ -22,9 +23,39 @@ export const CertificationModulesPage: React.FC = () => {
     enrollments.find((e: any) => e.id === enrollmentId),
     [enrollments, enrollmentId]);
 
-  const baseModules: ModuleData[] = useMemo(() =>
-    getModulesByCertification(enrollment?.certificationName, enrollment?.slug),
-    [enrollment]);
+  const [dynamicModules, setDynamicModules] = React.useState<ModuleData[] | null>(null);
+  const [loadingModules, setLoadingModules] = React.useState(false);
+
+  useEffect(() => {
+    const fetchCourse = async () => {
+      if (!enrollment?.slug) return;
+      setLoadingModules(true);
+      try {
+        const course = await getPublishedCourseById(enrollment.slug);
+        if (course.modules) {
+          const mappedModules: ModuleData[] = course.modules.map(m => ({
+            id: m.id,
+            title: m.title,
+            lessons: m.lessons?.length || 0,
+            status: "locked",
+            progress: 0,
+            duration: m.lessons?.length === 1 ? '1 lesson' : `${m.lessons?.length || 0} lessons`,
+          }));
+          setDynamicModules(mappedModules);
+        }
+      } catch (err) {
+        console.error("Failed to fetch course dynamically, falling back", err);
+      } finally {
+        setLoadingModules(false);
+      }
+    };
+    fetchCourse();
+  }, [enrollment?.slug]);
+
+  const baseModules: ModuleData[] = useMemo(() => {
+    if (dynamicModules && dynamicModules.length > 0) return dynamicModules;
+    return getModulesByCertification(enrollment?.certificationName, enrollment?.slug);
+  }, [enrollment, dynamicModules]);
 
   /**
    * Derive the live status of each module:
@@ -137,6 +168,11 @@ export const CertificationModulesPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 p-6 font-sans">
       <div className="max-w-3xl mx-auto">
+        {loadingModules && (
+          <div className="flex justify-center my-10">
+            <Loader2 className="animate-spin text-purple-600" size={32} />
+          </div>
+        )}
 
         {/* Header Section */}
         <div className="mb-8 text-center">

@@ -376,6 +376,10 @@ export const updateAdminUsersBulkStatus = async (
 	})).data;
 };
 
+export const deleteAdminUser = async (userId: string): Promise<ApiEnvelope<unknown>> => {
+	return (await client.delete<ApiEnvelope<unknown>>(`/v1/admin/users/${encodeURIComponent(userId)}`)).data;
+};
+
 export type AdminGlobalSearchResult = {
 	users: Array<{ id: string; name: string; email: string; role: string }>;
 	payments: Array<{ id: string; status: string; amountMinor: number; currency: string }>;
@@ -1917,4 +1921,27 @@ export const updateAdminRetreatIntentStatus = async (
 	adminNotes?: string,
 ): Promise<ApiEnvelope<RetreatIntentRecord>> => {
 	return (await client.patch<ApiEnvelope<RetreatIntentRecord>>(`/v1/admin/retreat-intents/${encodeURIComponent(id)}/status`, { status, adminNotes })).data;
+};
+
+// === AWS TRIAGE ===
+export interface AwsCostTriageData {
+  resources: {
+    ec2Count: number;
+    ec2RunningCount: number;
+    rdsCount: number;
+    natCount: number;
+    eipUnattachedCount: number;
+    eksCount: number;
+    elbCount: number;
+    lightsailCount: number;
+    s3BucketCount: number;
+  };
+  metrics: {
+    currentSpend: number;
+    projectedSpend: number;
+  };
+}
+
+export const getAwsCostTriageData = async (): Promise<AwsCostTriageData> => {
+  return (await client.get<ApiEnvelope<AwsCostTriageData>>('/v1/admin/system/aws-triage')).data.data;
 };

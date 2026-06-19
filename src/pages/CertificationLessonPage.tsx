@@ -3,6 +3,8 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEnrollmentStore } from "../store/CertificationEnrollmentStore";
 import { getModulesByCertification } from "../utils/certificationLessonUtils";
 import { useCertificationProgress } from "../store/useCertificationProgress";
+import { getPublishedCourseById } from "../api/courses";
+import { Loader2 } from "lucide-react";
 
 export const CertificationLessonPage: React.FC = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
@@ -11,6 +13,9 @@ export const CertificationLessonPage: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [vimeoBlocked, setVimeoBlocked] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+
+  const [dynamicVideoUrl, setDynamicVideoUrl] = useState<string | null>(null);
+  const [loadingVideo, setLoadingVideo] = useState(false);
 
   // ── Resolve enrollmentId from URL state or store ──────────────────────────
   // The modules page navigates here as: navigate(`/certifications/lessons/${moduleId}`)
@@ -49,6 +54,34 @@ export const CertificationLessonPage: React.FC = () => {
   }, [enrollmentIdFromState, enrollments, lessonId]);
 
   const enrollment = useMemo(() => enrollments.find((e: any) => e.id === enrollmentId), [enrollments, enrollmentId]);
+
+  useEffect(() => {
+    const fetchDynamicLesson = async () => {
+      if (!enrollment?.slug || !lessonId || lessonId.startsWith('ATMT-')) return;
+      setLoadingVideo(true);
+      try {
+        const course = await getPublishedCourseById(enrollment.slug);
+        let foundUrl = null;
+        if (course.modules) {
+          for (const mod of course.modules) {
+            const lesson = (mod as any).lessons?.find((l: any) => l.id === lessonId);
+            if (lesson && lesson.videoUrl) {
+              foundUrl = lesson.videoUrl;
+              break;
+            }
+          }
+        }
+        if (foundUrl) {
+          setDynamicVideoUrl(foundUrl);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dynamic course for lesson", err);
+      } finally {
+        setLoadingVideo(false);
+      }
+    };
+    fetchDynamicLesson();
+  }, [enrollment?.slug, lessonId]);
 
   // ── Payment Locking Logic ───────────────────────────────────────────────
   React.useEffect(() => {
@@ -447,6 +480,8 @@ export const CertificationLessonPage: React.FC = () => {
     }
   };
 
+  const currentVideoSrc = dynamicVideoUrl || getVideoSrc();
+
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 p-6 font-sans pb-20">
       <div className="max-w-4xl mx-auto">
@@ -520,20 +555,26 @@ export const CertificationLessonPage: React.FC = () => {
           </div>
         ) : (
           <div className="mb-8">
-            <div className="bg-black rounded-2xl overflow-hidden shadow-md relative aspect-video w-full">
-              <video
-                ref={videoRef}
-                key={lessonId}
-                controls
-                controlsList="nodownload"
-                className="absolute top-0 left-0 w-full h-full object-contain"
-                preload="auto"
-                onEnded={handleVideoEnded}
-              >
-                <source src={getVideoSrc()} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            </div>
+            {loadingVideo ? (
+              <div className="bg-black rounded-2xl overflow-hidden shadow-md relative aspect-video w-full flex items-center justify-center">
+                <Loader2 className="animate-spin text-white" size={48} />
+              </div>
+            ) : (
+              <div className="bg-black rounded-2xl overflow-hidden shadow-md relative aspect-video w-full">
+                <video
+                  ref={videoRef}
+                  key={lessonId}
+                  controls
+                  controlsList="nodownload"
+                  className="absolute top-0 left-0 w-full h-full object-contain"
+                  preload="auto"
+                  onEnded={handleVideoEnded}
+                >
+                  <source src={currentVideoSrc} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            )}
             <div className="mt-4 flex justify-between items-center">
               {vimeoEmbed && vimeoBlocked ? (
                 <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">

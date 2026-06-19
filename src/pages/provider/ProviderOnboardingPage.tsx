@@ -7,6 +7,7 @@ import {
   clearOnboardingSubmittedFlag,
   setOnboardingSubmittedFlag,
 } from '../../utils/providerOnboardingStorage';
+import { verifyPAN, verifyBankAccount } from '../../api/providerOnboarding';
 
 const clinicalCategories = [
   'Depression & Mood Disorders',
@@ -72,6 +73,13 @@ type FormState = {
   yearOfPassing: string;
   degreeCertificateUrl: string;
   idProofUrl: string;
+
+  // KYC (Sandbox)
+  panNumber: string;
+  nameOnPan: string;
+  bankAccountNumber: string;
+  bankIfsc: string;
+  bankAccountName: string;
 
   // Step 3: Specialization
   clinicalCategories: string[];
@@ -155,6 +163,15 @@ function ProviderOnboardingPage() {
   const [degreeUploadError, setDegreeUploadError] = useState<string | null>(null);
   const [idProofUploadError, setIdProofUploadError] = useState<string | null>(null);
 
+  // KYC States
+  const [isPanVerified, setIsPanVerified] = useState(false);
+  const [verifyingPan, setVerifyingPan] = useState(false);
+  const [panError, setPanError] = useState<string | null>(null);
+
+  const [isBankVerified, setIsBankVerified] = useState(false);
+  const [verifyingBank, setVerifyingBank] = useState(false);
+  const [bankError, setBankError] = useState<string | null>(null);
+
   const [form, setForm] = useState<FormState>(() => {
     const uid = user?.id || user?.phone || user?.email || 'anonymous';
     const key = `${ONBOARDING_CACHE_KEY}_${uid}_form`;
@@ -195,6 +212,11 @@ function ProviderOnboardingPage() {
       yearOfPassing: '',
       degreeCertificateUrl: '',
       idProofUrl: '',
+      panNumber: '',
+      nameOnPan: '',
+      bankAccountNumber: '',
+      bankIfsc: '',
+      bankAccountName: '',
       clinicalCategories: [],
       contactEmail: String(user?.email || ''),
       yearsOfExperience: 0,
@@ -237,6 +259,48 @@ function ProviderOnboardingPage() {
         availability: { ...prev.availability, [day]: updated },
       };
     });
+  };
+
+  const handleVerifyPAN = async () => {
+    if (!form.panNumber || !form.nameOnPan) {
+      setPanError("PAN Number and Name on PAN are required.");
+      return;
+    }
+    setVerifyingPan(true);
+    setPanError(null);
+    try {
+      const result = await verifyPAN(user?.id as string, form.panNumber, form.nameOnPan);
+      if (result.success) {
+        setIsPanVerified(true);
+      } else {
+        setPanError(result.error || "PAN verification failed.");
+      }
+    } catch (err: any) {
+      setPanError(err.message || "An error occurred during PAN verification.");
+    } finally {
+      setVerifyingPan(false);
+    }
+  };
+
+  const handleVerifyBank = async () => {
+    if (!form.bankAccountNumber || !form.bankIfsc || !form.bankAccountName) {
+      setBankError("Bank Account Number, IFSC, and Name are required.");
+      return;
+    }
+    setVerifyingBank(true);
+    setBankError(null);
+    try {
+      const result = await verifyBankAccount(user?.id as string, form.bankAccountNumber, form.bankIfsc, form.bankAccountName);
+      if (result.success) {
+        setIsBankVerified(true);
+      } else {
+        setBankError(result.error || "Bank verification failed.");
+      }
+    } catch (err: any) {
+      setBankError(err.message || "An error occurred during Bank verification.");
+    } finally {
+      setVerifyingBank(false);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'degree' | 'id_proof') => {
@@ -324,7 +388,9 @@ function ProviderOnboardingPage() {
     if (step === 2) return Boolean(
       form.degree &&
       form.university &&
-      form.yearOfPassing,
+      form.yearOfPassing &&
+      isPanVerified &&
+      isBankVerified
       // Documents are optional until the backend upload endpoint is available
     );
     if (step === 3) return form.clinicalCategories.length > 0;
@@ -600,6 +666,108 @@ function ProviderOnboardingPage() {
                     onChange={(e) => setForm((p) => ({ ...p, yearOfPassing: e.target.value }))}
                   />
                 </label>
+              </div>
+
+              <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/50 p-6">
+                <p className="text-sm font-bold text-slate-800">Mandatory KYC Verification (Sandbox)</p>
+                <p className="text-xs text-slate-500">As per RBI guidelines, PAN and Bank Account verification is mandatory.</p>
+
+                {/* PAN Verification */}
+                <div className="rounded-xl border border-slate-200 bg-white p-5">
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center justify-between">
+                    PAN Card Details
+                    {isPanVerified && <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-md flex items-center gap-1">✓ Verified</span>}
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="grid gap-1.5">
+                      <span className="text-xs font-semibold text-slate-600">PAN Number <span className="text-rose-500">*</span></span>
+                      <input
+                        type="text"
+                        disabled={isPanVerified}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition disabled:bg-slate-100 uppercase"
+                        placeholder="ABCDE1234F"
+                        value={form.panNumber}
+                        onChange={(e) => setForm((p) => ({ ...p, panNumber: e.target.value.toUpperCase() }))}
+                      />
+                    </label>
+                    <label className="grid gap-1.5">
+                      <span className="text-xs font-semibold text-slate-600">Name on PAN <span className="text-rose-500">*</span></span>
+                      <input
+                        type="text"
+                        disabled={isPanVerified}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition disabled:bg-slate-100"
+                        placeholder="John Doe"
+                        value={form.nameOnPan}
+                        onChange={(e) => setForm((p) => ({ ...p, nameOnPan: e.target.value }))}
+                      />
+                    </label>
+                  </div>
+                  {panError && <p className="mt-2 text-xs font-medium text-rose-600">{panError}</p>}
+                  {!isPanVerified && (
+                    <button
+                      type="button"
+                      onClick={handleVerifyPAN}
+                      disabled={verifyingPan || !form.panNumber || !form.nameOnPan}
+                      className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      {verifyingPan ? 'Verifying...' : 'Verify PAN'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Bank Verification (Penny Drop) */}
+                <div className="rounded-xl border border-slate-200 bg-white p-5 mt-4">
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center justify-between">
+                    Bank Account (Auto Penny Drop)
+                    {isBankVerified && <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-md flex items-center gap-1">✓ Verified</span>}
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="grid gap-1.5 md:col-span-2">
+                      <span className="text-xs font-semibold text-slate-600">Account Holder Name <span className="text-rose-500">*</span></span>
+                      <input
+                        type="text"
+                        disabled={isBankVerified}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition disabled:bg-slate-100"
+                        placeholder="As per bank records"
+                        value={form.bankAccountName}
+                        onChange={(e) => setForm((p) => ({ ...p, bankAccountName: e.target.value }))}
+                      />
+                    </label>
+                    <label className="grid gap-1.5">
+                      <span className="text-xs font-semibold text-slate-600">Account Number <span className="text-rose-500">*</span></span>
+                      <input
+                        type="text"
+                        disabled={isBankVerified}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition disabled:bg-slate-100"
+                        placeholder="1234567890"
+                        value={form.bankAccountNumber}
+                        onChange={(e) => setForm((p) => ({ ...p, bankAccountNumber: e.target.value }))}
+                      />
+                    </label>
+                    <label className="grid gap-1.5">
+                      <span className="text-xs font-semibold text-slate-600">IFSC Code <span className="text-rose-500">*</span></span>
+                      <input
+                        type="text"
+                        disabled={isBankVerified}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition disabled:bg-slate-100 uppercase"
+                        placeholder="HDFC0001234"
+                        value={form.bankIfsc}
+                        onChange={(e) => setForm((p) => ({ ...p, bankIfsc: e.target.value.toUpperCase() }))}
+                      />
+                    </label>
+                  </div>
+                  {bankError && <p className="mt-2 text-xs font-medium text-rose-600">{bankError}</p>}
+                  {!isBankVerified && (
+                    <button
+                      type="button"
+                      onClick={handleVerifyBank}
+                      disabled={verifyingBank || !form.bankAccountNumber || !form.bankIfsc || !form.bankAccountName}
+                      className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      {verifyingBank ? 'Initiating Penny Drop...' : 'Verify Bank Account'}
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/50 p-6">
