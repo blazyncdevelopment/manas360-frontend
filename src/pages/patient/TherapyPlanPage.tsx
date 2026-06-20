@@ -27,6 +27,7 @@ type ExerciseItem = {
   completedAt: string | null;
   weekNumber?: number;
   therapistFeedback?: string;
+  isCbtAssignment?: boolean;
 };
 
 type FeedbackItem = {
@@ -115,11 +116,14 @@ export default function TherapyPlanPage() {
     refetchOnWindowFocus: true,
   });
 
-  const activeAssignmentsQuery = useQuery(['active-assignments-plan'], async () => {
-    const assignments = await patientApi.getActiveCbtAssignments();
-    return Array.isArray(assignments) ? assignments : [];
-  }, {
-    retry: false,
+  const activeAssignmentsQuery = useQuery({
+    queryKey: ['patient-cbt-active'],
+    queryFn: async () => {
+      const res = await patientApi.getActiveCbtAssignments();
+      const data = (res as any)?.data ?? res;
+      return Array.isArray(data) ? data : [];
+    },
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
 
@@ -206,6 +210,7 @@ export default function TherapyPlanPage() {
         completedAt: null,
         weekNumber: activeDay,
         therapistFeedback: undefined,
+        isCbtAssignment: true,
       } as ExerciseItem));
 
       const merged = [...baseExercises];
@@ -485,35 +490,8 @@ export default function TherapyPlanPage() {
                 const isLocked = !previousExercisesCompleted && !exercise.completed;
 
                 return (
-                  <button
+                  <div
                     key={exercise.id}
-                    type="button"
-                    onClick={() => {
-                      if (exercise.completed || isLocked) return;
-
-                      const activityType = String(exercise.type || '').toUpperCase();
-                      if (activityType.includes('CLINICAL_ASSESSMENT') || activityType.includes('ASSESSMENT')) {
-                        navigate('/patient/sessions');
-                        return;
-                      }
-
-                      if (activityType.includes('MOOD_CHECKIN')) {
-                        navigate('/patient/mood');
-                        return;
-                      }
-
-                      if (exercise.id) {
-                        navigate(`/patient/cbt-assignment/${exercise.id}`);
-                        return;
-                      }
-
-                      if (exercise.sessionId) {
-                        navigate(`/patient/cbt/${exercise.sessionId}`);
-                        return;
-                      }
-
-                      navigate('/patient/cbt-section');
-                    }}
                     className={`group flex w-full items-center justify-between rounded-[1.5rem] bg-white/92 p-4 text-left shadow-wellness-sm transition hover:shadow-wellness-md ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center gap-4">
@@ -539,15 +517,73 @@ export default function TherapyPlanPage() {
                         {exercise.status}
                       </span>
                       {!exercise.completed ? (
-                        <span className="inline-flex min-h-[44px] items-center rounded-full bg-[#E8F2FF] px-4 text-sm font-semibold text-[#2B5EA7] md:min-h-[34px] md:px-3 md:text-xs">
-                          {isLocked ? 'Locked' : String(exercise.type || '').toUpperCase().includes('CLINICAL_ASSESSMENT')
-                            ? 'Start Assessment'
-                            : 'Start Exercise'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            title="Mark as completed"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (isLocked || completingTaskIds.includes(exercise.id)) return;
+                              
+                              if (exercise.isCbtAssignment) {
+                                setCompletingTaskIds((prev) => [...prev, exercise.id]);
+                                try {
+                                  await patientApi.updateCbtAssignment(exercise.id, { status: 'COMPLETED', responses: {} });
+                                  toast.success('Exercise marked as completed!');
+                                  await activeAssignmentsQuery.refetch();
+                                  await therapyPlanQuery.refetch();
+                                  await currentDayPlanQuery.refetch();
+                                } catch (err) {
+                                  toast.error('Failed to complete exercise');
+                                } finally {
+                                  setCompletingTaskIds((prev) => prev.filter((id) => id !== exercise.id));
+                                }
+                              } else {
+                                await completeTask(exercise.id);
+                              }
+                            }}
+                            className="flex h-[34px] w-[34px] md:h-[44px] md:w-[44px] shrink-0 items-center justify-center rounded-full border-2 border-emerald-500 bg-white text-emerald-500 hover:bg-emerald-500 hover:text-white transition-colors"
+                          >
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isLocked) return;
+                              const activityType = String(exercise.type || '').toUpperCase();
+                              if (activityType.includes('CLINICAL_ASSESSMENT') || activityType.includes('ASSESSMENT')) {
+                                navigate('/patient/sessions');
+                                return;
+                              }
+                              if (activityType.includes('MOOD_CHECKIN')) {
+                                navigate('/patient/mood');
+                                return;
+                              }
+                              if (exercise.id) {
+                                navigate(`/patient/cbt-assignment/${exercise.id}`);
+                                return;
+                              }
+                              if (exercise.sessionId) {
+                                navigate(`/patient/cbt/${exercise.sessionId}`);
+                                return;
+                              }
+                              navigate('/patient/cbt-section');
+                            }}
+                            className="inline-flex min-h-[44px] items-center rounded-full bg-[#E8F2FF] px-4 text-sm font-semibold text-[#2B5EA7] md:min-h-[34px] md:px-3 md:text-xs transition hover:bg-[#D1E3FF]"
+                          >
+                            {isLocked ? 'Locked' : String(exercise.type || '').toUpperCase().includes('CLINICAL_ASSESSMENT')
+                              ? 'Start Assessment'
+                              : 'Start Exercise'}
+                          </button>
+                        </div>
                       ) : null}
                     </div>
-                  </button>
+                  </div>
                 );
+
               })}
             </div>
           ) : (

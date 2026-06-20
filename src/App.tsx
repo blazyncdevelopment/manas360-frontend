@@ -42,6 +42,7 @@ const PatientDashboardLayout = lazy(() => import('./components/layout/PatientDas
 const DashboardPage = lazy(() => import('./pages/patient/DashboardPage'));
 const BookSessionPage = lazy(() => import('./pages/patient/BookSessionPage'));
 const SessionsPage = lazy(() => import('./pages/patient/SessionsPage'));
+const SessionHistoryPage = lazy(() => import('./pages/patient/SessionHistoryPage'));
 const PatientSessionDetailPage = lazy(() => import('./pages/patient/SessionDetailPage'));
 const AIChatPage = lazy(() => import('./pages/patient/AIChatPage'));
 const ProfilePage = lazy(() => import('./pages/patient/ProfilePage'));
@@ -66,6 +67,7 @@ const ProviderMessagesPage = lazy(() => import('./pages/patient/ProviderMessages
 const PatientOnboardingPage = lazy(() => import('./pages/patient/PatientOnboardingPage'));
 // const PatientProfilePreferences = lazy(() => import('./pages/patient/PatientProfilePreferences'));
 const DailyCheckInPage = lazy(() => import('./pages/patient/DailyCheckInPage'));
+const CbtAssignmentPlayerPage = lazy(() => import('./pages/patient/CbtAssignmentPlayerPage'));
 const HitASixerGamePage = lazy(() => import('./pages/patient/HitASixerGamePage'));
 const WalletPage = lazy(() => import('./pages/patient/WalletPage'));
 const GroupTherapySessionsPage = lazy(() => import('./pages/patient/GroupTherapySessionsPage'));
@@ -850,9 +852,11 @@ function App() {
                       <Route path="providers/:id" element={<Navigate to="/patient/sessions" replace />} />
                       <Route path="book/:providerId" element={<BookSessionPage />} />
                       <Route path="sessions" element={<SessionsPage />} />
+                      <Route path="session-history" element={<SessionHistoryPage />} />
                       <Route path="provider-selection" element={<Navigate to="/patient/sessions" replace />} />
                       <Route path="sessions/:id" element={<PatientSessionDetailPage />} />
                       <Route path="exercises" element={<Navigate to="/patient/check-in?tab=daily-mood" replace />} />
+                      <Route path="cbt-assignment/:id" element={<CbtAssignmentPlayerPage />} />
                       <Route path="sessions/:id/live" element={<LiveSessionPage />} />
                       <Route path="mood" element={<Navigate to="/patient/check-in?tab=daily-mood" replace />} />
                       <Route path="wellness-library" element={<WellnessLibraryPage />} />

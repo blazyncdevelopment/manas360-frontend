@@ -37,6 +37,7 @@ const mainNavItems = [
   { to: '/patient/dashboard', label: 'Dashboard', icon: Home },
   { to: '/patient/therapy-plan', label: 'My Therapy Plan', icon: ClipboardList, feature: 'progress-tracking' },
   { to: '/patient/sessions', label: 'My Care', icon: CalendarDays, feature: 'scheduling' },
+  { to: '/patient/session-history', label: 'Session History & Notes', icon: ClipboardList },
   { to: '/patient/group-therapy', label: 'Group Therapy', icon: CalendarDays, badge: 'Live', feature: 'group-therapy' },
 ];
 
@@ -353,6 +354,7 @@ export default function PatientDashboardLayout() {
     '/patient/dashboard': 'Dashboard',
     '/patient/therapy-plan': 'My Therapy Plan',
     '/patient/sessions': 'Sessions',
+    '/patient/session-history': 'Session History & Notes',
     '/patient/care-team': 'Care Team',
     '/patient/messages': 'AI Support',
     '/patient/check-in': 'Daily Check-in',

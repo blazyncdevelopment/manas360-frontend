@@ -3,6 +3,8 @@ import { useRef, useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../../../context/AuthContext';
 import { usePatientOverview } from '../../../../hooks/usePatientOverview';
+import { assignHomework, deliverPrescription } from '../../../../api/mdcPrescriptionHomework.api';
+import { toast } from 'react-hot-toast';
 
 type PrescriptionItem = {
   id: string;
@@ -63,6 +65,10 @@ export default function Prescriptions() {
   const [isDownloadingPrescription, setIsDownloadingPrescription] = useState(false);
   const [planPatientName, setPlanPatientName] = useState('John Doe');
   const [planPsychologistName, setPlanPsychologistName] = useState('Dr. Smith');
+  const [therapeuticGoals, setTherapeuticGoals] = useState('');
+  const [nextSessionFocus, setNextSessionFocus] = useState('');
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [assignedHomeworkId, setAssignedHomeworkId] = useState<string | null>(null);
 
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -206,10 +212,25 @@ export default function Prescriptions() {
     setShowPlanDetailsModal(false);
   };
 
-  const handleFinalizePrescription = () => {
-    setHasGeneratedPrescription(true);
-    setShowPrescriptionSheet(true);
-    setShowPlanDetailsModal(false);
+  const handleFinalizePrescription = async () => {
+    setIsAssigning(true);
+    try {
+      const hw = await assignHomework({
+        patientId: patientId || 'mock-p1',
+        title: `Wellness Care Plan - ${new Date().toLocaleDateString()}`,
+        description: `Goals: ${therapeuticGoals || 'N/A'}. Next Focus: ${nextSessionFocus || 'N/A'}`,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      });
+      setAssignedHomeworkId(hw.id);
+      setHasGeneratedPrescription(true);
+      setShowPrescriptionSheet(true);
+      setShowPlanDetailsModal(false);
+      toast.success('Care plan assigned securely.');
+    } catch (e) {
+      toast.error('Failed to assign care plan.');
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
   const handleDashboardRecordHistoryClick = () => {
@@ -1084,11 +1105,26 @@ export default function Prescriptions() {
                     </button>
                     <button
                       type="button"
+                      onClick={async () => {
+                        if (!assignedHomeworkId) return;
+                        try {
+                          await deliverPrescription(assignedHomeworkId, 'whatsapp');
+                          toast.success('Care plan sent via WhatsApp! 📱');
+                        } catch (e) {
+                          toast.error('Failed to send WhatsApp.');
+                        }
+                      }}
+                      className="rounded-full bg-[#25D366] px-8 py-3 text-xs font-bold uppercase tracking-[0.14em] text-white shadow-md hover:bg-[#20bd5a]"
+                    >
+                      Deliver via WhatsApp
+                    </button>
+                    <button
+                      type="button"
                       onClick={handleDownloadPrescriptionPdf}
                       disabled={isDownloadingPrescription}
                       className="rounded-full bg-[#2a45a1] px-8 py-3 text-xs font-bold uppercase tracking-[0.14em] text-white shadow-md hover:bg-[#223b8a] disabled:cursor-not-allowed disabled:opacity-70"
                     >
-                      {isDownloadingPrescription ? 'Preparing PDF...' : 'Download PDF Prescription'}
+                      {isDownloadingPrescription ? 'Preparing PDF...' : 'Download PDF'}
                     </button>
                   </div>
                 </div>
@@ -1148,6 +1184,34 @@ export default function Prescriptions() {
                       className="mt-2 w-full rounded-xl border border-[#2f3137] bg-[#2f3137] px-4 py-2.5 text-sm font-semibold text-white placeholder:text-white/65 focus:border-[#3d5ad6] focus:outline-none"
                     />
                   </div>
+
+                  <div>
+                    <label htmlFor="therapeutic-goals" className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9ea5b4]">
+                      Therapeutic Goals
+                    </label>
+                    <textarea
+                      id="therapeutic-goals"
+                      rows={2}
+                      placeholder="e.g. Reduce anxiety, improve sleep"
+                      value={therapeuticGoals}
+                      onChange={(event) => setTherapeuticGoals(event.target.value)}
+                      className="mt-2 w-full rounded-xl border border-[#2f3137] bg-[#2f3137] px-4 py-2.5 text-sm font-semibold text-white placeholder:text-white/65 focus:border-[#3d5ad6] focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="next-session-focus" className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9ea5b4]">
+                      Next Session Focus
+                    </label>
+                    <textarea
+                      id="next-session-focus"
+                      rows={2}
+                      placeholder="e.g. Discuss CBT homework"
+                      value={nextSessionFocus}
+                      onChange={(event) => setNextSessionFocus(event.target.value)}
+                      className="mt-2 w-full rounded-xl border border-[#2f3137] bg-[#2f3137] px-4 py-2.5 text-sm font-semibold text-white placeholder:text-white/65 focus:border-[#3d5ad6] focus:outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-7 flex items-center justify-between">
@@ -1161,10 +1225,11 @@ export default function Prescriptions() {
 
                   <button
                     type="button"
+                    disabled={isAssigning}
                     onClick={handleFinalizePrescription}
-                    className="rounded-xl bg-[#2744b2] px-7 py-2.5 text-xs font-bold uppercase tracking-[0.14em] text-white shadow-md hover:bg-[#1f3791]"
+                    className="rounded-xl bg-[#2744b2] px-7 py-2.5 text-xs font-bold uppercase tracking-[0.14em] text-white shadow-md hover:bg-[#1f3791] disabled:opacity-50"
                   >
-                    Finalize
+                    {isAssigning ? 'Finalizing...' : 'Finalize'}
                   </button>
                 </div>
               </div>

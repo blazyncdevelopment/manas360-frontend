@@ -476,7 +476,7 @@ export default function ProviderMarketplacePage() {
     if (!canPurchase || !stats) return;
     setPurchasing(leadId);
     
-    const limit = stats.planLimits?.[leadType] || 0;
+    const limit = (stats as any).planLimits?.[leadType] || 0;
     const used = stats.byType?.[leadType] || 0;
     const hasWeeklyQuota = stats.leadsRemaining > 0 && (limit - used > 0);
 
@@ -872,7 +872,7 @@ export default function ProviderMarketplacePage() {
 
                         {/* Action Buttons */}
                         {(() => {
-                          const limit = stats?.planLimits?.[lead.leadType as 'hot' | 'warm' | 'cold'] || 0;
+                          const limit = (stats as any)?.planLimits?.[lead.leadType as 'hot' | 'warm' | 'cold'] || 0;
                           const used = stats?.byType?.[lead.leadType as 'hot' | 'warm' | 'cold'] || 0;
                           const hasWeeklyQuota = (stats?.leadsRemaining || 0) > 0 && (limit - used > 0);
                           const availableCredits = credits[lead.leadType as 'hot' | 'warm' | 'cold'] || 0;

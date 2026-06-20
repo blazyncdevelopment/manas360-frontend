@@ -22,6 +22,7 @@ const toProviderKind = (role: string | undefined): ProviderKind => {
 const tabConfig: Record<ProviderKind, TabItem[]> = {
   THERAPIST: [
     { label: 'Overview', path: 'overview' },
+    { label: 'Plan Builder', path: 'plan-builder' },
     { label: 'Session Notes', path: 'notes' },
     { label: 'Assessments', path: 'assessments' },
     { label: 'Care Team', path: 'care-team' },
@@ -29,6 +30,7 @@ const tabConfig: Record<ProviderKind, TabItem[]> = {
   ],
   PSYCHOLOGIST: [
     { label: 'Overview', path: 'overview' },
+    { label: 'Plan Builder', path: 'plan-builder' },
     { label: 'Session Notes', path: 'notes' },
     { label: 'Assessments', path: 'assessments' },
     { label: 'Care Team', path: 'care-team' },

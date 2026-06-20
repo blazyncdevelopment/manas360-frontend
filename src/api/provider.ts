@@ -195,6 +195,7 @@ export interface AssignPatientItemPayload {
   referenceId?: string;
   estimatedMinutes?: number;
   frequency?: 'DAILY_RITUAL' | 'WEEKLY_MILESTONE' | 'ONE_TIME';
+  instructions?: string;
 }
 
 export interface AssignPatientItemResponse {
@@ -377,6 +378,7 @@ export interface NoteData {
   subjective: string;
   objective: string;
   assessment: string;
+  diagnosisCodes?: string;
   plan: string;
   createdAt: string;
 }
@@ -385,6 +387,7 @@ export interface CreatePatientNotePayload {
   subjective: string;
   objective: string;
   assessment: string;
+  diagnosisCodes?: string;
   plan: string;
   sessionDate: string;
   sessionType: string;
@@ -565,6 +568,11 @@ export const updatePatientNote = async (
 ): Promise<NoteData> => {
   const response = await http.put<Envelope<NoteData>>(`/v1/provider/patient/${patientId}/notes/${noteId}`, noteData);
   return unwrap<NoteData>(response.data);
+};
+
+export const optimizeNoteText = async (text: string, contextLabel: string): Promise<string> => {
+  const response = await http.post<Envelope<{ optimizedText: string }>>('/v1/provider/notes/optimize', { text, contextLabel });
+  return unwrap<{ optimizedText: string }>(response.data).optimizedText;
 };
 
 // ============ PRESCRIPTION CRUD ============
@@ -999,11 +1007,17 @@ export const quickAssignCbtTemplate = async (
   patientId: string,
   templateKey: string,
 ): Promise<{ assignmentId: string; status: string; title?: string }> => {
-  const response = await http.post<Envelope<{ assignmentId: string; status: string; title?: string }>>(
-    `/v1/provider/patient/${patientId}/assign`,
-    { assignmentType: 'CBT', title: templateKey, templateId: templateKey },
-  );
-  return unwrap<{ assignmentId: string; status: string; title?: string }>(response.data);
+  const response = await http.post(`/v1/provider/patient/${patientId}/assign`, {
+    assignmentType: 'CBT',
+    title: templateKey,
+    templateId: templateKey,
+  });
+  return response.data;
+};
+
+export const getPatientCbtAssignments = async (patientId: string): Promise<any[]> => {
+  const response = await http.get<Envelope<any[]>>(`/v1/provider/patient/${patientId}/cbt-assignments`);
+  return unwrap<any[]>(response.data);
 };
 
 // ============ PRESCRIPTIONS ============

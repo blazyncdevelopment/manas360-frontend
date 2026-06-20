@@ -138,7 +138,7 @@ type SmartMatchSummary = {
   };
 };
 
-export default function SessionsPage() {
+export default function SessionHistoryPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();

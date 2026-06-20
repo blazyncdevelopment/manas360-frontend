@@ -587,8 +587,8 @@ export const patientApi = {
   logWellnessLibraryActivity: async (payload: { title: string; duration?: number; category?: string; kind?: 'audio' | 'interactive' }) =>
     (await http.post('/v1/patient/exercises/library', payload)).data,
   completeExercise: async (id: string) => (await http.patch(`/v1/patient/exercises/${encodeURIComponent(id)}/complete`)).data,
-  getTherapyPlan: async (week?: number) =>
-    (await http.get('/v1/therapy-plan', { params: week ? { week } : undefined })).data,
+  getTherapyPlan: async (day?: number) =>
+    (await http.get('/v1/patients/me/therapy-plan', { params: day ? { day } : undefined })).data,
   completeTherapyPlanTask: async (id: string) => (await http.patch(`/v1/therapy-plan/tasks/${encodeURIComponent(id)}/complete`)).data,
   getPetState: async () =>
     (await http.get('/v1/patient/pets/state')).data,
@@ -602,11 +602,12 @@ export const patientApi = {
     const response = await http.get(`/v1/patient/cbt-assignments/${encodeURIComponent(assignmentId)}`);
     return response.data?.data ?? response.data;
   },
-  saveCbtAssignmentProgress: async (
-    assignmentId: string,
-    payload: { responses: Record<string, unknown>; currentStep?: number; status?: 'IN_PROGRESS' | 'COMPLETED' },
-  ) => {
-    const response = await http.patch(`/v1/patient/cbt-assignments/${encodeURIComponent(assignmentId)}`, payload);
+  updateCbtAssignment: async (id: string, payload: { responses: Record<string, unknown>; currentStep?: number; status?: 'IN_PROGRESS' | 'COMPLETED' }) => {
+    const res = await http.patch(`/v1/patient/cbt-assignments/${encodeURIComponent(id)}`, payload);
+    return res.data?.data ?? res.data;
+  },
+  submitPatientActivity: async (activityId: string, answers: Record<string, unknown>) => {
+    const response = await http.post(`/v1/patient/activities/${encodeURIComponent(activityId)}/submit`, { answers });
     return response.data?.data ?? response.data;
   },
   getPricing: async (params?: { mode?: 'domestic' | 'nri' }) =>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-
-
+import { useParams } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import { createPrescription, deliverPrescription, getPrescriptionPDF } from '../../api/mdcPrescriptionHomework.api';
 type CheckboxCardProps = {
   label: string;
   checked: boolean;
@@ -43,6 +44,10 @@ function CheckboxCard({ label, checked, onToggle, className = '' }: CheckboxCard
 }
 
 export default function PsychiatristPrescriptionTab() {
+  const { patientId } = useParams<{ patientId: string }>();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [prescriptionId, setPrescriptionId] = useState<string | null>(null);
+
   const [phase, setPhase] = useState<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7>(0);
   const [showPhaseOneResult, setShowPhaseOneResult] = useState(false);
   const [showPhaseTwoResult, setShowPhaseTwoResult] = useState(false);
@@ -857,15 +862,41 @@ export default function PsychiatristPrescriptionTab() {
                       type="button"
                       className="text-xs font-semibold uppercase tracking-[0.28em] text-[#7da3cf] transition hover:text-[#4f7fb8]"
                       onClick={() => setShowPhaseSixResult(false)}
+                      disabled={isGenerating}
                     >
                       Edit Input
                     </button>
                     <button
                       type="button"
-                      onClick={() => setPhase(7)}
-                      className="rounded-full bg-gradient-to-r from-[#2f7de6] to-[#2068cd] px-8 py-4 text-sm font-semibold uppercase tracking-[0.28em] text-white shadow-[0_12px_24px_rgba(32,104,205,0.35)] transition hover:from-[#286fcf] hover:to-[#185cb8]"
+                      disabled={isGenerating}
+                      onClick={async () => {
+                        setIsGenerating(true);
+                        try {
+                          const res = await createPrescription({
+                            patientId: patientId || 'mock-patient',
+                            title: `Psychiatric Evaluation - ${new Date().toLocaleDateString()}`,
+                            instructions: `Diagnosis: ${diagnosis}. Severity: ${severity}. CGI: ${cgiSeverity}.`,
+                            medicines: [
+                              {
+                                name: agentSelection || 'None',
+                                dosage: doseSchedule || 'None',
+                                frequency: 'Daily',
+                                durationDays: 30,
+                              }
+                            ]
+                          });
+                          setPrescriptionId(res.id);
+                          setPhase(7);
+                          toast.success('Digital prescription generated securely.');
+                        } catch (err) {
+                          toast.error('Failed to generate prescription.');
+                        } finally {
+                          setIsGenerating(false);
+                        }
+                      }}
+                      className="rounded-full bg-gradient-to-r from-[#2f7de6] to-[#2068cd] px-8 py-4 text-sm font-semibold uppercase tracking-[0.28em] text-white shadow-[0_12px_24px_rgba(32,104,205,0.35)] transition hover:from-[#286fcf] hover:to-[#185cb8] disabled:opacity-50"
                     >
-                      Confirm & Continue
+                      {isGenerating ? 'Generating...' : 'Finalize & Generate Prescription'}
                     </button>
                   </div>
                 </div>
@@ -888,6 +919,37 @@ export default function PsychiatristPrescriptionTab() {
                   className="rounded-full border border-[#bcd0ea] bg-white/70 px-8 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-[#4f7fb8] transition hover:bg-white"
                 >
                   Back To Dashboard
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!prescriptionId) return;
+                    try {
+                      const blob = await getPrescriptionPDF(prescriptionId);
+                      const url = URL.createObjectURL(blob);
+                      window.open(url, '_blank');
+                    } catch (err) {
+                      toast.error('Failed to download PDF.');
+                    }
+                  }}
+                  className="rounded-full border border-[#2f7de6] bg-white px-8 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-[#2f7de6] shadow-[0_4px_10px_rgba(47,125,230,0.15)] transition hover:bg-[#f0f6fc]"
+                >
+                  Download PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!prescriptionId) return;
+                    try {
+                      await deliverPrescription(prescriptionId, 'whatsapp');
+                      toast.success('Prescription sent via WhatsApp! 📱');
+                    } catch (err) {
+                      toast.error('Failed to send via WhatsApp.');
+                    }
+                  }}
+                  className="rounded-full border border-[#25D366] bg-[#25D366] px-8 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-white shadow-[0_4px_10px_rgba(37,211,102,0.35)] transition hover:bg-[#20bd5a]"
+                >
+                  Deliver via WhatsApp
                 </button>
                 <button
                   type="button"

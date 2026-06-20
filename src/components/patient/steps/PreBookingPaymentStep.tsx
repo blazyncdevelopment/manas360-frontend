@@ -5,14 +5,6 @@ import { useAuth } from '../../../context/AuthContext';
 import { setMarketplaceBookingPending } from '../../../lib/marketplaceBookingPending';
 import type { MarketplaceBookingOptions } from '../CalendarSelection';
 
-const NRI_PROVIDER_MAP: Record<string, string> = {
-  therapist: 'nri-therapist',
-  psychologist: 'nri-psychologist',
-  psychiatrist: 'nri-psychiatrist',
-  coach: 'nri-coach',
-  'clinical-psychologist': 'nri-psychologist',
-};
-
 interface PreBookingPaymentStepProps {
   selectedProviders: Array<{
     id: string;

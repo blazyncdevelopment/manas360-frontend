@@ -39,6 +39,7 @@ export type CbtActivitySubmission = {
 
 type CbtActivityPlayerProps = {
   assignmentTitle?: string;
+  instructions?: string;
   templateType?: 'thought-record' | 'activity-scheduler' | 'worry-postponement' | 'socratic-navigator' | 'exposure-ladder';
   steps?: CbtWizardStep[];
   initialAnswers?: Record<string, CbtAnswerValue>;
@@ -348,6 +349,7 @@ export default function CBTActivityPlayer({
   submitting = false,
   isOpen = true,
   onClose,
+  instructions,
 }: CbtActivityPlayerProps) {
   const [currentIndex, setCurrentIndex] = useState(Math.max(0, initialStepIndex));
   const [direction, setDirection] = useState(1);
@@ -394,7 +396,7 @@ export default function CBTActivityPlayer({
     if (isSummaryStep || !activeStep) return true;
     const value = answers[activeStep.id];
 
-    if (activeStep.inputType === 'text') {
+    if (activeStep.inputType === 'text' || activeStep.inputType === 'voiceText') {
       return typeof value === 'string' && value.trim().length > 0;
     }
 
@@ -406,11 +408,15 @@ export default function CBTActivityPlayer({
       return typeof value === 'string' && value.trim().length > 0;
     }
 
-    if (activeStep.inputType === 'prosCons') {
+    if (activeStep.inputType === 'prosCons' || activeStep.inputType === 'comparison') {
       const pc = getProsConsValue(activeStep.id);
       const hasPro = pc.pros.some((item) => item.trim().length > 0);
       const hasCon = pc.cons.some((item) => item.trim().length > 0);
       return hasPro && hasCon;
+    }
+
+    if (activeStep.inputType === 'dynamicList') {
+      return Array.isArray(value) && value.length > 0 && value.some((item: any) => typeof item === 'string' && item.trim().length > 0);
     }
 
     return false;
@@ -506,6 +512,14 @@ export default function CBTActivityPlayer({
               ))}
             </div>
           </div>
+
+          {/* Provider Instructions */}
+          {instructions && !isSummaryStep && (
+            <div className="bg-blue-50/50 p-4 border-b border-blue-100">
+              <p className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-1">Provider Instructions</p>
+              <p className="text-sm text-blue-900 whitespace-pre-wrap leading-relaxed">{instructions}</p>
+            </div>
+          )}
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-4">
