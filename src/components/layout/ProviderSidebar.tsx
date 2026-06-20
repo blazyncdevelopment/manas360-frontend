@@ -54,6 +54,7 @@ export const ProviderSidebar = ({ isOpen, onClose }: ProviderSidebarProps) => {
           { label: 'Calendar', path: '/provider/calendar', icon: <Calendar size={18} /> },
           { label: 'Appointments', path: '/provider/appointments', icon: <ClipboardCheck size={18} /> },
           { label: 'Lead Marketplace', path: '/provider/leads', icon: <Zap size={18} /> },
+          { label: 'Corporate Leads', path: '/provider/corporate-leads', icon: <Star size={18} /> },
           { label: 'Group Therapy', path: '/provider/portal', icon: <Radio size={18} /> },
         ]
       }

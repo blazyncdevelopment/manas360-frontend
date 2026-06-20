@@ -239,7 +239,7 @@ export default function LoginPage() {
 				if (requestedUserType) searchParams.set('userType', requestedUserType);
 				if (signupRole) searchParams.set('role', signupRole);
 
-				toast.error('Please sign up first to create an account.', { duration: 5000 });
+				toast.error('Please review and accept our terms to continue.', { duration: 5000 });
 
 				navigate(`/auth/signup?${searchParams.toString()}`, {
 					replace: true,

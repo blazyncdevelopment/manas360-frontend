@@ -2,10 +2,9 @@ import { Calendar, Clock3, FileText, Lock, Plus, Sparkles, MessageCircle } from 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../../../context/AuthContext';
 import { useCreatePatientNote, usePatientNotes, useUpdatePatientNote } from '../../../../hooks/usePatientNotes';
-import { getPatientCbtAssignments, optimizeNoteText } from '../../../../api/provider';
+import { optimizeNoteText } from '../../../../api/provider';
 import type { NoteData, NoteStatus } from '../../../../api/provider';
 import { deliverPrescription } from '../../../../api/mdcPrescriptionHomework.api';
 
@@ -38,12 +37,6 @@ export default function SessionNotes() {
 
   const { data: notes = [], isLoading } = usePatientNotes(patientId);
 
-  const { data: cbtAssignments = [], refetch: refetchAssignments } = useQuery({
-    queryKey: ['patient-cbt-assignments', patientId],
-    queryFn: () => getPatientCbtAssignments(patientId!),
-    enabled: !!patientId,
-  });
-
   const createNoteMutation = useCreatePatientNote();
   const updateNoteMutation = useUpdatePatientNote();
 
@@ -67,14 +60,8 @@ export default function SessionNotes() {
   }, [notes, selectedNoteId]);
 
   const [loadedPatientId, setLoadedPatientId] = useState<string | undefined>(undefined);
-  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<{ id: string; title: string } | null>(null);
-  const [templateInstruction, setTemplateInstruction] = useState('');
-  const [isAssigningTemplate, setIsAssigningTemplate] = useState(false);
   const [diagnosisCodes, setDiagnosisCodes] = useState('');
   const [notifyViaWhatsApp, setNotifyViaWhatsApp] = useState(true);
-  const [whatsappTemplate, setWhatsappTemplate] = useState('Hi! I have assigned a new activity for you. Please check your Manas360 dashboard to complete it before our next session.');
-
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isReferring, setIsReferring] = useState(false);
   const [selectedPsychiatrist, setSelectedPsychiatrist] = useState('Dr. Shruti');
@@ -97,31 +84,7 @@ export default function SessionNotes() {
     }
   };
 
-  const handleAssignTemplate = async (templateId: string, title: string) => {
-    if (!patientId) return;
-    setIsAssigningTemplate(true);
-    try {
-      const { assignPatientItem } = await import('../../../../api/provider');
-      await assignPatientItem(patientId, {
-        assignmentType: 'CBT',
-        templateId,
-        title,
-        instructions: templateInstruction,
-      });
-      toast.success(`${title} assigned successfully.`);
-      refetchAssignments();
-      if (notifyViaWhatsApp) {
-        toast.success('Patient notified via WhatsApp! 📱');
-      }
-      setIsTemplateModalOpen(false);
-      setSelectedTemplate(null);
-      setTemplateInstruction('');
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || 'Failed to assign template.');
-    } finally {
-      setIsAssigningTemplate(false);
-    }
-  };
+
 
   useEffect(() => {
     if (patientId && !isLoading) {
@@ -281,36 +244,7 @@ export default function SessionNotes() {
             )}
           </div>
           
-          <div className="mt-6 border-t border-[#E5E5E5] pt-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Patient Exercises</p>
-            <button
-              type="button"
-              onClick={() => setIsTemplateModalOpen(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-3 py-2.5 text-sm font-semibold text-[#2D4128] transition hover:bg-[#FAFAF8]"
-            >
-              <Sparkles className="h-4 w-4" />
-              Assign CBT Template
-            </button>
-            <div className="mt-4 space-y-2">
-              {cbtAssignments.slice(0, 5).map((assign: any) => (
-                <div key={assign.id} className="rounded-lg border border-[#E5E5E5] bg-[#FAFAF8] p-3 shadow-sm">
-                  <div className="flex justify-between items-start">
-                    <p className="font-semibold text-sm text-[#2D4128]">{assign.templateType.replace('_', ' ')}</p>
-                    <span className="text-[10px] font-semibold text-slate-500">{new Date(assign.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  {assign.description && (
-                    <p className="mt-1 text-xs text-slate-500 truncate">{assign.description}</p>
-                  )}
-                  <span className="mt-2 inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">
-                    {assign.status}
-                  </span>
-                </div>
-              ))}
-              {cbtAssignments.length === 0 && (
-                <p className="text-xs text-slate-500 text-center py-2">No exercises assigned yet.</p>
-              )}
-            </div>
-          </div>
+
         </div>
       </aside>
 
@@ -445,95 +379,6 @@ export default function SessionNotes() {
           )}
         </div>
       </section>
-
-      {isTemplateModalOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/50">
-          <div className="h-full w-full max-w-md bg-white shadow-2xl p-6 flex flex-col overflow-y-auto transform transition-transform duration-300">
-            <h3 className="mb-1 font-display text-xl font-bold text-[#2D4128]">Assign CBT / Session Template</h3>
-            <p className="mb-5 text-sm text-slate-500">Select a pre-built template to assign to the patient.</p>
-
-            <div className="space-y-3">
-              {[
-                { id: 'THOUGHT_RECORD', title: 'Thought Record Template', icon: '📝', desc: 'Classic 7-column CBT thought record.' },
-                { id: 'EXPOSURE_HIERARCHY', title: 'Exposure Hierarchy', icon: '📊', desc: 'Graduated exposure with SUDS ratings.' },
-                { id: 'HOMEWORK', title: 'Homework Assignments', icon: '🏠', desc: 'Mood diary, activity scheduling, etc.' },
-                { id: 'SESSION_GUIDE', title: 'Session Structure Guide', icon: '📋', desc: 'Patient-facing 50-min session overview.' },
-              ].map((tmpl) => (
-                <div key={tmpl.id} className="space-y-2">
-                  <button
-                    onClick={() => {
-                      if (selectedTemplate?.id === tmpl.id) {
-                        setSelectedTemplate(null);
-                      } else {
-                        setSelectedTemplate({ id: tmpl.id, title: tmpl.title });
-                      }
-                    }}
-                    disabled={isAssigningTemplate}
-                    className={`flex w-full items-center justify-between rounded-xl border p-4 text-left transition ${selectedTemplate?.id === tmpl.id ? 'border-[#4A6741] bg-[#FAFAF8] ring-1 ring-[#4A6741]' : 'border-[#E5E5E5] bg-white hover:border-[#4A6741] hover:bg-[#FAFAF8]'} disabled:opacity-50`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{tmpl.icon}</span>
-                      <div>
-                        <p className="font-semibold text-[#2D4128]">{tmpl.title}</p>
-                        <p className="text-xs text-slate-500">{tmpl.desc}</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {selectedTemplate?.id === tmpl.id && (
-                    <div className="p-3 bg-slate-50 border border-[#E5E5E5] rounded-xl">
-                      <label className="block text-xs font-semibold text-[#2D4128] uppercase mb-1">Additional Instructions / Data</label>
-                      <textarea
-                        className="w-full rounded-lg border border-[#E5E5E5] px-3 py-2 text-sm outline-none focus:border-[#4A6741]"
-                        rows={3}
-                        value={templateInstruction}
-                        onChange={(e) => setTemplateInstruction(e.target.value)}
-                        placeholder="Enter custom instructions or data for this assignment..."
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-5 rounded-lg border border-[#E5E5E5] bg-slate-50 p-4">
-              <div>
-                <p className="mb-2 text-xs font-semibold text-[#2D4128] uppercase tracking-wider flex items-center gap-1.5">
-                  <MessageCircle className="h-4 w-4 text-[#25D366]" /> Notify via WhatsApp (Always On)
-                </p>
-                <textarea
-                  className="w-full rounded-lg border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#2D4128] outline-none focus:border-[#25D366] focus:ring-2 focus:ring-[#25D366]/10"
-                  rows={3}
-                  value={whatsappTemplate}
-                  onChange={(e) => setWhatsappTemplate(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="mt-auto pt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsTemplateModalOpen(false);
-                  setSelectedTemplate(null);
-                  setTemplateInstruction('');
-                }}
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={!selectedTemplate || isAssigningTemplate}
-                onClick={() => handleAssignTemplate(selectedTemplate!.id, selectedTemplate!.title)}
-                className="rounded-lg bg-[#4A6741] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2D4128] disabled:opacity-50"
-              >
-                {isAssigningTemplate ? 'Assigning...' : 'Assign Selected'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {isReferralModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

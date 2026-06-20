@@ -27,7 +27,7 @@ const fallbackSeedAgreements: AgreementItem[] = [
   {
     id: 101,
     agreement_number: 'MANAS360-CORP-2026-101',
-    partner_name: 'TechCorp India',
+    partner_name: 'Blazync',
     partner_type: 'corporate',
     annual_value: 1500000,
     status: 'active',
@@ -36,7 +36,7 @@ const fallbackSeedAgreements: AgreementItem[] = [
   {
     id: 102,
     agreement_number: 'MANAS360-CORP-2026-102',
-    partner_name: 'FinAxis Solutions',
+    partner_name: 'Blazync',
     partner_type: 'corporate',
     annual_value: 980000,
     status: 'active',
@@ -171,12 +171,14 @@ export default function AgreementDashboard() {
   }, []);
 
   const stats = useMemo(() => {
-    const mergedAgreements = [...localCreatedAgreements, ...agreements].reduce<AgreementItem[]>((acc, item) => {
-      if (!acc.some((existing) => existing.agreement_number === item.agreement_number)) {
-        acc.push(item);
-      }
-      return acc;
-    }, []);
+    const mergedAgreements = [...localCreatedAgreements, ...agreements]
+      .filter((item) => String(item.partner_type || '').toLowerCase() === 'corporate')
+      .reduce<AgreementItem[]>((acc, item) => {
+        if (!acc.some((existing) => existing.agreement_number === item.agreement_number)) {
+          acc.push(item);
+        }
+        return acc;
+      }, []);
 
     const totalAgreements = mergedAgreements.length;
     const pendingSignatures = getPendingSignatureCount(mergedAgreements);
@@ -221,12 +223,14 @@ export default function AgreementDashboard() {
   };
 
   const visibleAgreements = useMemo(() => {
-    return [...localCreatedAgreements, ...agreements].reduce<AgreementItem[]>((acc, item) => {
-      if (!acc.some((existing) => existing.agreement_number === item.agreement_number)) {
-        acc.push(item);
-      }
-      return acc;
-    }, []);
+    return [...localCreatedAgreements, ...agreements]
+      .filter((item) => String(item.partner_type || '').toLowerCase() === 'corporate')
+      .reduce<AgreementItem[]>((acc, item) => {
+        if (!acc.some((existing) => existing.agreement_number === item.agreement_number)) {
+          acc.push(item);
+        }
+        return acc;
+      }, []);
   }, [localCreatedAgreements, agreements]);
 
   return (

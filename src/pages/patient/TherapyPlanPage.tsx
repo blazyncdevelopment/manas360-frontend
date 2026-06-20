@@ -4,8 +4,9 @@ import { toast } from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { patientApi } from '../../api/patient';
+import { getHomework } from '../../api/mdcPrescriptionHomework.api';
 import { useAuth } from '../../context/AuthContext';
-import { Sparkles, ClipboardCheck, UserPlus, Quote, Pill, Activity, Music, RefreshCw } from 'lucide-react';
+import { Sparkles, ClipboardCheck, UserPlus, Quote, Pill, Activity, Music, RefreshCw, FileText } from 'lucide-react';
 
 type GoalItem = {
   id: string;
@@ -83,6 +84,8 @@ export default function TherapyPlanPage() {
   const { user } = useAuth();
   const [actionError, setActionError] = useState<string | null>(null);
   const [completingTaskIds, setCompletingTaskIds] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<'goals' | 'cbt' | 'completed' | 'prescription'>('goals');
+  const [selectedRx, setSelectedRx] = useState<any>(null);
 
   const profileQuery = useQuery(['patient-profile-for-week'], async () => {
     const response = await patientApi.getMyProfile();
@@ -127,6 +130,28 @@ export default function TherapyPlanPage() {
     refetchOnWindowFocus: true,
   });
 
+  const completedAssignmentsQuery = useQuery({
+    queryKey: ['patient-cbt-completed'],
+    queryFn: async () => {
+      const res = await patientApi.getCompletedCbtAssignments();
+      const data = (res as any)?.data ?? res;
+      return Array.isArray(data) ? data : [];
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
+  });
+
+  const homeworkQuery = useQuery({
+    queryKey: ['patient-homework', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const res = await getHomework(user.id);
+      return res || [];
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const carePlanQuery = useQuery(['patient-care-plan'], async () => {
     const res = await patientApi.getCarePlan().catch(() => null);
     return (res?.data ?? res) as {
@@ -146,7 +171,7 @@ export default function TherapyPlanPage() {
   const queryMessage = String(queryError?.response?.data?.message || queryError?.message || '');
   const connectionRequired = queryStatus === 404 && queryMessage.toLowerCase().includes('connected with a provider');
   const error = actionError || (connectionRequired ? null : (queryMessage || null));
-  const loading = therapyPlanQuery.isLoading || (therapyPlanQuery.isFetching && !therapyPlanQuery.data) || activeAssignmentsQuery.isLoading;
+  const loading = therapyPlanQuery.isLoading || (therapyPlanQuery.isFetching && !therapyPlanQuery.data) || activeAssignmentsQuery.isLoading || completedAssignmentsQuery.isLoading;
 
   const completeTask = async (taskId: string) => {
     setActionError(null);
@@ -197,8 +222,12 @@ export default function TherapyPlanPage() {
       ? planData.cbtExercises.filter((exercise) => Number(exercise.weekNumber || activeDay) === activeDay)
       : [];
 
+    const activeData = activeAssignmentsQuery.data || [];
+    const completedData = completedAssignmentsQuery.data || [];
+
+    const merged = [...baseExercises];
+
     if (activeDay === currentDay) {
-      const activeData = activeAssignmentsQuery.data || [];
       const liveExercises = activeData.map((a: any) => ({
         id: a.id,
         sessionId: undefined,
@@ -213,16 +242,34 @@ export default function TherapyPlanPage() {
         isCbtAssignment: true,
       } as ExerciseItem));
 
-      const merged = [...baseExercises];
       for (const live of liveExercises) {
         if (!merged.find(e => e.id === live.id)) {
           merged.push(live);
         }
       }
-      return merged;
+
+      const compExercises = completedData.map((a: any) => ({
+        id: a.id,
+        sessionId: undefined,
+        type: a.templateType || 'CBT Assignment',
+        title: a.title,
+        status: 'Completed',
+        completed: true,
+        assignedAt: a.createdAt,
+        completedAt: a.updatedAt || null,
+        weekNumber: activeDay,
+        therapistFeedback: undefined,
+        isCbtAssignment: true,
+      } as ExerciseItem));
+
+      for (const comp of compExercises) {
+        if (!merged.find(e => e.id === comp.id)) {
+          merged.push(comp);
+        }
+      }
     }
-    return baseExercises;
-  }, [planData, activeDay, currentDay, activeAssignmentsQuery.data]);
+    return merged;
+  }, [planData, activeDay, currentDay, activeAssignmentsQuery.data, completedAssignmentsQuery.data]);
   const recentFeedback = useMemo(() => (Array.isArray(planData?.recentFeedback) ? planData.recentFeedback : []), [planData]);
   const featuredFeedback = recentFeedback[0] ?? null;
   const hasPlan = goals.length > 0 || exercises.length > 0;
@@ -237,13 +284,19 @@ export default function TherapyPlanPage() {
   const currentExercises = useMemo(() => {
     const base = Array.isArray(currentDayData?.cbtExercises) ? [...currentDayData!.cbtExercises] : [];
     const activeData = activeAssignmentsQuery.data || [];
+    const completedData = completedAssignmentsQuery.data || [];
     for (const live of activeData) {
       if (!base.find(e => e.id === live.id)) {
         base.push({ id: live.id, completed: live.status === 'COMPLETED' } as any);
       }
     }
+    for (const comp of completedData) {
+      if (!base.find(e => e.id === comp.id)) {
+        base.push({ id: comp.id, completed: true } as any);
+      }
+    }
     return base;
-  }, [currentDayData, activeAssignmentsQuery.data]);
+  }, [currentDayData, activeAssignmentsQuery.data, completedAssignmentsQuery.data]);
 
   const currentTotalDailyTasks = currentGoals.length + currentExercises.length;
   const currentCompletedDailyTasks = currentGoals.filter((g) => g.todayCheckInDone).length + currentExercises.filter((e) => e.completed).length;
@@ -388,8 +441,36 @@ export default function TherapyPlanPage() {
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-8 md:flex-row md:items-start">
-        <section className="space-y-4 md:w-1/2">
+            <div className="mb-6 flex overflow-x-auto border-b border-charcoal/10">
+        <button
+          onClick={() => setActiveTab('goals')}
+          className={`whitespace-nowrap px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'goals' ? 'border-b-2 border-[#2F7A5F] text-[#2F7A5F]' : 'text-charcoal/50 hover:text-charcoal/80'}`}
+        >
+          Daily Goals
+        </button>
+        <button
+          onClick={() => setActiveTab('cbt')}
+          className={`whitespace-nowrap px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'cbt' ? 'border-b-2 border-[#2B5EA7] text-[#2B5EA7]' : 'text-charcoal/50 hover:text-charcoal/80'}`}
+        >
+          Assigned Exercises - CBT
+        </button>
+        <button
+          onClick={() => setActiveTab('completed')}
+          className={`whitespace-nowrap px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'completed' ? 'border-b-2 border-[#A56A1F] text-[#A56A1F]' : 'text-charcoal/50 hover:text-charcoal/80'}`}
+        >
+          Completed Exercises
+        </button>
+        <button
+          onClick={() => setActiveTab('prescription')}
+          className={`whitespace-nowrap px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'prescription' ? 'border-b-2 border-[#8C52FF] text-[#8C52FF]' : 'text-charcoal/50 hover:text-charcoal/80'}`}
+        >
+          Prescription
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-8">
+        {activeTab === 'goals' && (
+<section className="space-y-4 w-full">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-charcoal">Daily Goals</h2>
             <span className="flex h-5 items-center rounded-full bg-[#E7F6F0] px-2 text-[10px] font-bold uppercase tracking-wider text-[#2F7A5F]">
@@ -437,8 +518,10 @@ export default function TherapyPlanPage() {
             </div>
           )}
         </section>
+        )}
 
-        <section className="space-y-4 md:w-1/2">
+        {activeTab === 'cbt' && (
+<section className="space-y-4 w-full">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-charcoal">Assigned Exercises</h2>
             <span className="flex h-5 items-center rounded-full bg-[#E8F2FF] px-2 text-[10px] font-bold uppercase tracking-wider text-[#2B5EA7]">
@@ -482,9 +565,9 @@ export default function TherapyPlanPage() {
               </div>
             </div>
           </div>
-          {exercises.length > 0 ? (
+          {exercises.filter(e => !e.completed).length > 0 ? (
             <div className="space-y-3">
-              {exercises.map((exercise, index) => {
+              {exercises.filter(e => !e.completed).map((exercise, index) => {
                 // Sequential tasking: only allow starting current exercise if previous are completed
                 const previousExercisesCompleted = exercises.slice(0, index).every(e => e.completed);
                 const isLocked = !previousExercisesCompleted && !exercise.completed;
@@ -531,6 +614,7 @@ export default function TherapyPlanPage() {
                                   await patientApi.updateCbtAssignment(exercise.id, { status: 'COMPLETED', responses: {} });
                                   toast.success('Exercise marked as completed!');
                                   await activeAssignmentsQuery.refetch();
+                                  await completedAssignmentsQuery.refetch();
                                   await therapyPlanQuery.refetch();
                                   await currentDayPlanQuery.refetch();
                                 } catch (err) {
@@ -592,7 +676,167 @@ export default function TherapyPlanPage() {
             </div>
           )}
         </section>
+        )}
+
+        {activeTab === 'completed' && (
+<section className="space-y-4 w-full">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold text-charcoal">Completed Exercises</h2>
+            <span className="flex h-5 items-center rounded-full bg-[#E8F2FF] px-2 text-[10px] font-bold uppercase tracking-wider text-[#2B5EA7]">
+              CBT
+            </span>
+          </div>
+          <div className="rounded-[1.6rem] border border-blue-100 bg-blue-50 p-5 shadow-wellness-sm">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-[#2B5EA7] shadow-sm">
+                {featuredFeedback?.providerInitials || 'CT'}
+              </div>
+              <div className="min-w-0 flex-1 break-words">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#2B5EA7]">
+                  <Quote className="h-4 w-4" />
+                  Insights from your Care Team
+                </div>
+                {featuredFeedback ? (
+                  <>
+                    <p className="mt-3 text-sm font-semibold text-charcoal md:text-base">
+                      {featuredFeedback.providerName} says:
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-charcoal/80 md:text-base">
+                      &ldquo;{featuredFeedback.feedback}&rdquo;
+                    </p>
+                    {recentFeedback.length > 1 ? (
+                      <div className="mt-4 space-y-2 border-t border-blue-100 pt-3">
+                        {recentFeedback.slice(1).map((item) => (
+                          <div key={item.id} className="rounded-2xl bg-white/70 px-3 py-2">
+                            <p className="text-xs font-semibold text-charcoal/70">{item.providerName}</p>
+                            <p className="mt-1 text-xs leading-relaxed text-charcoal/65">&ldquo;{item.feedback}&rdquo;</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="mt-3 text-sm leading-relaxed text-charcoal/70 md:text-base">
+                    Your provider’s guidance and exercise feedback will appear here as your care team reviews your progress.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+          {exercises.filter(e => e.completed).length > 0 ? (
+            <div className="space-y-3">
+              {exercises.filter(e => e.completed).map((exercise, index) => {
+                // Sequential tasking: only allow starting current exercise if previous are completed
+                const previousExercisesCompleted = exercises.slice(0, index).every(e => e.completed);
+                const isLocked = !previousExercisesCompleted && !exercise.completed;
+
+                return (
+                  <div
+                    key={exercise.id}
+                    className={`group flex w-full items-center justify-between rounded-[1.5rem] bg-white/92 p-4 text-left shadow-wellness-sm transition hover:shadow-wellness-md ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#ECF5FF] text-[#2B5EA7]">
+                        <ClipboardCheck className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-charcoal">{exercise.title}</p>
+                        <p className="mt-0.5 text-xs text-charcoal/55">{exercise.type} • Assigned {formatDate(exercise.assignedAt)}</p>
+                        {isLocked && (
+                          <p className="mt-1 text-xs text-amber-600 font-medium">Complete previous exercises first</p>
+                        )}
+                        {exercise.therapistFeedback ? (
+                          <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-charcoal/65">
+                            Latest feedback: &ldquo;{exercise.therapistFeedback}&rdquo;
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${exerciseStatusClass(exercise.status)}`}>
+                        {exercise.status}
+                      </span>
+                      {!exercise.completed ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            title="Mark as completed"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (isLocked || completingTaskIds.includes(exercise.id)) return;
+                              
+                              if (exercise.isCbtAssignment) {
+                                setCompletingTaskIds((prev) => [...prev, exercise.id]);
+                                try {
+                                  await patientApi.updateCbtAssignment(exercise.id, { status: 'COMPLETED', responses: {} });
+                                  toast.success('Exercise marked as completed!');
+                                  await activeAssignmentsQuery.refetch();
+                                  await completedAssignmentsQuery.refetch();
+                                  await therapyPlanQuery.refetch();
+                                  await currentDayPlanQuery.refetch();
+                                } catch (err) {
+                                  toast.error('Failed to complete exercise');
+                                } finally {
+                                  setCompletingTaskIds((prev) => prev.filter((id) => id !== exercise.id));
+                                }
+                              } else {
+                                await completeTask(exercise.id);
+                              }
+                            }}
+                            className="flex h-[34px] w-[34px] md:h-[44px] md:w-[44px] shrink-0 items-center justify-center rounded-full border-2 border-emerald-500 bg-white text-emerald-500 hover:bg-emerald-500 hover:text-white transition-colors"
+                          >
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isLocked) return;
+                              const activityType = String(exercise.type || '').toUpperCase();
+                              if (activityType.includes('CLINICAL_ASSESSMENT') || activityType.includes('ASSESSMENT')) {
+                                navigate('/patient/sessions');
+                                return;
+                              }
+                              if (activityType.includes('MOOD_CHECKIN')) {
+                                navigate('/patient/mood');
+                                return;
+                              }
+                              if (exercise.id) {
+                                navigate(`/patient/cbt-assignment/${exercise.id}`);
+                                return;
+                              }
+                              if (exercise.sessionId) {
+                                navigate(`/patient/cbt/${exercise.sessionId}`);
+                                return;
+                              }
+                              navigate('/patient/cbt-section');
+                            }}
+                            className="inline-flex min-h-[44px] items-center rounded-full bg-[#E8F2FF] px-4 text-sm font-semibold text-[#2B5EA7] md:min-h-[34px] md:px-3 md:text-xs transition hover:bg-[#D1E3FF]"
+                          >
+                            {isLocked ? 'Locked' : String(exercise.type || '').toUpperCase().includes('CLINICAL_ASSESSMENT')
+                              ? 'Start Assessment'
+                              : 'Start Exercise'}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+
+              })}
+            </div>
+          ) : (
+            <div className="rounded-[1.5rem] border border-dashed border-wellness-border p-8 text-center">
+              <p className="text-sm text-charcoal/50">No exercises completed yet.</p>
+            </div>
+          )}
+        </section>
+        )}
       </div>
+
 
       {/* UNIFIED CARE PLAN — aggregated from all providers */}
       {carePlanQuery.data && (
@@ -680,7 +924,130 @@ export default function TherapyPlanPage() {
             </div>
           )}
         </section>
-      )}
+        )}
+
+        {activeTab === 'prescription' && (
+        <section className="space-y-4 w-full">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold text-charcoal">Prescription</h2>
+            <span className="flex h-5 items-center rounded-full bg-[#F3E8FF] px-2 text-[10px] font-bold uppercase tracking-wider text-[#8C52FF]">
+              RX
+            </span>
+          </div>
+          
+          {homeworkQuery.isLoading ? (
+            <div className="rounded-[1.6rem] border border-dashed border-wellness-border bg-white/70 p-6 text-center">
+              <p className="text-sm font-medium text-charcoal/70">Loading prescriptions...</p>
+            </div>
+          ) : homeworkQuery.data && homeworkQuery.data.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {homeworkQuery.data.map((hw: any) => {
+                let parsedDesc: any = null;
+                try {
+                  parsedDesc = JSON.parse(hw.description);
+                } catch(e) {
+                  // Not JSON, just plain text
+                }
+                const isDetailed = parsedDesc && parsedDesc.items && Array.isArray(parsedDesc.items);
+
+                return (
+                <div key={hw.id} className="flex flex-col gap-2 rounded-[1.5rem] bg-white p-5 shadow-wellness-sm border border-wellness-border transition-all hover:shadow-wellness">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F3E8FF] text-[#8C52FF]">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-charcoal">{hw.title}</h3>
+                        <p className="text-xs text-charcoal/60">{new Date(hw.createdAt || Date.now()).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {isDetailed ? (
+                    <div className="mt-2 flex flex-col gap-3 border-t border-wellness-border/50 pt-3">
+                      <p className="text-sm text-charcoal/70">
+                        <span className="font-semibold">Goals: </span>{parsedDesc.goals}
+                      </p>
+                      <button
+                        onClick={() => setSelectedRx({ hw, parsedDesc })}
+                        className="self-start rounded-xl bg-[#F3E8FF] px-4 py-2 text-xs font-bold text-[#8C52FF] transition hover:bg-[#EBDDFF]"
+                      >
+                        VIEW DETAILED
+                      </button>
+                    </div>
+                  ) : hw.description ? (
+                    <p className="mt-2 text-sm text-charcoal/70 whitespace-pre-line border-t border-wellness-border/50 pt-3">
+                      {hw.description}
+                    </p>
+                  ) : null}
+                </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-[1.6rem] border border-dashed border-wellness-border bg-white/70 p-6 text-center">
+              <p className="text-sm font-medium text-charcoal/70">No prescriptions assigned yet.</p>
+            </div>
+          )}
+        </section>
+        )}
+
+    {selectedRx && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-charcoal/40 p-4 backdrop-blur-sm overflow-y-auto">
+        <div className="relative w-full max-w-[680px] rounded-2xl bg-[#edf7ff] p-4 sm:p-8 shadow-2xl my-auto">
+          <button
+            onClick={() => setSelectedRx(null)}
+            className="absolute right-4 top-4 rounded-full bg-white/50 p-2 text-charcoal/50 hover:bg-white hover:text-charcoal transition"
+          >
+            ✕
+          </button>
+          
+          <div className="mx-auto rounded-md border border-[#d9dee9] bg-white p-6 sm:p-8 shadow-[0_20px_38px_rgba(51,81,122,0.16)] text-left">
+            <div className="flex items-start justify-between border-b border-[#355090] pb-4">
+              <div>
+                <h3 className="font-serif text-2xl sm:text-4xl leading-tight text-[#2e4582]">CLINIC OF<br />PSYCHOTHERAPY</h3>
+                <p className="mt-2 text-[9px] sm:text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5f739f]">Holistic Wellness & Behavioral Medicine</p>
+              </div>
+              <div className="text-right text-[8px] sm:text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8392b3]">
+                <p>ID: {user?.id?.slice(0,8) || '1849317631'}</p>
+                <p>GEN-REF: P{selectedRx.hw.id.slice(-5)}</p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#9ba6bf]">Patient Name</p>
+                <p className="mt-1 text-lg sm:text-xl font-semibold text-[#374f7e]">{user?.firstName} {user?.lastName}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#9ba6bf]">Prescription Date</p>
+                <p className="mt-1 text-base sm:text-lg font-semibold text-[#374f7e]">{new Date(selectedRx.hw.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 inline-flex rounded bg-[#2a45a1] px-5 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white">Prescription RX</div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {selectedRx.parsedDesc.items?.map((item: any, index: number) => (
+                <div key={item.title} className="rounded-md border border-[#e3e8f2] bg-[#fbfcff] p-3">
+                  <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.12em] text-[#3d5493]">{`${index + 1}. ${item.title}`}</p>
+                  <p className="mt-2 text-xs sm:text-sm leading-5 sm:leading-6 text-[#445a83]">{item.content}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 flex items-end justify-between border-t border-[#ecf0f7] pt-4">
+              <p className="text-[8px] sm:text-[10px] font-semibold uppercase tracking-[0.16em] text-[#98a4bf] max-w-[60%]">Note: This document is for therapeutic guidance only.</p>
+              <div className="text-right">
+                <p className="font-serif text-xl sm:text-3xl text-[#3d5796]">Authorized Clinician</p>
+                <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.16em] text-[#7587ad]">Signature</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
 
     </div>
   );

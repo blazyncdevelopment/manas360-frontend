@@ -5,7 +5,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { hasProviderSubmittedOnboarding } from '../../../lib/providerOnboardingFlow';
 import { useProviderDashboard } from '../../../hooks/useProviderDashboard';
 import { useQuery } from '@tanstack/react-query';
-import { fetchProviderEarnings, fetchProviderMyQr, fetchProviderMyQrAnalytics } from '../../../api/provider';
+import { fetchProviderEarnings, fetchProviderMyQr, fetchProviderMyQrAnalytics, fetchProviderLeadStats } from '../../../api/provider';
 import type { SmartAlertItem } from '../../../api/provider';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -120,6 +120,11 @@ export default function ProviderDashboard() {
     queryFn: fetchProviderEarnings,
     staleTime: 60 * 1000,
     refetchInterval: 30 * 1000,
+  });
+  const leadStatsQuery = useQuery({
+    queryKey: ['providerLeadStats', 'dashboard-widget'],
+    queryFn: fetchProviderLeadStats,
+    staleTime: 5 * 60 * 1000,
   });
   const providerQrQuery = useQuery({
     queryKey: ['providerQr', 'my-qr'],
@@ -271,6 +276,40 @@ export default function ProviderDashboard() {
         <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5">
           <CheckCircle className="h-4 w-4 text-emerald-500" />
           <span className="text-xs font-semibold text-emerald-700">Account fully active — all verifications complete</span>
+        </div>
+      )}
+
+      {/* Corporate Lead Progress */}
+      {leadStatsQuery.data && (
+        <div className={`rounded-xl border p-5 shadow-sm ${leadStatsQuery.data.corporateUnlocked ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200'}`}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className={`text-base font-semibold ${leadStatsQuery.data.corporateUnlocked ? 'text-indigo-900' : 'text-slate-900'}`}>
+                Corporate Leads
+              </h2>
+              <p className={`mt-1 text-sm ${leadStatsQuery.data.corporateUnlocked ? 'text-indigo-700' : 'text-slate-600'}`}>
+                {leadStatsQuery.data.corporateUnlocked 
+                  ? 'Corporate Leads Unlocked! You can now receive leads from corporate partners.'
+                  : 'Complete 50+ sessions to unlock Corporate Leads.'}
+              </p>
+            </div>
+            <div className="flex-1 max-w-sm w-full">
+              {!leadStatsQuery.data.corporateUnlocked && (
+                <>
+                  <div className="flex items-center justify-between mb-1 text-xs font-medium text-slate-600">
+                    <span>{leadStatsQuery.data.completedSessions}/50 sessions completed</span>
+                    <span>{Math.max(0, 50 - leadStatsQuery.data.completedSessions)} more needed</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-indigo-500 rounded-full transition-all duration-500" 
+                      style={{ width: `${Math.min(100, Math.round((leadStatsQuery.data.completedSessions / 50) * 100))}%` }} 
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

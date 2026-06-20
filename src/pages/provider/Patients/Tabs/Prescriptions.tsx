@@ -3,7 +3,8 @@ import { useRef, useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../../../context/AuthContext';
 import { usePatientOverview } from '../../../../hooks/usePatientOverview';
-import { assignHomework, deliverPrescription } from '../../../../api/mdcPrescriptionHomework.api';
+import { assignHomework } from '../../../../api/mdcPrescriptionHomework.api';
+import { deliverCarePlanWhatsApp } from '../../../../api/provider';
 import { toast } from 'react-hot-toast';
 
 type PrescriptionItem = {
@@ -68,7 +69,7 @@ export default function Prescriptions() {
   const [therapeuticGoals, setTherapeuticGoals] = useState('');
   const [nextSessionFocus, setNextSessionFocus] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
-  const [assignedHomeworkId, setAssignedHomeworkId] = useState<string | null>(null);
+  const [, setAssignedHomeworkId] = useState<string | null>(null);
 
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -218,7 +219,11 @@ export default function Prescriptions() {
       const hw = await assignHomework({
         patientId: patientId || 'mock-p1',
         title: `Wellness Care Plan - ${new Date().toLocaleDateString()}`,
-        description: `Goals: ${therapeuticGoals || 'N/A'}. Next Focus: ${nextSessionFocus || 'N/A'}`,
+        description: JSON.stringify({
+          goals: therapeuticGoals || 'N/A',
+          focus: nextSessionFocus || 'N/A',
+          items: finalItems.map(item => ({ title: item, content: finalOutputMap[item] }))
+        }),
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       });
       setAssignedHomeworkId(hw.id);
@@ -1106,12 +1111,18 @@ export default function Prescriptions() {
                     <button
                       type="button"
                       onClick={async () => {
-                        if (!assignedHomeworkId) return;
+                        if (!patientId) return;
                         try {
-                          await deliverPrescription(assignedHomeworkId, 'whatsapp');
+                          const bodyText = selectedFinalItem && finalOutputMap[selectedFinalItem] 
+                            ? finalOutputMap[selectedFinalItem] 
+                            : `Goals: ${therapeuticGoals}. Focus: ${nextSessionFocus}`;
+                          await deliverCarePlanWhatsApp(patientId, { 
+                            body: bodyText,
+                            template_name: 'cbt_assigned_alert'
+                          });
                           toast.success('Care plan sent via WhatsApp! 📱');
                         } catch (e) {
-                          toast.error('Failed to send WhatsApp.');
+                          toast.error('Failed to send WhatsApp. Please ensure patient has a valid phone number.');
                         }
                       }}
                       className="rounded-full bg-[#25D366] px-8 py-3 text-xs font-bold uppercase tracking-[0.14em] text-white shadow-md hover:bg-[#20bd5a]"

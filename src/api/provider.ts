@@ -480,6 +480,11 @@ export const assignPatientItem = async (
   return unwrap<AssignPatientItemResponse>(response.data);
 };
 
+export const deliverCarePlanWhatsApp = async (patientId: string, payload: { body: string; template_name?: string }): Promise<{ delivered: boolean; reason?: string }> => {
+  const response = await http.post<Envelope<{ delivered: boolean; reason?: string }>>(`/v1/provider/patient/${patientId}/notify-care-plan`, payload);
+  return unwrap<{ delivered: boolean; reason?: string }>(response.data);
+};
+
 export const updatePatientWeeklyPlan = async (
   patientId: string,
   payload: UpdateWeeklyPlanPayload,
@@ -873,7 +878,7 @@ export const claimProviderLeadWithQuota = async (leadId: string) => {
   return data;
 };
 
-export const fetchProviderMarketplace = async (params?: { page?: number; limit?: number }) => {
+export const fetchProviderMarketplace = async (params?: { page?: number; limit?: number; channel?: string }) => {
   const response = await http.get<Envelope<{ items: any[] }>>('/v1/leads/marketplace', { params });
   return unwrap<{ items: any[] }>(response.data);
 };

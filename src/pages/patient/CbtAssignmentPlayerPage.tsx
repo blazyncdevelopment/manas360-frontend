@@ -24,7 +24,7 @@ export default function CbtAssignmentPlayerPage() {
         if (!found) {
           // If not in the base plan, try fetching active assignments
           const assignments = await patientApi.getActiveCbtAssignments();
-          const assignment = assignments.find(a => a.id === id);
+          const assignment = assignments.find((a: any) => a.id === id);
           if (assignment) {
              found = {
                id: assignment.id,

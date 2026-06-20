@@ -23,14 +23,18 @@ export default function SSOSettingsPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setError('');
+    setLoading(true);
     try {
       const data = await ssoApi.getTenantForCompany();
       setTenant(data);
     } catch (fetchError: any) {
       setError(fetchError?.response?.data?.message || 'Unable to load SSO settings');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -98,8 +102,12 @@ export default function SSOSettingsPage() {
       {error ? <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
       {status ? <div className="mb-4 rounded-xl border border-sage-200 bg-sage-50 p-3 text-sm text-sage-700">{status}</div> : null}
 
-      {!tenant ? (
+      {loading ? (
         <div className="rounded-xl border border-ink-100 bg-white p-4 text-sm text-ink-600">Loading SSO settings...</div>
+      ) : !tenant ? (
+        <div className="rounded-xl border border-ink-100 bg-white p-5 text-center">
+          <p className="text-sm text-ink-600">You don't have an SSO tenant configured yet. Please contact support to set up your SSO configuration.</p>
+        </div>
       ) : (
         <>
           <section className="rounded-xl border border-ink-100 bg-white p-5">

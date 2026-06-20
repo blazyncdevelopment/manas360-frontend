@@ -594,8 +594,12 @@ export const patientApi = {
     (await http.get('/v1/patient/pets/state')).data,
   upsertPetState: async (payload: { selectedPet: 'koi' | 'pup' | 'owl'; vitality: number; unlockedItems: string[]; isPremium: boolean }) =>
     (await http.put('/v1/patient/pets/state', payload)).data,
-  getActiveCbtAssignments: async (): Promise<ActiveCbtAssignment[]> => {
+  getActiveCbtAssignments: async () => {
     const response = await http.get('/v1/patient/cbt-assignments/active');
+    return response.data?.data ?? response.data ?? [];
+  },
+  getCompletedCbtAssignments: async () => {
+    const response = await http.get('/v1/patient/cbt-assignments/completed');
     return response.data?.data ?? response.data ?? [];
   },
   getCbtAssignmentDetail: async (assignmentId: string): Promise<CbtAssignmentDetail> => {

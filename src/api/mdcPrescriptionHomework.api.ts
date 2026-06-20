@@ -225,42 +225,15 @@ export const getPrescriptionPDF = async (id: string): Promise<Blob> => {
 };
 
 export const assignHomework = async (data: AssignHomeworkInput): Promise<HomeworkItem> => {
-  try {
-    const response = await mdcHttp.post<HomeworkItem | ApiEnvelope<HomeworkItem>>('/api/mdc/homework', data);
-    return unwrap<HomeworkItem>(response.data);
-  } catch (error) {
-    console.error('assignHomework failed, using mock fallback', toApiError(error));
-    return {
-      id: `mock-homework-${Date.now()}`,
-      patientId: data.patientId,
-      title: data.title,
-      description: data.description,
-      dueDate: data.dueDate,
-      status: data.status || 'pending',
-      createdAt: new Date().toISOString(),
-    };
-  }
+  const response = await mdcHttp.post<HomeworkItem | ApiEnvelope<HomeworkItem>>('/api/mdc/homework', data);
+  return unwrap<HomeworkItem>(response.data);
 };
 
 export const getHomework = async (patientId: string): Promise<HomeworkItem[]> => {
-  try {
-    const response = await mdcHttp.get<HomeworkItem[] | ApiEnvelope<HomeworkItem[]>>(
-      `/api/mdc/patients/${encodeURIComponent(patientId)}/homework`,
-    );
-    return unwrap<HomeworkItem[]>(response.data);
-  } catch (error) {
-    console.error('getHomework failed, using mock fallback', toApiError(error));
-    return [
-      {
-        id: `mock-homework-${Date.now()}-1`,
-        patientId,
-        title: 'Daily breathing exercise',
-        description: '10 minutes every morning',
-        dueDate: new Date().toISOString(),
-        status: 'pending',
-      },
-    ];
-  }
+  const response = await mdcHttp.get<HomeworkItem[] | ApiEnvelope<HomeworkItem[]>>(
+    `/api/mdc/patients/${encodeURIComponent(patientId)}/homework`,
+  );
+  return unwrap<HomeworkItem[]>(response.data);
 };
 
 export const updateHomework = async (id: string, data: UpdateHomeworkInput): Promise<HomeworkItem> => {

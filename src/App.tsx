@@ -202,6 +202,7 @@ const PatientChartLayout = lazy(() => import('./components/layout/PatientChartLa
 const ChartOverview = lazy(() => import('./pages/provider/Patients/Tabs/ChartOverview'));
 const SessionNotes = lazy(() => import('./pages/provider/Patients/Tabs/SessionNotes'));
 const Assessments = lazy(() => import('./pages/provider/Patients/Tabs/Assessments'));
+const PatientExercises = lazy(() => import('./pages/provider/Patients/Tabs/PatientExercises'));
 const CareTeamTab = lazy(() => import('./pages/provider/Patients/Tabs/CareTeamTab'));
 const PlanStudio = lazy(() => import('./pages/provider/Patients/Tabs/PlanStudio'));
 const Prescriptions = lazy(() => import('./pages/provider/PrescriptionGateway'));
@@ -513,6 +514,7 @@ function App() {
                         <Route path="notes" element={<SessionNotes />} />
                         <Route path="session-notes" element={<Navigate to="../notes" replace />} />
                         <Route path="assessments" element={<Assessments />} />
+                        <Route path="exercises" element={<PatientExercises />} />
                         <Route path="care-team" element={<CareTeamTab />} />
                         <Route path="plan-builder" element={<PlanStudio />} />
                         <Route path="goals" element={<GoalsAndHabits />} />
@@ -531,6 +533,7 @@ function App() {
                       <Route path="payments" element={<PaymentHistory />} />
                       <Route path="appointments" element={<AppointmentRequestsPage />} />
                       <Route path="leads" element={<ProviderMarketplacePage />} />
+                      <Route path="corporate-leads" element={<ProviderMarketplacePage corporateMode />} />
                       <Route path="certifications" element={<CertificationLandingPage />} />
                       {/* More specific paths must come before :slug catch-all */}
                       <Route path="certifications/modules/:enrollmentId" element={<CertificationModulesPage />} />

@@ -277,6 +277,8 @@ interface LeadStats {
   leadsAssigned: number;
   leadsClaimed: number;
   leadsRemaining: number;
+  corporateUnlocked?: boolean;
+  completedSessions?: number;
   byType?: { hot: number; warm: number; cold: number };
   leadQualityMix?: string;
   planLimits?: Record<string, number>;
@@ -298,7 +300,7 @@ const getRemainingTime = (expiresAt: string): string => {
   return `${diffHours}h ${remainingMins}m left`;
 };
 
-export default function ProviderMarketplacePage() {
+export default function ProviderMarketplacePage({ corporateMode = false }: { corporateMode?: boolean }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
@@ -327,7 +329,7 @@ export default function ProviderMarketplacePage() {
   const loadData = () => {
     setLoading(true);
     Promise.all([
-      fetchProviderMarketplace(),
+      fetchProviderMarketplace(corporateMode ? { channel: 'B2B_INSTITUTIONAL' } : {}),
       fetchProviderLeadStats().catch(() => null),
       fetchProviderLeads().catch(() => []),
       fetchProviderLeadCredits().catch(() => ({ hot: 0, warm: 0, cold: 0 })),
@@ -520,10 +522,10 @@ export default function ProviderMarketplacePage() {
         <div className="mx-auto max-w-7xl relative z-10">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
             <div className="space-y-2">
-              <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Growth Marketplace</span>
-              <h1 className="text-4xl font-black tracking-tight md:text-5xl text-white">Buy Additional Leads</h1>
+              <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">{corporateMode ? 'Corporate Network' : 'Growth Marketplace'}</span>
+              <h1 className="text-4xl font-black tracking-tight md:text-5xl text-white">{corporateMode ? 'Corporate Leads' : 'Buy Additional Leads'}</h1>
               <p className="mt-4 text-slate-400 max-w-xl leading-relaxed">
-                Scale your practice beyond your weekly plan constraints. First-come, first-served premium patient matches.
+                {corporateMode ? 'Access premium patients from our B2B institutional partners.' : 'Scale your practice beyond your weekly plan constraints. First-come, first-served premium patient matches.'}
               </p>
             </div>
 
@@ -581,7 +583,25 @@ export default function ProviderMarketplacePage() {
 
       <div className="mx-auto max-w-7xl px-6 mt-10">
 
-        {/* Tabs */}
+        {corporateMode && stats && !stats.corporateUnlocked ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm max-w-3xl mx-auto mt-12 text-center">
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Complete 50+ sessions to unlock Corporate Leads</h2>
+            <p className="text-sm text-slate-500 mb-6">
+              You need {Math.max(0, 50 - (stats.completedSessions || 0))} more sessions to access institutional corporate leads.
+            </p>
+            <div className="flex items-center justify-between mb-2 text-sm font-semibold text-slate-700">
+              <span>{stats.completedSessions || 0}/50 sessions completed</span>
+            </div>
+            <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-indigo-500 rounded-full transition-all duration-500" 
+                style={{ width: `${Math.min(100, Math.round(((stats.completedSessions || 0) / 50) * 100))}%` }} 
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Tabs */}
         <div className="mb-8 flex gap-2 border-b border-slate-200">
           {(['marketplace', 'purchased'] as const).map((t) => (
             <button
@@ -703,7 +723,7 @@ export default function ProviderMarketplacePage() {
           </div>
         )}
 
-        {tab === 'marketplace' && <>
+        {tab === 'marketplace' && (<>
           {/* Info Banner: show remaining weekly leads as info only */}
           {isPlatformActive && !isQuotaExhausted && (
             <div className="mb-6 p-4 rounded-2xl bg-teal-50 border border-teal-100 flex items-center gap-3">
@@ -926,9 +946,12 @@ export default function ProviderMarketplacePage() {
               )}
             </>
           )}
-        </>}
-      </div>
-    </div>
+        </>
+        )}
+      </>
+    )}
+  </div>
+</div>
 
     {/* Schedule Session Modal */}
 
