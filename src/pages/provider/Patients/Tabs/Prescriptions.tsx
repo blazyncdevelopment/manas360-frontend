@@ -213,6 +213,24 @@ export default function Prescriptions() {
     setShowPlanDetailsModal(false);
   };
 
+  const finalItems = [
+    'DAILY MOOD TRACKING',
+    'CBT / DBT HOMEWORK',
+    'DIGITAL DETOX PROTOCOL',
+    'BEHAVIORAL PRESCRIPTIONS',
+    'SOUND THERAPY',
+  ];
+
+  const finalOutputMap: Record<string, string> = {
+    'SOUND THERAPY': includeSoundTherapy
+      ? `Start ${timing === 'Morning' ? 'each morning' : timing === 'Afternoon' ? 'each afternoon' : timing === 'Evening' ? 'each evening' : timing === 'As needed' ? 'as needed for stress' : 'as clinically appropriate'} with ${duration === 'custom' ? `${customDuration || '20'} minutes/day` : duration ? `${duration} minutes/day` : 'recommended duration'} of ${frequency ? `${frequency} Hz` : 'recommended frequency'} sound therapy. Focus entirely on the sound.`
+      : 'Sound therapy is currently skipped for this patient.',
+    'BEHAVIORAL PRESCRIPTIONS': `Commit to random acts of kindness for at least ${behavioralFrequency || 'recommended'} ${behavioralFrequency === '1' ? 'hour' : 'hours'}/month to reduce depressive symptoms.`,
+    'DIGITAL DETOX PROTOCOL': `Reclaim your mental space by ${[eveningPhoneOff ? 'Phone off by 9 PM' : null, eveningNoScreens ? 'No screens before bed' : null, morningSilence ? 'Silence + Breathing' : null, morningNoSocial ? 'No social media before 10 AM' : null].filter(Boolean).join(' and ')} in your daily routine.`,
+    'CBT / DBT HOMEWORK': `To support our work in session, focus specifically on ${[cbtRestructuring ? 'Cognitive restructuring' : null, cbtBehavioralActivation ? 'Behavioral activation' : null].filter(Boolean).join(' and ')}. Please bring your notes to our next session.`,
+    'DAILY MOOD TRACKING': `Consistent data collection is vital. Please track ${[trackMood ? 'Mood' : null, trackSleep ? 'Sleep' : null, trackAdherence ? 'Adherence' : null].filter(Boolean).join(' and ')} daily via the MANS360 app.`,
+  };
+
   const handleFinalizePrescription = async () => {
     setIsAssigning(true);
     try {
@@ -931,23 +949,6 @@ export default function Prescriptions() {
   }
 
   if (sequenceStep === 6) {
-    const finalItems = [
-      'DAILY MOOD TRACKING',
-      'CBT / DBT HOMEWORK',
-      'DIGITAL DETOX PROTOCOL',
-      'BEHAVIORAL PRESCRIPTIONS',
-      'SOUND THERAPY',
-    ];
-
-    const finalOutputMap: Record<string, string> = {
-      'SOUND THERAPY': includeSoundTherapy
-        ? `Start ${timing === 'Morning' ? 'each morning' : timing === 'Afternoon' ? 'each afternoon' : timing === 'Evening' ? 'each evening' : timing === 'As needed' ? 'as needed for stress' : 'as clinically appropriate'} with ${duration === 'custom' ? `${customDuration || '20'} minutes/day` : duration ? `${duration} minutes/day` : 'recommended duration'} of ${frequency ? `${frequency} Hz` : 'recommended frequency'} sound therapy. Focus entirely on the sound.`
-        : 'Sound therapy is currently skipped for this patient.',
-      'BEHAVIORAL PRESCRIPTIONS': `Commit to random acts of kindness for at least ${behavioralFrequency || 'recommended'} ${behavioralFrequency === '1' ? 'hour' : 'hours'}/month to reduce depressive symptoms.`,
-      'DIGITAL DETOX PROTOCOL': `Reclaim your mental space by ${[eveningPhoneOff ? 'Phone off by 9 PM' : null, eveningNoScreens ? 'No screens before bed' : null, morningSilence ? 'Silence + Breathing' : null, morningNoSocial ? 'No social media before 10 AM' : null].filter(Boolean).join(' and ')} in your daily routine.`,
-      'CBT / DBT HOMEWORK': `To support our work in session, focus specifically on ${[cbtRestructuring ? 'Cognitive restructuring' : null, cbtBehavioralActivation ? 'Behavioral activation' : null].filter(Boolean).join(' and ')}. Please bring your notes to our next session.`,
-      'DAILY MOOD TRACKING': `Consistent data collection is vital. Please track ${[trackMood ? 'Mood' : null, trackSleep ? 'Sleep' : null, trackAdherence ? 'Adherence' : null].filter(Boolean).join(' and ')} daily via the MANS360 app.`,
-    };
 
     const prescriptionDate = new Date().toLocaleDateString('en-US', {
       month: 'long',
