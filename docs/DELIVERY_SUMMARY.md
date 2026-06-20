@@ -36,7 +36,7 @@
 
 | Document | Purpose | Status |
 |----------|---------|--------|
-| **README.md** | Overview and quick navigation | ✅ Complete |
+| **README.** | Overview and quick navigation | ✅ Complete |
 | **LANDING_PAGE_SETUP.md** | Setup, integration, testing (70+ KB) | ✅ Complete |
 | **PRODUCTION_OPTIMIZATION.md** | Performance, deployment, monitoring (65+ KB) | ✅ Complete |
 | **ADVANCED_ANIMATIONS.md** | Optional Framer Motion patterns (45+ KB) | ✅ Complete |
