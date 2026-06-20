@@ -20,9 +20,17 @@ const FindSparkLandingPage = lazy(() => import('./pages/FindSparkLandingPage'));
 const SelfHelpLandingPage = lazy(() => import('./pages/SelfHelpLandingPage'));
 const CorporateLandingPage = lazy(() => import('./pages/CorporateLandingPage'));
 const PremiumTheraphyLandingPage = lazy(() => import('./pages/PremiumTheraphyLandingPage'));
+const AnxietyLandingPage = lazy(() => import('./pages/AnxietyLandingPage'));
+const DepressionLandingPage = lazy(() => import('./pages/DepressionLandingPage'));
+const BangaloreLandingPage = lazy(() => import('./pages/BangaloreLandingPage'));
+const CSRLandingPage = lazy(() => import('./pages/CSRLandingPage'));
+const ExamStressLandingPage = lazy(() => import('./pages/ExamStressLandingPage'));
 const NRILandingPage = lazy(() => import('./pages/NRILandingPage'));
 const RetreatLandingPageNew = lazy(() => import('./pages/RetreatLandingPageNew'));
 const SoundTherapyLandingPage = lazy(() => import('./pages/SoundTherapyLandingPage'));
+const HindiTherapyLandingPage = lazy(() => import('./pages/HindiTherapyLandingPage'));
+const HindiAnxietyLandingPage = lazy(() => import('./pages/HindiAnxietyLandingPage'));
+const KannadaTherapyLandingPage = lazy(() => import('./pages/KannadaTherapyLandingPage'));
 import { AuthProvider, getPostLoginRoute, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { Assessment } from './pages/Assessment'
@@ -236,6 +244,7 @@ interface AssessmentData {
   crisisDetected?: boolean;
 }
 
+
 function DashboardRedirect() {
   const { user } = useAuth();
   return <Navigate to={getPostLoginRoute(user)} replace />;
@@ -353,6 +362,7 @@ function App() {
                     <Route path="/hero" element={<HeroPage />} />
                     <Route path="/landing" element={<LandingPage />} />
                     <Route path="/provider-landing" element={<ProviderLandingPage />} />
+                    <Route path="/for-providers" element={<ProviderLandingPage />} />
                     <Route path="/main-landing" element={<Navigate to="/landing" replace />} />
                     <Route path="/helping-hand" element={<HelpingHandLandingPage />} />
                     <Route path="/ai-power-hub" element={<AiPowerHubLandingPage />} />
@@ -361,10 +371,25 @@ function App() {
                     <Route path="/corporate-landing" element={<CorporateLandingPage />} />
                     <Route path="/premium-theraphy" element={<PremiumTheraphyLandingPage />} />
                     <Route path="/nri-landing" element={<NRILandingPage />} />
+                    <Route path="/nri" element={<NRILandingPage />} />
                     <Route path="/retreats" element={<RetreatLandingPageNew />} />
                     <Route path="/sound-therapy" element={<SoundTherapyGate />} />
                     <Route path="/group-therapy" element={<GroupTherapySessionsPage />} />
                     <Route path="/assessment" element={<Assessment onSubmit={handleAssessmentSubmit} />} />
+                    <Route path="/free-screening" element={<Assessment onSubmit={handleAssessmentSubmit} />} />
+                    <Route path="/anxiety" element={<AnxietyLandingPage />} />
+                    <Route path="/depression" element={<DepressionLandingPage />} />
+                    <Route path="/bangalore" element={<BangaloreLandingPage />} />
+                    <Route path="/csr" element={<CSRLandingPage />} />
+                    <Route path="/couples" element={<FindSparkLandingPage />} />
+                    <Route path="/exam-stress" element={<ExamStressLandingPage />} />
+
+                    <Route path="/hi/therapy" element={<HindiTherapyLandingPage />} />
+                    <Route path="/hi/anxiety" element={<HindiAnxietyLandingPage />} />
+                    <Route path="/kn/therapy" element={<KannadaTherapyLandingPage />} />
+
+
+
                     <Route path="/assessment-preset" element={<PresetAssessmentEntry />} />
                     <Route path="/eap/:companyKey/screen" element={<EapScreeningPage />} />
 
@@ -641,6 +666,10 @@ function App() {
                       element={<PricingPage />}
                     />
                     <Route
+                      path="/pricing"
+                      element={<PricingPage />}
+                    />
+                    <Route
                       path="/plans/addons"
                       element={
                         <ProtectedRoute allowedRoles={['patient']}>
@@ -815,6 +844,9 @@ function App() {
                       }
                     />
                     <Route path="/corporate" element={<CorporateOnboardingPage />} />
+                    <Route path="/csr" element={<CorporateOnboardingPage />} />
+                    <Route path="/education" element={<CorporateOnboardingPage />} />
+                    <Route path="/healthcare-partners" element={<CorporateOnboardingPage />} />
                     <Route path="/corporate/onboarding" element={<CorporateOnboardingPage />} />
                     <Route path="/corporate/landing" element={<CorporateLandingPage />} />
                     <Route path="/corporate/analytics" element={<CorporateRoute><CorporateAnalyticsPage /></CorporateRoute>} />

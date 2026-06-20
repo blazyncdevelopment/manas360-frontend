@@ -8,11 +8,13 @@ import { toast } from 'sonner';
 import { patientApi } from '@/api/patient';
 import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '@/context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 
 const HitASixerGame: React.FC = () => {
   const GUEST_PLAY_LOCK_KEY = 'manas360_hit_a_sixer_guest_played_v1';
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const normalizedRole = String(user?.role || '').toLowerCase().replace(/_/g, '');
   const canClaimWallet = isAuthenticated && normalizedRole === 'patient';
@@ -484,6 +486,16 @@ const HitASixerGame: React.FC = () => {
               ? '4% SIXER (₹108) • 8% FOUR (₹50) • 88% OUT (₹10) • 1 play/day • Credits expire in 30 days'
               : '4% SIXER • 8% FOUR • 88% OUT • Guest mode (no wallet credit)'}
           </p>
+
+        <div className="w-full flex justify-start pb-4 pt-8">
+          <button
+            onClick={() => navigate('/landing')}
+            className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            Go to Home
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>

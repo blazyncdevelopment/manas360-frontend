@@ -81,7 +81,7 @@ const LandingPage: React.FC = () => {
       pets: "/pet",
       sound: "/sound-therapy",
       "chat-mid": "https://wa.me/918951927280",
-      notes: "/assessment",
+      notes: "/free-screening",
       brain: "/self-help"
     }),
     []
@@ -131,7 +131,7 @@ const LandingPage: React.FC = () => {
   }, []);
 
   const handleScrollToAssess = () => {
-    navigate("/assessment");
+    navigate("/free-screening");
   };
 
   const [gtSessions, setGtSessions] = useState<GtSession[]>([]);

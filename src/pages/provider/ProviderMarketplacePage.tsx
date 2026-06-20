@@ -279,6 +279,7 @@ interface LeadStats {
   leadsRemaining: number;
   byType?: { hot: number; warm: number; cold: number };
   leadQualityMix?: string;
+  planLimits?: Record<string, number>;
 }
 
 const typeColors: Record<string, { bg: string; text: string; label: string; emoji: string }> = {

@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import { ArrowLeft } from 'lucide-react';
 import './ProviderLandingPage.css';
 
 type SocialProofNotification = {
@@ -646,6 +647,16 @@ const ProviderLandingPage: React.FC = () => {
                         <br /><br />
                         <strong style={{ fontSize: '15px' }}>Don't make the same mistake.</strong>
                     </p>
+                </div>
+
+                <div className="w-full flex justify-start pb-4 pt-6">
+                    <button
+                        onClick={() => navigate('/landing')}
+                        className="inline-flex items-center gap-1 md:gap-1.5 bg-white border border-[#D5DEE9] rounded-full cursor-pointer font-bold text-[#0B2D5E] shadow-sm text-[11px] md:text-[13px] px-2.5 py-1.5 md:px-3.5 md:py-2 hover:bg-slate-50 transition-colors ml-10 md:ml-[140px]"
+                    >
+                        <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        Go to Home
+                    </button>
                 </div>
             </div>
         </div>

@@ -71,7 +71,7 @@ export default function PreBookingPaymentStep({
 
   useEffect(() => {
     const providerKey = providerType ? providerType.toLowerCase() : 'all';
-    
+
     const DOMESTIC_MAP: Record<string, string> = {
       'psychologist': 'clinical-psychologist',
       'therapist': 'clinical-psychologist',
@@ -79,7 +79,7 @@ export default function PreBookingPaymentStep({
       'coach': 'nlp-coach',
       'all': 'clinical-psychologist'
     };
-    
+
     const NRI_MAP: Record<string, string> = {
       'psychologist': 'nri-psychologist',
       'therapist': 'nri-therapist',
@@ -240,8 +240,8 @@ export default function PreBookingPaymentStep({
             Session Type
           </p>
           <p className="text-sm font-semibold text-charcoal mt-1 capitalize">
-            {!providerType || providerType === 'ALL' 
-              ? 'Single Session' 
+            {!providerType || providerType === 'ALL'
+              ? 'Single Session'
               : `${providerType.toLowerCase()} Session`}
           </p>
         </div>

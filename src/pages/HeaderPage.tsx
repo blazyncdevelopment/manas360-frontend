@@ -763,7 +763,7 @@ export const HeaderPage: React.FC = () => {
     "Sleep Therapy": "/sleep-therapy",
     "Executive Coaching": "/premium-theraphy",
     "Wellness Retreats": "/retreats",
-    "Free Screening": "/assessment",
+    "Free Screening": "/free-screening",
     "Find a Therapist": "/helping-hand",
     "See a Psychiatrist": "/helping-hand",
     "See a Coach": "/helping-hand",
@@ -1185,7 +1185,7 @@ export const HeaderPage: React.FC = () => {
     { match: (q) => fuzzyIncludes(q, "couple"), route: "/find-spark" },
     { match: (q) => fuzzyIncludes(q, "psychiatr"), route: "/helping-hand" },
     { match: (q) => fuzzyIncludes(q, "group"), route: "/group-therapy" },
-    { match: (q) => fuzzyIncludes(q, "screen") || fuzzyIncludes(q, "assessment"), route: "/assessment" },
+    { match: (q) => fuzzyIncludes(q, "screen") || fuzzyIncludes(q, "assessment"), route: "/free-screening" },
     { match: (q) => fuzzyIncludes(q, "therapy") || fuzzyIncludes(q, "therapist"), route: "/premium-theraphy" },
     { match: (q) => fuzzyIncludes(q, "ai") || fuzzyIncludes(q, "buddy"), route: "/ai-power-hub" },
     { match: (q) => fuzzyIncludes(q, "pet"), route: "/pet" },
@@ -1683,7 +1683,7 @@ export const HeaderPage: React.FC = () => {
                       <button
                         type="button"
                         className="landing-subscribe-btn"
-                        onClick={() => navigate("/plans")}
+                        onClick={() => navigate("/pricing")}
                         style={{
                           background: "#0B2D5E",
                           color: "white",

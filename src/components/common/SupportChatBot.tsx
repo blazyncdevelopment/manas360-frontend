@@ -67,8 +67,8 @@ const SupportChatBot: React.FC = () => {
 
       let replyText = data.reply || "I'm sorry, I couldn't understand that. You can chat with us on WhatsApp at https://wa.me/918951927280";
 
-      // Replace pricing link to plans
-      replyText = replyText.replace('https://manas360.com/pricing', 'https://manas360.com/plans');
+      // Replace plans link to pricing
+      replyText = replyText.replace('https://manas360.com/plans', 'https://manas360.com/pricing');
 
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
