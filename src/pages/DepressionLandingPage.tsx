@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Languages, Activity, Users, Star } from 'lucide-react';
+import { ArrowRight, Languages, Activity, Users } from 'lucide-react';
 import Button from '../components/ui/Button';
 
 const DepressionLandingPage = () => {
