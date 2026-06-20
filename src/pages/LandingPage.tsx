@@ -102,33 +102,7 @@ const LandingPage: React.FC = () => {
     return () => window.clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://api.messegy.com/widget.js";
-    script.setAttribute("data-phone", "+918951927280");
-    script.setAttribute("data-message", "Hi, I want to know more about your services.");
-    script.async = true;
-    document.body.appendChild(script);
 
-    // Add a style tag to push the widget above Dr. Meera
-    const style = document.createElement("style");
-    style.id = "wa-widget-override-style";
-    style.innerHTML = `
-      #gx-chat-toggle, [id^="wa-widget"], [class*="whatsapp"], iframe[src*="whatsapp"] {
-        bottom: 100px !important;
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-      if (document.head.contains(style)) {
-        document.head.removeChild(style);
-      }
-    };
-  }, []);
 
   const handleScrollToAssess = () => {
     navigate("/free-screening");

@@ -77,27 +77,7 @@ const DepressionLandingPage = () => {
                     <span className="px-5 py-2.5 rounded-full bg-white/80 border border-slate-200 shadow-sm text-[#1A1A2E] font-medium">Interpersonal Therapy</span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {[
-                        { name: 'Dr. Aarti Singh', spec: 'CBT Expert', exp: '12 yrs exp.', rating: '4.9', reviews: 210, img: 'https://i.pravatar.cc/150?u=aarti' },
-                        { name: 'Rahul Verma', spec: 'Clinical Psychologist', exp: '7 yrs exp.', rating: '4.8', reviews: 134, img: 'https://i.pravatar.cc/150?u=rahul' },
-                        { name: 'Dr. Meera Rao', spec: 'Psychiatrist', exp: '15 yrs exp.', rating: '5.0', reviews: 305, img: 'https://i.pravatar.cc/150?u=meera' },
-                    ].map((doc, i) => (
-                        <div key={i} className="p-8 rounded-3xl bg-white/95 border border-slate-200 shadow-xl flex flex-col items-center text-center backdrop-blur-md hover:-translate-y-1 transition-transform">
-                            <img src={doc.img} alt={doc.name} className="w-24 h-24 rounded-full mb-4 border-4 border-slate-100 shadow-sm" />
-                            <h3 className="text-xl font-bold mb-1 text-[#1A1A2E]">{doc.name}</h3>
-                            <p className="text-[#3D3D5C] font-medium mb-1">{doc.spec}</p>
-                            <p className="text-[#666680] text-sm mb-4">
-                                {doc.exp}
-                            </p>
-                            <div className="flex items-center gap-1 mb-6">
-                                <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                                <span className="font-bold text-[#1A1A2E]">{doc.rating}</span>
-                                <span className="text-[#666680] text-sm">({doc.reviews} reviews)</span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+
             </div>
 
             {/* Hindi Content Block */}
