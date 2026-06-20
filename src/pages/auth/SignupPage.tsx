@@ -350,6 +350,13 @@ export default function SignupPage() {
 					if (response.provider_id) {
 						setStoredProviderId(response.provider_id);
 					}
+					if (response.user) {
+						const syncedUser = await syncSessionAfterOtp(response.user);
+						await resolveProviderIdForOnboarding(syncedUser);
+						await queryClient.invalidateQueries({ queryKey: ['wallet'] });
+						navigate('/plans', { replace: true });
+						return;
+					}
 					setOtpSent(true);
 				} catch (err) {
 					if (isProviderAlreadyRegisteredError(err)) {
@@ -486,7 +493,7 @@ export default function SignupPage() {
 					await resolveProviderIdForOnboarding(syncedUser);
 					await queryClient.invalidateQueries({ queryKey: ['wallet'] });
 					if (shouldNavigateToPlatformFee(providerResult) || !syncedUser.platformAccessActive) {
-						navigate('/provider/subscription', { replace: true });
+						navigate('/plans', { replace: true });
 						return;
 					}
 					const returnTo = resolveReturnTo();
@@ -496,11 +503,11 @@ export default function SignupPage() {
 				}
 
 				if (shouldNavigateToPlatformFee(providerResult)) {
-					navigate('/provider/subscription', { replace: true });
+					navigate('/plans', { replace: true });
 					return;
 				}
 
-				navigate('/provider/subscription', { replace: true });
+				navigate('/plans', { replace: true });
 				return;
 			}
 

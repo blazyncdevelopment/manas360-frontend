@@ -1,0 +1,69 @@
+# ==========================================
+# MANAS360 ADVANCED ROBOTS.TXT
+# ==========================================
+
+# ------------------------------------------
+# 1. DEFAULT BEHAVIOR FOR ALL BOTS
+# ------------------------------------------
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /patient/
+Disallow: /provider/
+Disallow: /learner/
+Disallow: /auth/
+Disallow: /api/
+Disallow: /help-center/*
+
+# ------------------------------------------
+# 2. EXPLICIT ALLOW FOR AI ENGINES & LLM BOTS
+# (Letting AI models index public content for answers)
+# ------------------------------------------
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: Google-Extended
+User-agent: ClaudeBot
+User-agent: anthropic-ai
+User-agent: PerplexityBot
+User-agent: Omgilibot
+User-agent: Omgili
+User-agent: FacebookBot
+User-agent: Diffbot
+User-agent: Bytespider
+User-agent: CCBot
+User-agent: Amazonbot
+User-agent: Applebot
+User-agent: Applebot-Extended
+Allow: /
+Allow: /blog/
+Allow: /about
+Allow: /contact
+Allow: /specialized-care
+Disallow: /admin/
+Disallow: /patient/
+Disallow: /provider/
+Disallow: /learner/
+Disallow: /auth/
+Disallow: /api/
+
+# ------------------------------------------
+# 3. EXPLICIT RULES FOR MAJOR SEARCH ENGINES
+# ------------------------------------------
+User-agent: Googlebot
+User-agent: Bingbot
+User-agent: Slurp
+User-agent: DuckDuckBot
+User-agent: Baiduspider
+User-agent: YandexBot
+Allow: /
+Disallow: /admin/
+Disallow: /patient/
+Disallow: /provider/
+Disallow: /learner/
+Disallow: /auth/
+Disallow: /api/
+
+# ------------------------------------------
+# SITEMAP LOCATION
+# ------------------------------------------
+Sitemap: https://manas360.com/sitemap.xml

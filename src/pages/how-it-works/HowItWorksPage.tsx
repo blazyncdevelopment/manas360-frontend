@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import SEO from '../../components/SEO';
 import { homeSections, getJourney } from './howItWorksData';
 import type {
   HomeCard,
@@ -181,6 +182,23 @@ const HowItWorksPage = () => {
 
   return (
     <div className="how-it-works-page" style={{ position: 'relative' }}>
+      <SEO 
+        title="MANAS360 — Interactive Demo · All Journeys" 
+        description="Explore MANAS360 All User Journeys. No login required. Click any journey to experience complete user pathways with fees, flows, and outcomes."
+        keywords="manas360 demo, interactive therapy demo, mental health platform journey, online therapy flow"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "name": "MANAS360 How It Works",
+          "description": "Interactive demo of all MANAS360 user journeys and therapy flows.",
+          "url": "https://manas360.com/how-it-works",
+          "publisher": {
+            "@type": "Organization",
+            "name": "MANAS360",
+            "logo": "https://manas360.com/AppIcon.jpeg"
+          }
+        }}
+      />
 
       <div className="container !pt-[72px] md:!pt-[80px]">
 

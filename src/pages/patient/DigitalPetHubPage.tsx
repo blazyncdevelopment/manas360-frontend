@@ -911,7 +911,7 @@ export default function DigitalPetHubPage({ returnTo }: DigitalPetHubPageProps) 
                     </div>
                     <div className="mt-3 text-xs text-violet-600 font-semibold flex items-center gap-1">
                       {pet.name === 'Healing Elephant' ? (
-                        <img src="/DigitalPet.png" className="h-4 w-4 object-contain inline-block" alt="" />
+                        <img src="/DigitalPet.png" className="h-4 w-4 object-contain inline-block" alt="Digital Pet" />
                       ) : (
                         <span className="text-base">{pet.emoji}</span>
                       )} Click to experience →

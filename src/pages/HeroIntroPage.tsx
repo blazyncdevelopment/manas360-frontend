@@ -37,7 +37,7 @@ export default function HeroIntroPage() {
     <div className="hero-intro-page">
       <div className="hero-logo-intro" aria-hidden="true">
         <div className="hero-logo-intro-card">
-          <img src={logo} alt="" />
+          <img src={logo} alt="MANAS360 Logo" />
         </div>
       </div>
     </div>

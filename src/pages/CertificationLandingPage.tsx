@@ -83,7 +83,22 @@ export const CertificationLandingPage: React.FC = () => {
   return (
     <div className="flex flex-col font-sans bg-white overflow-x-hidden selection:bg-purple-100 relative">
 
-      <SEO title="Certification Journey | MANAS360" />
+      <SEO 
+        title="Certification Journey | MANAS360" 
+        description="Advance your career with MANAS360's psychology and mental health certifications. Gain clinical skills and get certified."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "name": "Certification Journey | MANAS360",
+          "description": "Advance your career with MANAS360's psychology and mental health certifications.",
+          "url": "https://manas360.com/certification-landing",
+          "publisher": {
+            "@type": "Organization",
+            "name": "MANAS360",
+            "logo": "https://manas360.com/AppIcon.jpeg"
+          }
+        }}
+      />
 
       {/* Hero Section */}
       {!isProviderRoute && (

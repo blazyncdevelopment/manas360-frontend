@@ -208,6 +208,7 @@ export const FooterPage: React.FC = () => {
     "NRI | Global Inc": "/nri-landing",
     "Help Center": "/help-center",
     Blogs: "/blogs",
+    "Sitemap": "/sitemap.html",
   };
 
   const footerLegalRoutes: Record<string, string> = {
@@ -248,7 +249,7 @@ export const FooterPage: React.FC = () => {
 
             <div>
               <div className="footer-title">Quick Links</div>
-              {["About Us", "How It Works", "Specialized Care", "For Providers", "NRI | Global Inc", "Help Center", "Blogs"].map((t) => (
+              {["About Us", "How It Works", "Specialized Care", "For Providers", "NRI | Global Inc", "Help Center", "Blogs", "Sitemap"].map((t) => (
                 <button
                   key={t}
                   type="button"

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ChevronDown, Upload } from 'lucide-react';
 import { http } from '../lib/http';
+import SEO from '../components/SEO';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import './HelpCenterTicket.css';
@@ -87,6 +88,11 @@ const HelpCenterTicket: React.FC = () => {
 
     return (
         <div className="help-center-page">
+            <SEO 
+                title="Help Center & Support — MANAS360" 
+                description="Need assistance? Visit the MANAS360 Help Center. Find quick resolutions for frequently asked questions or raise a ticket."
+                keywords="manas360 help center, customer support, raise ticket, mental health platform support, faq"
+            />
             {/* Hero Section */}
             <div className="help-hero">
                 <div className="help-hero-inner">

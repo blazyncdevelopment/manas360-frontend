@@ -236,9 +236,13 @@ export const HubLayout = () => {
                   onClick={() => setProfileOpen(!profileOpen)}
                   className="flex items-center gap-2 p-1.5 pr-4 rounded-full bg-white hover:bg-gray-50 transition border border-gray-200 shadow-sm"
                 >
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs shadow-inner">
-                    {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
-                  </div>
+                  {user?.profileImageUrl ? (
+                    <img src={user.profileImageUrl} alt="Profile" className="w-8 h-8 rounded-full object-cover shadow-inner" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs shadow-inner">
+                      {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
                   <div className="hidden md:flex flex-col items-start">
                     <span className="text-sm font-bold text-gray-700 leading-tight">
                       {user?.firstName} {user?.lastName}
@@ -256,9 +260,13 @@ export const HubLayout = () => {
                     <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
                       <div className="p-5 border-b border-gray-100 bg-gradient-to-br from-emerald-50/50 to-white">
                         <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xl shadow-inner border border-emerald-200/50">
-                            {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
-                          </div>
+                          {user?.profileImageUrl ? (
+                            <img src={user.profileImageUrl} alt="Profile" className="w-14 h-14 rounded-full object-cover shadow-inner border border-emerald-200/50" />
+                          ) : (
+                            <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xl shadow-inner border border-emerald-200/50">
+                              {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                          )}
                           <div className="flex flex-col">
                             <span className="font-bold text-gray-900 text-lg">
                               {user?.firstName} {user?.lastName}
@@ -270,18 +278,22 @@ export const HubLayout = () => {
                         </div>
                       </div>
                       <div className="p-3 space-y-1">
-                        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-sm text-gray-700">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
-                            <Mail className="w-4 h-4" />
+                        {user?.email && (
+                          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-sm text-gray-700">
+                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                              <Mail className="w-4 h-4" />
+                            </div>
+                            <span className="font-medium truncate">{user.email}</span>
                           </div>
-                          <span className="font-medium truncate">{user?.email}</span>
-                        </div>
-                        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-sm text-gray-700">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
-                            <Phone className="w-4 h-4" />
+                        )}
+                        {user?.phone && String(user.phone).length > 2 && (
+                          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition text-sm text-gray-700">
+                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                              <Phone className="w-4 h-4" />
+                            </div>
+                            <span className="font-medium">{user.phone}</span>
                           </div>
-                          <span className="font-medium">{user?.phone || 'No phone added'}</span>
-                        </div>
+                        )}
                       </div>
                       <div className="p-3 border-t border-gray-100 bg-gray-50/50">
                         <button

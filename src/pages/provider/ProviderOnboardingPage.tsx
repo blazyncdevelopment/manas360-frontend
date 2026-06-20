@@ -8,6 +8,9 @@ import {
   setOnboardingSubmittedFlag,
 } from '../../utils/providerOnboardingStorage';
 import { verifyPAN, verifyBankAccount } from '../../api/providerOnboarding';
+import { uploadImage } from '../../api/upload';
+import { User, Upload, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const clinicalCategories = [
   'Depression & Mood Disorders',
@@ -66,6 +69,7 @@ type FormState = {
   dob: string;
   city: string;
   state: string;
+  profileImageUrl: string;
 
   // Step 2: Credentials
   degree: string;
@@ -113,7 +117,7 @@ export default function ProviderOnboardingPageWrapper() {
       const providerRoles = ['therapist', 'psychiatrist', 'psychologist', 'coach'];
       const role = String(user.role || '').toLowerCase();
       if (providerRoles.includes(role) && !user.platformAccessActive) {
-        navigate('/provider/subscription', { replace: true });
+        navigate('/plans', { replace: true });
       } else if (providerRoles.includes(role) && hasProviderSubmittedOnboarding(user)) {
         navigate(user.isTherapistVerified ? '/provider/dashboard' : '/provider/verification-pending', { replace: true });
       }
@@ -162,6 +166,7 @@ function ProviderOnboardingPage() {
   const [idProofFileName, setIdProofFileName] = useState('');
   const [degreeUploadError, setDegreeUploadError] = useState<string | null>(null);
   const [idProofUploadError, setIdProofUploadError] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // KYC States
   const [isPanVerified, setIsPanVerified] = useState(false);
@@ -194,6 +199,7 @@ function ProviderOnboardingPage() {
           if (typeof parsed.yearsOfExperience !== 'number') parsed.yearsOfExperience = 0;
           if (typeof parsed.consultationFee !== 'number') parsed.consultationFee = 0;
           if (typeof parsed.hourlyRate !== 'number') parsed.hourlyRate = 0;
+          if (!parsed.profileImageUrl) parsed.profileImageUrl = '';
           return parsed;
         }
       } catch (e) {
@@ -207,6 +213,7 @@ function ProviderOnboardingPage() {
       dob: '',
       city: '',
       state: '',
+      profileImageUrl: '',
       degree: '',
       university: '',
       yearOfPassing: '',
@@ -387,7 +394,7 @@ function ProviderOnboardingPage() {
   };
 
   const canContinue = (): boolean => {
-    if (step === 1) return Boolean(form.name && form.phone && form.dob && form.city && form.state);
+    if (step === 1) return Boolean(form.name && form.phone && form.dob && form.city && form.state && form.profileImageUrl);
     if (step === 2) return Boolean(
       form.degree &&
       form.university &&
@@ -464,6 +471,7 @@ function ProviderOnboardingPage() {
         idProofUrl: form.idProofUrl,
         availability: form.availability,
         hourlyRate: form.hourlyRate,
+        profileImageUrl: form.profileImageUrl,
       });
 
       localStorage.removeItem(`${userCacheKey}_form`);
@@ -576,6 +584,44 @@ function ProviderOnboardingPage() {
                     onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                   />
                 </label>
+
+                <div className="grid gap-1.5">
+                  <span className="text-sm font-semibold text-slate-700">Profile Photo <span className="text-rose-500">*</span></span>
+                  <div className="flex items-center gap-4">
+                    {form.profileImageUrl ? (
+                      <img src={form.profileImageUrl} alt="Profile" className="h-12 w-12 rounded-full object-cover border border-emerald-300 shadow-sm" />
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-slate-400 shadow-sm">
+                        <User className="h-6 w-6" />
+                      </div>
+                    )}
+                    <label className="relative flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-600 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-600 transition hover:bg-emerald-50 disabled:opacity-50">
+                      {uploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      <span>{uploadingPhoto ? 'Uploading...' : 'Upload Photo'}</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        disabled={uploadingPhoto} 
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            setUploadingPhoto(true);
+                            const url = await uploadImage(file);
+                            setForm(p => ({ ...p, profileImageUrl: url }));
+                            toast.success('Photo uploaded successfully');
+                          } catch (err: any) {
+                            toast.error('Failed to upload photo: ' + (err?.response?.data?.message || err.message));
+                          } finally {
+                            setUploadingPhoto(false);
+                            e.target.value = '';
+                          }
+                        }} 
+                      />
+                    </label>
+                  </div>
+                </div>
 
                 <label className="grid gap-1.5">
                   <span className="text-sm font-semibold text-slate-700">Phone Number (Pre-filled) <span className="text-rose-500">*</span></span>

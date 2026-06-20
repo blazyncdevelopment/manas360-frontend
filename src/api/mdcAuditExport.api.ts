@@ -92,7 +92,7 @@ const toApiError = (error: unknown): MdcAuditExportApiError => {
 
 export const getAuditLogs = async (): Promise<AuditLogItem[]> => {
   try {
-    const response = await auditHttp.get<AuditLogItem[] | ApiEnvelope<AuditLogItem[]>>('/api/mdc/audit-log');
+    const response = await auditHttp.get<AuditLogItem[] | ApiEnvelope<AuditLogItem[]>>('/audit-log');
     return unwrap<AuditLogItem[]>(response.data);
   } catch (error) {
     console.error('getAuditLogs failed, using mock fallback', toApiError(error));
@@ -112,7 +112,7 @@ export const getAuditLogs = async (): Promise<AuditLogItem[]> => {
 export const exportPatientData = async (id: string): Promise<ExportPatientResponse> => {
   try {
     const response = await auditHttp.post<ExportPatientResponse | ApiEnvelope<ExportPatientResponse>>(
-      `/api/mdc/patients/${encodeURIComponent(id)}/export`,
+      `/patients/${encodeURIComponent(id)}/export`,
     );
     return unwrap<ExportPatientResponse>(response.data);
   } catch (error) {
@@ -128,7 +128,7 @@ export const exportPatientData = async (id: string): Promise<ExportPatientRespon
 export const purgePatient = async (id: string): Promise<PurgePatientResponse> => {
   try {
     const response = await auditHttp.delete<PurgePatientResponse | ApiEnvelope<PurgePatientResponse>>(
-      `/api/mdc/patients/${encodeURIComponent(id)}/purge`,
+      `/patients/${encodeURIComponent(id)}/purge`,
     );
     return unwrap<PurgePatientResponse>(response.data);
   } catch (error) {

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import type { AuthUser } from '../../api/auth';
 import { patientApi } from '../../api/patient';
 import { hasCorporateAccess, useAuth } from '../../context/AuthContext';
+import SEO from '../../components/SEO';
 import { FRONTEND_URL } from '../../lib/runtimeEnv';
 import {
   PATIENT_PLANS,
@@ -216,8 +217,8 @@ export default function PricingPage() {
     }
 
     const baseCta = plan.cta;
-    const label = (user as any)?.patientSubscriptionTrialUsed 
-      ? baseCta.replace('6-Day Trial', 'Plan') 
+    const label = (user as any)?.patientSubscriptionTrialUsed
+      ? baseCta.replace('6-Day Trial', 'Plan')
       : baseCta;
 
     return { disabled: false, label, isCurrentPlan };
@@ -322,6 +323,11 @@ export default function PricingPage() {
 
   return (
     <div className="pricing-page">
+      <SEO
+        title="Pricing & Plans — MANAS360"
+        description="Transparent pricing. 6-day free trial for everyone. Explore affordable mental wellness plans for patients and providers."
+        keywords="manas360 pricing, online therapy cost, mental health plans, affordable therapy india, therapist platform fees"
+      />
       <header className="pg-header">
         <h1>MANAS360 Pricing Plans</h1>
         <p className="sub">

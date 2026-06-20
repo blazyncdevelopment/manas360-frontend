@@ -136,9 +136,13 @@ export const ProviderSidebar = ({ isOpen, onClose }: ProviderSidebarProps) => {
       {/* Sidebar Footer — Profile Card */}
       <div className="border-t border-gray-200 p-5 shrink-0 mt-auto bg-[#F5F3F0]">
         <div className="flex items-center gap-3.5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E8EFE6] text-[13px] font-bold tracking-wide text-[#4A6741]">
-            {user?.firstName ? user.firstName.charAt(0) : 'P'}
-          </div>
+          {user?.profileImageUrl ? (
+            <img src={user.profileImageUrl} alt="Profile" className="h-10 w-10 shrink-0 rounded-full object-cover shadow-sm" />
+          ) : (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E8EFE6] text-[13px] font-bold tracking-wide text-[#4A6741]">
+              {user?.firstName ? user.firstName.charAt(0) : 'P'}
+            </div>
+          )}
           <div className="min-w-0 flex-1 flex flex-col justify-center">
             <p className="truncate text-[15px] font-bold text-gray-800 leading-none mb-1">{displayName}</p>
             <p className="truncate text-xs font-medium text-gray-500 capitalize leading-none">{role.toLowerCase()}</p>

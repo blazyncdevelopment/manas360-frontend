@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import SEO from "../components/SEO";
 import "./SelfHelpLandingPage.css";
 
 type ToolCard = {
@@ -61,6 +62,28 @@ const SelfHelpLandingPage: React.FC = () => {
   const navigate = useNavigate();
   return (
     <main className="self-help-page" style={{ position: 'relative' }}>
+      <SEO 
+        title="Free Self-Help Tools - Manas360" 
+        description="Free mental health tools you can use right now. Build healthy habits at your own pace." 
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "MANAS360 Self-Help Tools",
+          "applicationCategory": "HealthApplication",
+          "description": "Free mental health tools you can use right now. Build healthy habits at your own pace.",
+          "operatingSystem": "Web",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "INR"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "MANAS360",
+            "logo": "https://manas360.com/AppIcon.jpeg"
+          }
+        }}
+      />
 
       {/* <header className="self-help-header">
         <div className="self-help-container self-help-header-inner">

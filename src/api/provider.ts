@@ -415,6 +415,35 @@ export const fetchProviderMyQr = async (): Promise<ProviderMyQrResponse> => {
   return unwrap<ProviderMyQrResponse>(response.data);
 };
 
+export interface ProviderMyProfileAnalyticsResponse {
+  totalScans: number;
+  totalBookings: number;
+  conversionRate: number;
+}
+
+export const fetchProviderMyProfileAnalytics = async (): Promise<ProviderMyProfileAnalyticsResponse> => {
+  const response = await http.get<Envelope<ProviderMyProfileAnalyticsResponse>>('/v1/provider/my-profile/analytics');
+  return unwrap<ProviderMyProfileAnalyticsResponse>(response.data);
+};
+
+export interface AddonLeadsPaymentPayload {
+  quantities: {
+    hot: number;
+    warm: number;
+    cold: number;
+  };
+}
+
+export interface AddonLeadsPaymentResponse {
+  payment_url?: string;
+  transaction_id?: string;
+}
+
+export const initiateAddonLeadsPayment = async (payload: AddonLeadsPaymentPayload): Promise<AddonLeadsPaymentResponse> => {
+  const response = await http.post<Envelope<AddonLeadsPaymentResponse>>('/v1/provider/marketplace/addon-payment', payload);
+  return unwrap<AddonLeadsPaymentResponse>(response.data);
+};
+
 export const fetchProviderMyQrAnalytics = async (): Promise<ProviderMyQrAnalyticsResponse> => {
   const response = await http.get<Envelope<ProviderMyQrAnalyticsResponse>>('/v1/provider/my-qr/analytics');
   return unwrap<ProviderMyQrAnalyticsResponse>(response.data);
@@ -1079,3 +1108,7 @@ export const generateWellnessPlan = async (
   return unwrap<{ pdfUrl: string; sentViaWhatsapp: boolean }>(response.data);
 };
 
+export const verifyAddonLeadsPayment = async (transactionId: string): Promise<{ status: string }> => {
+	const res = await http.post('/v1/provider/marketplace/addon-payment/verify', { transactionId });
+	return res.data.data || res.data;
+};

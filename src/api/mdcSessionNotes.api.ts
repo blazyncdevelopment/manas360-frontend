@@ -104,7 +104,7 @@ const toApiError = (error: unknown): MdcSessionNotesApiError => {
 
 export const getTemplates = async (): Promise<MdcTemplate[]> => {
   try {
-    const response = await mdcHttp.get<MdcTemplate[] | ApiEnvelope<MdcTemplate[]>>('/api/mdc/templates');
+    const response = await mdcHttp.get<MdcTemplate[] | ApiEnvelope<MdcTemplate[]>>('/templates');
     return unwrap<MdcTemplate[]>(response.data);
   } catch (error) {
     console.error('getTemplates failed, using mock fallback', toApiError(error));
@@ -118,7 +118,7 @@ export const getTemplates = async (): Promise<MdcTemplate[]> => {
 export const saveSessionNotes = async (sessionId: string, data: SaveSessionNotesInput): Promise<SessionNotesRecord> => {
   try {
     const response = await mdcHttp.post<SessionNotesRecord | ApiEnvelope<SessionNotesRecord>>(
-      `/api/mdc/sessions/${encodeURIComponent(sessionId)}/notes`,
+      `/sessions/${encodeURIComponent(sessionId)}/notes`,
       data,
     );
     return unwrap<SessionNotesRecord>(response.data);
@@ -138,7 +138,7 @@ export const saveSessionNotes = async (sessionId: string, data: SaveSessionNotes
 export const getSessionNotes = async (sessionId: string): Promise<SessionNotesRecord> => {
   try {
     const response = await mdcHttp.get<SessionNotesRecord | ApiEnvelope<SessionNotesRecord>>(
-      `/api/mdc/sessions/${encodeURIComponent(sessionId)}/notes`,
+      `/sessions/${encodeURIComponent(sessionId)}/notes`,
     );
     return unwrap<SessionNotesRecord>(response.data);
   } catch (error) {
@@ -157,7 +157,7 @@ export const getSessionNotes = async (sessionId: string): Promise<SessionNotesRe
 export const finalizeNotes = async (sessionId: string): Promise<FinalizeNotesResponse> => {
   try {
     const response = await mdcHttp.put<FinalizeNotesResponse | ApiEnvelope<FinalizeNotesResponse>>(
-      `/api/mdc/sessions/${encodeURIComponent(sessionId)}/notes/finalize`,
+      `/sessions/${encodeURIComponent(sessionId)}/notes/finalize`,
     );
     return unwrap<FinalizeNotesResponse>(response.data);
   } catch (error) {
@@ -181,7 +181,7 @@ export const finalizeNotes = async (sessionId: string): Promise<FinalizeNotesRes
 export const generateSummary = async (sessionId: string): Promise<SummaryResponse> => {
   try {
     const response = await mdcHttp.post<SummaryResponse | ApiEnvelope<SummaryResponse>>(
-      `/api/mdc/sessions/${encodeURIComponent(sessionId)}/summarize`,
+      `/sessions/${encodeURIComponent(sessionId)}/summarize`,
     );
     return unwrap<SummaryResponse>(response.data);
   } catch (error) {

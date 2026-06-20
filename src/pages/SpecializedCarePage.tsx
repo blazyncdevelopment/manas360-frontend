@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import SEO from '../components/SEO';
+import { API_BASE } from '../lib/runtimeEnv';
+import Swal from 'sweetalert2';
 import './SpecializedCarePage.css';
 
 type FilterSegment = 'all' | 'adults' | 'teens' | 'children' | 'programs';
@@ -291,19 +294,19 @@ export default function SpecializedCarePage() {
     const { name, phone, email, lang, day, time, note } = bookingState;
 
     if (!name.trim()) {
-      window.alert('Please enter your name');
+      Swal.fire('Required', 'Please enter your name', 'warning');
       return;
     }
     if (!phone.trim() || phone.replace(/\D/g, '').length < 10) {
-      window.alert('Please enter a valid WhatsApp number');
+      Swal.fire('Invalid Number', 'Please enter a valid WhatsApp number', 'warning');
       return;
     }
     if (!day) {
-      window.alert('Please select your preferred day');
+      Swal.fire('Required', 'Please select your preferred day', 'warning');
       return;
     }
     if (!time) {
-      window.alert('Please select your preferred time');
+      Swal.fire('Required', 'Please select your preferred time', 'warning');
       return;
     }
 
@@ -312,7 +315,7 @@ export default function SpecializedCarePage() {
     const price = selectedPath === 'single' ? p.singlePrice : p.programPrice;
 
     try {
-      const response = await fetch('/api/mdc/specialized-care/enroll', {
+      const response = await fetch(`${API_BASE}/v1/enrollment/specialized-care`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -327,14 +330,22 @@ export default function SpecializedCarePage() {
       });
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Something went wrong');
+        let err;
+        try { err = await response.json(); } catch (e) { err = {}; }
+        throw new Error(err.error || err.message || 'Something went wrong');
       }
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (err) {
+        throw new Error('Server returned an invalid response. Please try again.');
+      }
 
-      if (result.paymentUrl) {
-        window.location.href = result.paymentUrl;
+      if (result.data?.paymentUrl) {
+        window.location.href = typeof result.data.paymentUrl === 'string' 
+          ? result.data.paymentUrl 
+          : result.data.paymentUrl.redirectUrl;
         return;
       }
 
@@ -346,11 +357,11 @@ export default function SpecializedCarePage() {
         📅 Preference: <strong>${day}, ${time}</strong> in <strong>${lang}</strong><br>
         💰 Amount: <strong>${price}</strong><br><br>
         Your therapist will be assigned within 24 hours. Schedule confirmation comes on WhatsApp.<br><br>
-        Booking ID: <strong>${result.bookingId}</strong>
+        Booking ID: <strong>${result.data?.bookingId}</strong>
       `);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Something went wrong';
-      window.alert(`${message}\n\nPlease try again or WhatsApp us at +91-XXXXXXXXXX`);
+      Swal.fire('Oops...', `${message}\n\nPlease try again or WhatsApp us at +91-XXXXXXXXXX`, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -358,6 +369,23 @@ export default function SpecializedCarePage() {
 
   return (
     <div className="specialized-care-page" style={{ position: 'relative' }}>
+      <SEO 
+        title="Specialized Mental Health Care - Manas360" 
+        description="Pick what sounds like you — we'll connect you with someone who truly understands it." 
+        keywords="specialized therapy, couples therapy, sleep therapy, NRI psychologist, executive coach, mental health care"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "MedicalWebPage",
+          "name": "Specialized Mental Health Care - Manas360",
+          "description": "Specialized mental health care for anxiety, depression, OCD, ADHD, and addiction.",
+          "url": "https://manas360.com/specialized-care",
+          "publisher": {
+            "@type": "Organization",
+            "name": "MANAS360",
+            "logo": "https://manas360.com/AppIcon.jpeg"
+          }
+        }}
+      />
 
       <div className="sc-header">
         <h1>

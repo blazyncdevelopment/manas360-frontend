@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SupportChatBot from "../components/common/SupportChatBot";
 import { http } from "../lib/http";
+import SEO from "../components/SEO";
 
 const landingBg = encodeURI("/You renot alone-Beach.jpeg");
 
@@ -219,6 +220,18 @@ const LandingPage: React.FC = () => {
         backgroundColor: "#F8FAFC"
       }}
     >
+      <SEO 
+        title="Manas360 - Mental Health & Wellness" 
+        description="Find the right mental health support. Therapy, Group Therapy, and AI tools for your well-being." 
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "MedicalOrganization",
+          "name": "MANAS360",
+          "url": "https://manas360.com",
+          "logo": "https://manas360.com/AppIcon.jpeg",
+          "description": "Find the right mental health support. Therapy, Group Therapy, and AI tools for your well-being."
+        }}
+      />
       <div
         style={{
           position: "fixed",

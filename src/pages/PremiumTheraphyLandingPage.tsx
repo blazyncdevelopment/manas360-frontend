@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import SEO from "../components/SEO";
 import "./PremiumTheraphyLandingPage.css";
 
 type HubCard = {
@@ -94,6 +95,22 @@ const PremiumTheraphyLandingPage: React.FC = () => {
 
   return (
     <main className="premium-theraphy-page" style={{ position: 'relative' }}>
+      <SEO 
+        title="Premium Therapy Hub - Manas360" 
+        description="Your complete healing ecosystem. Explore therapeutic tools recommended by your therapist." 
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "serviceType": "Premium Therapy Hub",
+          "provider": {
+            "@type": "Organization",
+            "name": "MANAS360",
+            "logo": "https://manas360.com/AppIcon.jpeg"
+          },
+          "url": "https://manas360.com/premium-therapy",
+          "description": "Your complete healing ecosystem. Explore therapeutic tools recommended by your therapist."
+        }}
+      />
 
       {/* <header className="premium-topbar">
         <div className="premium-shell premium-topbar-inner">

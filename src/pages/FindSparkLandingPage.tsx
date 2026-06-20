@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { buildPresetAssessmentLink } from "../config/presetDefaults";
+import SEO from "../components/SEO";
 import "./FindSparkLandingPage.css";
 
 type SparkCard = {
@@ -52,6 +53,22 @@ const FindSparkLandingPage: React.FC = () => {
 
   return (
     <main className="spark-page" style={{ position: 'relative' }}>
+      <SEO 
+        title="Couples & Family Therapy - Manas360" 
+        description="Couples, parents, and families - expert support for the relationships that matter most." 
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "name": "Couples & Family Therapy - Manas360",
+          "description": "Couples, parents, and families - expert support for the relationships that matter most.",
+          "url": "https://manas360.com/find-spark",
+          "publisher": {
+            "@type": "Organization",
+            "name": "MANAS360",
+            "logo": "https://manas360.com/AppIcon.jpeg"
+          }
+        }}
+      />
 
       {/* <header className="spark-header">
         <div className="spark-container spark-header-inner">

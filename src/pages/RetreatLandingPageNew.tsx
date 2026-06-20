@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { submitRetreatIntentApi } from '../api/retreat.api';
+import SEO from '../components/SEO';
 import './RetreatLandingPageNew.css';
 
 type FormState = {
@@ -163,6 +164,22 @@ export default function RetreatLandingPageNew() {
 
   return (
     <div className="retreat-page" style={{ position: 'relative' }}>
+      <SEO 
+        title="Wellness Retreats in Nature - Manas360" 
+        description="Curated wellness retreats across Karnataka's most healing landscapes — where therapy meets terrain." 
+        schema={{
+          "@context": "https://schema.org",
+          "@type": ["Event", "Product"],
+          "name": "MANAS360 Wellness Retreats",
+          "description": "Curated wellness retreats across Karnataka's most healing landscapes.",
+          "url": "https://manas360.com/retreats",
+          "provider": {
+            "@type": "Organization",
+            "name": "MANAS360",
+            "logo": "https://manas360.com/AppIcon.jpeg"
+          }
+        }}
+      />
 
       {/* BRAND BAR */}
       {/* <div className="brand-bar">

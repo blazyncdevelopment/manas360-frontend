@@ -88,7 +88,7 @@ const normalizeStatus = (status: string): HomeworkStatus => {
 export const getHomework = async (patientId: string): Promise<HomeworkAdherenceItem[]> => {
   try {
     const response = await adherenceHttp.get<HomeworkAdherenceItem[] | ApiEnvelope<HomeworkAdherenceItem[]>>(
-      `/api/mdc/patients/${encodeURIComponent(patientId)}/homework`,
+      `/patients/${encodeURIComponent(patientId)}/homework`,
     );
 
     const items = unwrap<HomeworkAdherenceItem[]>(response.data);
@@ -111,7 +111,7 @@ export const getHomework = async (patientId: string): Promise<HomeworkAdherenceI
 export const updateHomeworkStatus = async (id: string, status: HomeworkStatus): Promise<HomeworkAdherenceItem> => {
   try {
     const response = await adherenceHttp.put<HomeworkAdherenceItem | ApiEnvelope<HomeworkAdherenceItem>>(
-      `/api/mdc/homework/${encodeURIComponent(id)}`,
+      `/homework/${encodeURIComponent(id)}`,
       { status },
     );
 

@@ -70,7 +70,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 			return <>{children}</>;
 		}
 
-		const subscriptionRoute = '/provider/subscription';
+		const subscriptionRoute = '/plans';
 		const onboardingRoute = '/onboarding/provider-setup';
 		const verificationRoute = '/provider/verification-pending';
 		const verified = Boolean(user?.isTherapistVerified);
@@ -94,7 +94,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 
 		// Step 1: Platform fee not paid
 		if (!user?.platformAccessActive) {
-			if (location.pathname !== subscriptionRoute) {
+			if (location.pathname !== subscriptionRoute && location.pathname !== '/provider/subscription') {
 				return <Navigate to={subscriptionRoute} replace />;
 			}
 			return <>{children}</>;

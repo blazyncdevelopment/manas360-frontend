@@ -92,7 +92,7 @@ const toApiError = (error: unknown): MdcProgressApiError => {
 
 export const submitAssessment = async (data: SubmitAssessmentInput): Promise<PatientProgressItem> => {
   try {
-    const response = await progressHttp.post<PatientProgressItem | ApiEnvelope<PatientProgressItem>>('/api/mdc/assessments', data);
+    const response = await progressHttp.post<PatientProgressItem | ApiEnvelope<PatientProgressItem>>('/assessments', data);
     return unwrap<PatientProgressItem>(response.data);
   } catch (error) {
     console.error('submitAssessment failed, using mock fallback', toApiError(error));
@@ -110,7 +110,7 @@ export const submitAssessment = async (data: SubmitAssessmentInput): Promise<Pat
 export const getPatientProgress = async (patientId: string): Promise<PatientProgressItem[]> => {
   try {
     const response = await progressHttp.get<PatientProgressItem[] | ApiEnvelope<PatientProgressItem[]>>(
-      `/api/mdc/patients/${encodeURIComponent(patientId)}/progress`,
+      `/patients/${encodeURIComponent(patientId)}/progress`,
     );
     return unwrap<PatientProgressItem[]>(response.data);
   } catch (error) {

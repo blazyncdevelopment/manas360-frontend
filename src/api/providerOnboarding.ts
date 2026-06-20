@@ -20,6 +20,7 @@ export interface ProviderRegisterResult {
 	message?: string;
 	next_step?: ProviderOnboardingNextStep;
 	devOtp?: string;
+	user?: AuthUser;
 }
 
 export interface ProviderVerifyOtpResult {

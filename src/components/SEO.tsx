@@ -10,12 +10,12 @@ interface SEOProps {
   url?: string;
 }
 
-export const SEO: React.FC<SEOProps> = ({ 
-  title, 
-  description = "Get a 60-second mental health assessment and connect with licensed therapists. Confidential, non-judgmental support for anxiety, depression, and more.", 
-  keywords = "mental health, therapy, anxiety, depression, counseling, therapist, online therapy, MANAS360", 
+export const SEO: React.FC<SEOProps> = ({
+  title,
+  description = "Get a 60-second mental health assessment and connect with licensed therapists. Confidential, non-judgmental support for anxiety, depression, and more.",
+  keywords = "mental health, therapy, anxiety, depression, counseling, therapist, online therapy, MANAS360",
   schema,
-  image = "https://manas360.com/Untitled.png",
+  image = "https://manas360.com/seobanner.png",
   url = "https://manas360.com"
 }) => {
   return (
@@ -23,7 +23,7 @@ export const SEO: React.FC<SEOProps> = ({
       <title>{title}</title>
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords} />
-      
+
       {/* Open Graph / Facebook */}
       <meta property="og:type" content="website" />
       <meta property="og:url" content={url} />
@@ -37,7 +37,7 @@ export const SEO: React.FC<SEOProps> = ({
       <meta property="twitter:title" content={title} />
       <meta property="twitter:description" content={description} />
       <meta property="twitter:image" content={image} />
-      
+
       <link rel="canonical" href={url} />
 
       {schema && (
@@ -48,3 +48,5 @@ export const SEO: React.FC<SEOProps> = ({
     </Helmet>
   );
 };
+
+export default SEO;

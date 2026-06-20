@@ -9,8 +9,10 @@ import {
   type ProviderAvailabilitySlot,
   type ProviderSettingsResponse,
 } from '../../api/provider';
+import { uploadImage } from '../../api/upload';
 import {
   User, Clock, Globe, DollarSign, Bell, Shield, CreditCard, Globe2,
+  Upload, Loader2
 } from 'lucide-react';
 
 type SectionId = 'profile' | 'availability' | 'languages' | 'pricing' | 'international' | 'notifications' | 'security' | 'billing';
@@ -77,6 +79,7 @@ export default function Settings() {
   // Profile
   const [bio, setBio] = useState('');
   const [profileImageUrl, setProfileImageUrl] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [specialtiesInput, setSpecialtiesInput] = useState('');
   const [tagline, setTagline] = useState('');
 
@@ -148,6 +151,22 @@ export default function Settings() {
     } as any);
   };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingPhoto(true);
+      const url = await uploadImage(file);
+      setProfileImageUrl(url);
+      toast.success('Photo uploaded successfully. Remember to save changes.');
+    } catch (err: any) {
+      toast.error('Failed to upload photo: ' + (err?.response?.data?.message || err.message));
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = '';
+    }
+  };
+
   const sub = subQuery.data as any;
   const planName = sub?.plan ? sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1) : 'Free';
   const planStatus = sub?.status || 'inactive';
@@ -183,8 +202,22 @@ export default function Settings() {
                   <p className="mt-1 text-xs text-charcoal/40">Set during onboarding — contact support to change.</p>
                 </div>
                 <div>
-                  <label className={LABEL}>Profile Photo URL</label>
-                  <input value={profileImageUrl} onChange={(e) => setProfileImageUrl(e.target.value)} placeholder="https://..." className={INPUT} />
+                  <label className={LABEL}>Profile Photo</label>
+                  <div className="flex items-center gap-4">
+                    {profileImageUrl ? (
+                      <img src={profileImageUrl} alt="Profile" className="h-16 w-16 rounded-full object-cover border border-calm-sage/30 shadow-sm" />
+                    ) : (
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-calm-sage/10 border border-calm-sage/20 text-charcoal/30 shadow-sm">
+                        <User className="h-8 w-8" />
+                      </div>
+                    )}
+                    <label className="relative flex cursor-pointer items-center justify-center gap-2 rounded-full border border-teal-600 bg-white px-4 py-2 text-sm font-semibold text-teal-600 transition hover:bg-teal-50 disabled:opacity-50">
+                      {uploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      <span>{uploadingPhoto ? 'Uploading...' : 'Upload Photo'}</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+                    </label>
+                  </div>
+                  <p className="mt-2 text-xs text-charcoal/40">Visible to patients on your profile.</p>
                 </div>
                 <div>
                   <label className={LABEL}>Professional Tagline</label>

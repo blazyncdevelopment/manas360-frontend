@@ -1,13 +1,27 @@
-import { useEffect } from 'react';
+import SEO from '../components/SEO';
 import './ContactUs.css';
 
 export default function ContactUsPage() {
-    useEffect(() => {
-        document.title = "Contact Us — MANAS360 Mental Wellness Pvt. Ltd.";
-    }, []);
 
     return (
         <div className="contact-us-page">
+            <SEO 
+                title="Contact Us — MANAS360" 
+                description="Contact MANAS360 Mental Wellness Pvt. Ltd. Whether you're a patient seeking support or exploring partnership." 
+                keywords="contact manas360, mental health support, therapy partnership, corporate wellness contact"
+                schema={{
+                    "@context": "https://schema.org",
+                    "@type": "ContactPage",
+                    "name": "Contact MANAS360",
+                    "description": "Contact MANAS360 Mental Wellness Pvt. Ltd. Whether you're a patient seeking support or exploring partnership.",
+                    "url": "https://manas360.com/contact-us",
+                    "publisher": {
+                        "@type": "Organization",
+                        "name": "MANAS360",
+                        "logo": "https://manas360.com/AppIcon.jpeg"
+                    }
+                }}
+            />
             {/* ===== HERO ===== */}
             <div className="hero">
                 <div className="hero-inner">

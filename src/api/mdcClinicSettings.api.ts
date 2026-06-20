@@ -77,7 +77,7 @@ const toApiError = (error: unknown): MdcClinicSettingsApiError => {
 
 export const getClinicSettings = async (): Promise<ClinicSettings> => {
   try {
-    const response = await clinicSettingsHttp.get<ClinicSettings | ApiEnvelope<ClinicSettings>>('/api/mdc/clinic/settings');
+    const response = await clinicSettingsHttp.get<ClinicSettings | ApiEnvelope<ClinicSettings>>('/clinic/settings');
     return unwrap<ClinicSettings>(response.data);
   } catch (error) {
     console.error('getClinicSettings failed, using mock fallback', toApiError(error));
@@ -90,7 +90,7 @@ export const getClinicSettings = async (): Promise<ClinicSettings> => {
 
 export const updateClinicSettings = async (data: UpdateClinicSettingsInput): Promise<ClinicSettings> => {
   try {
-    const response = await clinicSettingsHttp.put<ClinicSettings | ApiEnvelope<ClinicSettings>>('/api/mdc/clinic/settings', data);
+    const response = await clinicSettingsHttp.put<ClinicSettings | ApiEnvelope<ClinicSettings>>('/clinic/settings', data);
     return unwrap<ClinicSettings>(response.data);
   } catch (error) {
     console.error('updateClinicSettings failed, using mock fallback', toApiError(error));

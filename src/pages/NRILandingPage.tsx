@@ -1,12 +1,29 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import SEO from "../components/SEO";
 import "./NRILandingPage.css";
 
 const NRILandingPage: React.FC = () => {
   const navigate = useNavigate();
   return (
     <main className="nri-page" style={{ position: 'relative' }}>
+      <SEO 
+        title="NRI & Global Indian Mental Health - Manas360" 
+        description="Therapy in your mother tongue with Indian experts who understand NRI realities." 
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "serviceType": "NRI Mental Health Counseling",
+          "provider": {
+            "@type": "Organization",
+            "name": "MANAS360",
+            "logo": "https://manas360.com/AppIcon.jpeg"
+          },
+          "url": "https://manas360.com/nri-landing",
+          "description": "Therapy in your mother tongue with Indian experts who understand NRI realities."
+        }}
+      />
 
       {/* <div className="nri-top-strip">
         <div className="nri-shell">

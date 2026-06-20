@@ -100,7 +100,7 @@ const mockPatient = (data: CreatePatientInput, id?: string): Patient => ({
 
 export const createPatient = async (data: CreatePatientInput): Promise<Patient> => {
 	try {
-		const response = await patientHttp.post<Patient | ApiEnvelope<Patient>>('/api/mdc/patients', data);
+		const response = await patientHttp.post<Patient | ApiEnvelope<Patient>>('/mdc/patients', data);
 		return unwrap<Patient>(response.data);
 	} catch (error) {
 		console.error('createPatient failed, using mock fallback', toPatientApiError(error));
@@ -110,7 +110,7 @@ export const createPatient = async (data: CreatePatientInput): Promise<Patient> 
 
 export const getPatients = async (): Promise<Patient[]> => {
 	try {
-		const response = await patientHttp.get<Patient[] | ApiEnvelope<Patient[]>>('/api/mdc/patients');
+		const response = await patientHttp.get<Patient[] | ApiEnvelope<Patient[]>>('/mdc/patients');
 		return unwrap<Patient[]>(response.data);
 	} catch (error) {
 		console.error('getPatients failed, using mock fallback', toPatientApiError(error));
@@ -123,7 +123,7 @@ export const getPatients = async (): Promise<Patient[]> => {
 
 export const getPatientById = async (id: string): Promise<Patient> => {
 	try {
-		const response = await patientHttp.get<Patient | ApiEnvelope<Patient>>(`/api/mdc/patients/${encodeURIComponent(id)}`);
+		const response = await patientHttp.get<Patient | ApiEnvelope<Patient>>(`/mdc/patients/${encodeURIComponent(id)}`);
 		return unwrap<Patient>(response.data);
 	} catch (error) {
 		console.error('getPatientById failed, using mock fallback', toPatientApiError(error));
@@ -133,7 +133,7 @@ export const getPatientById = async (id: string): Promise<Patient> => {
 
 export const updatePatient = async (id: string, data: UpdatePatientInput): Promise<Patient> => {
 	try {
-		const response = await patientHttp.put<Patient | ApiEnvelope<Patient>>(`/api/mdc/patients/${encodeURIComponent(id)}`, data);
+		const response = await patientHttp.put<Patient | ApiEnvelope<Patient>>(`/mdc/patients/${encodeURIComponent(id)}`, data);
 		return unwrap<Patient>(response.data);
 	} catch (error) {
 		console.error('updatePatient failed, using mock fallback', toPatientApiError(error));
@@ -149,7 +149,7 @@ export const updatePatient = async (id: string, data: UpdatePatientInput): Promi
 export const deletePatient = async (id: string): Promise<DeletePatientResponse> => {
 	try {
 		const response = await patientHttp.delete<DeletePatientResponse | ApiEnvelope<DeletePatientResponse>>(
-			`/api/mdc/patients/${encodeURIComponent(id)}`,
+			`/mdc/patients/${encodeURIComponent(id)}`,
 		);
 		return unwrap<DeletePatientResponse>(response.data);
 	} catch (error) {

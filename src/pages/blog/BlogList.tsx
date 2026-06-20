@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, Calendar, User, ArrowRight, Image as ImageIcon, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getPublicPosts, getPublicCategories, getPublicTags, BlogPost, BlogCategory, BlogTag } from '../../api/blog.api';
+import SEO from '../../components/SEO';
 
 export default function BlogList() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -31,7 +32,6 @@ export default function BlogList() {
   useEffect(() => {
     // Scroll to top on load
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    loadMetaTags();
     loadCategoriesAndTags();
   }, []);
 
@@ -39,18 +39,7 @@ export default function BlogList() {
     loadPosts();
   }, [page, debouncedSearchTerm, selectedCategory, selectedTag]);
 
-  const loadMetaTags = () => {
-    document.title = 'Manas360 Blog | Mental Health & Mindfulness Tips';
 
-    // Add default meta description for SEO
-    let descMeta = document.querySelector('meta[name="description"]');
-    if (!descMeta) {
-      descMeta = document.createElement('meta');
-      descMeta.setAttribute('name', 'description');
-      document.head.appendChild(descMeta);
-    }
-    descMeta.setAttribute('content', 'Explore insights, guides, and professional advice on mental wellness, therapy, mindfulness, and healthy living on the Manas360 Blog.');
-  };
 
   const loadCategoriesAndTags = async () => {
     try {
@@ -105,6 +94,23 @@ export default function BlogList() {
 
   return (
     <div className="min-h-screen bg-[#FDFDFB] text-[#23313A] font-sans">
+      <SEO 
+        title="Manas360 Blog | Mental Health & Mindfulness Tips"
+        description="Explore insights, guides, and professional advice on mental wellness, therapy, mindfulness, and healthy living on the Manas360 Blog."
+        url="https://manas360.com/blog"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "Manas360 Blog | Mental Health & Mindfulness Tips",
+          "description": "Explore insights, guides, and professional advice on mental wellness, therapy, mindfulness, and healthy living on the Manas360 Blog.",
+          "url": "https://manas360.com/blog",
+          "publisher": {
+            "@type": "Organization",
+            "name": "MANAS360",
+            "logo": "https://manas360.com/AppIcon.jpeg"
+          }
+        }}
+      />
       {/* HERO SECTION */}
       <section className="relative overflow-hidden bg-[#F4FAF6] py-6 lg:py-10 border-b border-[#D8EAE1]">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">

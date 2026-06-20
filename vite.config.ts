@@ -3,7 +3,7 @@ import path from 'path'
 import react from '@vitejs/plugin-react'
 import Sitemap from 'vite-plugin-sitemap'
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   
   const hmrProtocol = (env.VITE_HMR_PROTOCOL as 'ws' | 'wss' | undefined) || 'ws'
@@ -11,31 +11,47 @@ export default defineConfig(({ mode }) => {
   const hmrPort = Number(env.VITE_HMR_PORT || env.PORT || 5173)
   const hmrClientPort = Number(env.VITE_HMR_CLIENT_PORT || env.VITE_HMR_PORT || env.PORT || 5173)
 
-  return {
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, 'src'),
+    let dynamicBlogRoutes: string[] = [];
+    try {
+      const backendUrl = env.VITE_BACKEND_URL || 'http://localhost:4502';
+      // Use dynamic import or global fetch to get blogs at build time
+      const res = await fetch(`${backendUrl}/api/blogs`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data && Array.isArray(json.data)) {
+          dynamicBlogRoutes = json.data.map((b: any) => `/blogs/${b.slug || b._id}`);
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch dynamic blogs for sitemap generation:', err);
+    }
+
+    return {
+      resolve: {
+        alias: {
+          '@': path.resolve(__dirname, 'src'),
+        },
       },
-    },
-    plugins: [
-      react(),
-      Sitemap({
-        hostname: 'https://manas360.com',
-        robots: [{ userAgent: '*', allow: '/' }],
-        dynamicRoutes: [
-          '/',
-          '/about',
-          '/contact',
-          '/how-it-works',
-          '/intro',
-          '/landing',
-          '/plans',
-          '/crisis',
-          '/specialized-care',
-          '/blogs'
-        ]
-      })
-    ],
+      plugins: [
+        react(),
+        Sitemap({
+          hostname: 'https://manas360.com',
+          robots: [{ userAgent: '*', allow: '/' }],
+          dynamicRoutes: [
+            '/',
+            '/about',
+            '/contact',
+            '/how-it-works',
+            '/intro',
+            '/landing',
+            '/plans',
+            '/crisis',
+            '/specialized-care',
+            '/blogs',
+            ...dynamicBlogRoutes
+          ]
+        })
+      ],
     test: {
       globals: true,
       environment: 'jsdom',

@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Copy, MessageSquare, Twitter, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getPublicPostBySlug, getPublicPosts, BlogPost } from '../../api/blog.api';
+import SEO from '../../components/SEO';
 
 export default function BlogDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -17,38 +18,7 @@ export default function BlogDetail() {
     }
   }, [slug]);
 
-  const updateSEOMetadata = (blog: BlogPost) => {
-    // Document Title
-    document.title = `${blog.metaTitle || blog.title} | Manas360 Blog`;
 
-    // Helpers to manage header meta tags
-    const setMetaTag = (attributeName: string, attributeValue: string, contentValue: string) => {
-      let element = document.querySelector(`meta[${attributeName}="${attributeValue}"]`);
-      if (!element) {
-        element = document.createElement('meta');
-        element.setAttribute(attributeName, attributeValue);
-        document.head.appendChild(element);
-      }
-      element.setAttribute('content', contentValue);
-    };
-
-    // SEO Meta Tags
-    setMetaTag('name', 'description', blog.metaDescription || blog.excerpt || '');
-    setMetaTag('name', 'keywords', blog.metaKeywords || '');
-
-    // Open Graph Social Tags
-    setMetaTag('property', 'og:title', blog.metaTitle || blog.title);
-    setMetaTag('property', 'og:description', blog.metaDescription || blog.excerpt || '');
-    setMetaTag('property', 'og:image', blog.coverImage || '');
-    setMetaTag('property', 'og:url', window.location.href);
-    setMetaTag('property', 'og:type', 'article');
-
-    // Twitter Card Tags
-    setMetaTag('name', 'twitter:card', 'summary_large_image');
-    setMetaTag('name', 'twitter:title', blog.metaTitle || blog.title);
-    setMetaTag('name', 'twitter:description', blog.metaDescription || blog.excerpt || '');
-    setMetaTag('name', 'twitter:image', blog.coverImage || '');
-  };
 
   const loadPostAndRelated = async () => {
     setLoading(true);
@@ -56,7 +26,6 @@ export default function BlogDetail() {
       const postRes = await getPublicPostBySlug(slug!);
       const blog = postRes.data;
       setPost(blog);
-      updateSEOMetadata(blog);
 
       // Load related posts from same category
       if (blog.category) {
@@ -106,6 +75,32 @@ export default function BlogDetail() {
 
   return (
     <div className="min-h-screen bg-[#FDFDFB] text-[#23313A] pb-20 font-sans">
+      <SEO 
+        title={`${post.metaTitle || post.title} | Manas360 Blog`}
+        description={post.metaDescription || post.excerpt || ''}
+        keywords={post.metaKeywords || ''}
+        image={post.coverImage || ''}
+        url={window.location.href}
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": post.title,
+          "image": post.coverImage || "https://manas360.com/AppIcon.jpeg",
+          "author": {
+            "@type": "Person",
+            "name": post.author ? `${post.author.firstName} ${post.author.lastName}` : "Manas360 Expert"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "MANAS360",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://manas360.com/AppIcon.jpeg"
+            }
+          },
+          "datePublished": post.publishedAt || new Date().toISOString()
+        }}
+      />
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         
         {/* BACK TO BLOGS BUTTON */}

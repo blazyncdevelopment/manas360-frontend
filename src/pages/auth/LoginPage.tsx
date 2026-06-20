@@ -114,7 +114,7 @@ export default function LoginPage() {
 		if (isProviderAuthRole(resolveSignupRole(user.role))) {
 			void resolveProviderIdForOnboarding(user);
 			if (!user.platformAccessActive) {
-				navigate('/provider/subscription', { replace: true });
+				navigate('/plans', { replace: true });
 				return;
 			}
 			navigate(getPostLoginRoute(user), { replace: true });
@@ -169,7 +169,7 @@ export default function LoginPage() {
 			if (isProviderAuthRole(resolveSignupRole(resolvedUser.role) ?? resolvedUser.role)) {
 				await resolveProviderIdForOnboarding(resolvedUser);
 				if (!resolvedUser.platformAccessActive) {
-					navigate('/provider/subscription', { replace: true });
+					navigate('/plans', { replace: true });
 					return;
 				}
 				const candidate = from || afterLogin || next || null;

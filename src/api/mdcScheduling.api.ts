@@ -137,7 +137,7 @@ const mockSession = (data: CreateSessionInput, id?: string): MdcSession => ({
 
 export const createSession = async (data: CreateSessionInput): Promise<MdcSession> => {
   try {
-    const response = await schedulingHttp.post<MdcSession | ApiEnvelope<MdcSession>>('/api/mdc/sessions', data);
+    const response = await schedulingHttp.post<MdcSession | ApiEnvelope<MdcSession>>('/sessions', data);
     return unwrap<MdcSession>(response.data);
   } catch (error) {
     console.error('createSession failed, using mock fallback', toApiError(error));
@@ -148,7 +148,7 @@ export const createSession = async (data: CreateSessionInput): Promise<MdcSessio
 export const getSessions = async (filters?: SessionFilters): Promise<MdcSession[]> => {
   try {
     const query = buildFiltersQuery(filters);
-    const response = await schedulingHttp.get<MdcSession[] | ApiEnvelope<MdcSession[]>>(`/api/mdc/sessions${query}`);
+    const response = await schedulingHttp.get<MdcSession[] | ApiEnvelope<MdcSession[]>>(`/sessions${query}`);
     return unwrap<MdcSession[]>(response.data);
   } catch (error) {
     console.error('getSessions failed, using mock fallback', toApiError(error));
@@ -165,7 +165,7 @@ export const getSessions = async (filters?: SessionFilters): Promise<MdcSession[
 export const updateSession = async (id: string, data: UpdateSessionInput): Promise<MdcSession> => {
   try {
     const response = await schedulingHttp.put<MdcSession | ApiEnvelope<MdcSession>>(
-      `/api/mdc/sessions/${encodeURIComponent(id)}`,
+      `/sessions/${encodeURIComponent(id)}`,
       data,
     );
     return unwrap<MdcSession>(response.data);
@@ -185,7 +185,7 @@ export const updateSession = async (id: string, data: UpdateSessionInput): Promi
 export const sendReminder = async (sessionId: string): Promise<ReminderResponse> => {
   try {
     const response = await schedulingHttp.post<ReminderResponse | ApiEnvelope<ReminderResponse>>(
-      `/api/mdc/sessions/${encodeURIComponent(sessionId)}/reminders`,
+      `/sessions/${encodeURIComponent(sessionId)}/reminders`,
     );
     return unwrap<ReminderResponse>(response.data);
   } catch (error) {

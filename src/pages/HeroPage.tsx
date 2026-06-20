@@ -5,15 +5,15 @@ import { SEO } from '../components/SEO';
 
 
 const AWS_REGION = import.meta.env.VITE_AWS_REGION || 'ap-south-1';
-const AWS_BUCKET_NAME = import.meta.env.VITE_AWS_BUCKET_NAME || 'blazync-storage';
-const HERO_VIDEO_S3_URL = `https://${AWS_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/Website%20Assets/HERO-BackgroundVideo.mp4`;
+const AWS_BUCKET_NAME = import.meta.env.VITE_AWS_BUCKET_NAME || 'manas360-storage';
+const HERO_VIDEO_S3_URL = `https://${AWS_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/hero.mp4`;
 
 /** Optional presigned URL when the bucket object is not public-read */
 const HERO_VIDEO_SRC =
   import.meta.env.VITE_HERO_VIDEO_URL?.trim() || HERO_VIDEO_S3_URL;
 
 /** sessionStorage keys */
-const SESSION_KEY_NEW  = 'manas360_hero_seen';   // set by one-cycle patch
+const SESSION_KEY_NEW = 'manas360_hero_seen';   // set by one-cycle patch
 const SESSION_KEY_LEGACY = 'heroVideoPlayed';     // legacy key kept for compat
 
 const FADE_MS = 1500;
@@ -29,10 +29,10 @@ export const Hero: React.FC = () => {
     sessionStorage.getItem(SESSION_KEY_LEGACY) === 'true';
 
   const [videoAvailable, setVideoAvailable] = useState<boolean>(!alreadySeen);
-  const [videoPlaying,   setVideoPlaying]   = useState<boolean>(false);
+  const [videoPlaying, setVideoPlaying] = useState<boolean>(false);
 
-  const videoRef    = React.useRef<HTMLVideoElement>(null);
-  const wrapRef     = React.useRef<HTMLDivElement>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const wrapRef = React.useRef<HTMLDivElement>(null);
 
 
   // ── Body-scroll lock ──────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ export const Hero: React.FC = () => {
     if (alreadySeen) return;           // video was never rendered — nothing to do
 
     const wrap = wrapRef.current;
-    const vid  = videoRef.current;
+    const vid = videoRef.current;
 
     if (!wrap || !vid) return;
 
@@ -101,7 +101,7 @@ export const Hero: React.FC = () => {
 
     // Mark session as seen immediately so navigation/unmount can't re-show it
     const markSeen = () => {
-      sessionStorage.setItem(SESSION_KEY_NEW,    '1');
+      sessionStorage.setItem(SESSION_KEY_NEW, '1');
       sessionStorage.setItem(SESSION_KEY_LEGACY, 'true');
     };
 
@@ -127,14 +127,14 @@ export const Hero: React.FC = () => {
     };
 
     vid.addEventListener('canplay', onCanPlay);
-    vid.addEventListener('ended',   onEnded);
-    vid.addEventListener('error',   onError);
+    vid.addEventListener('ended', onEnded);
+    vid.addEventListener('error', onError);
 
     return () => {
       clearTimeout(stallTimer);
       vid.removeEventListener('canplay', onCanPlay);
-      vid.removeEventListener('ended',   onEnded);
-      vid.removeEventListener('error',   onError);
+      vid.removeEventListener('ended', onEnded);
+      vid.removeEventListener('error', onError);
     };
 
     // ── Local helpers ──
@@ -143,7 +143,7 @@ export const Hero: React.FC = () => {
       const w = wrapRef.current;
       if (w) {
         w.style.transition = `opacity ${FADE_MS}ms ease`;
-        w.style.opacity    = '0';
+        w.style.opacity = '0';
       }
       setTimeout(destroyVideo, FADE_MS + 100);
     }
@@ -161,7 +161,7 @@ export const Hero: React.FC = () => {
       // the "removeChild: node is not a child" NotFoundError.
       setVideoAvailable(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -176,7 +176,7 @@ export const Hero: React.FC = () => {
 
   return (
     <div className="hero-wrapper min-h-screen h-screen flex flex-col relative overflow-hidden">
-      <SEO 
+      <SEO
         title="MANAS360 - You're Not Alone | Mental Wellness Platform"
         description="India's complete mental wellness ecosystem. Verified therapists, AI companion, and clinical care. Get a free 6-min screening."
         schema={{
@@ -242,13 +242,17 @@ export const Hero: React.FC = () => {
 
         .hero-bg-gradient {
           position: absolute;
-          inset: 0;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
           z-index: 2;
           background: linear-gradient(160deg, var(--dark) 0%, var(--navy-deep) 20%, var(--navy) 50%, var(--navy-mid) 80%, var(--navy-deep) 100%);
-          background-size: 400% 400%;
           animation: gradientShift 20s ease infinite;
           opacity: 0.3;
           transition: opacity 1s ease-in, background 1s ease-in;
+          will-change: transform;
+          pointer-events: none;
         }
 
         .hero-bg--static .hero-bg-gradient {
@@ -284,10 +288,12 @@ export const Hero: React.FC = () => {
         }
 
         @keyframes gradientShift { 
-          0% { background-position: 0% 50% } 50% { background-position: 100% 50% } 100% { background-position: 0% 50% } 
+          0% { transform: translate3d(0, 0, 0) } 
+          50% { transform: translate3d(-10%, -10%, 0) } 
+          100% { transform: translate3d(0, 0, 0) } 
         }
 
-        .particles { position: absolute; inset: 0; z-index: 5; overflow: hidden; transition: opacity 1s ease-in-out; }
+        .particles { position: absolute; inset: 0; z-index: 5; overflow: hidden; transition: opacity 1s ease-in-out; pointer-events: none; }
         
         .hero-bg--static ~ .hero-glow,
         .hero-bg--static ~ .particles { 
@@ -385,9 +391,10 @@ export const Hero: React.FC = () => {
           display: flex; justify-content: center; gap: 0; 
         }
         .float-stat { 
-          background: rgba(3, 36, 103, 0.45); backdrop-filter: blur(20px); 
+          background: rgba(3, 36, 103, 0.45); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
           border-top: 1px solid rgba(126, 129, 0, 0.15); 
           padding: 16px 20px; text-align: center; flex: 1; max-width: 190px; transition: all .3s; 
+          transform: translateZ(0); will-change: transform;
         }
         .float-stat:hover { background: rgba(3, 36, 103, 0.65); border-top-color: var(--olive-light); }
         .float-stat:not(:last-child) { border-right: 1px solid rgba(126, 129, 0, 0.08); }
@@ -490,7 +497,7 @@ export const Hero: React.FC = () => {
               aria-hidden="true"
               disablePictureInPicture
               onCanPlay={() => {
-                videoRef.current?.play().catch(() => {});
+                videoRef.current?.play().catch(() => { });
               }}
               onPlaying={() => setVideoPlaying(true)}
               onError={() => setVideoAvailable(false)}

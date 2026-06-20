@@ -38,6 +38,7 @@ export interface AuthUser {
 	providerOnboardingCompleted?: boolean;
 	providerProfileVerified?: boolean;
 	requiresPlatformPayment?: boolean;
+	profileImageUrl?: string | null;
 	platformAccessActive?: boolean;
 	requiresSubscription?: boolean;
 	patientSubscriptionActive?: boolean;
@@ -108,6 +109,7 @@ export interface ProviderRegisterPayload {
 	availability?: Record<string, string[]>;
 	hourlyRate?: number;
 	ethicsAgreed?: boolean;
+	profileImageUrl?: string;
 }
 
 export type ClinicalScreeningOtpPayload = {

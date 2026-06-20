@@ -583,24 +583,7 @@ export default function ProviderMarketplacePage({ corporateMode = false }: { cor
 
       <div className="mx-auto max-w-7xl px-6 mt-10">
 
-        {corporateMode && stats && !stats.corporateUnlocked ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm max-w-3xl mx-auto mt-12 text-center">
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Complete 50+ sessions to unlock Corporate Leads</h2>
-            <p className="text-sm text-slate-500 mb-6">
-              You need {Math.max(0, 50 - (stats.completedSessions || 0))} more sessions to access institutional corporate leads.
-            </p>
-            <div className="flex items-center justify-between mb-2 text-sm font-semibold text-slate-700">
-              <span>{stats.completedSessions || 0}/50 sessions completed</span>
-            </div>
-            <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-indigo-500 rounded-full transition-all duration-500" 
-                style={{ width: `${Math.min(100, Math.round(((stats.completedSessions || 0) / 50) * 100))}%` }} 
-              />
-            </div>
-          </div>
-        ) : (
-          <>
+        <>
             {/* Tabs */}
         <div className="mb-8 flex gap-2 border-b border-slate-200">
           {(['marketplace', 'purchased'] as const).map((t) => (
@@ -947,9 +930,8 @@ export default function ProviderMarketplacePage({ corporateMode = false }: { cor
             </>
           )}
         </>
-        )}
-      </>
-    )}
+      )}
+    </>
   </div>
 </div>
 

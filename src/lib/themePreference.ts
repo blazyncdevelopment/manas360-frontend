@@ -6,13 +6,6 @@ const DARK_CLASS = 'dark';
 const DARK_DATA_ATTR = 'dark';
 const LIGHT_DATA_ATTR = 'light';
 
-const getSystemDarkMode = (): boolean => {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return false;
-  }
-
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
-};
 
 export const getStoredThemePreference = (): ThemePreference | null => {
   if (typeof window === 'undefined') {
@@ -27,12 +20,9 @@ export const getStoredThemePreference = (): ThemePreference | null => {
   return null;
 };
 
-export const resolveTheme = (preference: ThemePreference | null): ThemePreference => {
-  if (preference) {
-    return preference;
-  }
-
-  return getSystemDarkMode() ? 'dark' : 'light';
+export const resolveTheme = (_preference: ThemePreference | null): ThemePreference => {
+  // Always force light mode
+  return 'light';
 };
 
 export const applyTheme = (theme: ThemePreference): void => {

@@ -177,6 +177,7 @@ const AboutUsPage = lazy(() => import('./pages/AboutUs'));
 const ContactUsPage = lazy(() => import('./pages/ContactUs'));
 const HelpCenterTicket = lazy(() => import('./pages/HelpCenterTicket'));
 const SpecializedCarePage = lazy(() => import('./pages/SpecializedCarePage'));
+const SitemapPage = lazy(() => import('./pages/SitemapPage'));
 const ProviderCalendarPage = lazy(() => import('./pages/provider/Calendar'));
 const ProviderInboxPage = lazy(() => import('./pages/provider/Messages'));
 const ProviderEarningsPage = lazy(() => import('./pages/provider/Earnings'));
@@ -441,6 +442,8 @@ function App() {
                     <Route path="/blogs" element={<BlogListPage />} />
                     <Route path="/blog" element={<Navigate to="/blogs" replace />} />
                     <Route path="/blogs/:slug" element={<BlogDetailPage />} />
+                    <Route path="/sitemap.html" element={<SitemapPage />} />
+                    <Route path="/sitemap" element={<Navigate to="/sitemap.html" replace />} />
                     <Route path="/specialized-care" element={<SpecializedCarePage />} />
                     <Route path="/my-digital-clinic" element={<MyDigitalClinicPricingPage />} />
                     <Route path="/my-digital-clinic/register" element={<RegisterClinicPage />} />

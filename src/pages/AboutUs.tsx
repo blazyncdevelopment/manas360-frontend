@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 import './AboutUs.css';
 
 const PILLARS = [
@@ -87,6 +88,23 @@ export default function AboutUsPage() {
 
   return (
     <div className="about-us-page">
+      <SEO 
+        title="About — MANAS360 | Bharat's Mental Wellness Ecosystem" 
+        description="MANAS360 is Bharat's digital mental wellness ecosystem — connecting patients with verified mental health professionals across languages."
+        keywords="about manas360, mental wellness ecosystem, online therapy india, multilingual therapy, mental health bharat"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "AboutPage",
+          "name": "About Us | MANAS360",
+          "description": "Learn about MANAS360, our mission, vision, and the team dedicated to revolutionizing mental health care in India.",
+          "url": "https://manas360.com/about",
+          "publisher": {
+            "@type": "Organization",
+            "name": "MANAS360",
+            "logo": "https://manas360.com/AppIcon.jpeg"
+          }
+        }}
+      />
       <div className="hero">
         <div className="hero-inner">
           <div className="hero-eyebrow">About MANAS360</div>
@@ -118,6 +136,7 @@ export default function AboutUsPage() {
           health in India has been episodic — you go to a doctor when you&apos;re in crisis, get a
           prescription, and disappear until the next crisis.
         </p>
+
         <p>
           MANAS360 exists to change that. We believe mental health care should be sustained,
           accessible, culturally respectful, and available in the language you think in — not just the

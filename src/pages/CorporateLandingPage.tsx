@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import SEO from "../components/SEO";
 import "./CorporateLandingPage.css";
 
 type CorporateCard = {
@@ -132,6 +133,22 @@ const CorporateLandingPage: React.FC = () => {
 
   return (
     <main className="corporate-landing-page" style={{ position: 'relative' }}>
+      <SEO 
+        title="Corporate Mental Wellness | B2B Solutions - Manas360" 
+        description="Comprehensive mental health solutions for your workforce. Enhance productivity and well-being with MANAS360's corporate wellness programs." 
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "serviceType": "Corporate Mental Wellness Programs",
+          "provider": {
+            "@type": "Organization",
+            "name": "MANAS360",
+            "logo": "https://manas360.com/AppIcon.jpeg"
+          },
+          "url": "https://manas360.com/corporate-landing",
+          "description": "Comprehensive mental health solutions for your workforce. Enhance productivity and well-being with MANAS360's corporate wellness programs."
+        }}
+      />
 
       {/* <header className="corporate-landing-header">
         <div className="corporate-landing-container corporate-landing-header-inner">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Lock, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -19,6 +19,8 @@ import {
 import { setStoredPlatformTransactionId } from '../../utils/providerOnboardingStorage';
 import { hasProviderSubmittedOnboarding } from '../../lib/providerOnboardingFlow';
 import { fetchLeadMarketplacePricing, fetchPublicPricingConfig, type LeadMarketplacePricing } from '../../api/provider';
+import PurchaseAddonLeadsModal from '../../components/provider/PurchaseAddonLeadsModal';
+import { initiateAddonLeadsPayment, verifyAddonLeadsPayment } from '../../api/provider';
 
 const DEFAULT_LEAD_PRICING: LeadMarketplacePricing = { hot: 299, warm: 199, cold: 99 };
 
@@ -34,12 +36,40 @@ interface UILeadPlan {
 export default function ProviderSubscriptionPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [selectedPlatformCycle] = useState<ProviderBillingCycle>('quarterly');
+  const [selectedPlatformCycle] = useState<ProviderBillingCycle>('monthly');
   const [loading, setLoading] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [leadPricing, setLeadPricing] = useState<LeadMarketplacePricing>(DEFAULT_LEAD_PRICING);
   const [dynamicPlans, setDynamicPlans] = useState<UILeadPlan[]>([]);
   const [currentPlanId, setCurrentPlanId] = useState<ProviderLeadPlanId>('free');
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [isPurchasingAddon, setIsPurchasingAddon] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    const addonTxn = searchParams.get('addonTxn');
+    if (addonTxn) {
+      setLoading(true);
+      verifyAddonLeadsPayment(addonTxn)
+        .then((res) => {
+          if (res.status === 'SUCCESS') {
+            alert('Payment Successful! Add-on leads credited to your account.');
+          } else {
+            alert('Payment is still pending or failed. Please check your history later.');
+          }
+        })
+        .catch(() => {
+          alert('Error verifying payment status. Please check your history later.');
+        })
+        .finally(() => {
+          setLoading(false);
+          // Remove the parameter from the URL
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete('addonTxn');
+          setSearchParams(newParams, { replace: true });
+        });
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     fetchLeadMarketplacePricing()
@@ -63,9 +93,9 @@ export default function ProviderSubscriptionPage() {
               name: tier.name,
               subtitle: tier.subtitle,
               badge: tier.badge,
-              amountMinor: (p.quarterlyPrice || 0) * 100,
+              amountMinor: (p.price || 0) * 100,
               features: [
-                p.leadsPerWeek > 0 
+                p.leadsPerWeek > 0
                   ? `${p.leadsPerWeek} leads/week (Hot: ${p.hotLeads || 0} | Warm: ${p.warmLeads || 0} | Cold: ${p.coldLeads || 0})`
                   : `${p.leadsPerWeek} leads/week`,
                 tier.id === 'free' ? 'Basic profile' : p.leadQualityMix,
@@ -74,7 +104,7 @@ export default function ProviderSubscriptionPage() {
               ]
             }
           }).filter(Boolean) as UILeadPlan[];
-          
+
           if (mapped.length > 0) {
             setDynamicPlans(mapped);
           } else {
@@ -106,7 +136,7 @@ export default function ProviderSubscriptionPage() {
   // Fallback plans if API fails
   const fallbackPlans: UILeadPlan[] = PROVIDER_LEAD_PLANS.map(plan => ({
     ...plan,
-    amountMinor: getLeadPlanAmountMinor(plan.id, 'quarterly'),
+    amountMinor: getLeadPlanAmountMinor(plan.id, 'monthly'),
   }));
 
   const isPlatformActive = user?.platformAccessActive;
@@ -173,6 +203,25 @@ export default function ProviderSubscriptionPage() {
       return;
     }
     navigate('/provider/plans/addons');
+  };
+
+  const handleProceedToPayAddon = async (quantities: { hot: number; warm: number; cold: number }, _totalAmountMinor: number) => {
+    setIsPurchasingAddon(true);
+    try {
+      const result = await initiateAddonLeadsPayment({ quantities });
+      if (result.transaction_id) {
+        setStoredPlatformTransactionId(result.transaction_id);
+      }
+      if (result.payment_url) {
+        window.location.href = result.payment_url;
+      } else {
+        throw new Error('Payment URL not received');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to initiate payment');
+    } finally {
+      setIsPurchasingAddon(false);
+    }
   };
 
   return (
@@ -248,39 +297,6 @@ export default function ProviderSubscriptionPage() {
           )}
         </section>
 
-        {/* Marketplace Lead Pricing Reference */}
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-1">Marketplace Lead Pricing</h2>
-          <p className="text-xs text-slate-500 mb-4">Buy additional leads beyond your weekly plan allocation. First-come, first-served.</p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4">
-              <span className="text-2xl">🔥</span>
-              <div>
-                <p className="text-sm font-black text-red-700">Hot Lead</p>
-                <p className="text-xl font-black text-slate-900">₹{leadPricing.hot}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Score 90–100 · ~70% conversion</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50 p-4">
-              <span className="text-2xl">🌟</span>
-              <div>
-                <p className="text-sm font-black text-amber-700">Warm Lead</p>
-                <p className="text-xl font-black text-slate-900">₹{leadPricing.warm}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Score 70–89 · ~50% conversion</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-4">
-              <span className="text-2xl">❄️</span>
-              <div>
-                <p className="text-sm font-black text-blue-700">Cold Lead</p>
-                <p className="text-xl font-black text-slate-900">₹{leadPricing.cold}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Score 50–69 · ~25% conversion</p>
-              </div>
-            </div>
-          </div>
-          <p className="mt-3 text-[11px] text-slate-400">Standard plan gets 10% off · Premium plan gets 20% off on all marketplace purchases. Your weekly subscription leads are included at no extra charge.</p>
-        </section>
-
         {/* Step 2: Lead Growth Plans */}
         <section className={`space-y-8 ${!canChoosePlan ? 'opacity-50' : ''}`}>
           <div className="relative">
@@ -327,7 +343,7 @@ export default function ProviderSubscriptionPage() {
             {(dynamicPlans.length > 0 ? dynamicPlans : fallbackPlans).map((plan) => {
               const leadAmountMinor = plan.amountMinor;
               const isCurrentPlan = currentPlanId === plan.id;
-              
+
               return (
                 <article key={plan.id} className={`relative flex flex-col rounded-3xl border bg-white p-6 shadow-sm border-b-4 ${isCurrentPlan ? 'border-[#1f6f5f] shadow-md' : 'border-slate-200 border-b-slate-100'}`}>
                   {plan.badge && (
@@ -337,8 +353,8 @@ export default function ProviderSubscriptionPage() {
                   )}
                   <div className="mb-4">
                     <h3 className="text-lg font-bold text-slate-900">{plan.name}</h3>
-                    <p className="text-3xl font-black text-slate-900 mt-1">{formatInr(leadAmountMinor)}<span className="text-xs text-slate-400 font-bold">/plan</span></p>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#1f6f5f] mt-1 opacity-80">Manual One-time Purchase</p>
+                    <p className="text-3xl font-black text-slate-900 mt-1">{formatInr(leadAmountMinor)}<span className="text-xs text-slate-400 font-bold">/month</span></p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#1f6f5f] mt-1 opacity-80">Billed Monthly</p>
                   </div>
 
                   <p className="text-xs font-semibold text-slate-500 mb-6 leading-relaxed flex-grow">{plan.subtitle}</p>
@@ -356,12 +372,11 @@ export default function ProviderSubscriptionPage() {
                     type="button"
                     disabled={!canChoosePlan || isCurrentPlan}
                     onClick={() => startFlow(plan.id)}
-                    className={`w-full rounded-2xl py-3.5 text-sm font-black transition-all ${
-                      !canChoosePlan 
+                    className={`w-full rounded-2xl py-3.5 text-sm font-black transition-all ${!canChoosePlan
                         ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                         : isCurrentPlan
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
-                        : 'bg-[#1f6f5f] text-white hover:bg-[#145347] shadow-lg shadow-[#1f6f5f]/20'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
+                          : 'bg-[#1f6f5f] text-white hover:bg-[#145347] shadow-lg shadow-[#1f6f5f]/20'
                       }`}
                   >
                     {!canChoosePlan ? 'Pending Verification' : isCurrentPlan ? 'Current Plan' : 'Upgrade Now'}
@@ -371,6 +386,85 @@ export default function ProviderSubscriptionPage() {
             })}
           </div>
         </section>
+
+        {/* Step 3: Marketplace Lead Pricing */}
+        <section className={`space-y-8 ${!canChoosePlan ? 'opacity-50' : ''}`}>
+          <div className="relative">
+            <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-slate-600 text-sm font-black">3</span>
+              Marketplace Lead Pricing
+            </h2>
+            {!canChoosePlan && (
+              <div className="mt-6 p-6 rounded-2xl bg-white border border-slate-200 border-dashed flex items-center gap-5">
+                <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+                  <Lock className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Add-on Leads Unlocked After Verification</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {!isPlatformActive
+                      ? "Pay the platform access fee (Step 1) to continue."
+                      : "Your clinical documents are being verified. We'll notify you once unlocked."}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className={`rounded-3xl border border-slate-200 bg-white p-6 shadow-sm ${!canChoosePlan ? 'pointer-events-none' : ''}`}>
+            <p className="text-xs text-slate-500 mb-4">Buy additional leads beyond your weekly plan allocation. First-come, first-served.</p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4">
+                <span className="text-2xl">🔥</span>
+                <div>
+                  <p className="text-sm font-black text-red-700">Hot Lead</p>
+                  <p className="text-xl font-black text-slate-900">₹{leadPricing.hot}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Score 90–100 · ~70% conversion</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                <span className="text-2xl">🌟</span>
+                <div>
+                  <p className="text-sm font-black text-amber-700">Warm Lead</p>
+                  <p className="text-xl font-black text-slate-900">₹{leadPricing.warm}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Score 70–89 · ~50% conversion</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                <span className="text-2xl">❄️</span>
+                <div>
+                  <p className="text-sm font-black text-blue-700">Cold Lead</p>
+                  <p className="text-xl font-black text-slate-900">₹{leadPricing.cold}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Score 50–69 · ~25% conversion</p>
+                </div>
+              </div>
+            </div>
+            <p className="mt-3 text-[11px] text-slate-400">Standard plan gets 10% off · Premium plan gets 20% off on all marketplace purchases. Your weekly subscription leads are included at no extra charge.</p>
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => setIsPurchaseModalOpen(true)}
+                disabled={!canChoosePlan}
+                className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl text-sm font-black transition-all ${
+                  canChoosePlan
+                    ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-xl shadow-slate-900/10'
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                Purchase Add-on Leads
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <PurchaseAddonLeadsModal
+          isOpen={isPurchaseModalOpen}
+          onClose={() => setIsPurchaseModalOpen(false)}
+          pricing={leadPricing}
+          currentPlanId={currentPlanId}
+          onProceedToPay={handleProceedToPayAddon}
+          isProcessing={isPurchasingAddon}
+        />
 
         <footer className="pt-10 border-t border-slate-100 text-center">
           <p className="text-xs text-slate-400 font-medium">
